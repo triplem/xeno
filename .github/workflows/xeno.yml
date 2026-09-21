@@ -1,0 +1,28 @@
+# Xeno checks its own repository. CI recomputes and compares; it writes nothing and runs
+# no agent. Read only permissions, no secrets, and pull_request rather than
+# pull_request_target, so a pull request from a fork never runs with write access.
+# Pin the actions to a commit sha before this repository becomes public.
+name: xeno
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: test
+        run: go test ./...
+      - name: build
+        run: go build -o xeno ./cmd/xeno
+      - name: verify
+        run: ./xeno gate verify

@@ -68,9 +68,8 @@ func (r *Runner) hash(key, phase string) (string, error) {
 	return hashing.DirHash(r.Root, model.PhaseDir(key, phase), hashing.PhaseExcluded)
 }
 
-// evaluate runs the gates of a phase and writes its gate.yaml. gate.yaml lies outside
-// artifacts_hash, so rewriting it never changes what a verdict is about.
-func (r *Runner) evaluate(key, phase string) (*model.Gate, error) {
+// compute runs the gates of a phase without writing anything.
+func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 	h, err := r.hash(key, phase)
 	if err != nil {
 		return nil, err
@@ -85,7 +84,82 @@ func (r *Runner) evaluate(key, phase string) (*model.Gate, error) {
 	if prev != nil && prev.Created != "" {
 		g.Created = prev.Created
 	}
+	return g, nil
+}
+
+// evaluate computes and writes gate.yaml. gate.yaml lies outside artifacts_hash, so
+// rewriting it never changes what a verdict is about.
+func (r *Runner) evaluate(key, phase string) (*model.Gate, error) {
+	g, err := r.compute(key, phase)
+	if err != nil {
+		return nil, err
+	}
 	return g, fm.WriteYAML(r.abs(model.PhaseDir(key, phase)+"/gate.yaml"), g)
+}
+
+// Divergence is one difference between a committed verdict and a recomputed one.
+type Divergence struct {
+	Key, Phase, What string
+}
+
+// VerifyResult is what CI reports. It writes nothing: CI recomputes and compares.
+type VerifyResult struct {
+	Checked     int
+	Divergences []Divergence
+	Red         []string
+	Provisional []string
+}
+
+// Verify recomputes every committed verdict and compares it with what is in the
+// repository. It never attaches evidence and never writes, so a pending item stays
+// pending here and is reported as provisional rather than as a divergence.
+func (r *Runner) Verify(key string) (*VerifyResult, error) {
+	keys := []string{key}
+	if key == "" {
+		entries, err := os.ReadDir(r.abs(".xeno/intents"))
+		if os.IsNotExist(err) {
+			return &VerifyResult{}, nil // no intent yet is not a failure
+		}
+		if err != nil {
+			return nil, err
+		}
+		keys = nil
+		for _, e := range entries {
+			if e.IsDir() {
+				keys = append(keys, e.Name())
+			}
+		}
+	}
+	res := &VerifyResult{}
+	for _, k := range keys {
+		for _, p := range model.Phases {
+			committed, err := r.readGate(k, p)
+			if err != nil {
+				continue
+			}
+			res.Checked++
+			label := k + " " + p
+			got, err := r.compute(k, p)
+			if err != nil {
+				return nil, err
+			}
+			if got.ArtifactsHash != committed.ArtifactsHash {
+				res.Divergences = append(res.Divergences, Divergence{k, p, "artifacts changed after the verdict was written"})
+				continue
+			}
+			if got.Status != committed.Status {
+				res.Divergences = append(res.Divergences, Divergence{k, p,
+					fmt.Sprintf("committed status %s, recomputed %s", committed.Status, got.Status)})
+			}
+			switch got.Status {
+			case "red":
+				res.Red = append(res.Red, label)
+			case "provisional":
+				res.Provisional = append(res.Provisional, label)
+			}
+		}
+	}
+	return res, nil
 }
 
 // Start begins a phase. The sequence is a property of the tool: a phase whose

@@ -385,3 +385,54 @@ func readFile(t *testing.T, p string) string {
 	}
 	return string(b)
 }
+
+// ---- CI: recompute and compare, never write
+
+func TestVerifyMatchesAndWritesNothing(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	gatePath := filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "gate.yaml")
+	before := readFile(t, gatePath)
+	res, err := f.r.Verify("")
+	f.must(err)
+	if res.Checked != 1 || len(res.Divergences) != 0 || len(res.Red) != 0 {
+		t.Fatalf("unexpected verify result %+v", res)
+	}
+	if readFile(t, gatePath) != before {
+		t.Fatal("verify wrote gate.yaml")
+	}
+}
+
+func TestVerifyDetectsAChangeAfterTheVerdict(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	f.write(model.PhaseDir(key, "00-intake")+"/digest.md", "edited after the verdict\n")
+	res, err := f.r.Verify(key)
+	f.must(err)
+	if len(res.Divergences) != 1 {
+		t.Fatalf("a change after the verdict went unnoticed: %+v", res)
+	}
+}
+
+func TestVerifyReportsProvisionalWithoutFailing(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases[:4] {
+		f.run(p, "")
+	}
+	f.must(f.r.Start(key, "04-verification"))
+	f.output("04-verification", pendingTest)
+	f.finish("04-verification")
+	res, err := f.r.Verify(key)
+	f.must(err)
+	if len(res.Provisional) != 1 || len(res.Divergences) != 0 || len(res.Red) != 0 {
+		t.Fatalf("pending evidence was not reported as provisional: %+v", res)
+	}
+}
+
+func TestVerifyOnARepositoryWithoutIntents(t *testing.T) {
+	r := New(t.TempDir())
+	res, err := r.Verify("")
+	if err != nil || res.Checked != 0 {
+		t.Fatalf("a repository without intents must verify cleanly: %v %+v", err, res)
+	}
+}

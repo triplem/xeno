@@ -18,6 +18,7 @@ const usage = `usage:
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
   xeno phase finish   --intent KEY --phase NN
   xeno gate run       --intent KEY --phase NN [--evidence-from DIR]
+  xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  --intent KEY
   xeno version
@@ -44,7 +45,7 @@ func run(args []string) int {
 	if err := fs.Parse(args[2:]); err != nil {
 		return 2
 	}
-	if *key == "" {
+	if *key == "" && cmd != "gate verify" {
 		fmt.Fprintln(os.Stderr, "--intent is required")
 		return 2
 	}
@@ -52,7 +53,7 @@ func run(args []string) int {
 	r.EvidenceFrom = *from
 
 	phase := ""
-	if cmd != "intent status" {
+	if cmd != "intent status" && cmd != "gate verify" {
 		p, err := model.ResolvePhase(*phaseArg)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -75,6 +76,26 @@ func run(args []string) int {
 			return 2
 		}
 		fmt.Printf("attached %d, pending %d; run xeno gate run to carry the verdict forward\n", a, p)
+		return 0
+	case "gate verify":
+		res, err := r.Verify(*key)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			return 2
+		}
+		fmt.Printf("verified %d verdicts\n", res.Checked)
+		for _, d := range res.Divergences {
+			fmt.Printf("  DIVERGENT   %s %s: %s\n", d.Key, d.Phase, d.What)
+		}
+		for _, l := range res.Red {
+			fmt.Printf("  RED         %s\n", l)
+		}
+		for _, l := range res.Provisional {
+			fmt.Printf("  PROVISIONAL %s: evidence outstanding, binding only at the merge request\n", l)
+		}
+		if len(res.Divergences) > 0 || len(res.Red) > 0 {
+			return 1
+		}
 		return 0
 	case "intent status":
 		states, err := r.Status(*key)
