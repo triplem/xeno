@@ -1876,13 +1876,17 @@ statement checkable for those who need it to be.
 
 ## 9. Open
 
-Not nothing any more. What stands before building is listed here rather than scattered.
-
 To verify rather than assume, each before the code that relies on it: whether the client
-accepts the instance URL for the marketplace; whether the gateway reports the model that
-actually served a request; whether it accepts and records request metadata; whether each
-harness forwards custom headers to it, and under which variable; whether the job token CI
-provides can read protected branch settings.
+accepts the instance URL for the marketplace --> unsure right now
+
+whether the gateway reports the model that
+actually served a request; whether it accepts and records request metadata --> going to get sorted out later
+
+whether each
+harness forwards custom headers to it, and under which variable --> claude-code: export ANTHROPIC_CUSTOM_HEADERS="X-Custom-Header-1: value1\nX-Custom-Header-2: value2"; codex: X-Custom-Header = "MeinWert"
+
+whether the job token CI
+provides can read protected branch settings --> github via api/ cli or ui; gitlab https://docs.gitlab.com/ci/pipelines/merge_request_pipelines/#control-access-to-protected-variables-and-runners
 
 Decided later on purpose: which of content, packaging and wiring WP11 builds per harness,
 settled in dogfooding rather than in advance.
