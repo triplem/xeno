@@ -109,10 +109,12 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
           GH_TOKEN: ${{ github.token }}
-          # Written out here too. A release description does autolink "#2" on its own,
-          # but not everywhere it is read: the API returns the anchor while the page did
-          # not show one. An explicit link renders as a link in every context and costs
-          # only the hovercard, which is the cheaper side of that trade.
+          # Written out here too, and this is the one worth not undoing. A release
+          # description is documented to autolink "#2" by itself, and the API agrees:
+          # body_html for v0.1.0 comes back with issue-link anchors around every
+          # reference. The release page shows none of them. v0.1.1 carries explicit
+          # links and they work, so the two versions are the A/B and the page is what
+          # counts. The cost is the hovercard that GitHub's own autolink adds.
           ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
         run: |
           set -eu
