@@ -7,11 +7,25 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     go build ./cmd/xeno
     go test ./...
 
-    xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
-    xeno phase finish   --intent KEY --phase NN
-    xeno gate run       --intent KEY --phase NN [--evidence-from DIR]
+    xeno phase start     --intent KEY --phase NN [--evidence-from DIR]
+    xeno phase finish    --intent KEY --phase NN
+    xeno gate run        --intent KEY --phase NN [--evidence-from DIR]
+    xeno gate verify     [--intent KEY]
     xeno evidence attach --intent KEY --phase NN --from DIR
-    xeno intent status  --intent KEY
+    xeno intent status   --intent KEY
+    xeno version
+
+Xeno collects no telemetry. Nothing it writes leaves the repository it writes in, and
+there is no endpoint for it to leave towards.
+
+## The trail in this repository
+
+`.xeno/intents/` holds Xeno's own process artifacts, and until WP8 they stop after P0.
+That is deliberate rather than abandoned: `M0.md` runs one intake per work package and
+goes no further, because G-Freshness is half implemented until then and a phase beyond
+P0 could not be judged honestly. An intent whose P1 to P5 read `not-started` is
+therefore complete for what it set out to record. `M0.md` has the reasoning and the
+sequence; `ASSUMPTIONS.md` has it as A6 and A20.
 
 Coverage against the implementation plan, by acceptance criterion:
 
