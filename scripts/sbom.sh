@@ -1,61 +1,38 @@
 #!/bin/sh
 # SPDX-License-Identifier: Apache-2.0
 #
-# Writes a CycloneDX 1.5 software bill of materials for a built binary, read from the
-# build information the Go toolchain embeds in it. Usage:
+# Writes a CycloneDX bill of materials for one build target. Usage:
 #
-#     scripts/sbom.sh <binary> <version> > sbom.cdx.json
+#     scripts/sbom.sh <goos> <goarch> <output>
 #
-# The binary is the source rather than go.mod, because what a release ships is what the
-# binary contains: a module the build did not reach never appears, and a replace never
-# goes unnoticed. It also needs no network and no go.sum, which matters for an instance
-# whose runners have no route out (WP0, "Runners and egress"). Recorded as A24.
+# The generator is cyclonedx-gomod, pinned below and fetched if it is not on PATH. It
+# needs a route to the module proxy, which is the one thing this script assumes and the
+# instance's runners may not have; see A18 and A24.
 #
-# No serial number is written. It is optional in CycloneDX, and leaving it out keeps two
-# runs over the same binary byte identical, which is worth more here than a fresh uuid.
+# Build constraints decide module selection, so a bill of materials is written per
+# target rather than once for the release. The main component takes its version from the
+# tag, which is why the release tags before it builds.
+#
+# -noserial: the serial number is random, and leaving it out keeps two runs over the
+# same commit byte identical.
 set -eu
 
-bin=${1:?usage: sbom.sh <binary> <version>}
-version=${2:?usage: sbom.sh <binary> <version>}
-name=$(basename "$bin")
-stamp=${SOURCE_DATE_EPOCH:+$(date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%dT%H:%M:%SZ)}
-stamp=${stamp:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+CYCLONEDX_GOMOD_VERSION=v1.9.0
 
-components=$(go version -m "$bin" | awk '
-	$1 == "dep" {
-		# dep <module> <version> [<hash>]
-		printf "%s\t%s\n", $2, $3
-	}' | sort -u | awk -F'\t' '
-	{
-		if (NR > 1) printf ",\n"
-		printf "    {\n"
-		printf "      \"type\": \"library\",\n"
-		printf "      \"name\": \"%s\",\n", $1
-		printf "      \"version\": \"%s\",\n", $2
-		printf "      \"purl\": \"pkg:golang/%s@%s\"\n", $1, $2
-		printf "    }"
-	}')
+goos=${1:?usage: sbom.sh <goos> <goarch> <output>}
+goarch=${2:?usage: sbom.sh <goos> <goarch> <output>}
+out=${3:?usage: sbom.sh <goos> <goarch> <output>}
 
-cat <<JSON
-{
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.5",
-  "version": 1,
-  "metadata": {
-    "timestamp": "$stamp",
-    "tools": [
-      { "name": "scripts/sbom.sh", "vendor": "conet Deutschland GmbH" }
-    ],
-    "component": {
-      "type": "application",
-      "name": "$name",
-      "version": "$version",
-      "purl": "pkg:golang/github.com/triplem/xeno@$version",
-      "licenses": [ { "license": { "id": "Apache-2.0" } } ]
-    }
-  },
-  "components": [
-$components
-  ]
-}
-JSON
+tool=$(command -v cyclonedx-gomod || true)
+if [ -z "$tool" ]; then
+	# Installed from a directory without a go.mod, so that this module's vendored
+	# build is never involved in resolving the tool's own dependencies.
+	( cd "$(mktemp -d)" && go install "github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$CYCLONEDX_GOMOD_VERSION" )
+	tool="$(go env GOPATH)/bin/cyclonedx-gomod"
+fi
+
+GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 "$tool" app \
+	-json -licenses -noserial \
+	-main ./cmd/xeno \
+	-output "$out" \
+	.

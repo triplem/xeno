@@ -1,13 +1,25 @@
 #!/bin/sh
 # SPDX-License-Identifier: Apache-2.0
 #
-# Prints the release notes for everything since the last tag, grouped by Conventional
-# Commit type. The notes go into the release rather than into a file in the repository:
-# a pipeline that commits a CHANGELOG.md writes into the repository it is verifying and
-# starts the next pipeline doing it. Recorded as A23.
+# Prints the release notes for everything since a tag, grouped by Conventional Commit
+# type. Usage:
+#
+#     scripts/changelog.sh [previous-tag]
+#
+# The tag is an argument rather than something this script works out, because the
+# release creates the new tag before it builds, so by the time the notes are written
+# "the last tag" is the one being released and the range would be empty.
 set -eu
 
-last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+# $# rather than ${1:-...}: an empty argument means "no previous tag, take the whole
+# history", which is the first release, and that has to be distinguishable from no
+# argument at all. With the default expansion the first release would look for a tag,
+# find the one just created for it, and report an empty range.
+if [ $# -ge 1 ]; then
+	last=$1
+else
+	last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+fi
 range=${last:+$last..HEAD}
 range=${range:-HEAD}
 
