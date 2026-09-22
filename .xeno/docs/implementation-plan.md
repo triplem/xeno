@@ -1491,10 +1491,31 @@ issues is on its way to becoming a tracker front end.
 
 **Branch and commit message carry the intent.** The branch is named after its issue,
 which GitLab does by itself when the branch is created from the issue, and the commit
-subject follows Conventional Commits with the issue reference in it, in the form
-`feat(docs): #123 short slug`. One expression then covers both the individual commits
+subject follows Conventional Commits with the issue reference at its end, in the form
+`feat(docs): short slug (#123)`. One expression then covers both the individual commits
 and the merge request title, and since the squashed message is built from that title,
 the reference survives a squash, which a trailer in the footer does not.
+
+**The reference sits at the end rather than after the type**, which is the one place it
+must not be. A code host reads a subject for closing keywords and `fix` is one of them,
+so `fix: #123 short slug` closes the issue: the colon between keyword and reference does
+not separate them, whatever the documented syntax suggests. A convention that puts the
+reference there therefore closes an issue on the first fix commit of twenty rather than
+the last, and nothing reopens it afterwards. It happened to this project's own issue #2,
+which was closed by its third commit of six while the work ran on for three more. At the
+end of the subject the reference is just as durable and no keyword stands beside it.
+
+**Closing is then a deliberate act**, because nothing does it by accident any more. The
+commit that finishes the work carries `Closes #123` in its body, and the merge request
+description carries it too. Both, and not either: a squashed message is built from the
+title and the description, so a trailer in an individual commit body does not survive a
+squash, which is the same reason the reference is in the subject in the first place.
+Where a change reaches the default branch without a merge request, the commit body is
+the only carrier and is enough.
+
+Only the subject half of this is checkable. `commit-message` reads a range and can
+require the form; which commit in that range is the last one is not a question a
+predicate can ask, so the closing trailer is convention and stays one.
 
 The `Xeno-Intent:` trailer stays available as a shipped example for projects whose
 subject line is already spoken for. Xeno's own repository does not use it.

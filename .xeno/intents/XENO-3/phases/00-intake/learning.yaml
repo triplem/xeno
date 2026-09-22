@@ -20,4 +20,10 @@ learnings:
       survives a squash, which is what the convention was built for, and no closing
       keyword stands next to it. Expressed as a rule this is `type: commit-message`
       over the range, so the same pattern decides in the hook and at the gate.
+
+      Closing then has to become deliberate, since nothing does it by accident any
+      more: `Closes #123` in the body of the commit that finishes the work and in the
+      merge request description, both, because a squashed message is built from the
+      title and the description. That half is convention rather than rule. A predicate
+      reads a range and cannot be asked which commit in it was the last.
     target: .xeno/config/rules/learned/project/commit-message.yaml

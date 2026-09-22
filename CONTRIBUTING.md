@@ -9,6 +9,28 @@ intent in a trailer:
 
     Xeno-Intent: XENO-2
 
+## Commit messages
+
+The subject follows Conventional Commits with the issue reference at its end:
+
+    fix(gates): never carry a decision forward for an external finding (#3)
+
+The reference belongs at the end and not after the type. GitHub reads a subject for
+closing keywords, `fix` is one of them, and it closes an issue on `fix: #3` even with
+the colon in between. That closed issue #2 of this repository on the third of its six
+commits, while the work ran on for three more, and nothing reopens an issue afterwards.
+At the end of the subject the reference survives a squash just as well and closes
+nothing.
+
+Because nothing closes by accident any more, closing is deliberate. The commit that
+finishes the work carries the keyword in its body, and so does the pull request
+description:
+
+    Closes #3
+
+Both, because a squashed message is built from the title and the description, so a
+trailer in a single commit body does not survive the squash.
+
 ## Developer Certificate of Origin
 
 Every commit is signed off under the Developer Certificate of Origin 1.1
