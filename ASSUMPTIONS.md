@@ -24,6 +24,8 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A16 | Source files carry only `SPDX-License-Identifier`, no per file copyright line | WP0 names the identifier and nothing more; the copyright line lives in `NOTICE` | `*.go` | open |
 | A17 | The copyright wording in `NOTICE` and the security contact are placeholders | both are for legal or the maintainer to fix, not for the build | `NOTICE`, `SECURITY.md` | open |
 | A18 | The module path moves to the self managed GitLab instance once it exists, and that move is a package of its own rather than a side effect of A1 | the plan targets GitLab CE, and a Go module path is its host: the instance's own path replaces `github.com/triplem/xeno` in `go.mod` and in every import, and a private instance needs either a vanity import path or `GOPRIVATE` and the `go-import` meta tag, neither of which is free | `go.mod`, every import, `.github/workflows/xeno.yml`, `M0.md` | **open, scheduled**: to be done with the host move, not before |
+| A20 | An intent that runs P0 only has no defined way to close | `intent close` writes the closing record for an *abandoned* intent, and a merged one meets G-Complete in P5; an intent that by design stops after intake is neither, so `status: in-progress` is the only honest value and stays | `.xeno/intents/*/intent.yaml` | **open, a finding about the plan rather than about the code**: M0.md asks every work package to run its intake through Xeno, and the process definition offers no closing path for that shape |
+| A21 | Release automation, SBOM and checksums wait for the GitLab move rather than being built on GitHub | WP0 names GitLab's changelog API as the mechanism, so building the same thing on GitHub Actions is work thrown away at the move (A18), and v1 distributes through the instance's registries, which do not exist yet | `.github/workflows/`, WP0 | **open, deferred deliberately**: WP0's "Done when" is not met until this lands, and saying so is better than a green tick on a package that is short three deliverables |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Built
@@ -40,9 +42,12 @@ Gates written as `not-implemented`: G-Supply, G-Secret, G-Test, G-Rules, G-Polic
 G-Complete.
 
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
-procedure, `SECURITY.md`. `LICENSE` is to be taken unchanged from the Apache Software
+procedure, `SECURITY.md`, the module path (A1), and the format and vet jobs the package
+asks for on day one. `LICENSE` is to be taken unchanged from the Apache Software
 Foundation rather than transcribed. SBOM, checksums and signing wait for a release.
-Where the sign-off is enforced is open question Q-1 of intent XENO-2.
+Where the sign-off is enforced is open question Q-1 of intent XENO-2, now recorded in
+that intent's `output.md` rather than only here. Release automation, SBOM and checksums
+are deferred under A21, so the package is not done.
 
 ## Not built
 
