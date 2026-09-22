@@ -5,6 +5,15 @@ editing this file by hand changes the rendering and not what it renders.
 
 <!-- releases below, newest first -->
 
+## 0.1.1, 2026-09-22
+
+### Fixes
+
+- [#2](https://github.com/triplem/xeno/issues/2) write issue links out in the release notes as well (`863c233`)
+- [#2](https://github.com/triplem/xeno/issues/2) write issue links out in CHANGELOG.md (`216c381`)
+
+Full history since v0.1.0.
+
 ## 0.1.0, 2026-09-22
 
 ### Features
