@@ -130,6 +130,11 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
+          # Only here. A release description autolinks "#2" by itself and gives it a
+          # hovercard; a markdown file served from the repository does not autolink at
+          # all, so the file is the one that needs the link written out. This prefix is
+          # host shaped and moves with the workflow, not with the script (A18).
+          ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
         run: |
           set -eu
           sh scripts/changelog-update.sh "$VERSION" "$PREVIOUS"

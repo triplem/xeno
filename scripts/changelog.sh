@@ -23,6 +23,23 @@ fi
 range=${last:+$last..HEAD}
 range=${range:-HEAD}
 
+# GitHub turns "#2" into a link by itself in a release description, but not in a
+# markdown file served from the repository: autolinking of issue references happens in
+# issues, pull requests, comments, commit messages and releases, and nowhere else. So a
+# changelog that is only ever read as a file needs the link written out.
+#
+# ISSUE_URL is the prefix an issue number is appended to, for example
+# https://github.com/triplem/xeno/issues/ or, on GitLab, .../-/issues/. Unset, the
+# references stay plain, which is what the release description wants, since its own
+# autolink carries a hovercard this cannot.
+linkify() {
+	if [ -z "${ISSUE_URL:-}" ]; then
+		cat
+	else
+		sed -E "s|#([0-9]+)|[#\1](${ISSUE_URL}\1)|g"
+	fi
+}
+
 section() {
 	# $1 heading, $2.. grep patterns over the subject
 	heading=$1
@@ -37,7 +54,7 @@ section() {
 				;;
 			esac
 		done
-	done)
+	done | linkify)
 	[ -n "$body" ] || return 0
 	printf '### %s\n\n%s\n\n' "$heading" "$body"
 }
