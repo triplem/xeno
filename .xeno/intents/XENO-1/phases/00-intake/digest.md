@@ -1,5 +1,5 @@
 ---
-intent: github.com/triplem/xeno
+intent: github.com/triplem/xeno#1
 phase: 00-intake
 created: 2026-09-21T09:00:00Z
 runner_version: 0.1.0-dev
