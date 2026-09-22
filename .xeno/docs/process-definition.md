@@ -322,6 +322,7 @@ Markdown artifacts and top level keys in YAML artifacts.
 # every process file
 intent: <qualified id>
 created: <iso8601>
+schema_version: <major.minor>
 runner_version: <gate runner version>
 plugin_version: <xeno plugin version>
 
@@ -346,6 +347,12 @@ key: PROJ-123
 status: <in-progress|abandoned>
 reason: <text>              # required when status is abandoned
 ```
+
+schema_version says which shape an artifact has, and it is read rather than enforced backwards. It exists so that a reader, and a later runner, can tell what an artifact is without guessing from which fields happen to be present. The minor moves when a field is added that an older reader can ignore, the major when one changes meaning or goes away.
+
+An artifact written before the field existed does not carry it, and its absence is the schema that predates versioning rather than a field somebody forgot. A gate that failed on it would invalidate every artifact behind the change that introduced it, which is the rewriting this process avoids everywhere else. A runner reads every version it knows and writes only the current one.
+
+It sits beside runner_version and is not derived from it, because the two move for different reasons. A runner that has released twice without touching the shape of an artifact has one number moving and the other standing still, and a schema read out of a tool version would report a break that never happened.
 
 Three groups, not two, because `digest.md` is neither rendered nor written by the
 agent. The agent supplies the summary text, the runner filters, hashes and writes the

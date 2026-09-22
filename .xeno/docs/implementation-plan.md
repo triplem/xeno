@@ -232,7 +232,9 @@ platforms.
 takes a major version, existing artifacts stay as they are: rewriting them would
 destroy the very trail they exist for. The runner keeps reading older schema
 versions, and only new phases are written in the new format. This has to be settled
-before the first release, not after.
+before the first release, not after. 
+
+Settled in revision 9 of the process definition: schema_version in the common field set.
 
 ### WP2 Template engine
 
