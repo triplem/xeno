@@ -1,0 +1,25 @@
+# Changelog
+
+Derived from the commit history by the release pipeline. The commits are the source;
+editing this file by hand changes the rendering and not what it renders.
+
+<!-- releases below, newest first -->
+
+## 0.1.0, 2026-09-22
+
+### Features
+
+- #2 SBOM from cyclonedx-gomod, and the changelog written back (`eeb8b2b`)
+- #2 derive version, notes, SBOM and checksums from the history (`af18808`)
+- initial commit (`ae1e987`)
+
+### Fixes
+
+- #2 G-Schema requires digest.md (`28678cc`)
+- #2 complete the XENO-2 intake and name what WP0 still owes (`3256f63`)
+- #2 - XENO-2 - minor adjustements (`b17ffd2`)
+- #1 unify intent id and re-seal the P0 verdict (`85c4438`)
+- XENO-2 - finish first real xeno run (`8905ddb`)
+- add M0 as a first intent¨ (`a3f30c9`)
+- change runner to github (`02ed3a1`)
+- resolve open issues (`27b3a37`)
