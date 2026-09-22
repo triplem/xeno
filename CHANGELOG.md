@@ -5,6 +5,14 @@ editing this file by hand changes the rendering and not what it renders.
 
 <!-- releases below, newest first -->
 
+## 0.2.0, 2026-09-22
+
+### Features
+
+- [#3](https://github.com/triplem/xeno/issues/3) open WP1 and run its intake (`a4f17ee`)
+
+Full history since v0.1.1.
+
 ## 0.1.1, 2026-09-22
 
 ### Fixes
