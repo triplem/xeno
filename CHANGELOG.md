@@ -5,6 +5,15 @@ editing this file by hand changes the rendering and not what it renders.
 
 <!-- releases below, newest first -->
 
+## 0.3.1, 2026-09-22
+
+### Fixes
+
+- [#3](https://github.com/triplem/xeno/issues/3) write the learning record in the shape section 10 defines (`dce1a32`)
+- [#3](https://github.com/triplem/xeno/issues/3) never carry a decision forward for an external finding (`4d3d5dd`)
+
+Full history since v0.3.0.
+
 ## 0.3.0, 2026-09-22
 
 ### Features
