@@ -109,6 +109,11 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
           GH_TOKEN: ${{ github.token }}
+          # Written out here too. A release description does autolink "#2" on its own,
+          # but not everywhere it is read: the API returns the anchor while the page did
+          # not show one. An explicit link renders as a link in every context and costs
+          # only the hovercard, which is the cheaper side of that trade.
+          ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
         run: |
           set -eu
           sh scripts/changelog.sh "$PREVIOUS" > notes.md
@@ -130,10 +135,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
-          # Only here. A release description autolinks "#2" by itself and gives it a
-          # hovercard; a markdown file served from the repository does not autolink at
-          # all, so the file is the one that needs the link written out. This prefix is
-          # host shaped and moves with the workflow, not with the script (A18).
+          # A markdown file served from the repository never autolinks an issue
+          # reference, so the file needs it written out in any case. The prefix is host
+          # shaped and moves with the workflow, not with the script (A18).
           ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
         run: |
           set -eu
