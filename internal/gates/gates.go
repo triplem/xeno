@@ -53,6 +53,36 @@ var table = []spec{
 	{"G-Complete", 5, notImplemented},
 }
 
+// ExternalProvenance marks a check whose findings were produced by foreign code.
+const ExternalProvenance = "external"
+
+// carryForward gives every finding its id and attaches the decision the previous run
+// held for it. It is the only place a decision is attached, and it refuses to attach
+// one to a finding from an external gate.
+//
+// The id is a hash over gate, rule, file and cause. For a gate of this runner the cause
+// is written in this repository, so the id is stable by a promise we keep and any change
+// to it is visible in a diff. An external gate's cause comes from foreign code, and the
+// same id across two runs then means only that somebody else's wording did not change: a
+// tool reporting a different problem in the same words would carry an old release onto it
+// unnoticed, and one rewording cosmetically would drop every decision at once. Xeno
+// cannot tell those apart from the outside, so it does neither, and the decision is taken
+// again. A project wanting a lasting release for an external finding writes a rule of its
+// own, whose cause Xeno words and can therefore keep stable.
+//
+// The provenance read is this run's, not the previous one's: the question is whether the
+// finding is foreign now, not whether it once was.
+func carryForward(ch *model.Check, decided map[string]*model.DecisionOnFinding) {
+	for i := range ch.Findings {
+		f := &ch.Findings[i]
+		f.ID = hashing.FindingID(ch.Gate, "", f.File, f.Cause)
+		if ch.Provenance == ExternalProvenance {
+			continue
+		}
+		f.Decision = decided[f.ID]
+	}
+}
+
 // Run evaluates every gate that applies to the phase, carrying decisions forward from
 // the previous gate.yaml by finding id.
 func Run(c Ctx, previous *model.Gate) []model.Check {
@@ -74,11 +104,7 @@ func Run(c Ctx, previous *model.Gate) []model.Check {
 		}
 		ch := s.fn(c)
 		ch.Gate = s.id
-		for i := range ch.Findings {
-			f := &ch.Findings[i]
-			f.ID = hashing.FindingID(s.id, "", f.File, f.Cause)
-			f.Decision = decided[f.ID]
-		}
+		carryForward(&ch, decided)
 		out = append(out, ch)
 	}
 	return out
