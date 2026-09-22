@@ -48,6 +48,7 @@ because nothing that could resolve them is allowed to run yet.
 |---|---|---|---|
 | D-1 | XENO-3 Q-1, where the WP1 fixtures live | `testdata` per package, read by the tests of that package. The corpus for G-Schema is `internal/gates/testdata/`: a well formed artifact of each kind, and `required-fields.yaml` written out of section 5 so that the tests assert behaviour against the specification rather than against the constants in `gates.go` | the maintainer |
 | D-2 | XENO-3 Q-2, how the schema version is recorded | `schema_version` in the common field set, `major.minor`, written by the runner. Absent means the schema that predates the field and is read rather than failed; present has to be well formed. Process definition changed first, in its own commit | the maintainer |
+| D-3 | XENO-3, where the cross platform assertion of the hashes belongs | WP17, not WP1. `Normalise`, `TestCRLFIsNormalised` and `TestPathIsPartOfTheHash` hold in this package; running them on a second operating system needs a CI matrix, which the implementation plan already assigns to WP17. The criterion was written into the wrong issue at intake and is handed over rather than dropped | the maintainer |
 
 ## Built
 
