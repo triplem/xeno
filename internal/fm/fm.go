@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package fm reads and writes frontmatter and YAML files.
 package fm
 

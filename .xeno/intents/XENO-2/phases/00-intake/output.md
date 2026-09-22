@@ -1,7 +1,7 @@
 ---
-intent: github.com/triplem/xeno#0A
+intent: github.com/triplem/xeno#2
 phase: 00-intake
-created: 2026-09-21T09:00:00Z
+created: 2026-09-22T09:00:00Z
 runner_version: 0.1.0-dev
 plugin_version: 0.1.0-dev
 language: en

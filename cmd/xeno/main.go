@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Command xeno is the runner. Exit codes follow one staircase throughout: 0 where the
 // command did what was asked and the verdict is not red, 1 on a red verdict or a
 // refusal with a reason, 2 where it could not run at all.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package hashing implements Appendix B of the process definition to the byte.
 // Both values are recomputed by whoever verifies the trail, so nothing here may
 // depend on the machine, the clock or the file system beyond file content and path.

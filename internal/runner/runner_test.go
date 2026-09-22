@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package runner
 
 import (
@@ -25,7 +27,7 @@ func newFixture(t *testing.T) *fixture {
 	r := New(root)
 	r.Now = func() time.Time { return time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC) }
 	f := &fixture{t, root, r}
-	f.write(model.IntentDir(key)+"/intent.yaml", "intent: git.example/group/proj#1\nkey: PROJ-1\nstatus: in-progress\n")
+	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n")
 	f.write(model.IntentDir(key)+"/assumptions.yaml", "assumptions: []\n")
 	return f
 }
@@ -434,5 +436,24 @@ func TestVerifyOnARepositoryWithoutIntents(t *testing.T) {
 	res, err := r.Verify("")
 	if err != nil || res.Checked != 0 {
 		t.Fatalf("a repository without intents must verify cleanly: %v %+v", err, res)
+	}
+}
+
+func TestMissingIntentIdIsNamedNotGuessed(t *testing.T) {
+	f := newFixture(t)
+	f.write(model.IntentDir(key)+"/intent.yaml", "intent: github.com/o/r #1\nkey: PROJ-1\n")
+	err := f.r.Start(key, "00-intake")
+	var ref *Refusal
+	if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "comment") {
+		t.Fatalf("an id cut off by a YAML comment was not named: %v", err)
+	}
+}
+
+func TestKeyMustMatchItsDirectory(t *testing.T) {
+	f := newFixture(t)
+	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"github.com/o/r#9\"\nkey: PROJ-9\n")
+	var ref *Refusal
+	if err := f.r.Start(key, "00-intake"); !errors.As(err, &ref) {
+		t.Fatalf("an intent.yaml naming another key was accepted: %v", err)
 	}
 }

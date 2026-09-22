@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package evidence attaches pipeline results to declarations that were left pending.
 // CI never writes into the repository; the runner pulls. Everything written here lies
 // under evidence/, which is outside artifacts_hash.

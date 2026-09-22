@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package model holds the directory layout and the file formats of the process
 // definition. It has no behaviour beyond naming things.
 package model
@@ -30,6 +32,9 @@ func PhaseIndex(id string) int {
 
 // ResolvePhase accepts "04" or "04-verification".
 func ResolvePhase(s string) (string, error) {
+	if len(s) == 1 {
+		s = "0" + s
+	}
 	for _, p := range Phases {
 		if p == s || p[:2] == s {
 			return p, nil

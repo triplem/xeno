@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package gates evaluates the gates of one phase. Everything here is deterministic and
 // free of network access: gates read, they never run anything and never ask a model.
 package gates

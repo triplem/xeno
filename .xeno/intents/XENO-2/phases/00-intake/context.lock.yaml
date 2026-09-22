@@ -1,6 +1,6 @@
-intent: github.com/triplem/xeno#0
+intent: github.com/triplem/xeno#2
 phase: 00-intake
-created: "2026-09-21T20:11:11Z"
+created: "2026-09-22T06:00:20Z"
 runner_version: 0.1.0-dev
 plugin_version: 0.1.0-dev
 evidence_source: ci

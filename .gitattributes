@@ -1,0 +1,10 @@
+# Line endings are fixed here rather than left to each machine. The artifacts_hash
+# normalises CRLF itself, but other tools do not, and mixed files are cheapest to
+# prevent before they exist.
+* text=auto eol=lf
+*.go text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.png binary
+*.gz binary

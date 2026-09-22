@@ -20,6 +20,9 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A11 | Exit codes: 0 done and not red, including provisional and overridden; 1 red or refused with a reason; 2 could not run | the plan's staircase, applied to every command | `cmd/xeno` | approved |
 | A12 | The next phase starts only on a decided predecessor: green, approved or overridden start, red and provisional are refused | building on a red verdict moves the failure downstream; the process definition said the local verdict was advisory and now says it binds the sequence | `internal/runner` | **changed and approved**; process definition and plan updated |
 | A13 | The pipeline artifact fetch is stood in for by a directory with `manifest.yaml` (`--evidence-from`) | the real fetch belongs to the GitLab adapter and needs a host; the attach logic is testable without one | `internal/evidence` | open, explained |
+| A15 | `.gitattributes` fixes LF for every text file | the hash normalises CRLF, other tools do not; WP0 asks for fixed line endings without saying which | `.gitattributes` | open |
+| A16 | Source files carry only `SPDX-License-Identifier`, no per file copyright line | WP0 names the identifier and nothing more; the copyright line lives in `NOTICE` | `*.go` | open |
+| A17 | The copyright wording in `NOTICE` and the security contact are placeholders | both are for legal or the maintainer to fix, not for the build | `NOTICE`, `SECURITY.md` | open |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Built
@@ -34,6 +37,11 @@ Gates implemented: G-Schema, G-Trace, G-Assumptions, G-Questions, G-Learning,
 G-Freshness (partial, A6), G-Evidence, G-Build.
 Gates written as `not-implemented`: G-Supply, G-Secret, G-Test, G-Rules, G-Policy,
 G-Complete.
+
+WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
+procedure, `SECURITY.md`. `LICENSE` is to be taken unchanged from the Apache Software
+Foundation rather than transcribed. SBOM, checksums and signing wait for a release.
+Where the sign-off is enforced is open question Q-1 of intent XENO-2.
 
 ## Not built
 

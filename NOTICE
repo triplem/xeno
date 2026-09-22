@@ -1,0 +1,7 @@
+Xeno
+Copyright 2026 conet Deutschland GmbH
+
+This product is licensed under the Apache License, Version 2.0, found in LICENSE.
+
+It includes gopkg.in/yaml.v3, vendored under vendor/, which carries its own licence
+and notice files in that directory.

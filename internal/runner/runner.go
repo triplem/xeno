@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package runner implements the commands on top of gates and evidence. It is the only
 // writer of gate.yaml and context.lock.yaml, and it never writes inside the
 // artifacts_hash of a phase whose verdict exists.
@@ -8,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"example.com/xeno/internal/evidence"
@@ -41,19 +44,43 @@ func (r *Runner) marker(key, phase string) string {
 	return r.abs(filepath.Join(".xeno/local/runs", key, phase+".lock"))
 }
 
-func (r *Runner) qualified(key string) string {
+// qualified reads the qualified intent id. It never falls back to the directory name:
+// a guessed id would make every trace comparison against it meaningless.
+func (r *Runner) qualified(key string) (string, error) {
 	var in struct {
 		Intent string `yaml:"intent"`
 	}
-	if err := fm.ReadYAML(r.abs(model.IntentDir(key)+"/intent.yaml"), &in); err == nil && in.Intent != "" {
-		return in.Intent
+	path := model.IntentDir(key) + "/intent.yaml"
+	if err := fm.ReadYAML(r.abs(path), &in); err != nil {
+		return "", refuse("%s cannot be read: %v", path, err)
 	}
-	return key
+	if in.Intent == "" {
+		return "", refuse("%s has no intent field", path)
+	}
+	// YAML reads " #" as the start of a comment, so an unquoted id with a space before
+	// its key loses the key silently. If every file is cut the same way they all agree,
+	// and the verdict is green on the wrong id; hence the check on the raw line.
+	raw, _ := os.ReadFile(r.abs(path))
+	for _, line := range strings.Split(string(raw), "\n") {
+		v, ok := strings.CutPrefix(strings.TrimSpace(line), "intent:")
+		v = strings.TrimSpace(v)
+		if ok && v != "" && v[0] != '"' && v[0] != '\'' && strings.Contains(v, " #") {
+			return "", refuse("%s: the intent id is cut off by a YAML comment; write it in quotes, as intent: \"%s\"", path, strings.ReplaceAll(v, " #", "#"))
+		}
+	}
+	var k struct {
+		Key string `yaml:"key"`
+	}
+	if fm.ReadYAML(r.abs(path), &k) == nil && k.Key != "" && k.Key != key {
+		return "", refuse("%s names key %s but lies in %s", path, k.Key, model.IntentDir(key))
+	}
+	return in.Intent, nil
 }
 
-func (r *Runner) common(key, phase string) model.Common {
-	return model.Common{Intent: r.qualified(key), Phase: phase, Created: r.stamp(),
-		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion}
+func (r *Runner) common(key, phase string) (model.Common, error) {
+	q, err := r.qualified(key)
+	return model.Common{Intent: q, Phase: phase, Created: r.stamp(),
+		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion}, err
 }
 
 func (r *Runner) readGate(key, phase string) (*model.Gate, error) {
@@ -74,13 +101,17 @@ func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 	if err != nil {
 		return nil, err
 	}
+	common, err := r.common(key, phase)
+	if err != nil {
+		return nil, err
+	}
 	prev, _ := r.readGate(key, phase)
-	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h, QualifiedID: r.qualified(key)}, prev)
+	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h, QualifiedID: common.Intent}, prev)
 	status, err := gates.Status(checks)
 	if err != nil {
 		return nil, err
 	}
-	g := &model.Gate{Common: r.common(key, phase), Status: status, RunAt: r.stamp(), ArtifactsHash: h, Checks: checks}
+	g := &model.Gate{Common: common, Status: status, RunAt: r.stamp(), ArtifactsHash: h, Checks: checks}
 	if prev != nil && prev.Created != "" {
 		g.Created = prev.Created
 	}
@@ -173,7 +204,11 @@ func (r *Runner) Start(key, phase string) error {
 	if fm.Exists(r.marker(key, phase)) {
 		return refuse("%s is already running; if that run died, remove %s", phase, r.marker(key, phase))
 	}
-	lock := model.ContextLock{Common: r.common(key, phase), EvidenceSource: r.evidenceSource()}
+	common, err := r.common(key, phase)
+	if err != nil {
+		return err
+	}
+	lock := model.ContextLock{Common: common, EvidenceSource: r.evidenceSource()}
 
 	if idx > 0 {
 		pred := model.Phases[idx-1]
