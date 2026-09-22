@@ -5,6 +5,15 @@ editing this file by hand changes the rendering and not what it renders.
 
 <!-- releases below, newest first -->
 
+## 0.3.0, 2026-09-22
+
+### Features
+
+- [#3](https://github.com/triplem/xeno/issues/3) record the schema version and build the WP1 fixture corpus (`d6bd66d`)
+- [#3](https://github.com/triplem/xeno/issues/3) adopt documentation to reflect schema version (`042825d`)
+
+Full history since v0.2.0.
+
 ## 0.2.0, 2026-09-22
 
 ### Features
