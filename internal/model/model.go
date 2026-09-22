@@ -18,6 +18,15 @@ var (
 	PluginVersion = "0.1.0-dev"
 )
 
+// SchemaVersion is the shape of the artifacts this runner writes, and it moves for a
+// different reason than the two above: the minor when a field is added that an older
+// reader can ignore, the major when one changes meaning or goes away. It is const,
+// because a build cannot be told to write a shape other than the one it implements.
+//
+// Artifacts written before the field existed do not carry it, and that absence is the
+// schema that predates versioning rather than a field somebody forgot.
+const SchemaVersion = "1.0"
+
 // Phases in order. The order is the process; nothing else defines it.
 var Phases = []string{
 	"00-intake", "01-requirements", "02-design",
@@ -65,6 +74,7 @@ type Common struct {
 	Intent        string `yaml:"intent"`
 	Phase         string `yaml:"phase,omitempty"`
 	Created       string `yaml:"created"`
+	SchemaVersion string `yaml:"schema_version,omitempty"`
 	RunnerVersion string `yaml:"runner_version"`
 	PluginVersion string `yaml:"plugin_version"`
 }

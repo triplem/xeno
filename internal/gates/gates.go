@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 
 	"github.com/triplem/xeno/internal/fm"
@@ -144,6 +145,25 @@ var (
 	renderedFields = []string{"template", "strings_hash", "rules_hash"}
 )
 
+// schema_version is deliberately absent from commonFields. An artifact written before
+// the field existed does not carry it, and the process definition reads that absence as
+// the schema that predates versioning rather than as a field somebody forgot: a gate
+// that failed on it would invalidate every artifact behind the change that introduced
+// it. What is checked is the shape of the value where there is one.
+var schemaVersionShape = regexp.MustCompile(`^[0-9]+\.[0-9]+$`)
+
+func schemaVersion(file string, raw map[string]any) []model.Finding {
+	v, ok := raw["schema_version"]
+	if !ok || v == nil {
+		return nil // predates versioning, and that is readable rather than wrong
+	}
+	if s, isString := v.(string); !isString || !schemaVersionShape.MatchString(s) {
+		return []model.Finding{finding(file, fmt.Sprintf("schema_version %v is not major.minor", v),
+			"write it as two numbers separated by a dot, or leave it out where the artifact predates the field")}
+	}
+	return nil
+}
+
 func missing(raw map[string]any, fields ...[]string) []string {
 	var m []string
 	for _, group := range fields {
@@ -172,6 +192,7 @@ func schema(c Ctx) model.Check {
 		for _, f := range missing(raw, commonFields, sessionFields, renderedFields) {
 			fs = append(fs, finding(out, "required field missing: "+f, "add "+f+" to the frontmatter"))
 		}
+		fs = append(fs, schemaVersion(out, raw)...)
 		fs = append(fs, questionShape(out, o)...)
 		fs = append(fs, decisionShape(out, o)...)
 	}
@@ -189,6 +210,22 @@ func schema(c Ctx) model.Check {
 		for _, f := range missing(r, commonFields, sessionFields) {
 			fs = append(fs, finding(dig, "required field missing: "+f, "add "+f+" to the frontmatter"))
 		}
+		fs = append(fs, schemaVersion(dig, r)...)
+	}
+
+	// Section 5 states its field sets for frontmatter and for the equivalent top level
+	// keys in YAML artifacts alike, so the YAML ones are checked here rather than left
+	// to G-Trace, which looks at two fields and judges binding rather than shape.
+	for _, y := range []string{"context.lock.yaml", "learning.yaml"} {
+		rel := dir + "/" + y
+		raw := map[string]any{}
+		if err := fm.ReadYAML(c.abs(rel), &raw); err != nil {
+			continue // absence is G-Learning's finding, or G-Freshness's
+		}
+		for _, f := range missing(raw, commonFields) {
+			fs = append(fs, finding(rel, "required field missing: "+f, "add "+f+" to the file"))
+		}
+		fs = append(fs, schemaVersion(rel, raw)...)
 	}
 
 	entries, _ := os.ReadDir(c.abs(dir))

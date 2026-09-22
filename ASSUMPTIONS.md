@@ -32,6 +32,22 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A24 | The bill of materials is `cyclonedx-gomod`, pinned, run once per build target, and the tag is created before it so that the main component carries the release version rather than a pseudo-version | a hand written generator is apparatus nobody asked for, and build constraints decide module selection, so one document per target is the accurate form; it needs a route to the module proxy, which the instance's runners may not have | `scripts/sbom.sh` | approved; the proxy route is the one thing this assumes, and it joins the dependency mirror WP0 already calls for, see A18 |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
+## Decisions
+
+Not assumptions, and kept apart from them for the reason the process definition gives:
+an assumption stands in for missing knowledge and can turn out wrong, a decision is a
+choice between workable paths and can only be regretted. Decisions belong in the
+`decisions` section of the phase they were made in, sealed with it. These two were taken
+after the P0 of XENO-3 was sealed, and the phase that would carry them is P1, which
+cannot run before WP8 closes the G-Freshness gap (A6). So they are recorded here, by
+hand, like the rest of the work in this window, and Q-1 and Q-2 stay open in the trail
+because nothing that could resolve them is allowed to run yet.
+
+| # | Question | Decision | By |
+|---|---|---|---|
+| D-1 | XENO-3 Q-1, where the WP1 fixtures live | `testdata` per package, read by the tests of that package. The corpus for G-Schema is `internal/gates/testdata/`: a well formed artifact of each kind, and `required-fields.yaml` written out of section 5 so that the tests assert behaviour against the specification rather than against the constants in `gates.go` | the maintainer |
+| D-2 | XENO-3 Q-2, how the schema version is recorded | `schema_version` in the common field set, `major.minor`, written by the runner. Absent means the schema that predates the field and is read rather than failed; present has to be well formed. Process definition changed first, in its own commit | the maintainer |
+
 ## Built
 
 Hashing per Appendix B, byte exact and checked against a `sha256sum` pipeline. Finding

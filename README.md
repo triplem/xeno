@@ -31,7 +31,7 @@ Coverage against the implementation plan, by acceptance criterion:
 
 | Package | Covered here | Test |
 |---|---|---|
-| WP1 | hashing to Appendix B, finding ids, derived status, decisions carried forward by id, the sealed invariant | `hashing_test`, `TestDecisionCarriesForward…`, `TestNoCommandButFinish…` |
+| WP1 | hashing to Appendix B, finding ids, derived status, decisions carried forward by id, the sealed invariant, the four field sets over frontmatter and YAML alike, `schema_version` read rather than enforced backwards | `hashing_test`, `TestDecisionCarriesForward…`, `TestNoCommandButFinish…`, `gates/schema_test` against `gates/testdata` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…` |
 | WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5 | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…` |

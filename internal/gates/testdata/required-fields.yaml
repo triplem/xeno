@@ -1,0 +1,54 @@
+# The required fields of each artifact kind, taken from section 5 of the process
+# definition and from nowhere else.
+#
+# It exists so that the corpus tests behaviour against the specification rather than
+# against the constants in gates.go. Written from the document, the two lists are
+# independent and a disagreement between them is a finding; derived from the code they
+# would agree by construction, which is the closed circle this package exists to avoid.
+#
+# schema_version is absent on purpose. Section 5 lists it, and the same section reads
+# its absence as the schema that predates the field, so it is not required and the
+# corpus checks the shape of a present value instead.
+output.md:
+  # every process file
+  - intent
+  - created
+  - runner_version
+  - plugin_version
+  # phase files add
+  - phase
+  # produced in a session
+  - language
+  - secrets_hash
+  - context_hash
+  - model
+  - tool
+  - tool_version
+  # rendered
+  - template
+  - strings_hash
+  - rules_hash
+digest.md:
+  - intent
+  - created
+  - runner_version
+  - plugin_version
+  - phase
+  - language
+  - secrets_hash
+  - context_hash
+  - model
+  - tool
+  - tool_version
+context.lock.yaml:
+  - intent
+  - created
+  - runner_version
+  - plugin_version
+  - phase
+learning.yaml:
+  - intent
+  - created
+  - runner_version
+  - plugin_version
+  - phase

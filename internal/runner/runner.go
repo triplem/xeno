@@ -80,6 +80,7 @@ func (r *Runner) qualified(key string) (string, error) {
 func (r *Runner) common(key, phase string) (model.Common, error) {
 	q, err := r.qualified(key)
 	return model.Common{Intent: q, Phase: phase, Created: r.stamp(),
+		SchemaVersion: model.SchemaVersion,
 		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion}, err
 }
 
