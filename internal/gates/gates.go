@@ -176,10 +176,18 @@ func schema(c Ctx) model.Check {
 		fs = append(fs, decisionShape(out, o)...)
 	}
 
-	if fm.Exists(c.abs(dir + "/digest.md")) {
-		r, _ := fm.ReadFront(c.abs(dir+"/digest.md"), nil)
+	// Section 4 lists digest.md among the files every phase directory holds, and no
+	// other gate looks for it: G-Learning guards learning.yaml, G-Freshness guards
+	// context.lock.yaml from P1, and cost.yaml is deliberately unguarded because it may
+	// arrive after the gate ran. Absent this check a phase finished without its digest
+	// was green, which is a verdict on a phase that is not complete.
+	dig := dir + "/digest.md"
+	if !fm.Exists(c.abs(dig)) {
+		fs = append(fs, finding(dig, "digest.md is missing", "write the digest of the session; a phase without one is incomplete"))
+	} else {
+		r, _ := fm.ReadFront(c.abs(dig), nil)
 		for _, f := range missing(r, commonFields, sessionFields) {
-			fs = append(fs, finding(dir+"/digest.md", "required field missing: "+f, "add "+f+" to the frontmatter"))
+			fs = append(fs, finding(dig, "required field missing: "+f, "add "+f+" to the frontmatter"))
 		}
 	}
 

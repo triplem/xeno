@@ -335,6 +335,22 @@ func TestQuestionShape(t *testing.T) {
 	}
 }
 
+// A phase finished without its digest is not complete, and G-Schema is the gate that
+// says so: no other one looks at the file.
+func TestMissingDigestIsAStructuralFailure(t *testing.T) {
+	f := newFixture(t)
+	f.must(f.r.Start(key, "00-intake"))
+	f.output("00-intake", "")
+	f.must(os.Remove(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "digest.md")))
+	g := f.finish("00-intake")
+	if g.Status != "red" {
+		t.Fatalf("a phase without a digest passed: %s", g.Status)
+	}
+	if c := check(g, "G-Schema"); c == nil || len(c.Findings) != 1 || !strings.Contains(c.Findings[0].Cause, "digest.md is missing") {
+		t.Fatalf("G-Schema did not name the missing digest: %+v", check(g, "G-Schema"))
+	}
+}
+
 // ---- WP1: decisions survive an unchanged finding and not a changed one
 
 func TestDecisionCarriesForwardOnlyForTheSameFinding(t *testing.T) {
