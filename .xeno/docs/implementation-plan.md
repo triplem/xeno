@@ -1698,6 +1698,14 @@ component receives them. The dashboard, WP18, specified in section 2 and not bui
 The German documentation translation together with the hash binding that keeps it
 current.
 
+The host move is owed, not deferred. This repository is on GitHub while the self
+managed instance is being arranged, and two things are bound to that: the pipeline file,
+and the Go module path with every import that follows it. The pipeline file is expected
+to be replaced; the module path is the one that looks portable and is not, and a module
+served from a private instance needs either a vanity import path or GOPRIVATE with
+the go-import meta tag. It is a search and replace until the first release anybody
+depends on, and a breaking change afterwards.
+
 **Public release, decided rather than deferred.** From 1.1 the repository is public:
 release signatures, a public distribution channel and the marketplace registration of
 the plugin. Three obligations fall on v1 for it, and the first two are the kind that

@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"example.com/xeno/internal/fm"
-	"example.com/xeno/internal/hashing"
-	"example.com/xeno/internal/model"
+	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/hashing"
+	"github.com/triplem/xeno/internal/model"
 )
 
 // ManifestEntry describes one result a pipeline published. In a real setup the fetch

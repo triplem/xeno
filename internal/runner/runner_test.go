@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"example.com/xeno/internal/fm"
-	"example.com/xeno/internal/model"
+	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/model"
 )
 
 const key = "PROJ-1"

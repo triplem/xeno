@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"example.com/xeno/internal/evidence"
-	"example.com/xeno/internal/fm"
-	"example.com/xeno/internal/gates"
-	"example.com/xeno/internal/hashing"
-	"example.com/xeno/internal/model"
+	"github.com/triplem/xeno/internal/evidence"
+	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/gates"
+	"github.com/triplem/xeno/internal/hashing"
+	"github.com/triplem/xeno/internal/model"
 )
 
 // Refusal is a command declining to proceed for a reason a person can act on.

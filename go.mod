@@ -1,4 +1,4 @@
-module example.com/xeno
+module github.com/triplem/xeno
 
 go 1.22
 

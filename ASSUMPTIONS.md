@@ -7,7 +7,7 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 
 | # | Assumption | Why | Where | State |
 |---|---|---|---|---|
-| A1 | Module path `example.com/xeno` | the namespace is deliberately unrecorded in the plan; renaming is one line in `go.mod` and a search | `go.mod` | open until the namespace is fixed |
+| A1 | Module path `github.com/triplem/xeno`, matching where the repository currently lives | a placeholder namespace breaks `go get` and every import path reads as a stand-in; the plan leaves the namespace unrecorded, so the honest choice is the host the code is actually on | `go.mod`, every import | **approved for now, to be redone at the GitLab move**, see A18 |
 | A2 | `gopkg.in/yaml.v3`, vendored | the only dependency; vendored matches the plan's rule of vendoring rather than fetching | `vendor/` | approved |
 | A3 | Open questions, decisions and evidence declarations are structured frontmatter lists in `output.md` (`open_questions`, `decisions`, `evidence`); the rendered sections are derived from them | the documents fix stable keys and sections, not where the structured form lives, and a gate cannot parse prose | `internal/model` | open, explained; once approved it belongs in the process definition as a format rule |
 | A4 | Gate result `pending` and status `provisional`, loudness red, overridden, provisional, approved, green | the evidence section decides a provisional state; the `gate.yaml` schema in section 5 is corrected alongside | `internal/gates` | approved |
@@ -23,6 +23,7 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A15 | `.gitattributes` fixes LF for every text file | the hash normalises CRLF, other tools do not; WP0 asks for fixed line endings without saying which | `.gitattributes` | open |
 | A16 | Source files carry only `SPDX-License-Identifier`, no per file copyright line | WP0 names the identifier and nothing more; the copyright line lives in `NOTICE` | `*.go` | open |
 | A17 | The copyright wording in `NOTICE` and the security contact are placeholders | both are for legal or the maintainer to fix, not for the build | `NOTICE`, `SECURITY.md` | open |
+| A18 | The module path moves to the self managed GitLab instance once it exists, and that move is a package of its own rather than a side effect of A1 | the plan targets GitLab CE, and a Go module path is its host: the instance's own path replaces `github.com/triplem/xeno` in `go.mod` and in every import, and a private instance needs either a vanity import path or `GOPRIVATE` and the `go-import` meta tag, neither of which is free | `go.mod`, every import, `.github/workflows/xeno.yml`, `M0.md` | **open, scheduled**: to be done with the host move, not before |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Built

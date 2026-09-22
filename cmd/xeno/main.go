@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"os"
 
-	"example.com/xeno/internal/evidence"
-	"example.com/xeno/internal/model"
-	"example.com/xeno/internal/runner"
+	"github.com/triplem/xeno/internal/evidence"
+	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/runner"
 )
 
 const usage = `usage:
