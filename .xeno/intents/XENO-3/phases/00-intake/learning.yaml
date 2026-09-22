@@ -1,0 +1,24 @@
+intent: github.com/triplem/xeno#3
+phase: 00-intake
+created: 2026-09-22T11:59:31Z
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+observations:
+  - category: process
+    text: >-
+      This is the first artifact written in a session rather than by hand, so it is the
+      first to carry a real model, tool and tool_version instead of none, manual and 0.
+      The three fields cost nothing to fill and are the only reason a later reader can
+      tell the two kinds of intake apart.
+  - category: tooling
+    text: >-
+      The runner that wrote this reports 0.1.0-dev while v0.1.1 is released, because it
+      was built from the working tree. Nothing catches the difference: G-Supply is
+      not-implemented and no project.yaml pins a version. It is the first concrete case
+      of what that gate exists for.
+  - category: specification
+    text: >-
+      Appendix B defines artifacts_hash and the finding id to the byte, but context_hash,
+      secrets_hash, rules_hash and strings_hash are named in section 5 without a
+      definition. context_hash here is a plain sha256 over context.lock.yaml, which is a
+      reading and not a rule.
