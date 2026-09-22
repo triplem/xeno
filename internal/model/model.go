@@ -9,7 +9,11 @@ import (
 	"path/filepath"
 )
 
-const (
+// The version the runner reports and writes into every artifact. It is var rather than
+// const so that the release build sets it through -ldflags from the tag the pipeline
+// derived, which is what keeps the number out of the source. A build from a working
+// tree keeps the placeholder and says so.
+var (
 	RunnerVersion = "0.1.0-dev"
 	PluginVersion = "0.1.0-dev"
 )

@@ -1,0 +1,106 @@
+# The release pipeline of Xeno's own repository. It derives the version from the commit
+# history, tags, builds, and publishes binaries with their checksums and a bill of
+# materials. Nobody edits a version string, which is what WP0 asks of this package.
+#
+# It writes a tag and a release and nothing else. In particular it does not commit a
+# CHANGELOG.md back into the repository: a pipeline that commits into the repository it
+# just verified starts the next pipeline doing the same, and the notes belong to the
+# release rather than to the tree. See A23.
+#
+# Only push to main triggers it, never pull_request, so nothing from a fork ever reaches
+# the write permission below. Pin the actions to a commit sha before this repository
+# becomes public.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the version is derived from the history and the tags
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # The same gates the verify workflow runs. A release is not published from a tree
+      # that would not pass them, and repeating them here is cheaper than a release that
+      # depends on another workflow having finished.
+      - name: format
+        run: |
+          unformatted=$(gofmt -l . | grep -v '^vendor/' || true)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt clean:"; echo "$unformatted"; exit 1
+          fi
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test ./...
+      - name: verify
+        run: go build -o xeno ./cmd/xeno && ./xeno gate verify
+
+      - name: derive the version
+        id: version
+        run: |
+          version=$(sh scripts/version.sh)
+          if [ -z "$version" ]; then
+            echo "no commit since the last tag calls for a release"
+          else
+            echo "releasing $version"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: build, checksum and bill of materials
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          mkdir -p dist
+          # The version reaches the binary through ldflags. Runner and plugin share one
+          # number, which is the mistake G-Supply exists to catch, removed at the source.
+          ldflags="-s -w -X github.com/triplem/xeno/internal/model.RunnerVersion=$VERSION -X github.com/triplem/xeno/internal/model.PluginVersion=$VERSION"
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os=${target%/*}; arch=${target#*/}
+            # if rather than "&&": under set -e a false test ends the whole step.
+            ext=""
+            if [ "$os" = windows ]; then ext=".exe"; fi
+            out="dist/xeno-$VERSION-$os-$arch$ext"
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
+              go build -trimpath -ldflags "$ldflags" -o "$out" ./cmd/xeno
+          done
+          # The bill of materials is read from the binary this release ships.
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) \
+            sh scripts/sbom.sh "dist/xeno-$VERSION-linux-amd64" "$VERSION" > "dist/xeno-$VERSION.cdx.json"
+          # Written outside dist and moved in: a redirect into the directory creates the
+          # file before the glob expands, and the checksums would cover themselves.
+          ( cd dist && sha256sum * > ../SHA256SUMS ) && mv SHA256SUMS dist/
+          cat dist/SHA256SUMS
+
+      - name: tag and release
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          sh scripts/changelog.sh > notes.md
+          # The checksums are in the notes as well as in the file: a reader comparing one
+          # download should not have to fetch a second artifact to do it.
+          printf '\n### Checksums\n\n```\n%s\n```\n' "$(cat dist/SHA256SUMS)" >> notes.md
+          git tag -a "v$VERSION" -m "xeno v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" dist/* \
+            --title "xeno v$VERSION" \
+            --notes-file notes.md

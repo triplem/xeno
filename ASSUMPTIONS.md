@@ -26,7 +26,10 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A18 | The module path moves to the self managed GitLab instance once it exists, and that move is a package of its own rather than a side effect of A1 | the plan targets GitLab CE, and a Go module path is its host: the instance's own path replaces `github.com/triplem/xeno` in `go.mod` and in every import, and a private instance needs either a vanity import path or `GOPRIVATE` and the `go-import` meta tag, neither of which is free | `go.mod`, every import, `.github/workflows/xeno.yml`, `M0.md` | **open, scheduled**: to be done with the host move, not before |
 | A19 | G-Schema requires `digest.md` and nothing else beyond `output.md`; `context.lock.yaml` stays with G-Freshness and `learning.yaml` with G-Learning, and `cost.yaml` is required by no gate | section 4 lists six files per phase, but two of them cannot be required today: `cost.yaml` may arrive after the gate ran and its writer is WP13, and a second gate reporting a file another one already names would give one cause two findings | `internal/gates` | open, explained; `context.lock.yaml` is unguarded at P0, where G-Freshness returns early and there is no predecessor to compare against |
 | A20 | An intent that runs P0 only has no defined way to close | `intent close` writes the closing record for an *abandoned* intent, and a merged one meets G-Complete in P5; an intent that by design stops after intake is neither, so `status: in-progress` is the only honest value and stays | `.xeno/intents/*/intent.yaml` | **open, a finding about the plan rather than about the code**: M0.md asks every work package to run its intake through Xeno, and the process definition offers no closing path for that shape |
-| A21 | Release automation, SBOM and checksums wait for the GitLab move rather than being built on GitHub | WP0 names GitLab's changelog API as the mechanism, so building the same thing on GitHub Actions is work thrown away at the move (A18), and v1 distributes through the instance's registries, which do not exist yet | `.github/workflows/`, WP0 | **open, deferred deliberately**: WP0's "Done when" is not met until this lands, and saying so is better than a green tick on a package that is short three deliverables |
+| A21 | Release automation, SBOM and checksums are built on GitHub Actions now rather than waiting for the GitLab move | WP0's "Done when" is not met without them, and a package left short because its final host does not exist yet stays short indefinitely; the logic sits in `scripts/`, so the move replaces the workflow that calls them and not the derivation itself | `.github/workflows/release.yml`, `scripts/` | approved; the workflow is thrown away at the move (A18), the three scripts are not |
+| A22 | Below 1.0.0 a breaking change raises the minor, not the major | the usual reading of semver while a project is unstable; WP0 names Conventional Commits as the source and not which rule applies under 1.0 | `scripts/version.sh` | open |
+| A23 | The release notes go into the release, and no `CHANGELOG.md` is committed | WP0 names GitLab's changelog API, which commits the file; a pipeline that commits into the repository it just verified starts the next pipeline doing the same, which the process definition names as the reason CI writes nothing | `scripts/changelog.sh`, `.github/workflows/release.yml` | open, explained; the GitLab move may switch to the API and accept the commit |
+| A24 | The SBOM is derived from the built binary through `go version -m`, not from a bill of materials tool | what a release ships is what the binary contains, and reading it there needs no network, no `go.sum` and no fetched toolchain, which is what WP0 asks of an instance whose runners have no route out | `scripts/sbom.sh` | open, explained; swapping in `cyclonedx-gomod` is one line if a standard tool is wanted |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Built
@@ -43,12 +46,15 @@ Gates written as `not-implemented`: G-Supply, G-Secret, G-Test, G-Rules, G-Polic
 G-Complete.
 
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
-procedure, `SECURITY.md`, the module path (A1), and the format and vet jobs the package
-asks for on day one. `LICENSE` is to be taken unchanged from the Apache Software
+procedure, `SECURITY.md`, the module path (A1), the format and vet jobs the package asks
+for on day one, and the release pipeline: version and notes derived from Conventional
+Commits, five platform binaries with the version injected through ldflags, a CycloneDX
+bill of materials and `SHA256SUMS`. Signing waits for publication, as WP0 says. `LICENSE` is to be taken unchanged from the Apache Software
 Foundation rather than transcribed. SBOM, checksums and signing wait for a release.
 Where the sign-off is enforced is open question Q-1 of intent XENO-2, now recorded in
-that intent's `output.md` rather than only here. Release automation, SBOM and checksums
-are deferred under A21, so the package is not done.
+that intent's `output.md` rather than only here. Release automation, SBOM and checksums are
+built (A21). What WP0 still owes is the container and package registry side, which needs
+the instance.
 
 ## Not built
 
