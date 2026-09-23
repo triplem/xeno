@@ -1,5 +1,22 @@
 # Changelog
 
+Derived from the commit history by semantic-release. The commits are the source;
+editing this file by hand changes the rendering and not what it renders.
+
+# [0.4.0](https://github.com/triplem/xeno/compare/v0.3.1...v0.4.0) (2026-09-23)
+
+
+### Bug Fixes
+
+* **release:** drop the anticipated tag by reading the flag that already existed ([01af147](https://github.com/triplem/xeno/commit/01af1477f42bb86c6d95d7e325d833d3a430c887)), closes [#4](https://github.com/triplem/xeno/issues/4)
+
+
+### Features
+
+* **docs:** write CLAUDE.md and record the branch this host cannot protect ([304b043](https://github.com/triplem/xeno/commit/304b043290234c748614e60ff962fa857ba8d6ec)), closes [#5](https://github.com/triplem/xeno/issues/5)
+
+# Changelog
+
 Derived from the commit history by the release pipeline. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
