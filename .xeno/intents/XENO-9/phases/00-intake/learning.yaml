@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#9
+phase: 00-intake
+created: 2026-09-23T19:36:21Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A convention that depends on a host setting is only as strong as the settings that
+      are left switched off beside it. The squash message was configured to come from
+      the pull request description, and the repository went on offering a merge commit
+      and a rebase, both of which discard it. The footer would have survived or not
+      depending on which button somebody pressed, which is the property that made the
+      previous subject placement wrong.
+    proposal: >-
+      Where a convention rests on a host setting, close the paths that bypass it in the
+      same change rather than in a later one, and have `xeno enforcement check` ask the
+      host about all of them rather than about the one that was configured.
+    target: .xeno/config/rules/learned/project/host-settings.yaml
