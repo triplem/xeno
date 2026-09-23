@@ -24,6 +24,10 @@ finishes the work:
 
 A pull request description carries the closing line too; the template fills it in.
 
+**Write the description at 72 characters.** It becomes the body of the squashed commit,
+and GitHub rewraps it to that width on the way, so anything wider is reflowed into
+something nobody wrote. It is a commit message, not a note about one.
+
 ### The setting this depends on
 
 A footer survives a squash only where the squashed message is built from the pull
@@ -35,8 +39,12 @@ Squash merging*, set to **Pull request title and description**. On GitLab it is
 **Without that setting the reference is lost at the merge.** It is not a nicety; it is
 what makes the convention work at all.
 
-On GitHub it is applied by `scripts/github-settings.sh`, which prints the setting before
-and after so that a drift is visible rather than assumed. A setting is not a commit and
+Squash is also the only method the repository offers. A merge commit and a rebase both
+discard the description, and the footer with it, so leaving them available would make
+the convention depend on which button somebody presses.
+
+On GitHub all three are applied by `scripts/github-settings.sh`, which prints them
+before and after so that a drift is visible rather than assumed. A setting is not a commit and
 no gate covers it, so the script is how it is written down at all. GitLab's template has
 no API call shaped like it and is set in the project's merge request settings by hand.
 

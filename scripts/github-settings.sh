@@ -24,16 +24,23 @@ repo=${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}
 echo "repository: $repo"
 echo
 echo "before:"
-gh api "/repos/$repo" -q '"  squash title:   \(.squash_merge_commit_title)\n  squash message: \(.squash_merge_commit_message)"'
+gh api "/repos/$repo" -q '"  squash title:   \(.squash_merge_commit_title)\n  squash message: \(.squash_merge_commit_message)\n  methods:        squash=\(.allow_squash_merge) merge=\(.allow_merge_commit) rebase=\(.allow_rebase_merge)"'
 
+# Squash is also made the only method on offer. A merge commit and a rebase both
+# discard the pull request description, and the Closes footer with it, so leaving them
+# available would make the convention depend on which button somebody presses.
 gh api -X PATCH "/repos/$repo" \
 	-f squash_merge_commit_title=PR_TITLE \
 	-f squash_merge_commit_message=PR_BODY \
+	-F allow_squash_merge=true \
+	-F allow_merge_commit=false \
+	-F allow_rebase_merge=false \
 	>/dev/null
 
 echo
 echo "after:"
-gh api "/repos/$repo" -q '"  squash title:   \(.squash_merge_commit_title)\n  squash message: \(.squash_merge_commit_message)"'
+gh api "/repos/$repo" -q '"  squash title:   \(.squash_merge_commit_title)\n  squash message: \(.squash_merge_commit_message)\n  methods:        squash=\(.allow_squash_merge) merge=\(.allow_merge_commit) rebase=\(.allow_rebase_merge)"'
 echo
 echo "The squashed message is now built from the pull request title and description,"
-echo "so a Closes footer in the description survives the merge."
+echo "so a Closes footer in the description survives the merge, and squash is the only"
+echo "method on offer, so no other path can discard it."
