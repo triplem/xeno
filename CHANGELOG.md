@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.5.0](https://github.com/triplem/xeno/compare/v0.4.0...v0.5.0) (2026-09-23)
+
+
+### Features
+
+* **intents:** open WP7 and run its intake ([#8](https://github.com/triplem/xeno/issues/8)) ([90696bd](https://github.com/triplem/xeno/commit/90696bd80381d51cddeaac3dbaa968adeabbdc56)), closes [#7](https://github.com/triplem/xeno/issues/7)
+
 # [0.4.0](https://github.com/triplem/xeno/compare/v0.3.1...v0.4.0) (2026-09-23)
 
 
