@@ -29,7 +29,9 @@ learnings:
       not being used had said so.
     proposal: >-
       Before building around the absence of an option, read the tool's help for the mode
-      being used and for its neighbours. Not a rule, since no predicate can ask it, but
-      worth carrying into the session guidance in AGENTS.md and CLAUDE.md, which the
-      implementation plan asks for in its first steps and which do not exist yet.
-    target: .xeno/config/rules/learned/project/read-the-help.yaml
+      being used and for its neighbours. This is a phase skill's business and not a
+      rule, since no predicate can ask whether somebody read something, and it does not
+      belong in CLAUDE.md either: section 10 routes a learning through a merge request
+      against the rule set so that it takes effect after review, and a context file that
+      took it directly would defeat both that and the brevity the plan asks of it.
+    target: .xeno/plugin/skills/

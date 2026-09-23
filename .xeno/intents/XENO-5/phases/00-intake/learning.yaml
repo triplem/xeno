@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#5
+phase: 00-intake
+created: 2026-09-23T18:46:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The six first steps of section 4 have no owner. They are not a work package and no
+      package depends on them, so two of them stood open for the life of the project and
+      were found by a question rather than by a check. Step 2 is the one the plan calls
+      the setting the whole tool claims to rest on.
+    proposal: >-
+      Give the first steps the same treatment the packages get: one issue each at
+      bootstrap, so that an unfinished one is visible in a filtered list rather than in
+      a paragraph nobody rereads. Not a rule, since no predicate can ask whether a
+      sentence in the plan was acted on.
+    target: .xeno/docs/implementation-plan.md
