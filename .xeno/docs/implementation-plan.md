@@ -1499,11 +1499,17 @@ the reference survives a squash, which a trailer in the footer does not.
 **The reference sits at the end rather than after the type**, which is the one place it
 must not be. A code host reads a subject for closing keywords and `fix` is one of them,
 so `fix: #123 short slug` closes the issue: the colon between keyword and reference does
-not separate them, whatever the documented syntax suggests. A convention that puts the
-reference there therefore closes an issue on the first fix commit of twenty rather than
-the last, and nothing reopens it afterwards. It happened to this project's own issue #2,
-which was closed by its third commit of six while the work ran on for three more. At the
-end of the subject the reference is just as durable and no keyword stands beside it.
+not separate them, whatever the documented syntax suggests. It closed this project's own
+issue #2 on the third of its six commits, while the work ran on for three more, and
+nothing reopens an issue afterwards.
+
+A scope does separate them. `fix(gates): #123 short slug` leaves the issue open, which
+was measured on #3 rather than assumed: five commits naming it, every one of them
+recorded as a reference and none as a close. That is the worse property, not the better
+one. Under such a convention whether a commit closes its issue depends on whether its
+author happened to write a scope, and a thing that only sometimes happens is harder to
+work with than a thing that always does. At the end of the subject the reference is just
+as durable, and nothing turns on a detail nobody is thinking about while writing it.
 
 **Closing is then a deliberate act**, because nothing does it by accident any more. The
 commit that finishes the work carries `Closes #123` in its body, and the merge request
