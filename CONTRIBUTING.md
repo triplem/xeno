@@ -11,28 +11,40 @@ intent in a trailer:
 
 ## Commit messages
 
-The subject follows Conventional Commits with the issue reference at its end:
+The subject is plain Conventional Commits and carries no issue reference:
 
-    fix(gates): never carry a decision forward for an external finding (#3)
+    feat(docs): a description
 
-The reference belongs at the end and not after the type. GitHub reads a subject for
-closing keywords, `fix` is one of them, and it closes an issue on `fix: #3` even with
-the colon in between. That closed issue #2 of this repository on the third of its six
-commits, while the work ran on for three more, and nothing reopens an issue afterwards.
+The issue goes in the footer, and so does the closing keyword on the commit that
+finishes the work:
 
-A scope separates them again, so `fix(gates): #3` leaves the issue open. That is the
-awkward part rather than the reassuring one: it would mean a commit closes its issue or
-not depending on whether you wrote a scope. At the end of the subject the reference
-survives a squash just as well and closes nothing, whatever else the line contains.
-
-Because nothing closes by accident any more, closing is deliberate. The commit that
-finishes the work carries the keyword in its body, and so does the pull request
-description:
+    Refs #3
 
     Closes #3
 
-Both, because a squashed message is built from the title and the description, so a
-trailer in a single commit body does not survive the squash.
+A pull request description carries the closing line too; the template fills it in.
+
+### The setting this depends on
+
+A footer survives a squash only where the squashed message is built from the pull
+request description. On this repository that is *Settings, General, Pull Requests,
+Squash merging*, set to **Pull request title and description**. On GitLab it is
+*Settings, Merge requests, Squash commit message template*, which has to include
+`%{description}`.
+
+**Without that setting the reference is lost at the merge.** It is not a nicety; it is
+what makes the convention work at all.
+
+### Why the reference is not in the subject
+
+It used to be, and it closed issues by accident. GitHub reads a subject for closing
+keywords, `fix` is one of them, and `fix: #3` closes the issue even with the colon
+between. That closed issue #2 of this repository on the third of its six commits, while
+the work ran on for three more, and nothing reopens an issue afterwards. A scope
+separates them again, so `fix(gates): #3` does not close — which is worse, because then
+it depends on whether you wrote a scope.
+
+In the footer nothing closes unless you write `Closes`.
 
 ## Developer Certificate of Origin
 

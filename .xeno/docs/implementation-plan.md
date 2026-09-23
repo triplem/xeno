@@ -1490,38 +1490,44 @@ deliberately absent. It should not grow in later either: what a developer does w
 issues is on its way to becoming a tracker front end.
 
 **Branch and commit message carry the intent.** The branch is named after its issue,
-which GitLab does by itself when the branch is created from the issue, and the commit
-subject follows Conventional Commits with the issue reference at its end, in the form
-`feat(docs): short slug (#123)`. One expression then covers both the individual commits
-and the merge request title, and since the squashed message is built from that title,
-the reference survives a squash, which a trailer in the footer does not.
+which GitLab does by itself when the branch is created from the issue. The commit
+subject is plain Conventional Commits and carries no issue reference:
 
-**The reference sits at the end rather than after the type**, which is the one place it
-must not be. A code host reads a subject for closing keywords and `fix` is one of them,
-so `fix: #123 short slug` closes the issue: the colon between keyword and reference does
-not separate them, whatever the documented syntax suggests. It closed this project's own
-issue #2 on the third of its six commits, while the work ran on for three more, and
-nothing reopens an issue afterwards.
+```
+feat(docs): a description
+```
 
-A scope does separate them. `fix(gates): #123 short slug` leaves the issue open, which
-was measured on #3 rather than assumed: five commits naming it, every one of them
-recorded as a reference and none as a close. That is the worse property, not the better
-one. Under such a convention whether a commit closes its issue depends on whether its
-author happened to write a scope, and a thing that only sometimes happens is harder to
-work with than a thing that always does. At the end of the subject the reference is just
-as durable, and nothing turns on a detail nobody is thinking about while writing it.
+The reference lives in the footer, `Refs #123` on the commits of the change and
+`Closes #123` on the one that finishes it, and the merge request description carries
+the closing line as well.
 
-**Closing is then a deliberate act**, because nothing does it by accident any more. The
-commit that finishes the work carries `Closes #123` in its body, and the merge request
-description carries it too. Both, and not either: a squashed message is built from the
-title and the description, so a trailer in an individual commit body does not survive a
-squash, which is the same reason the reference is in the subject in the first place.
-Where a change reaches the default branch without a merge request, the commit body is
-the only carrier and is enough.
+**This rests on one host setting, and it has to be made before the convention is worth
+anything.** Earlier revisions put the reference in the subject because a footer does not
+survive a squash. That is true of the default and not of the host: both GitLab and
+GitHub can build the squashed message from the merge request description, and then the
+footer survives exactly as well as a subject does.
 
-Only the subject half of this is checkable. `commit-message` reads a range and can
-require the form; which commit in that range is the last one is not a question a
-predicate can ask, so the closing trailer is convention and stays one.
+| Host | Setting |
+|---|---|
+| GitLab | *Settings, Merge requests, Squash commit message template*, set to include `%{description}` |
+| GitHub | *Settings, General, Pull Requests, Squash merging*, set to *Pull request title and description* |
+
+Without it the reference is lost at the merge and the trail loses the one link it exists
+to keep, which is worse than any of the placements considered before. The setting is
+therefore part of what `xeno init` prints for an administrator to arrange, alongside the
+protected branch and the required pipeline.
+
+A merge request template carries the closing line, so that it is filled rather than
+remembered.
+
+**What the subject no longer has to do.** A code host reads a subject for closing
+keywords, and `fix` is one of them, so a reference standing next to the type closed the
+issue: `fix: #123 short slug` did, on this project's own issue #2, on the third of its
+six commits while the work ran on for three more. A scope separated them again, so
+`fix(gates): #123` did not, which was measured on #3 and is the worse property rather
+than the better one, since it made the outcome depend on whether the author happened to
+write a scope. In the footer the question does not arise: `Closes #123` closes because
+somebody wrote it there, which is what deliberate means.
 
 The `Xeno-Intent:` trailer stays available as a shipped example for projects whose
 subject line is already spoken for. Xeno's own repository does not use it.
