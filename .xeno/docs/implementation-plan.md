@@ -121,9 +121,16 @@ be inferred from its absence.
 pipeline derives the version, the tag, the `CHANGELOG.md` and the release from the
 commit history. The shared version number of plugin and runner is set by that
 tooling rather than by hand, which removes the one mistake G-Supply exists to catch
-in the first place. GitLab derives release notes through its changelog API, which reads
-Conventional Commits directly, so this is configuration rather than a release tool on
-top.
+in the first place.
+
+The tool is semantic-release, configured by `.releaserc.json` in the repository and
+brought in as a CI job rather than as a dependency of this project: an action on GitHub,
+the common-ci-tasks job on GitLab. A Go repository whose only dependency is one vendored
+YAML library does not grow a Node dependency tree to cut a tag, and the configuration
+moving between the two hosts unchanged is what makes the job replaceable rather than the
+arrangement. GitLab's own changelog API would cover the notes alone; it would not cover
+the version, the tag and the write-back, and one tool doing all four in the same way on
+both hosts is worth more here than the one call it saves.
 
 **The repository's own pipeline is a deliverable that grows**, not a file somebody
 adds when it is needed. It exists on day one because the protected branch needs

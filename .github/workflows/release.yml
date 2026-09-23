@@ -1,17 +1,21 @@
-# The release pipeline of Xeno's own repository. It derives the version from the commit
-# history, tags, builds, and publishes binaries with their checksums and a bill of
-# materials per target. Nobody edits a version string, which is what WP0 asks of this
-# package.
+# The release pipeline of Xeno's own repository. semantic-release derives the version
+# from the Conventional Commits history, writes CHANGELOG.md back, tags and publishes;
+# this workflow only builds what the release carries. The configuration is .releaserc.json
+# in the repository, so what a release does is read here and not in a workflow input.
 #
-# The order is not arbitrary. The tag is created before the build, because the bill of
-# materials takes the main component's version from it and a pseudo-version in a release
-# artifact would be wrong. The previous tag is therefore read before that, or the notes
-# would be written against the tag being released and come out empty.
+# semantic-release arrives as an action and not as a dependency of this project. There is
+# no package.json and nothing of it is vendored: a Go repository whose only dependency is
+# one vendored YAML library does not grow a Node dependency tree to cut a tag. The GitLab
+# equivalent is the common-ci-tasks semantic-release job, and .releaserc.json moves across
+# unchanged, which is the point of keeping it in the repository (A18, A21).
 #
-# Only push to main triggers it, never pull_request, so nothing from a fork ever reaches
-# the write permission below. A push made with GITHUB_TOKEN does not trigger workflows,
-# so the changelog commit at the end starts nothing. Pin the actions to a commit sha
-# before this repository becomes public.
+# @semantic-release/npm is deliberately absent from the plugin list. It is in the default
+# set and would look for a package.json and try to publish one.
+#
+# Only push to main triggers it, never pull_request, so nothing from a fork reaches the
+# write permission below. Pushes made with GITHUB_TOKEN trigger no workflow, so the
+# changelog commit starts nothing. Pin the actions to a commit sha before this repository
+# becomes public.
 name: release
 
 on:
@@ -20,6 +24,8 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: release
@@ -32,13 +38,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # the version is derived from the history and the tags
+          persist-credentials: false
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
       # The same gates the verify workflow runs. A release is not published from a tree
-      # that would not pass them, and repeating them here is cheaper than a release that
-      # depends on another workflow having finished.
+      # that would not pass them.
       - name: format
         run: |
           unformatted=$(gofmt -l . | grep -v '^vendor/' || true)
@@ -52,103 +58,77 @@ jobs:
       - name: verify
         run: go build -o xeno ./cmd/xeno && ./xeno gate verify
 
-      - name: derive the version
-        id: version
-        run: |
-          set -eu
-          # Read before the tag is written, and carried to the notes as an argument.
-          previous=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
-          version=$(sh scripts/version.sh)
-          if [ -z "$version" ]; then
-            echo "no commit since ${previous:-the first commit} calls for a release"
-          else
-            echo "releasing $version, previous tag ${previous:-none}"
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "previous=$previous" >> "$GITHUB_OUTPUT"
-
-      - name: tag
-        if: steps.version.outputs.version != ''
+      # Asked first, because the binaries have to carry the number the release will use
+      # and the bill of materials reads it from the tag.
+      - name: the version this push would release
+        id: next
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -eu
-          git config user.name  'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git tag -a "v$VERSION" -m "xeno v$VERSION"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: build, bill of materials and checksums
-        if: steps.version.outputs.version != ''
+      # The tag semantic-release is about to create, made here and removed again before
+      # it runs for real. cyclonedx-gomod reads the main component's version from git and
+      # has no flag to be told one, and a pseudo-version in a published bill of materials
+      # would be wrong. Left in place it would make semantic-release believe this version
+      # was already released.
+      - name: anticipate the tag
+        if: steps.next.outputs.new_release_published == 'true'
+        run: git tag "v${{ steps.next.outputs.new_release_version }}"
+
+      - name: build
+        if: steps.next.outputs.new_release_published == 'true'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.next.outputs.new_release_version }}
         run: |
           set -eu
           mkdir -p dist
-          # The version reaches the binary through ldflags. Runner and plugin share one
-          # number, which is the mistake G-Supply exists to catch, removed at the source.
+          # Runner and plugin share one number, taken from one derivation, which removes
+          # the mistake G-Supply exists to catch instead of catching it.
           ldflags="-s -w -X github.com/triplem/xeno/internal/model.RunnerVersion=$VERSION -X github.com/triplem/xeno/internal/model.PluginVersion=$VERSION"
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
             os=${target%/*}; arch=${target#*/}
-            # if rather than "&&": under set -e a false test ends the whole step.
             ext=""
             if [ "$os" = windows ]; then ext=".exe"; fi
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
               go build -trimpath -ldflags "$ldflags" -o "dist/xeno-$VERSION-$os-$arch$ext" ./cmd/xeno
-            # Build constraints decide module selection, so one per target and not one
-            # for the release.
-            sh scripts/sbom.sh "$os" "$arch" "dist/xeno-$VERSION-$os-$arch.cdx.json"
           done
+
+      # One document for all five binaries. Build constraints decide module selection, so
+      # that holds only while nothing in the tree is platform dependent, which for a module
+      # with one pure Go dependency it is not. A24 records the condition; the day a
+      # constrained dependency appears this goes back to one per target.
+      - name: bill of materials
+        if: steps.next.outputs.new_release_published == 'true'
+        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        with:
+          version: v1
+          args: app -json -licenses -noserial -main ./cmd/xeno -output dist/xeno-${{ steps.next.outputs.new_release_version }}.cdx.json
+
+      - name: checksums
+        if: steps.next.outputs.new_release_published == 'true'
+        run: |
+          set -eu
           # Written outside dist and moved in: a redirect into the directory creates the
           # file before the glob expands, and the checksums would cover themselves.
           ( cd dist && sha256sum * > ../SHA256SUMS ) && mv SHA256SUMS dist/
           cat dist/SHA256SUMS
 
-      - name: publish
-        if: steps.version.outputs.version != ''
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          PREVIOUS: ${{ steps.version.outputs.previous }}
-          GH_TOKEN: ${{ github.token }}
-          # Written out here too, and this is the one worth not undoing. A release
-          # description is documented to autolink "#2" by itself, and the API agrees:
-          # body_html for v0.1.0 comes back with issue-link anchors around every
-          # reference. The release page shows none of them. v0.1.1 carries explicit
-          # links and they work, so the two versions are the A/B and the page is what
-          # counts. The cost is the hovercard that GitHub's own autolink adds.
-          ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
-        run: |
-          set -eu
-          sh scripts/changelog.sh "$PREVIOUS" > notes.md
-          # The checksums are in the notes as well as in the file: a reader comparing one
-          # download should not have to fetch a second artifact to do it.
-          printf '\n### Checksums\n\n```\n%s\n```\n' "$(cat dist/SHA256SUMS)" >> notes.md
-          git push origin "v$VERSION"
-          gh release create "v$VERSION" dist/* \
-            --title "xeno v$VERSION" \
-            --notes-file notes.md
+      # Removed again, so that semantic-release does not read it as a version it has
+      # already released and find nothing left to do.
+      - name: drop the anticipated tag
+        if: steps.next.outputs.new_release_published == 'true'
+        run: git tag -d "v${{ steps.next.outputs.new_release_version }}"
 
-      # Last, and deliberately not fatal. The release is complete without it: the same
-      # notes are already in it. Where main is a protected branch this push is refused
-      # unless the token is on the bypass list, and a release that failed for that reason
-      # would be a worse outcome than a changelog one commit behind. See A23.
-      - name: write the changelog back
-        if: steps.version.outputs.version != ''
-        continue-on-error: true
+      - name: release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          PREVIOUS: ${{ steps.version.outputs.previous }}
-          # A markdown file served from the repository never autolinks an issue
-          # reference, so the file needs it written out in any case. The prefix is host
-          # shaped and moves with the workflow, not with the script (A18).
-          ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/
-        run: |
-          set -eu
-          sh scripts/changelog-update.sh "$VERSION" "$PREVIOUS"
-          git add CHANGELOG.md
-          git commit -s -m "docs(changelog): v$VERSION" \
-            -m "Written by the release pipeline from the commit history. docs: is not a
-          releasable type, so this commit cannot trigger the release that produced it."
-          # Rebase in case a developer pushed while the release ran; the changelog commit
-          # touches one file nobody else writes, so a conflict here is not expected.
-          git pull --rebase --autostash origin main
-          git push origin HEAD:main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
