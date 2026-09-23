@@ -1524,6 +1524,12 @@ to keep, which is worse than any of the placements considered before. The settin
 therefore part of what `xeno init` prints for an administrator to arrange, alongside the
 protected branch and the required pipeline.
 
+A setting is not a commit, so no gate covers it and nothing notices it drifting back.
+For this repository `scripts/github-settings.sh` applies it and prints it before and
+after, which is the most a repository can do about its own configuration from inside
+itself. It belongs with `xeno enforcement check`, which asks the host what it is
+configured to do and is the general form of the same problem.
+
 A merge request template carries the closing line, so that it is filled rather than
 remembered.
 

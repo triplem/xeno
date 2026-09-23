@@ -35,6 +35,11 @@ Squash merging*, set to **Pull request title and description**. On GitLab it is
 **Without that setting the reference is lost at the merge.** It is not a nicety; it is
 what makes the convention work at all.
 
+On GitHub it is applied by `scripts/github-settings.sh`, which prints the setting before
+and after so that a drift is visible rather than assumed. A setting is not a commit and
+no gate covers it, so the script is how it is written down at all. GitLab's template has
+no API call shaped like it and is set in the project's merge request settings by hand.
+
 ### Why the reference is not in the subject
 
 It used to be, and it closed issues by accident. GitHub reads a subject for closing

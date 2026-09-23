@@ -1,0 +1,35 @@
+intent: github.com/triplem/xeno#4
+phase: 00-intake
+created: 2026-09-23T18:30:41Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This intake was written after its work rather than before it. CONTRIBUTING.md
+      says every change is an intent and that its intake runs through Xeno, and the
+      change went straight from the issue to the commits. Nothing caught it: an intent
+      that does not exist has no phase to be out of order, so sequence enforcement,
+      which is what would refuse a phase started too late, has nothing to hold on to.
+      The gap is not in the runner but in the step before it.
+    proposal: >-
+      A `commit-range` predicate requiring that every commit in the range belongs to an
+      intent directory that exists in the same range, so that a change without an intake
+      is a finding rather than a habit. It is the same shape as the trailer rule already
+      shipped as an example and needs the rule engine of WP4.
+    target: .xeno/config/rules/learned/project/intent-before-work.yaml
+  - category: project-convention
+    observation: >-
+      A construction was built around a flag that exists. The release workflow
+      anticipated the tag semantic-release was about to create and deleted it again,
+      because cyclonedx-gomod was believed to read the main component's version only
+      from git. `cyclonedx-gomod bin -version` takes it as an argument, and reads the
+      shipped binary rather than the module besides. The help of the subcommand that was
+      not being used had said so.
+    proposal: >-
+      Before building around the absence of an option, read the tool's help for the mode
+      being used and for its neighbours. Not a rule, since no predicate can ask it, but
+      worth carrying into the session guidance in AGENTS.md and CLAUDE.md, which the
+      implementation plan asks for in its first steps and which do not exist yet.
+    target: .xeno/config/rules/learned/project/read-the-help.yaml

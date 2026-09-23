@@ -58,32 +58,29 @@ jobs:
       - name: verify
         run: go build -o xeno ./cmd/xeno && ./xeno gate verify
 
-      # Asked first, because the binaries have to carry the number the release will use
-      # and the bill of materials reads it from the tag.
-      - name: the version this push would release
-        id: next
+      # semantic-release goes first and the artifacts follow it. The earlier order asked
+      # for the version in a dry run, anticipated the tag and deleted it again, all to
+      # work around a flag that exists: cyclonedx-gomod bin takes -version. Without that
+      # detour the steps run in the order they read in, each doing one thing.
+      #
+      # The cost is named rather than hidden: the release exists for the length of a
+      # build before its artifacts do. The gates above have already passed at that point,
+      # so what remains is cross compilation of tested code, and a release briefly
+      # without assets is easier to repair than a release aborted halfway.
+      - name: release
+        id: release
         uses: cycjimmy/semantic-release-action@v4
         with:
-          dry_run: true
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # The tag semantic-release is about to create, made here and removed again before
-      # it runs for real. cyclonedx-gomod reads the main component's version from git and
-      # has no flag to be told one, and a pseudo-version in a published bill of materials
-      # would be wrong. Left in place it would make semantic-release believe this version
-      # was already released.
-      - name: anticipate the tag
-        if: steps.next.outputs.new_release_published == 'true'
-        run: git tag "v${{ steps.next.outputs.new_release_version }}"
-
       - name: build
-        if: steps.next.outputs.new_release_published == 'true'
+        if: steps.release.outputs.new_release_published == 'true'
         env:
-          VERSION: ${{ steps.next.outputs.new_release_version }}
+          VERSION: ${{ steps.release.outputs.new_release_version }}
         run: |
           set -eu
           mkdir -p dist
@@ -98,37 +95,26 @@ jobs:
               go build -trimpath -ldflags "$ldflags" -o "dist/xeno-$VERSION-$os-$arch$ext" ./cmd/xeno
           done
 
-      # One document for all five binaries. Build constraints decide module selection, so
-      # that holds only while nothing in the tree is platform dependent, which for a module
-      # with one pure Go dependency it is not. A24 records the condition; the day a
-      # constrained dependency appears this goes back to one per target.
+      # bin rather than app: it reads the binary this release ships instead of the module
+      # it was built from, and -version says what the main component is called without
+      # anything having to be inferred from a tag. License detection is off because it
+      # downloads the main module from the proxy, where this version does not exist yet.
       - name: bill of materials
-        if: steps.next.outputs.new_release_published == 'true'
+        if: steps.release.outputs.new_release_published == 'true'
         uses: CycloneDX/gh-gomod-generate-sbom@v2
         with:
           version: v1
-          args: app -json -licenses -noserial -main ./cmd/xeno -output dist/xeno-${{ steps.next.outputs.new_release_version }}.cdx.json
+          args: bin -json -noserial -version v${{ steps.release.outputs.new_release_version }} -output dist/xeno-${{ steps.release.outputs.new_release_version }}.cdx.json dist/xeno-${{ steps.release.outputs.new_release_version }}-linux-amd64
 
-      - name: checksums
-        if: steps.next.outputs.new_release_published == 'true'
+      - name: checksums and upload
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.new_release_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
           # Written outside dist and moved in: a redirect into the directory creates the
           # file before the glob expands, and the checksums would cover themselves.
           ( cd dist && sha256sum * > ../SHA256SUMS ) && mv SHA256SUMS dist/
           cat dist/SHA256SUMS
-
-      # Removed again, so that semantic-release does not read it as a version it has
-      # already released and find nothing left to do.
-      - name: drop the anticipated tag
-        if: steps.next.outputs.new_release_published == 'true'
-        run: git tag -d "v${{ steps.next.outputs.new_release_version }}"
-
-      - name: release
-        uses: cycjimmy/semantic-release-action@v4
-        with:
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gh release upload "v$VERSION" dist/*
