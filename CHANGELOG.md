@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.8.0](https://github.com/triplem/xeno/compare/v0.7.0...v0.8.0) (2026-09-24)
+
+
+### Features
+
+* **runner:** the three commands that write a decision ([#26](https://github.com/triplem/xeno/issues/26)) ([6c5bb64](https://github.com/triplem/xeno/commit/6c5bb64a66bcbeb3f4eca83bd01679ba00c02508)), closes [#7](https://github.com/triplem/xeno/issues/7) [#7](https://github.com/triplem/xeno/issues/7)
+
 # [0.7.0](https://github.com/triplem/xeno/compare/v0.6.0...v0.7.0) (2026-09-24)
 
 
