@@ -332,3 +332,103 @@ func (r *Runner) Status(key string) ([]PhaseState, error) {
 	}
 	return out, nil
 }
+
+// Decide writes a decision onto one finding of a phase's verdict. With CloseObligation
+// below it is the only writer of a decision block, which is what keeps that block from
+// being something a person edits by hand.
+//
+// It refuses where the phase directory has moved since the verdict was written. A
+// decision carries `against`, the artifacts_hash it was made on, and that is what makes
+// it verifiable rather than a claim: written against a hash nobody judged, the field
+// would assert something untrue. The finding may not even survive a recompute, since an
+// id is a hash over gate, rule, file and cause, so content that moved can take the
+// finding with it. The repair is `xeno phase finish`, after which either the finding
+// comes back with the same id and the decision is about something that exists, or it
+// does not and there was nothing to decide. Recorded as D-6.
+func (r *Runner) Decide(key, phase, id, kind, by, reason string) (*model.Gate, error) {
+	if kind != "approved" && kind != "overridden" {
+		return nil, refuse("unknown decision %q", kind)
+	}
+	if by == "" || reason == "" {
+		return nil, refuse("a decision needs --by and --reason: it is a statement by a person")
+	}
+	g, err := r.readGate(key, phase)
+	if err != nil {
+		return nil, refuse("%s %s has no verdict to decide on; run xeno phase finish first", key, phase)
+	}
+	h, err := r.hash(key, phase)
+	if err != nil {
+		return nil, err
+	}
+	if h != g.ArtifactsHash {
+		return nil, refuse("%s %s changed after it was judged, so there is nothing to decide against.\n"+
+			"  verdict:   %s\n  directory: %s\nRun xeno phase finish and decide again; the finding may not survive it.",
+			key, phase, g.ArtifactsHash, h)
+	}
+	f := findFinding(g, id)
+	if f == nil {
+		return nil, refuse("%s %s has no finding %s", key, phase, id)
+	}
+	if f.Decision != nil {
+		return nil, refuse("%s is already %s by %s at %s; a decision is not replaced, it is made once",
+			id, f.Decision.Type, f.Decision.By, f.Decision.At)
+	}
+	f.Decision = &model.DecisionOnFinding{
+		Type: kind, By: by, At: r.stamp(), Against: h, Reason: reason,
+	}
+	if kind == "overridden" {
+		f.Decision.Obligation = "open"
+	}
+	return r.rewriteStatus(key, phase, g)
+}
+
+// CloseObligation marks the artifacts an override owed as delivered.
+//
+// Unlike Decide it does not require the directory to match the verdict, and the reason
+// is the mechanism rather than an exception to it: an override is taken so that a merge
+// can proceed while artifacts are still missing, so by the time they exist the phase has
+// moved by definition. Requiring a matching hash here would make an obligation
+// impossible to close, which is the opposite of the visibility it exists for.
+//
+// What it does require is that the finding is still there. An id that is gone took its
+// override and its obligation with it.
+func (r *Runner) CloseObligation(key, phase, id string) (*model.Gate, error) {
+	g, err := r.readGate(key, phase)
+	if err != nil {
+		return nil, refuse("%s %s has no verdict", key, phase)
+	}
+	f := findFinding(g, id)
+	if f == nil {
+		return nil, refuse("%s %s has no finding %s; if the phase was redone, the obligation went with it", key, phase, id)
+	}
+	if f.Decision == nil || f.Decision.Type != "overridden" {
+		return nil, refuse("%s carries no override, so it owes nothing", id)
+	}
+	if f.Decision.Obligation == "closed" {
+		return nil, refuse("%s was closed already", id)
+	}
+	f.Decision.Obligation = "closed"
+	return r.rewriteStatus(key, phase, g)
+}
+
+func findFinding(g *model.Gate, id string) *model.Finding {
+	for i := range g.Checks {
+		for j := range g.Checks[i].Findings {
+			if g.Checks[i].Findings[j].ID == id {
+				return &g.Checks[i].Findings[j]
+			}
+		}
+	}
+	return nil
+}
+
+// rewriteStatus derives the status again and writes the verdict back. run_at is left
+// alone: nothing was re-run, a person decided about what the last run found.
+func (r *Runner) rewriteStatus(key, phase string, g *model.Gate) (*model.Gate, error) {
+	status, err := gates.Status(g.Checks)
+	if err != nil {
+		return nil, err
+	}
+	g.Status = status
+	return g, fm.WriteYAML(r.abs(model.PhaseDir(key, phase)+"/gate.yaml"), g)
+}
