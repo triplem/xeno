@@ -51,6 +51,9 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `@semantic-release/git` | 11.0.1 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
+| `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25`, v0.36.0 | github.com |
+| `trivy` | v0.74.0 | github.com |
+| trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
@@ -62,6 +65,25 @@ records its own generator together with that generator's hashes, and the run log
 the version of semantic-release that ran. This table is therefore a convenience and the
 release is the record; where the two disagree, the release is right.
 
+**The vulnerability database is the one row that cannot be pinned.** A scan answers
+what is known today, so a database fixed at a version would answer what was known when
+somebody fixed it, which is the opposite of the question. It is fetched on every run,
+and it is built upstream on a 24 hour cycle, which the daily scan is aligned with.
+
+It is also the one row where being cut off from the network is not the interesting
+question. `--db-repository` takes a list of OCI repositories and the database is an OCI
+artifact, so an instance mirrors it into the registry WP0 already requires as a channel.
+**Currency is then the mirror's sync cadence and not a property of the air gap**:
+mirrored daily it is as fresh as fetching it directly, mirrored weekly it is up to seven
+days blind. That is a number somebody chooses, and it belongs wherever the scan result
+is read.
+
+Two things follow from the database being data rather than code. The case for letting it
+through a gap is a different case from the one for a toolchain, since nothing in it is
+executed. And a scan is evidence in this process, which does not have to be produced on
+the instance's own runner: it can be produced where there is a route out and bound in by
+`uri` and `sha256` like any other evidence item.
+
 ## What this does not yet answer
 
 The plan targets a self managed GitLab whose runners may have no route to the public
@@ -71,7 +93,17 @@ internet:
 > toolchains from the public internet at build time and makes the dependency mirror part
 > of the bootstrap rather than an afterthought.
 
-Every row of the second table above is such a fetch. For each of them the instance needs
+Every row of the second table above is such a fetch. The vulnerability database is the
+one that is fetched on every run rather than pinned, and the paragraph above says what
+the question becomes for it: a mirror and its cadence, not an air gap.
+
+One gap is open regardless of how the database arrives. **A Trivy report records when
+the scan ran and not when its database was built**, so a report cannot be judged for
+coverage from itself. `UpdatedAt` sits in the cache's `metadata.json` and nowhere in the
+output. Where the report becomes a declared `kind: scan` item, that value belongs
+beside
+`produced_by` and `result`, or the trail records that a scan ran without recording what
+it could have known. For each of them the instance needs
 an answer — mirrored, pre-installed on the runner image, or dropped — and none of those
 can be decided without the instance. Neither can the module proxy question for a
 repository that vendors everything and has no `go.sum`.
