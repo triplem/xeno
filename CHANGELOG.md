@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.6.0](https://github.com/triplem/xeno/compare/v0.5.0...v0.6.0) (2026-09-24)
+
+
+### Features
+
+* take the three deferred action majors ([#22](https://github.com/triplem/xeno/issues/22)) ([b106731](https://github.com/triplem/xeno/commit/b10673144b329a340059c8a13d8b76b29c38cc5b)), closes [#21](https://github.com/triplem/xeno/issues/21)
+
 # [0.5.0](https://github.com/triplem/xeno/compare/v0.4.0...v0.5.0) (2026-09-23)
 
 
