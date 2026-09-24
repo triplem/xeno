@@ -36,6 +36,8 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A28 | Every action is pinned to a commit sha and every tool to an exact version, taken from the run that produced v0.4.0 rather than from what is newest | a tag can be repointed by whoever owns it and `cycjimmy/semantic-release-action@v4` is a branch, so without this two runs a month apart can use different tooling and nothing records which; what is wanted is the set that demonstrably works, not the set that is current | `.github/workflows/`, `SUPPLY-CHAIN.md` | approved; **this repaired a regression rather than adding a property**: `scripts/sbom.sh` pinned `cyclonedx-gomod` to v1.9.0 and the action that replaced it was given `version: v1`, and neither the commit that made the change nor the two assumptions it rewrote said so |
 | A29 | `--by` is required on a decision and is not read from git | the process definition calls a decision a statement by a person, and an identity taken from a local config is inferred rather than stated; neither form is authenticated, so the one that is typed deliberately is worth more in a governance record than the one that appears by itself | `cmd/xeno` | open, explained; it also keeps the runner from shelling out to git, which it does nowhere else |
 | A30 | Closing an obligation does not require the verdict to match the directory, while approving and overriding do | an override is taken so that a merge can proceed while artifacts are still missing, so by the time they exist the phase has moved by definition; requiring a matching hash there would make an obligation impossible to close, which is the opposite of the visibility it exists for | `internal/runner` | approved; what it does require is that the finding is still present, since an id that is gone took its override with it |
+| A31 | `xeno intent close` requires the closing learning record to exist already; it does not write one | the working sequence says the command "writes the closing learning record and the intent level `gate.yaml`", and section 7 says G-Complete in that mode "checks … that the closing learning record exists". A gate checking a file the same command just created checks itself, so the reading that leaves the gate meaningful is taken | `internal/runner`, `internal/gates` | open, explained; the record is written like every phase record, by whoever ends the intent |
+| A32 | G-Complete is implemented in its abandoned mode only; the P5 mode stays `not-implemented` in the gate table | the two modes have different conditions and different invocation points, and only one of them can be exercised: no intent in this repository reaches P5, since no phase beyond P0 may run before WP8 closes the G-Freshness gap (A6) | `internal/gates` | open, explained; the phase table still says `not-implemented` rather than claiming a check that did not happen |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Decisions
@@ -61,15 +63,16 @@ because nothing that could resolve them is allowed to run yet.
 ## Built
 
 Hashing per Appendix B, byte exact and checked against a `sha256sum` pipeline. Finding
-ids. The runner commands `phase start`, `phase finish`, `gate run`, `evidence attach`,
-`intent status`. Sequence enforcement, the run marker, computed status and staleness.
+ids. The runner commands `phase start`, `phase finish`, `gate run`, `gate verify`,
+`gate approve`, `gate override`, `obligation close`, `evidence attach`,
+`intent status`, `intent close`, `check commit-message`, `version`. Sequence enforcement, the run marker, computed status and staleness.
 Evidence pulled from the pipeline into `evidence/attached.yaml` with provisional
 verdicts. Decisions carried forward by finding id.
 
 Gates implemented: G-Schema, G-Trace, G-Assumptions, G-Questions, G-Learning,
-G-Freshness (partial, A6), G-Evidence, G-Build.
+G-Freshness (partial, A6), G-Evidence, G-Build, G-Complete (abandoned mode only, A32).
 Gates written as `not-implemented`: G-Supply, G-Secret, G-Test, G-Rules, G-Policy,
-G-Complete.
+and G-Complete in the P5 mode.
 
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
 procedure, `SECURITY.md`, the module path (A1), the format and vet jobs the package asks
@@ -87,5 +90,5 @@ the instance.
 
 Everything that needs a host, a harness or a network: the GitLab adapter, the CI
 wrapper, `enforcement check`, the MCP server, hooks, the plugin, the documentation site.
-Templates, rules, the secret filter and the digest writer. `xeno init`, approve and
-override, intent close. Five of the plan's verification points stand before those parts.
+Templates, rules, the secret filter and the digest writer. `xeno init`. Five of the
+plan's verification points stand before those parts.

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/hashing"
@@ -427,20 +428,58 @@ func questions(c Ctx) model.Check {
 // ---- G-Learning
 
 func learning(c Ctx) model.Check {
-	rel := c.phaseRel(c.Phase) + "/learning.yaml"
+	return result(learningFindings(c.abs(c.phaseRel(c.Phase)+"/learning.yaml"), c.phaseRel(c.Phase)+"/learning.yaml"))
+}
+
+// learningFindings is the same judgement wherever a learning record sits: present, and
+// carrying something beyond the header fields every process file has. A7.
+func learningFindings(abs, rel string) []model.Finding {
 	raw := map[string]any{}
-	err := fm.ReadYAML(c.abs(rel), &raw)
+	err := fm.ReadYAML(abs, &raw)
 	if os.IsNotExist(err) {
-		return result([]model.Finding{finding(rel, "learning record missing", "write one, even when the result is no finding")})
+		return []model.Finding{finding(rel, "learning record missing", "write one, even when the result is no finding")}
 	}
 	for k := range raw {
 		switch k {
-		case "intent", "phase", "created", "runner_version", "plugin_version":
+		case "intent", "phase", "created", "schema_version", "runner_version", "plugin_version":
 		default:
-			return result(nil)
+			return nil
 		}
 	}
-	return result([]model.Finding{finding(rel, "learning record is empty", "record an observation or state no_finding: true")})
+	return []model.Finding{finding(rel, "learning record is empty", "record an observation or state no_finding: true")}
+}
+
+// CompleteOnClose is G-Complete in its second mode, the one an abandoned intent meets.
+// It has two invocation points because an intent has two ways of ending, and the mode
+// follows from where the gate was invoked rather than from a field.
+//
+// Run as part of P5 it checks the preceding phases; that mode is in the table above and
+// is not implemented, since no intent in this repository reaches P5 yet. Run from
+// `xeno intent close` it checks what the process definition names for this mode: that
+// the intent carries a reason, and that the closing learning record exists.
+//
+// Why a reason has to be checked at all, when the command requires one: the command is
+// not the only way a file gets written, and a gate that trusts the writer checks
+// nothing.
+func CompleteOnClose(root, key string) model.Check {
+	var fs []model.Finding
+	rel := model.IntentDir(key) + "/intent.yaml"
+	var in model.Intent
+	if err := fm.ReadYAML(filepath.Join(root, rel), &in); err != nil {
+		fs = append(fs, finding(rel, "intent.yaml cannot be read: "+err.Error(), "repair it"))
+	} else {
+		if in.Status != "abandoned" {
+			fs = append(fs, finding(rel, "status is "+in.Status+", not abandoned", "an intent that closes this way is abandoned"))
+		}
+		if strings.TrimSpace(in.Reason) == "" {
+			fs = append(fs, finding(rel, "abandoned without a reason", "why something was dropped is usually worth more than why it was built"))
+		}
+	}
+	lrel := model.IntentDir(key) + "/learning.yaml"
+	fs = append(fs, learningFindings(filepath.Join(root, lrel), lrel)...)
+	ch := result(fs)
+	ch.Gate = "G-Complete"
+	return ch
 }
 
 // ---- G-Freshness: the first half, the context hash against the predecessor.

@@ -16,6 +16,8 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     xeno gate verify     [--intent KEY]
     xeno evidence attach --intent KEY --phase NN --from DIR
     xeno intent status   --intent KEY
+    xeno intent close    --intent KEY --reason TEXT
+    xeno check commit-message [--pattern NAME] [--file PATH]
     xeno version
 
 Xeno collects no telemetry. Nothing it writes leaves the repository it writes in, and
@@ -37,7 +39,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP1 | hashing to Appendix B, finding ids, derived status, decisions carried forward by id, the sealed invariant, the four field sets over frontmatter and YAML alike, `schema_version` read rather than enforced backwards, no decision carried forward for an external finding, a development build naming the commit it came from | `hashing_test`, `TestDecisionCarriesForward…`, `TestNoCommandButFinish…`, `TestDecisionSurvivesForXenoAndNeverFor…`, `gates/schema_test` against `gates/testdata`, `model/version_test` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…` |
-| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…` |
+| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test` |
 
 Two deliberate mutations were run against the suite, removing the sequence check and
 letting attachment write into a sealed artifact; both were caught.

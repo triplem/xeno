@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
 )
 
@@ -597,5 +598,86 @@ func TestADecisionIsMadeOnceAndNeedsAPersonAndAReason(t *testing.T) {
 	f.must2(f.r.Decide(key, "00-intake", id, "approved", "a person", "assessed"))
 	if _, err := f.r.Decide(key, "00-intake", id, "overridden", "somebody else", "changed my mind"); err == nil {
 		t.Fatal("a second decision replaced the first")
+	}
+}
+
+// ---- WP7: an intent that is dropped rather than merged
+
+func (f *fixture) intentLearning(body string) {
+	f.write(model.IntentDir(key)+"/learning.yaml",
+		"intent: git.example/group/proj#1\ncreated: 2026-09-20T10:00:00Z\n"+
+			"runner_version: 0.1.0-dev\nplugin_version: 0.1.0-dev\n"+body)
+}
+
+func TestClosingAnAbandonedIntentRecordsItAndJudgesIt(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	f.intentLearning("no_finding: true\n")
+
+	g, err := f.r.IntentClose(key, "the requirement was withdrawn")
+	f.must(err)
+	if g.Status != "green" {
+		t.Fatalf("status %s, want green: the reason and the record are both there", g.Status)
+	}
+	if g.Phase != "" {
+		t.Fatalf("an intent level verdict carries no phase, got %q", g.Phase)
+	}
+	if len(g.Checks) != 1 || g.Checks[0].Gate != "G-Complete" {
+		t.Fatalf("expected one G-Complete check, got %+v", g.Checks)
+	}
+
+	var in model.Intent
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir(key), "intent.yaml"), &in))
+	if in.Status != "abandoned" || in.Reason != "the requirement was withdrawn" {
+		t.Fatalf("intent.yaml not recorded: %+v", in)
+	}
+}
+
+// The gate reads the files, not the argument. Without the closing record it is red, and
+// the intent is abandoned all the same: the record says what is missing.
+func TestClosingWithoutTheLearningRecordIsRedRatherThanRefused(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+
+	g, err := f.r.IntentClose(key, "dropped")
+	f.must(err)
+	if g.Status != "red" {
+		t.Fatalf("status %s, want red", g.Status)
+	}
+	var in model.Intent
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir(key), "intent.yaml"), &in))
+	if in.Status != "abandoned" {
+		t.Fatal("the intent was not recorded as abandoned")
+	}
+}
+
+func TestClosingNeedsAReasonAndHappensOnce(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	f.intentLearning("no_finding: true\n")
+
+	if _, err := f.r.IntentClose(key, "  "); err == nil {
+		t.Fatal("an intent was abandoned without a reason")
+	}
+	f.must2(f.r.IntentClose(key, "dropped"))
+	if _, err := f.r.IntentClose(key, "dropped again"); err == nil {
+		t.Fatal("an abandoned intent was abandoned a second time")
+	}
+}
+
+// The intent level hash covers the files lying directly in the intent directory and
+// does not descend, which is what keeps phases/ out: each phase already has a verdict.
+func TestTheIntentHashDoesNotDescendIntoPhases(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	f.intentLearning("no_finding: true\n")
+	g, err := f.r.IntentClose(key, "dropped")
+	f.must(err)
+
+	f.write(model.PhaseDir(key, "00-intake")+"/output.md", "---\nintent: x\n---\nchanged\n")
+	after, err := hashing.DirHash(f.root, model.IntentDir(key), hashing.IntentExcluded)
+	f.must(err)
+	if after != g.ArtifactsHash {
+		t.Fatalf("changing a phase moved the intent hash, %s to %s", g.ArtifactsHash, after)
 	}
 }
