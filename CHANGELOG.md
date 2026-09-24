@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.11.0](https://github.com/triplem/xeno/compare/v0.10.0...v0.11.0) (2026-09-24)
+
+
+### Features
+
+* **ci:** static analysis with semgrep, rules vendored ([#31](https://github.com/triplem/xeno/issues/31)) ([750a66c](https://github.com/triplem/xeno/commit/750a66c2f575a186210b29030b294123f5ab69d6)), closes [#12](https://github.com/triplem/xeno/issues/12)
+
 # [0.10.0](https://github.com/triplem/xeno/compare/v0.9.0...v0.10.0) (2026-09-24)
 
 
