@@ -1,0 +1,46 @@
+# Static analysis of this project's own code. It is a scanner like the vulnerability
+# scan, so the same three things hold: no gate reads the report, the threshold lives in
+# the tool, and what stops a merge is this job failing.
+#
+# The rules are vendored under .semgrep/ and not fetched, which is the opposite of how
+# the vulnerability database is handled, for a reason that follows from what each one
+# reads. A database is facts other people discover and goes stale by time passing; a
+# rule set is patterns somebody chose and goes stale only when nobody changes it. A set
+# that changes underneath a project can fail a build that nothing in the repository
+# touched. Facts want currency, policy wants a commit.
+#
+# --error is not optional. semgrep exits 0 with findings present without it, so a step
+# written from the obvious invocation would report success on everything.
+#
+# Every action is pinned to a commit sha and every tool to a digest or an exact version;
+# SUPPLY-CHAIN.md says which and why.
+name: semgrep
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Rules do not change here without a commit, so a schedule proves less than the one
+    # the vulnerability scan needs. It is here because a scan that only ever runs on a
+    # change never runs against what is sitting on the default branch.
+    - cron: '41 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    container:
+      # semgrep 1.178.0, by digest rather than by tag, since a tag is repointable.
+      image: semgrep/semgrep@sha256:32e459968daabe7ab86968184a29109b9564aa00392401156f9788452b42786b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: scan
+        run: |
+          semgrep \
+            --config .semgrep/golang.yaml \
+            --error \
+            --metrics off \
+            cmd internal

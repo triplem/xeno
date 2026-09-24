@@ -1,0 +1,28 @@
+intent: github.com/triplem/xeno#12
+phase: 00-intake
+created: 2026-09-24T20:34:38Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c7abd5d
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A scan that reports nothing and a scan that did not run are the same line in a log,
+      and the second is the one that gets shipped. Four rule sets reported zero against
+      this repository before a file was written that they should find; only then did the
+      zero mean anything.
+    proposal: >-
+      Where a check exists to find something, it is proved against something it should
+      find before its silence is believed. It is the same move as the mutation tests
+      already used on the gates, applied to a tool nobody here wrote.
+    target: CLAUDE.md
+  - category: project-convention
+    observation: >-
+      Without `--error` semgrep exits 0 with findings present. A job written from the
+      obvious invocation would have passed on everything and looked like a working
+      scanner for as long as nobody checked.
+    proposal: >-
+      When a tool is wired into a pipeline to block something, its failing exit code is
+      observed before the step is written, not inferred from the fact that it found
+      something.
+    target: CLAUDE.md

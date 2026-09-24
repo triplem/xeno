@@ -54,6 +54,8 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25`, v0.36.0 | github.com |
 | `trivy` | v0.74.0 | github.com |
 | trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
+| `semgrep` | `sha256:32e45996…`, 1.178.0, by digest | docker.io |
+| semgrep's rules | vendored under `.semgrep/`, not fetched | — |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
@@ -77,6 +79,13 @@ artifact, so an instance mirrors it into the registry WP0 already requires as a 
 mirrored daily it is as fresh as fetching it directly, mirrored weekly it is up to seven
 days blind. That is a number somebody chooses, and it belongs wherever the scan result
 is read.
+
+**semgrep's rules go the other way, and the contrast is the point.** They are vendored
+under `.semgrep/` and nothing fetches them at scan time, which was verified by running
+the scan with the network removed. A vulnerability database is facts about the world
+that other people discover, so it goes stale by time passing. A rule set is patterns
+somebody chose to enforce, and one that changes underneath a project can fail a build
+that nothing in the repository touched. Facts want currency; policy wants a commit.
 
 Two things follow from the database being data rather than code. The case for letting it
 through a gap is a different case from the one for a toolchain, since nothing in it is
