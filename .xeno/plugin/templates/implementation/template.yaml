@@ -1,0 +1,11 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/implementation/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: implementation
+version: 1.0.0
+phase: 03-implementation
+sections:
+  - { id: changes, required: true }
+  - { id: deviations, required: true }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }

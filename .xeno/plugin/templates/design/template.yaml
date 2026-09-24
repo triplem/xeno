@@ -1,0 +1,11 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/design/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: design
+version: 1.0.0
+phase: 02-design
+sections:
+  - { id: decisions, required: true }
+  - { id: alternatives, required: true }
+  - { id: impact, required: true }
+  - { id: open-questions, required: false }

@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 	"time"
 
 	"github.com/triplem/xeno/internal/evidence"
@@ -18,6 +21,7 @@ import (
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/template"
 )
 
 // Refusal is a command declining to proceed for a reason a person can act on.
@@ -210,6 +214,13 @@ func (r *Runner) Start(key, phase string) error {
 		return err
 	}
 	lock := model.ContextLock{Common: common, EvidenceSource: r.evidenceSource()}
+	// Which template the phase will be rendered from, recorded because otherwise two
+	// projects on the same template version are indistinguishable although one of them
+	// overrode it. A repository without a vendored plugin records nothing here and
+	// finds out at the first section write, which is where it matters.
+	if t, err := template.Load(r.Root, model.TemplateID(phase), r.language()); err == nil {
+		lock.TemplateSource = string(t.Source)
+	}
 
 	if idx > 0 {
 		pred := model.Phases[idx-1]
@@ -276,6 +287,111 @@ func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
 		return nil, err
 	}
 	return r.evaluate(key, phase)
+}
+
+// language is the language artifacts are written in. English unless a project says
+// otherwise; the process layer is English regardless.
+func (r *Runner) language() string {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err == nil && p.Language.Artifacts != "" {
+		return p.Language.Artifacts
+	}
+	return "en"
+}
+
+// SectionSet writes one section of a phase result and renders the whole file again.
+//
+// Rendering on every write rather than at the end is what keeps the file on disk always
+// in rendered form, and it is why the anchors can never be wrong: the agent supplies
+// content per section and never writes an anchor.
+//
+// The frontmatter is carried over untouched where the file exists. Where it does not,
+// what the runner knows is written and the rest is left out rather than filled with
+// something plausible: model, tool and tool_version come from the harness, and
+// secrets_hash from a filter that does not exist yet. G-Schema reports them missing,
+// which is the honest state of a phase nothing has produced yet.
+func (r *Runner) SectionSet(key, phase, section, content string) (*template.Resolved, error) {
+	if model.PhaseIndex(phase) < 0 {
+		return nil, fmt.Errorf("unknown phase %q", phase)
+	}
+	t, err := template.Load(r.Root, model.TemplateID(phase), r.language())
+	if err != nil {
+		return nil, refuse("%v", err)
+	}
+	if !t.Has(section) {
+		return nil, refuse("template %s has no section %q; it has %s",
+			t.Ref(), section, strings.Join(t.Known(), ", "))
+	}
+	path := r.abs(model.PhaseDir(key, phase) + "/output.md")
+	front, sections := map[string]any{}, map[string]string{}
+	if b, err := os.ReadFile(path); err == nil {
+		f, body, ferr := fm.Split(b)
+		if ferr == nil {
+			_ = yaml.Unmarshal(f, &front)
+		}
+		sections = template.Parse(string(body))
+	} else {
+		common, err := r.common(key, phase)
+		if err != nil {
+			return nil, err
+		}
+		front["intent"], front["phase"] = common.Intent, common.Phase
+		front["created"] = common.Created
+		front["schema_version"] = common.SchemaVersion
+		front["runner_version"], front["plugin_version"] = common.RunnerVersion, common.PluginVersion
+	}
+	front["language"] = t.Bundle.Language
+	front["template"] = t.Ref()
+	front["strings_hash"] = t.StringsHash
+	sections[section] = content
+
+	out := "---\n" + frontmatter(front) + "---\n\n" + t.Render(sections)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, err
+	}
+	return &t, os.WriteFile(path, []byte(out), 0o644)
+}
+
+// frontmatterOrder is the order section 5 lists the fields in, group by group: every
+// process file, then what a phase file adds, then what a file produced in a session
+// adds, then what a rendered file adds. A map would sort them alphabetically, and every
+// artifact written by hand in this repository is in this order.
+var frontmatterOrder = []string{
+	"intent", "phase", "created", "schema_version", "runner_version", "plugin_version",
+	"language", "secrets_hash", "context_hash", "model", "tool", "tool_version",
+	"template", "strings_hash", "rules_hash",
+	"open_questions", "decisions", "evidence",
+}
+
+func frontmatter(front map[string]any) string {
+	var b strings.Builder
+	written := map[string]bool{}
+	emit := func(k string) {
+		v, ok := front[k]
+		if !ok || written[k] {
+			return
+		}
+		written[k] = true
+		out, err := yaml.Marshal(map[string]any{k: v})
+		if err != nil {
+			return
+		}
+		b.Write(out)
+	}
+	for _, k := range frontmatterOrder {
+		emit(k)
+	}
+	rest := make([]string, 0, len(front))
+	for k := range front {
+		if !written[k] {
+			rest = append(rest, k)
+		}
+	}
+	sort.Strings(rest)
+	for _, k := range rest {
+		emit(k)
+	}
+	return b.String()
 }
 
 func (r *Runner) evidenceSource() string {

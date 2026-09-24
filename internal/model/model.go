@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 )
 
 // The version the runner reports and writes into every artifact. It is var rather than
@@ -122,6 +123,15 @@ var KnownPhaseFiles = map[string]bool{
 
 const ContextProfile = "context-profile.yaml" // P0 only
 
+// TemplateID is the phase without its ordering prefix: 02-design is rendered from the
+// template design. The prefix orders the phases and says nothing a template needs.
+func TemplateID(phase string) string {
+	if i := strings.IndexByte(phase, '-'); i >= 0 {
+		return phase[i+1:]
+	}
+	return phase
+}
+
 // Common is carried by every process file.
 type Common struct {
 	Intent        string `yaml:"intent"`
@@ -222,6 +232,11 @@ type ContextLock struct {
 	Common          `yaml:",inline"`
 	PredecessorHash string `yaml:"predecessor_artifacts_hash,omitempty"`
 	EvidenceSource  string `yaml:"evidence_source"`
+	// TemplateSource is plugin or project, and it is recorded because otherwise two
+	// projects on the same template version are indistinguishable although one of them
+	// overrode it. Empty where no template could be resolved, which is what a
+	// repository without a vendored plugin looks like until xeno init puts one there.
+	TemplateSource string `yaml:"template_source,omitempty"`
 }
 
 type DecisionOnFinding struct {
@@ -269,9 +284,18 @@ type Intent struct {
 	PluginVersion string `yaml:"plugin_version"`
 }
 
+// Project is the part of project.yaml the core reads. Appendix A has the whole file;
+// what is here is what the runner acts on today.
+type Language struct {
+	// Artifacts is the language artifact content is written in. The process layer,
+	// meaning keys, ids, gate names and section ids, is English regardless.
+	Artifacts string `yaml:"artifacts"`
+}
+
 // Project is the part of project.yaml the core reads.
 type Project struct {
 	Evidence struct {
 		Source string `yaml:"source"`
 	} `yaml:"evidence"`
+	Language Language `yaml:"language"`
 }

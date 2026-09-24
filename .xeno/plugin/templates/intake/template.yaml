@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/intake/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: intake
+version: 1.0.0
+phase: 00-intake
+sections:
+  - { id: problem, required: true }
+  - { id: scope, required: true }
+  - { id: context-rationale, required: true }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }

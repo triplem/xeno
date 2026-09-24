@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/verification/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: verification
+version: 1.0.0
+phase: 04-verification
+sections:
+  - { id: test-mapping, required: true }
+  - { id: results, required: true }
+  - { id: gaps, required: true }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }
