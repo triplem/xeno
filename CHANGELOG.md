@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.10.0](https://github.com/triplem/xeno/compare/v0.9.0...v0.10.0) (2026-09-24)
+
+
+### Features
+
+* **ci:** scan what the release carries with trivy ([#30](https://github.com/triplem/xeno/issues/30)) ([b5eaca9](https://github.com/triplem/xeno/commit/b5eaca98e5eb66c35e992bc12ed41d54b0e85588)), closes [#6](https://github.com/triplem/xeno/issues/6) [#11](https://github.com/triplem/xeno/issues/11) [#11](https://github.com/triplem/xeno/issues/11)
+
 # [0.9.0](https://github.com/triplem/xeno/compare/v0.8.0...v0.9.0) (2026-09-24)
 
 
