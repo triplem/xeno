@@ -11,6 +11,10 @@ One module, vendored under `vendor/`, so a build fetches nothing:
 |---|---|---|
 | `gopkg.in/yaml.v3` | v3.0.1 | Apache-2.0, MIT |
 
+Its own `go.mod` declares no `go` directive, which is why `vendor/modules.txt` records
+it as `## explicit` with no version annotation. That line describes the dependency and
+not this module, so it does not move when the `go` directive here does.
+
 Each release carries a CycloneDX bill of materials generated from the shipped binary
 rather than from `go.mod`, so it records what the artifact contains and not what the
 module declares. It also records its own generator with that generator's hashes.
@@ -25,7 +29,7 @@ exact version for a tool. A tag can be repointed by whoever owns it, and
 |---|---|---|
 | `actions/checkout` | `11d5960a326750d5838078e36cf38b85af677262`, v4.4.0 | github.com |
 | `actions/setup-go` | `40f1582b2485089dde7abd97c1529aa768e1baff`, v5.6.0 | github.com |
-| Go toolchain | `go.mod`, via `setup-go` | golang.org |
+| Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
 | `cycjimmy/semantic-release-action` | `16ca923e6ccbb50770c415a0ccd43709a8c5f7a4`, v4.2.2 | github.com |
 | semantic-release | 24.2.9 | npm |
 | `@semantic-release/changelog` | 7.0.0 | npm |
