@@ -21,6 +21,30 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
+      # A pull request description becomes the squashed commit message, so a string in
+      # it that a machine acts on takes effect. Closes #N is used that way on purpose.
+      # The markers below would switch off the very run that verifies the merge, which
+      # is not hypothetical: it happened to the merge of #27, whose description quoted
+      # one as an example. This list is the authoritative one, so that nothing else has
+      # to quote a marker in order to warn about it.
+      #
+      # The title and the body come through the environment rather than by interpolation
+      # into the script, because both are text somebody else can write.
+      - name: no ci-skip marker in the description
+        if: github.event_name == 'pull_request'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -eu
+          markers='\[(skip[ -]ci|ci[ -]skip|no[ -]ci|skip[ -]actions|actions[ -]skip)\]|\*\*\*NO_CI\*\*\*'
+          if printf '%s\n%s' "$TITLE" "$BODY" | grep -qiE "$markers"; then
+            echo "The title or the description carries a marker that switches CI off."
+            echo "It becomes the squashed commit message, so the merge would run nothing."
+            echo "Describe the marker instead of writing it."
+            exit 1
+          fi
+
       - name: format
         run: |
           unformatted=$(gofmt -l . | grep -v '^vendor/' || true)

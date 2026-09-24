@@ -24,6 +24,14 @@ finishes the work:
 
 A pull request description carries the closing line too; the template fills it in.
 
+**A description is a commit message.** It becomes the body of the squashed commit, so
+anything in it that a machine acts on takes effect. `Closes #3` is used that way
+deliberately. The markers that switch CI off are the same mechanism pointed the other
+way: one quoted as an example in a description once meant the merge ran nothing at all.
+The verify workflow refuses a description carrying any of them and holds the
+authoritative list, so nothing here has to write one out in order to warn about it. To
+mention one, describe it.
+
 **Write the description at 72 characters.** It becomes the body of the squashed commit,
 and GitHub rewraps it to that width on the way, so anything wider is reflowed into
 something nobody wrote. It is a commit message, not a note about one.
