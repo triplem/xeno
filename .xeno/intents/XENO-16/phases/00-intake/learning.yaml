@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#16
+phase: 00-intake
+created: 2026-09-24T19:02:03Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A placeholder that every build shares reads like a version and identifies nothing,
+      and it survived thirteen phases without anybody noticing, in a repository whose
+      subject is provenance. What found it was a person reading an artifact and asking
+      whether the number was right, which is the one check that was never going to be
+      automated.
+    proposal: >-
+      Where a field exists to identify something, a default that cannot identify it is
+      worse than an absent value: absence is visible and a plausible constant is not.
+      Prefer failing to write over writing a placeholder, or make the placeholder say
+      what it is.
+    target: .xeno/config/rules/learned/project/no-plausible-defaults.yaml

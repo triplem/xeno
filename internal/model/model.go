@@ -7,16 +7,69 @@ package model
 import (
 	"fmt"
 	"path/filepath"
+	"runtime/debug"
 )
 
 // The version the runner reports and writes into every artifact. It is var rather than
 // const so that the release build sets it through -ldflags from the tag the pipeline
-// derived, which is what keeps the number out of the source. A build from a working
-// tree keeps the placeholder and says so.
+// derived, which is what keeps the number out of the source.
+//
+// A build that was not made by the release carries devVersion, and init below appends
+// the commit it came from. Without that the field names every unreleased build ever
+// made and therefore identifies none of them, which is a poor showing for a field whose
+// only job is to say which binary wrote an artifact.
+//
+// PluginVersion takes no stamp. It describes the vendored plugin and not the binary
+// that wrote the artifact, and there is no plugin yet to have a commit.
 var (
-	RunnerVersion = "0.1.0-dev"
-	PluginVersion = "0.1.0-dev"
+	RunnerVersion = devVersion
+	PluginVersion = devVersion
 )
+
+const devVersion = "0.1.0-dev"
+
+func init() {
+	if RunnerVersion != devVersion {
+		return // a release build already said what it is
+	}
+	revision, modified := vcsStamp()
+	RunnerVersion = stamp(devVersion, revision, modified)
+}
+
+// stamp appends the commit to a development version as semver build metadata: "+", then
+// dot separated alphanumerics. An empty revision leaves the version alone, which is what
+// happens in a test binary, where the toolchain stamps no vcs settings at all.
+//
+// "dirty" says the tree was not the commit. It does not say which tree it was, so two
+// builds from one commit with different uncommitted changes report the same string.
+func stamp(base, revision string, modified bool) string {
+	if revision == "" {
+		return base
+	}
+	if len(revision) > 7 {
+		revision = revision[:7]
+	}
+	if modified {
+		return base + "+" + revision + ".dirty"
+	}
+	return base + "+" + revision
+}
+
+func vcsStamp() (revision string, modified bool) {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "", false
+	}
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+		case "vcs.modified":
+			modified = s.Value == "true"
+		}
+	}
+	return revision, modified
+}
 
 // SchemaVersion is the shape of the artifacts this runner writes, and it moves for a
 // different reason than the two above: the minor when a field is added that an older
