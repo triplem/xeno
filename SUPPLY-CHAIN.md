@@ -41,10 +41,10 @@ exact version for a tool. A tag can be repointed by whoever owns it, and
 
 | What | Pinned to | Fetched from |
 |---|---|---|
-| `actions/checkout` | `11d5960a326750d5838078e36cf38b85af677262`, v4.4.0 | github.com |
-| `actions/setup-go` | `40f1582b2485089dde7abd97c1529aa768e1baff`, v5.6.0 | github.com |
+| `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1`, v7.0.1 | github.com |
+| `actions/setup-go` | `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e`, v7.0.0 | github.com |
 | Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
-| `cycjimmy/semantic-release-action` | `16ca923e6ccbb50770c415a0ccd43709a8c5f7a4`, v4.2.2 | github.com |
+| `cycjimmy/semantic-release-action` | `b12c8f6015dc215fe37bc154d4ad456dd3833c90`, v6.0.0 | github.com |
 | semantic-release | 24.2.9 | npm |
 | `@semantic-release/changelog` | 7.0.0 | npm |
 | `@semantic-release/git` | 11.0.1 | npm |
@@ -55,9 +55,10 @@ exact version for a tool. A tag can be repointed by whoever owns it, and
 the bill of materials it published, rather than whichever were newest on the day this
 was written. What is wanted is the set that demonstrably works.
 
-Three of the four actions are behind their current major, and two carry a Node 20
-deprecation warning. Upgrading is its own change: a run that both pins and upgrades
-cannot say which of the two broke it.
+The three that were behind their current major were upgraded afterwards, in a change of
+their own, so that a failure would have one answer rather than two. `cyclonedx-gomod`
+and `semantic-release` are still the versions that produced v0.4.0; the actions are
+current.
 
 ## What this does not yet answer
 

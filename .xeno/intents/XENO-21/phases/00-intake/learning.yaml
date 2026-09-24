@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#21
+phase: 00-intake
+created: 2026-09-24T18:31:17Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Deferring the upgrade when the pins went in cost one extra change and bought a
+      clean answer: everything that runs today ran with the old versions and is proven,
+      so anything that breaks now is this change. The two are only separable because
+      they were separated in advance; afterwards the question cannot be reopened.
+    proposal: >-
+      Where a change both fixes a property and moves a version, split it in that order,
+      pin first and upgrade second. Not a rule, since no predicate can recognise the
+      shape, and it belongs with the session guidance in CLAUDE.md rather than in the
+      rule set.
+    target: CLAUDE.md
