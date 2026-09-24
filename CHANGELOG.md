@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.7.0](https://github.com/triplem/xeno/compare/v0.6.0...v0.7.0) (2026-09-24)
+
+
+### Features
+
+* **model:** let a development build say which build it is ([#25](https://github.com/triplem/xeno/issues/25)) ([109bae6](https://github.com/triplem/xeno/commit/109bae6caa6cc43086efa8b80cd43dfae056c2b8)), closes [#16](https://github.com/triplem/xeno/issues/16)
+
 # [0.6.0](https://github.com/triplem/xeno/compare/v0.5.0...v0.6.0) (2026-09-24)
 
 
