@@ -18,10 +18,11 @@ Lines wrap at 88 characters, in code and in prose. Go source carries
 `SPDX-License-Identifier: Apache-2.0` and no per file copyright line. One dependency,
 `gopkg.in/yaml.v3`, vendored; adding a second is a decision, not a step.
 
-A comment says what the construction is and why it is that way. Where the reason is
-genuinely the thing it replaced, that belongs in the commit message: the reader of a
-comment has the current tree and nothing else, and after a squash the history does not
-carry the intermediate states either.
+A comment or a passage of prose says what the construction is and why it is that way.
+Where the reason is genuinely the thing it replaced, that belongs in the commit message:
+the reader has the current tree and nothing else, and after a squash the history does
+not carry the intermediate states either. This holds for the documents as much as for
+the code; prose in a file is as readable by a stranger and ages the same way.
 
 Commit subjects are Conventional Commits without an issue reference. The reference goes
 in the footer, `Refs #123`, and `Closes #123` on the commit that finishes the work and

@@ -36,8 +36,9 @@ module declares. It also records its own generator with that generator's hashes.
 ## In the pipeline
 
 Every entry is pinned to something that cannot move: a commit sha for an action, an
-exact version for a tool. A tag can be repointed by whoever owns it, and
-`cycjimmy/semantic-release-action@v4` is a *branch*, which moves by design.
+exact version for a tool. A tag can be repointed by whoever owns it, and some publishers
+keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` through
+`v6` as *branches*, which move by design and look exactly like tags in a `uses:` line.
 
 | What | Pinned to | Fetched from |
 |---|---|---|
@@ -51,14 +52,15 @@ exact version for a tool. A tag can be repointed by whoever owns it, and
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
 
-**The versions are the ones that produced v0.4.0**, read from that run's log and from
-the bill of materials it published, rather than whichever were newest on the day this
-was written. What is wanted is the set that demonstrably works.
+**Where a version in this table comes from.** It is read off a run that produced a
+release, from that run's log and from the bill of materials it published, rather than
+taken as whichever is newest on the day somebody looks. What is wanted is the set that
+demonstrably works, and a release is the only thing that demonstrates it.
 
-The three that were behind their current major were upgraded afterwards, in a change of
-their own, so that a failure would have one answer rather than two. `cyclonedx-gomod`
-and `semantic-release` are still the versions that produced v0.4.0; the actions are
-current.
+The evidence travels with each release rather than living here. The bill of materials
+records its own generator together with that generator's hashes, and the run log names
+the version of semantic-release that ran. This table is therefore a convenience and the
+release is the record; where the two disagree, the release is right.
 
 ## What this does not yet answer
 
