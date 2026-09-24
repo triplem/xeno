@@ -58,10 +58,10 @@ jobs:
       - name: verify
         run: go build -o xeno ./cmd/xeno && ./xeno gate verify
 
-      # semantic-release goes first and the artifacts follow it. The earlier order asked
-      # for the version in a dry run, anticipated the tag and deleted it again, all to
-      # work around a flag that exists: cyclonedx-gomod bin takes -version. Without that
-      # detour the steps run in the order they read in, each doing one thing.
+      # semantic-release goes first and the artifacts follow it, so that the version is
+      # known before anything is built with it in. Both the binaries, through ldflags,
+      # and the bill of materials, through cyclonedx-gomod bin -version, take it as an
+      # argument, so nothing has to be inferred from a tag that does not exist yet.
       #
       # The cost is named rather than hidden: the release exists for the length of a
       # build before its artifacts do. The gates above have already passed at that point,

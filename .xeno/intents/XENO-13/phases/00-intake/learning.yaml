@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#13
+phase: 00-intake
+created: 2026-09-24T05:14:25Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Comments written immediately after a change tend to argue with the version they
+      replaced, because that argument is what was in the writer's head. It is invisible
+      to everyone else: the reader has the current tree and, after a squash, a history
+      that does not contain the intermediate states at all. The sentence meant to
+      justify the code costs the reader time instead.
+    proposal: >-
+      A comment says what the construction is and why it is that way. Where the reason
+      genuinely is the thing it replaced, that belongs in the commit message, which is
+      where a reader looking for history will be. Not a rule, since no predicate can
+      read prose, so it goes into CLAUDE.md where the conventions are.
+    target: CLAUDE.md

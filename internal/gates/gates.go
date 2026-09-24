@@ -226,8 +226,8 @@ func schema(c Ctx) model.Check {
 	// Section 4 lists digest.md among the files every phase directory holds, and no
 	// other gate looks for it: G-Learning guards learning.yaml, G-Freshness guards
 	// context.lock.yaml from P1, and cost.yaml is deliberately unguarded because it may
-	// arrive after the gate ran. Absent this check a phase finished without its digest
-	// was green, which is a verdict on a phase that is not complete.
+	// arrive after the gate ran. Without this check a phase finished without its digest
+	// is green, which is a verdict on a phase that is not complete.
 	dig := dir + "/digest.md"
 	if !fm.Exists(c.abs(dig)) {
 		fs = append(fs, finding(dig, "digest.md is missing", "write the digest of the session; a phase without one is incomplete"))
