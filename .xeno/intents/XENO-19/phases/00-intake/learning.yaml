@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#19
+phase: 00-intake
+created: 2026-09-24T18:11:27Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      An explanation written into a document to save the next reader a derivation is a
+      claim about the world, and it ages like any other. The note in SUPPLY-CHAIN.md
+      about the missing `go` directive was written two changes before the change that
+      invalidates it, and only the habit of reading the dependency's go.mod before
+      acting caught it.
+    proposal: >-
+      Where a document explains why something in the tree looks the way it does, the
+      thing it explains is named precisely enough to be greppable, so that a change to
+      it finds the explanation. Here that is the dependency path, which the correction
+      keeps.
+    target: SUPPLY-CHAIN.md

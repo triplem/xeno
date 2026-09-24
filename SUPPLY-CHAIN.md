@@ -9,11 +9,14 @@ One module, vendored under `vendor/`, so a build fetches nothing:
 
 | Module | Version | Licence |
 |---|---|---|
-| `gopkg.in/yaml.v3` | v3.0.1 | Apache-2.0, MIT |
+| `go.yaml.in/yaml/v3` | v3.0.5 | MIT, Apache-2.0 |
 
-Its own `go.mod` declares no `go` directive, which is why `vendor/modules.txt` records
-it as `## explicit` with no version annotation. That line describes the dependency and
-not this module, so it does not move when the `go` directive here does.
+`vendor/modules.txt` records it as `## explicit; go 1.16`. That annotation is the `go`
+directive of the dependency, not of this module, so it does not move when the directive
+in `go.mod` here does.
+
+`go.sum` carries its checksums. A vendored build does not consult it, so it is a record
+rather than a gate, and `go mod verify` is what reads it.
 
 Each release carries a CycloneDX bill of materials generated from the shipped binary
 rather than from `go.mod`, so it records what the artifact contains and not what the
