@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#11
+phase: 00-intake
+created: 2026-09-24T20:04:36Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c7abd5d
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two plausible scan targets differed in exactly the thing the project had just
+      spent a change on. The Go toolchain was raised because an unsupported version
+      stops receiving vulnerability patches, and only one of the two targets can see the
+      toolchain at all. Running both took two minutes and settled a question that would
+      otherwise have been decided by whichever argument sounded better.
+    proposal: >-
+      Where a choice is between tools or targets that can both be run, run them and
+      compare what they report, rather than reasoning about what they should report. The
+      cost is minutes and the alternative is a decision nobody can check.
+    target: CLAUDE.md

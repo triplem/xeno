@@ -1,0 +1,18 @@
+# The threshold lives here and not in a gate. A scanner is evidence in this process:
+# no gate evaluates its findings, and what stops a merge is the pipeline failing on the
+# run. The trail gains that a scan ran, which one, on what, and what it returned.
+scan:
+  scanners:
+    - vuln
+
+severity:
+  - HIGH
+  - CRITICAL
+
+vulnerability:
+  # A finding with no fix available blocks work that nobody can do, and a check that
+  # fires without a possible response is one people learn to route around. Those
+  # findings stay in the report; they do not stop the job.
+  ignore-unfixed: true
+
+exit-code: 1

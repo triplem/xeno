@@ -1,0 +1,50 @@
+# The vulnerability scan. It is its own workflow because it answers a different question
+# than the verify does, on a different schedule: the verify asks whether a change is
+# consistent, this asks whether what the release carries is known to be vulnerable, and
+# that answer changes without anything here changing.
+#
+# It scans the built binary and not the source tree. Measured rather than argued: a
+# binary scan reports the Go standard library with its version, a source scan reports
+# only the declared dependency. The toolchain is half of what this project is exposed
+# to, and it is the half that moved to 1.27 because an unsupported one stops receiving
+# patches.
+#
+# No gate reads the report. A scanner is evidence in this process, its threshold lives
+# in trivy.yaml, and what stops a merge is this job failing.
+#
+# Every action is pinned to a commit sha and every tool to an exact version;
+# SUPPLY-CHAIN.md says which and why.
+name: trivy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # A vulnerability is found after the code is written, so the scheduled run is the one
+    # that does the work; the others only keep a new one from arriving. Off the hour,
+    # which is what GitHub asks of a cron that does not need to be there.
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # What is scanned is what is shipped, so it has to exist first.
+      - name: build what is scanned
+        run: go build -o xeno ./cmd/xeno
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.74.0
+          scan-type: rootfs
+          scan-ref: xeno
+          trivy-config: trivy.yaml

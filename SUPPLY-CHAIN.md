@@ -51,6 +51,9 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `@semantic-release/git` | 11.0.1 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
+| `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25`, v0.36.0 | github.com |
+| `trivy` | v0.74.0 | github.com |
+| trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
@@ -62,6 +65,10 @@ records its own generator together with that generator's hashes, and the run log
 the version of semantic-release that ran. This table is therefore a convenience and the
 release is the record; where the two disagree, the release is right.
 
+**The vulnerability database is the one row that cannot be pinned.** A scan answers
+what is known today, so a database fixed at a version would answer what was known when
+somebody fixed it, which is the opposite of the question. It is fetched on every run.
+
 ## What this does not yet answer
 
 The plan targets a self managed GitLab whose runners may have no route to the public
@@ -71,7 +78,9 @@ internet:
 > toolchains from the public internet at build time and makes the dependency mirror part
 > of the bootstrap rather than an afterthought.
 
-Every row of the second table above is such a fetch. For each of them the instance needs
+Every row of the second table above is such a fetch, and one of them, the vulnerability
+database, is fetched on every run rather than pinned. Trivy supports an air gapped form
+of it, which is the shape that question takes here. For each of them the instance needs
 an answer — mirrored, pre-installed on the runner image, or dropped — and none of those
 can be decided without the instance. Neither can the module proxy question for a
 repository that vendors everything and has no `go.sum`.
