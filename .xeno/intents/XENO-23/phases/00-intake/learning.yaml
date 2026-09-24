@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#23
+phase: 00-intake
+created: 2026-09-24T18:38:58Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A correction applied to one kind of file does not reach the others. #13 took the
+      habit of narrating a superseded state out of the comments, read every comment in
+      the repository to do it, and did not read the documents. The same habit was
+      written into SUPPLY-CHAIN.md two changes later, by the same hand, in a paragraph
+      that begins "The three that were behind their current major were upgraded
+      afterwards".
+    proposal: >-
+      When a convention about how something is written is adopted, the sweep covers
+      every kind of file it applies to, not the kind that prompted it. Prose in a
+      document is as readable by a stranger as a comment in a workflow, and ages the
+      same way.
+    target: CLAUDE.md
