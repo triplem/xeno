@@ -3,6 +3,18 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.9.0](https://github.com/triplem/xeno/compare/v0.8.0...v0.9.0) (2026-09-24)
+
+
+### Bug Fixes
+
+* **ci:** refuse a description that would switch the run off ([#29](https://github.com/triplem/xeno/issues/29)) ([2c75cd4](https://github.com/triplem/xeno/commit/2c75cd45f6e57b033613c312db5f3bb53e186197)), closes [#27](https://github.com/triplem/xeno/issues/27) [#16](https://github.com/triplem/xeno/issues/16) [#28](https://github.com/triplem/xeno/issues/28)
+
+
+### Features
+
+* **runner:** close an abandoned intent, and check one commit message ([#27](https://github.com/triplem/xeno/issues/27)) ([c7abd5d](https://github.com/triplem/xeno/commit/c7abd5da00e604da4b8eb8f448acf52c76cf92aa)), closes [#7](https://github.com/triplem/xeno/issues/7) [#8](https://github.com/triplem/xeno/issues/8) [#7](https://github.com/triplem/xeno/issues/7) [#7](https://github.com/triplem/xeno/issues/7)
+
 # [0.8.0](https://github.com/triplem/xeno/compare/v0.7.0...v0.8.0) (2026-09-24)
 
 
