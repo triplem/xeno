@@ -9,11 +9,25 @@ One module, vendored under `vendor/`, so a build fetches nothing:
 
 | Module | Version | Licence |
 |---|---|---|
-| `gopkg.in/yaml.v3` | v3.0.1 | Apache-2.0, MIT |
+| `go.yaml.in/yaml/v3` | v3.0.5 | MIT, Apache-2.0 |
 
-Its own `go.mod` declares no `go` directive, which is why `vendor/modules.txt` records
-it as `## explicit` with no version annotation. That line describes the dependency and
-not this module, so it does not move when the `go` directive here does.
+`vendor/modules.txt` records it as `## explicit; go 1.16`. That annotation is the `go`
+directive of the dependency, not of this module, so it does not move when the directive
+in `go.mod` here does.
+
+It is load bearing rather than cosmetic. Go compiles each module under its own declared
+language version, so this package's files are built with 1.16 semantics and ours with
+1.27, in one build and one binary. For this package that means no generics and the loop
+variable behaviour from before 1.22, which is what its code was written against. A
+dependency declaring a version below ours is never a constraint on us; one declaring a
+version above ours would be, and could not be built at all.
+
+What it does not say is whether the module is patched. That follows from its version and
+from somebody maintaining it, and the YAML organisation took this package over after
+go-yaml was marked unmaintained in April 2025, which is why it is the one vendored here.
+
+`go.sum` carries its checksums. A vendored build does not consult it, so it is a record
+rather than a gate, and `go mod verify` is what reads it.
 
 Each release carries a CycloneDX bill of materials generated from the shipped binary
 rather than from `go.mod`, so it records what the artifact contains and not what the
@@ -37,9 +51,9 @@ exact version for a tool. A tag can be repointed by whoever owns it, and
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
 
-**The versions are the ones that produced v0.4.0**, read from that run's log and from the
-bill of materials it published, rather than whichever were newest on the day this was
-written. What is wanted is the set that demonstrably works.
+**The versions are the ones that produced v0.4.0**, read from that run's log and from
+the bill of materials it published, rather than whichever were newest on the day this
+was written. What is wanted is the set that demonstrably works.
 
 Three of the four actions are behind their current major, and two carry a Node 20
 deprecation warning. Upgrading is its own change: a run that both pins and upgrades

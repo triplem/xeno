@@ -223,7 +223,7 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 			} else if strings.HasPrefix(plain, "-0b") {
 				intv, err := strconv.ParseInt("-"+plain[3:], 2, 64)
 				if err == nil {
-					if intv == int64(int(intv)) {
+					if true || intv == int64(int(intv)) {
 						return intTag, int(intv)
 					} else {
 						return intTag, intv

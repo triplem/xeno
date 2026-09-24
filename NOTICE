@@ -3,5 +3,6 @@ Copyright 2026 conet Deutschland GmbH
 
 This product is licensed under the Apache License, Version 2.0, found in LICENSE.
 
-It includes gopkg.in/yaml.v3, vendored under vendor/, which carries its own licence
-and notice files in that directory.
+It includes go.yaml.in/yaml/v3, vendored under vendor/, which carries its own licence
+and notice files in that directory. That package is dual licensed, MIT and Apache 2.0,
+and is copyright 2011-2016 Canonical Ltd.
