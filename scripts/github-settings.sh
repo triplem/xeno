@@ -5,10 +5,10 @@
 #
 #     scripts/github-settings.sh [owner/repo]
 #
-# The convention puts the issue reference in the footer rather than in the subject, and
-# a footer survives a squash only where the squashed message is built from the pull
-# request description. Without these two settings the reference is lost at the merge,
-# which is worse than any of the placements considered before it.
+# The convention puts the issue reference in the footer, and a footer survives a squash
+# only where the squashed message is built from the pull request description. Without
+# these settings the reference is lost at the merge, and the trail loses the one link it
+# exists to keep.
 #
 # A setting is not a commit, so it is not covered by any gate and nobody notices it
 # drifting. This script exists so that it is at least written down in the repository and
