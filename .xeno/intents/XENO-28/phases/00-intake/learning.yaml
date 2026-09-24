@@ -1,0 +1,31 @@
+intent: github.com/triplem/xeno#28
+phase: 00-intake
+created: 2026-09-24T19:51:40Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+fce3d0f.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A pull request description is read by everything that reads commit messages, and
+      that was understood for one keyword and not for the rest. `Closes #N` is used
+      there deliberately; a marker quoted as an example switched off the run that would
+      have verified the merge. The same text is prose to its writer and an instruction
+      to a machine, and only one of those was in view.
+    proposal: >-
+      Where a description carries strings that a machine acts on, the ones that are
+      wanted are used and the ones that are not are described rather than quoted, and a
+      check refuses the rest before the merge. Generally: text that two readers
+      interpret differently needs the machine reader considered first, because it acts
+      without asking.
+    target: .xeno/config/rules/learned/project/description-is-a-commit-message.yaml
+  - category: project-convention
+    observation: >-
+      Four things were checked before the commit message was read: whether the workflows
+      were disabled, whether Actions was switched off, whether the push had arrived, and
+      whether a minutes quota was exhausted. The artifact that carried the answer was the
+      one the change itself produced.
+    proposal: >-
+      When a run does not happen, read what the run would have read before looking at the
+      machinery around it.
+    target: CLAUDE.md
