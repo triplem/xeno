@@ -67,7 +67,22 @@ release is the record; where the two disagree, the release is right.
 
 **The vulnerability database is the one row that cannot be pinned.** A scan answers
 what is known today, so a database fixed at a version would answer what was known when
-somebody fixed it, which is the opposite of the question. It is fetched on every run.
+somebody fixed it, which is the opposite of the question. It is fetched on every run,
+and it is built upstream on a 24 hour cycle, which the daily scan is aligned with.
+
+It is also the one row where being cut off from the network is not the interesting
+question. `--db-repository` takes a list of OCI repositories and the database is an OCI
+artifact, so an instance mirrors it into the registry WP0 already requires as a channel.
+**Currency is then the mirror's sync cadence and not a property of the air gap**:
+mirrored daily it is as fresh as fetching it directly, mirrored weekly it is up to seven
+days blind. That is a number somebody chooses, and it belongs wherever the scan result
+is read.
+
+Two things follow from the database being data rather than code. The case for letting it
+through a gap is a different case from the one for a toolchain, since nothing in it is
+executed. And a scan is evidence in this process, which does not have to be produced on
+the instance's own runner: it can be produced where there is a route out and bound in by
+`uri` and `sha256` like any other evidence item.
 
 ## What this does not yet answer
 
@@ -78,9 +93,17 @@ internet:
 > toolchains from the public internet at build time and makes the dependency mirror part
 > of the bootstrap rather than an afterthought.
 
-Every row of the second table above is such a fetch, and one of them, the vulnerability
-database, is fetched on every run rather than pinned. Trivy supports an air gapped form
-of it, which is the shape that question takes here. For each of them the instance needs
+Every row of the second table above is such a fetch. The vulnerability database is the
+one that is fetched on every run rather than pinned, and the paragraph above says what
+the question becomes for it: a mirror and its cadence, not an air gap.
+
+One gap is open regardless of how the database arrives. **A Trivy report records when
+the scan ran and not when its database was built**, so a report cannot be judged for
+coverage from itself. `UpdatedAt` sits in the cache's `metadata.json` and nowhere in the
+output. Where the report becomes a declared `kind: scan` item, that value belongs
+beside
+`produced_by` and `result`, or the trail records that a scan ran without recording what
+it could have known. For each of them the instance needs
 an answer — mirrored, pre-installed on the runner image, or dropped — and none of those
 can be decided without the instance. Neither can the module proxy question for a
 repository that vendors everything and has no `go.sum`.
