@@ -256,6 +256,19 @@ type Gate struct {
 	Checks        []Check `yaml:"checks"`
 }
 
+// Intent is intent.yaml. The field order is the one the file already has, so that
+// rewriting it at close does not reorder a file that sits inside the intent level hash.
+type Intent struct {
+	Intent        string `yaml:"intent"`
+	Key           string `yaml:"key"`
+	Status        string `yaml:"status"`
+	Reason        string `yaml:"reason,omitempty"`
+	Created       string `yaml:"created"`
+	SchemaVersion string `yaml:"schema_version,omitempty"`
+	RunnerVersion string `yaml:"runner_version"`
+	PluginVersion string `yaml:"plugin_version"`
+}
+
 // Project is the part of project.yaml the core reads.
 type Project struct {
 	Evidence struct {

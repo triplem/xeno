@@ -432,3 +432,54 @@ func (r *Runner) rewriteStatus(key, phase string, g *model.Gate) (*model.Gate, e
 	g.Status = status
 	return g, fm.WriteYAML(r.abs(model.PhaseDir(key, phase)+"/gate.yaml"), g)
 }
+
+// IntentClose ends an intent that was dropped rather than merged.
+//
+// It exists because an intent abandoned in P1 never reaches P5 and would otherwise meet
+// no gate at all. A merged intent needs no such command: G-Complete has already run as
+// part of P5, where it has to run, since a gate that reports after the merge cannot gate
+// it.
+//
+// The order is: record what the person asserted, then judge it. intent.yaml sits inside
+// the intent level hash, so it is written before the hash is taken, and the gate reads
+// the file rather than the argument, because a gate that trusts its caller checks
+// nothing. A failing verdict is written rather than refused, the same as phase finish:
+// the intent is abandoned either way and the record says what is missing.
+func (r *Runner) IntentClose(key, reason string) (*model.Gate, error) {
+	if strings.TrimSpace(reason) == "" {
+		return nil, refuse("--reason is required: why something was dropped is usually worth more than why it was built")
+	}
+	rel := model.IntentDir(key) + "/intent.yaml"
+	var in model.Intent
+	if err := fm.ReadYAML(r.abs(rel), &in); err != nil {
+		return nil, refuse("%s cannot be read: %v", rel, err)
+	}
+	if in.Status == "abandoned" {
+		return nil, refuse("%s is already abandoned: %s", key, in.Reason)
+	}
+	in.Status = "abandoned"
+	in.Reason = reason
+	if err := fm.WriteYAML(r.abs(rel), in); err != nil {
+		return nil, err
+	}
+
+	h, err := hashing.DirHash(r.Root, model.IntentDir(key), hashing.IntentExcluded)
+	if err != nil {
+		return nil, err
+	}
+	check := gates.CompleteOnClose(r.Root, key)
+	status, err := gates.Status([]model.Check{check})
+	if err != nil {
+		return nil, err
+	}
+	g := &model.Gate{
+		Common: model.Common{
+			Intent: in.Intent, Created: r.stamp(),
+			SchemaVersion: model.SchemaVersion,
+			RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+		},
+		Status: status, RunAt: r.stamp(), ArtifactsHash: h,
+		Checks: []model.Check{check},
+	}
+	return g, fm.WriteYAML(r.abs(model.IntentDir(key)+"/gate.yaml"), g)
+}

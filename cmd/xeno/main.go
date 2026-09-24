@@ -9,10 +9,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/triplem/xeno/internal/evidence"
+	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/runner"
 )
@@ -27,6 +29,8 @@ const usage = `usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  --intent KEY
+  xeno intent close   --intent KEY --reason TEXT
+  xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno version
 common: --root DIR (default .)`
 
@@ -59,11 +63,13 @@ func run(args []string) int {
 	from := fs.String("evidence-from", "", "directory standing in for the pipeline artifact store")
 	src := fs.String("from", "", "directory standing in for the pipeline artifact store")
 	by := fs.String("by", "", "the person deciding")
+	pattern := fs.String("pattern", "conventional-commits", "a shipped pattern name")
+	file := fs.String("file", "", "the message to read, or stdin when absent")
 	reason := fs.String("reason", "", "why")
 	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
-	if *key == "" && cmd != "gate verify" {
+	if *key == "" && cmd != "gate verify" && cmd != "check commit-message" {
 		fmt.Fprintln(os.Stderr, "--intent is required")
 		return 2
 	}
@@ -71,7 +77,9 @@ func run(args []string) int {
 	r.EvidenceFrom = *from
 
 	phase := ""
-	if cmd != "intent status" && cmd != "gate verify" {
+	switch cmd {
+	case "intent status", "intent close", "gate verify", "check commit-message":
+	default:
 		p, err := model.ResolvePhase(*phaseArg)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -81,6 +89,19 @@ func run(args []string) int {
 	}
 
 	switch cmd {
+	case "check commit-message":
+		message, err := readMessage(*file)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		if err := gates.CheckMessage(*pattern, message); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return 0
+	case "intent close":
+		return report(r.IntentClose(*key, *reason))
 	case "phase start":
 		return report(nil, r.Start(*key, phase))
 	case "phase finish":
@@ -138,6 +159,17 @@ func run(args []string) int {
 	}
 	fmt.Fprintln(os.Stderr, usage)
 	return 2
+}
+
+// readMessage takes the message from a file, which is what a commit-msg hook has, or
+// from stdin, which is what a pipe has.
+func readMessage(path string) (string, error) {
+	if path != "" {
+		b, err := os.ReadFile(path)
+		return string(b), err
+	}
+	b, err := io.ReadAll(os.Stdin)
+	return string(b), err
 }
 
 func report(g *model.Gate, err error) int {
