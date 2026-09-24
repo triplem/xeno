@@ -54,6 +54,8 @@ func (f *fixture) output(phase, extra string) {
 	f.write(d+"/learning.yaml", common+"no_finding: true\n")
 }
 
+func (f *fixture) must2(_ *model.Gate, err error) { f.t.Helper(); f.must(err) }
+
 func (f *fixture) must(err error) {
 	f.t.Helper()
 	if err != nil {
@@ -471,5 +473,129 @@ func TestKeyMustMatchItsDirectory(t *testing.T) {
 	var ref *Refusal
 	if err := f.r.Start(key, "00-intake"); !errors.As(err, &ref) {
 		t.Fatalf("an intent.yaml naming another key was accepted: %v", err)
+	}
+}
+
+// ---- WP7: the commands that write a decision
+
+// findingOf returns the first failing finding of a phase, which is what a person would
+// be deciding about.
+func (f *fixture) findingOf(phase string) string {
+	f.t.Helper()
+	g, err := f.r.readGate(key, phase)
+	f.must(err)
+	for _, ch := range g.Checks {
+		if len(ch.Findings) > 0 {
+			return ch.Findings[0].ID
+		}
+	}
+	f.t.Fatal("no finding to decide about")
+	return ""
+}
+
+// redPhase produces a phase with one failing finding: a file Xeno did not write.
+func (f *fixture) redPhase(phase string) string {
+	f.t.Helper()
+	f.must(f.r.Start(key, phase))
+	f.output(phase, "")
+	f.write(model.PhaseDir(key, phase)+"/stray.txt", "x")
+	if g := f.finish(phase); g.Status != "red" {
+		f.t.Fatalf("expected a red phase, got %s", g.Status)
+	}
+	return f.findingOf(phase)
+}
+
+func TestApprovalTurnsRedIntoApprovedAndRecordsWhatItJudged(t *testing.T) {
+	f := newFixture(t)
+	id := f.redPhase("00-intake")
+	before := f.hash("00-intake")
+
+	g, err := f.r.Decide(key, "00-intake", id, "approved", "a person", "assessed and accepted")
+	f.must(err)
+	if g.Status != "approved" {
+		t.Fatalf("status %s, want approved", g.Status)
+	}
+	d := findFinding(g, id).Decision
+	if d == nil || d.By != "a person" || d.Reason != "assessed and accepted" {
+		t.Fatalf("decision not recorded: %+v", d)
+	}
+	if d.Against != before {
+		t.Fatalf("against is %s, want the hash that was judged, %s", d.Against, before)
+	}
+	if d.Obligation != "" {
+		t.Fatal("an approval owes nothing and must carry no obligation")
+	}
+	// gate.yaml is outside artifacts_hash, so deciding must not move it.
+	if after := f.hash("00-intake"); after != before {
+		t.Fatalf("deciding changed the artifacts_hash, %s to %s", before, after)
+	}
+}
+
+func TestOverrideCarriesAnOpenObligationUntilItIsClosed(t *testing.T) {
+	f := newFixture(t)
+	id := f.redPhase("00-intake")
+
+	g, err := f.r.Decide(key, "00-intake", id, "overridden", "a person", "production incident")
+	f.must(err)
+	if g.Status != "overridden" {
+		t.Fatalf("status %s, want overridden", g.Status)
+	}
+	if o := findFinding(g, id).Decision.Obligation; o != "open" {
+		t.Fatalf("obligation %q, want open", o)
+	}
+	g, err = f.r.CloseObligation(key, "00-intake", id)
+	f.must(err)
+	if o := findFinding(g, id).Decision.Obligation; o != "closed" {
+		t.Fatalf("obligation %q, want closed", o)
+	}
+	if g.Status != "overridden" {
+		t.Fatalf("status %s: closing what was owed does not unmake the override", g.Status)
+	}
+}
+
+// D-6. The decision carries the hash it was made on, so there has to be one.
+func TestDecidingOnAStaleVerdictIsRefused(t *testing.T) {
+	f := newFixture(t)
+	id := f.redPhase("00-intake")
+	f.write(model.PhaseDir(key, "00-intake")+"/output.md", "---\nintent: x\n---\nedited outside the runner\n")
+
+	_, err := f.r.Decide(key, "00-intake", id, "approved", "a person", "why not")
+	var refusal *Refusal
+	if !errors.As(err, &refusal) {
+		t.Fatalf("expected a refusal, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "changed after it was judged") {
+		t.Fatalf("the refusal does not say why: %v", err)
+	}
+}
+
+// An obligation is closed after the artifacts exist, so the phase has moved by then.
+// The check that refuses a stale decision must not refuse this.
+func TestClosingAnObligationSurvivesAChangedPhase(t *testing.T) {
+	f := newFixture(t)
+	id := f.redPhase("00-intake")
+	f.must2(f.r.Decide(key, "00-intake", id, "overridden", "a person", "incident"))
+	f.write(model.PhaseDir(key, "00-intake")+"/output.md", "---\nintent: x\n---\nthe artifacts that were owed\n")
+
+	g, err := f.r.CloseObligation(key, "00-intake", id)
+	f.must(err)
+	if o := findFinding(g, id).Decision.Obligation; o != "closed" {
+		t.Fatalf("obligation %q, want closed", o)
+	}
+}
+
+func TestADecisionIsMadeOnceAndNeedsAPersonAndAReason(t *testing.T) {
+	f := newFixture(t)
+	id := f.redPhase("00-intake")
+
+	if _, err := f.r.Decide(key, "00-intake", id, "approved", "", "a reason"); err == nil {
+		t.Fatal("a decision without a person was accepted")
+	}
+	if _, err := f.r.Decide(key, "00-intake", id, "approved", "a person", ""); err == nil {
+		t.Fatal("a decision without a reason was accepted")
+	}
+	f.must2(f.r.Decide(key, "00-intake", id, "approved", "a person", "assessed"))
+	if _, err := f.r.Decide(key, "00-intake", id, "overridden", "somebody else", "changed my mind"); err == nil {
+		t.Fatal("a second decision replaced the first")
 	}
 }

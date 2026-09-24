@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/triplem/xeno/internal/evidence"
 	"github.com/triplem/xeno/internal/model"
@@ -20,6 +21,9 @@ const usage = `usage:
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
   xeno phase finish   --intent KEY --phase NN
   xeno gate run       --intent KEY --phase NN [--evidence-from DIR]
+  xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
+  xeno gate override  FINDING --intent KEY --phase NN --by WHO --reason TEXT
+  xeno obligation close FINDING --intent KEY --phase NN
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  --intent KEY
@@ -38,13 +42,25 @@ func run(args []string) int {
 		return 2
 	}
 	cmd := args[0] + " " + args[1]
+
+	// A finding id stands before the flags, as the process definition writes these
+	// commands. Go's flag package stops at the first argument that is not a flag, so it
+	// is taken off the front rather than read back out afterwards.
+	finding := ""
+	rest := args[2:]
+	if len(rest) > 0 && !strings.HasPrefix(rest[0], "-") {
+		finding, rest = rest[0], rest[1:]
+	}
+
 	fs := flag.NewFlagSet(cmd, flag.ContinueOnError)
 	root := fs.String("root", ".", "repository root")
 	key := fs.String("intent", "", "intent key")
 	phaseArg := fs.String("phase", "", "phase id or number")
 	from := fs.String("evidence-from", "", "directory standing in for the pipeline artifact store")
 	src := fs.String("from", "", "directory standing in for the pipeline artifact store")
-	if err := fs.Parse(args[2:]); err != nil {
+	by := fs.String("by", "", "the person deciding")
+	reason := fs.String("reason", "", "why")
+	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
 	if *key == "" && cmd != "gate verify" {
@@ -71,6 +87,12 @@ func run(args []string) int {
 		return report(r.Finish(*key, phase))
 	case "gate run":
 		return report(r.GateRun(*key, phase))
+	case "gate approve":
+		return report(r.Decide(*key, phase, finding, "approved", *by, *reason))
+	case "gate override":
+		return report(r.Decide(*key, phase, finding, "overridden", *by, *reason))
+	case "obligation close":
+		return report(r.CloseObligation(*key, phase, finding))
 	case "evidence attach":
 		a, p, err := evidence.Attach(*root, *key, phase, *src)
 		if err != nil {

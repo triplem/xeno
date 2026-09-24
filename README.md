@@ -10,6 +10,9 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     xeno phase start     --intent KEY --phase NN [--evidence-from DIR]
     xeno phase finish    --intent KEY --phase NN
     xeno gate run        --intent KEY --phase NN [--evidence-from DIR]
+    xeno gate approve    FINDING --intent KEY --phase NN --by WHO --reason TEXT
+    xeno gate override   FINDING --intent KEY --phase NN --by WHO --reason TEXT
+    xeno obligation close FINDING --intent KEY --phase NN
     xeno gate verify     [--intent KEY]
     xeno evidence attach --intent KEY --phase NN --from DIR
     xeno intent status   --intent KEY
@@ -34,7 +37,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP1 | hashing to Appendix B, finding ids, derived status, decisions carried forward by id, the sealed invariant, the four field sets over frontmatter and YAML alike, `schema_version` read rather than enforced backwards, no decision carried forward for an external finding, a development build naming the commit it came from | `hashing_test`, `TestDecisionCarriesForward…`, `TestNoCommandButFinish…`, `TestDecisionSurvivesForXenoAndNeverFor…`, `gates/schema_test` against `gates/testdata`, `model/version_test` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…` |
-| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5 | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…` |
+| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…` |
 
 Two deliberate mutations were run against the suite, removing the sequence check and
 letting attachment write into a sealed artifact; both were caught.
