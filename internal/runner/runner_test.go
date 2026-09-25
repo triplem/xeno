@@ -783,3 +783,80 @@ func TestAnUnknownSectionIsRefusedWithWhatThereIs(t *testing.T) {
 		t.Errorf("the refusal does not say what the template has: %v", err)
 	}
 }
+
+// ---- WP6: a scan report from the pipeline attaches
+
+// scanArtifact builds the directory the scan workflows upload: the report, the
+// database metadata that travels with it, and the manifest naming both.
+func (f *fixture) scanArtifact(result string) string {
+	dir := filepath.Join(f.t.TempDir(), "scan-trivy")
+	_ = os.MkdirAll(dir, 0o755)
+	os.WriteFile(filepath.Join(dir, "trivy.json"), []byte("{\"Results\":[]}\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "db-metadata.json"),
+		[]byte("{\"UpdatedAt\":\"2026-09-25T06:17:00Z\"}\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
+		"- kind: scan\n  job: trivy\n  result: "+result+"\n  file: trivy.json\n"+
+			"  pipeline: \"4711\"\n  commit: abc123\n"+
+			"- kind: other\n  job: trivy-db\n  file: db-metadata.json\n"+
+			"  pipeline: \"4711\"\n  commit: abc123\n"), 0o644)
+	return dir
+}
+
+const pendingScan = "evidence:\n  - kind: scan\n    job: trivy\n  - kind: other\n    job: trivy-db\n"
+
+func TestAScanReportFromThePipelineAttachesWithItsDatabaseAge(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases[:4] {
+		f.run(p, "")
+	}
+	f.must(f.r.Start(key, "04-verification"))
+	f.output("04-verification", pendingScan)
+	if g := f.finish("04-verification"); check(g, "G-Evidence").Result != "pending" {
+		t.Fatalf("a declared scan that the pipeline has not produced is not pending")
+	}
+
+	// A failing scan is still evidence: the job's own result is recorded, and no gate
+	// judges it.
+	f.r.EvidenceFrom = f.scanArtifact("fail")
+	f.must(f.r.Start(key, "05-review"))
+
+	g, err := f.r.readGate(key, "04-verification")
+	f.must(err)
+	if g.Status != "green" || check(g, "G-Evidence").Result != "pass" {
+		t.Fatalf("attached scan did not resolve: %s, %s", g.Status, check(g, "G-Evidence").Result)
+	}
+
+	var att []model.Attached
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "04-verification"),
+		"evidence", "attached.yaml"), &att))
+	if len(att) != 2 {
+		t.Fatalf("expected the report and its database metadata, got %d", len(att))
+	}
+	if att[0].Result != "fail" {
+		t.Fatalf("the scanner's own result was not carried: %q", att[0].Result)
+	}
+	for _, a := range att {
+		if a.SHA256 == "" || a.Path == "" {
+			t.Fatalf("attached item is not bound: %+v", a)
+		}
+	}
+}
+
+// The manifest above is written by the workflows, not by the runner, so the shape the
+// test relies on is read back out of them rather than assumed to still match.
+func TestTheScanWorkflowsWriteTheManifestThisExpects(t *testing.T) {
+	for _, c := range []struct{ file, job, report string }{
+		{"trivy.yml", "trivy", "trivy.json"},
+		{"semgrep.yml", "semgrep", "semgrep.json"},
+	} {
+		b, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", c.file))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{"kind: scan", "job: " + c.job, "file: " + c.report} {
+			if !strings.Contains(string(b), want) {
+				t.Errorf("%s no longer writes %q", c.file, want)
+			}
+		}
+	}
+}
