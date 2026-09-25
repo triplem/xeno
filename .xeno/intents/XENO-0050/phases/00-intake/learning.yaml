@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#50
+phase: 00-intake
+created: 2026-09-25T21:01:25Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+9f4b620
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      Two issues were reported as waiting on a later package when their remaining
+      criterion was implementable at once. The label said wp6 and the label was taken
+      for the answer; the issue body said the opposite in as many words, and the
+      workflows settled it in a minute.
+    proposal: >-
+      Before saying an issue is blocked, read its acceptance criteria against the
+      tree. A label routes work, it does not report the state of it.
+    target: CLAUDE.md
