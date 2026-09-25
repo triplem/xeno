@@ -87,6 +87,10 @@ jobs:
       # be judged for its coverage from itself. The file travels along as its own item.
       # That is a workaround for a field the process definition does not have, and #11
       # carries the question of where the value should live.
+      #
+      # The cache is not under HOME. The action sets TRIVY_CACHE_DIR to a directory in
+      # the workspace, which is what the first run of this step found out by looking in
+      # the wrong place and uploading a report whose age nobody could read.
       - name: declare what this run produced
         if: always()
         run: |
@@ -107,20 +111,21 @@ jobs:
             echo "  commit: ${{ github.sha }}"
           } > "$out/manifest.yaml"
 
-          db=$(find "$HOME/.cache/trivy" -name metadata.json 2>/dev/null | head -1)
-          if [ -n "$db" ]; then
-            cp "$db" "$out/db-metadata.json"
-            {
-              echo "- kind: other"
-              echo "  job: trivy-db"
-              echo "  file: db-metadata.json"
-              echo "  pipeline: \"${{ github.run_id }}\""
-              echo "  commit: ${{ github.sha }}"
-            } >> "$out/manifest.yaml"
-          else
-            echo "no database metadata found under $HOME/.cache/trivy" >&2
-          fi
-          cat "$out/manifest.yaml"
+          cache="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"
+          db=$(find "$cache" "$HOME/.cache/trivy" -name metadata.json 2>/dev/null \
+               | head -1)
+          # A report whose database age cannot be read is the gap #11 names, so this
+          # is loud rather than skipped.
+          test -n "$db"
+          cp "$db" "$out/db-metadata.json"
+          {
+            echo "- kind: other"
+            echo "  job: trivy-db"
+            echo "  file: db-metadata.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } >> "$out/manifest.yaml"
+          cat "$out/manifest.yaml" "$out/db-metadata.json"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
