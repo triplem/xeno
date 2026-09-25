@@ -23,7 +23,7 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A15 | `.gitattributes` fixes LF for every text file | the hash normalises CRLF, other tools do not; WP0 asks for fixed line endings without saying which | `.gitattributes` | open |
 | A16 | Source files carry only `SPDX-License-Identifier`, no per file copyright line | WP0 names the identifier and nothing more; the copyright line lives in `NOTICE` | `*.go` | open |
 | A17 | The copyright wording in `NOTICE` and the security contact are placeholders | both are for legal or the maintainer to fix, not for the build | `NOTICE`, `SECURITY.md` | open |
-| A18 | ~~The module path moves to a self managed GitLab instance once it exists~~ | **void.** GitHub is the target host (#36), so `github.com/triplem/xeno` is the module path rather than an interim one, and the second thing bound to the host stops being a debt | `go.mod` | **closed, not done**: there is no move to schedule it for |
+| A18 | ~~The module path moves to another host once one exists~~ | **void.** GitHub is the target host (#36), so `github.com/triplem/xeno` is the module path rather than an interim one, and the second thing bound to the host stops being a debt | `go.mod` | **closed, not done**: there is no move to schedule it for |
 | A19 | G-Schema requires `digest.md` and nothing else beyond `output.md`; `context.lock.yaml` stays with G-Freshness and `learning.yaml` with G-Learning, and `cost.yaml` is required by no gate | section 4 lists six files per phase, but two of them cannot be required today: `cost.yaml` may arrive after the gate ran and its writer is WP13, and a second gate reporting a file another one already names would give one cause two findings | `internal/gates` | open, explained; `context.lock.yaml` is unguarded at P0, where G-Freshness returns early and there is no predecessor to compare against |
 | A20 | An intent that runs P0 only is the intended shape between M0 and WP8, and nothing marks it finished | `M0.md` runs one intake per work package and stops there deliberately, because G-Freshness is half implemented until WP8 (A6) and no phase beyond P0 can be judged honestly; `in-progress` is in any case what every merged intent carries, since the process definition has no `merged` status by design and says so | `.xeno/intents/*/intent.yaml`, `M0.md` | explained, intended, no action; the same honesty as `not-implemented` and `by-hand`, and the one cost is that these intents read as stalled to anyone who has not found `M0.md`, which is why the README now points at it |
 | A21 | The release runs on semantic-release, brought in as a GitHub Action, with `.releaserc.json` in the repository | WP0 wants version, tag, changelog and release derived from the commit history, and a standard tool does that better than three shell scripts; as an action it is not a dependency of this project, so a Go repository with one vendored library grows no `package.json` and no Node tree | `.github/workflows/release.yml`, `.releaserc.json` | approved; `.releaserc.json` would move to another host unchanged through its own semantic-release job, which is why it lives in the repository rather than in workflow inputs, and is now portability rather than a scheduled move |
@@ -99,8 +99,8 @@ version injected through ldflags, a CycloneDX bill of materials per target and
 Foundation rather than transcribed. SBOM, checksums and signing wait for a release.
 Where the sign-off is enforced is open question Q-1 of intent XENO-2, now recorded in
 that intent's `output.md` rather than only here. Release automation, SBOM and checksums are
-built (A21). What WP0 still owes is the container and package registry side, which needs
-the instance.
+built (A21). What WP0 still owes is the container image, which nothing has needed yet:
+the binaries go to the release and the registry is for the image.
 
 ## Not built
 

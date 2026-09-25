@@ -805,7 +805,7 @@ that they are read by whoever builds that part:
 
 - Whether the gateway reports the model that actually served a request, rather
   than the requested virtual name. The record of what was used depends on it.
-- Whether the client accepts the instance URL for the plugin marketplace
+- Whether the client accepts a repository URL for the plugin marketplace
   directly.
 
 ## 14. Consequences for v1
