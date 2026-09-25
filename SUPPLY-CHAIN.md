@@ -74,7 +74,7 @@ and it is built upstream on a 24 hour cycle, which the daily scan is aligned wit
 
 It is also the one row where being cut off from the network is not the interesting
 question. `--db-repository` takes a list of OCI repositories and the database is an OCI
-artifact, so an instance mirrors it into the registry WP0 already requires as a channel.
+artifact, so a runner without egress reads it from a mirror in a registry it can reach.
 **Currency is then the mirror's sync cadence and not a property of the air gap**:
 mirrored daily it is as fresh as fetching it directly, mirrored weekly it is up to seven
 days blind. That is a number somebody chooses, and it belongs wherever the scan result
@@ -90,13 +90,14 @@ that nothing in the repository touched. Facts want currency; policy wants a comm
 Two things follow from the database being data rather than code. The case for letting it
 through a gap is a different case from the one for a toolchain, since nothing in it is
 executed. And a scan is evidence in this process, which does not have to be produced on
-the instance's own runner: it can be produced where there is a route out and bound in by
+a runner without egress: it can be produced where there is a route out and bound in by
 `uri` and `sha256` like any other evidence item.
 
 ## What this does not yet answer
 
-The plan targets a self managed GitLab whose runners may have no route to the public
-internet:
+A hosted runner has a route out, so nothing below blocks this repository today. It
+blocks any project adopting Xeno on its own infrastructure, and it would block this one
+the day it moves to a self hosted runner, which is why the plan keeps the requirement:
 
 > Every step has to work from what the instance holds, which rules out fetching
 > toolchains from the public internet at build time and makes the dependency mirror part
@@ -112,9 +113,10 @@ coverage from itself. `UpdatedAt` sits in the cache's `metadata.json` and nowher
 output. Where the report becomes a declared `kind: scan` item, that value belongs
 beside
 `produced_by` and `result`, or the trail records that a scan ran without recording what
-it could have known. For each of them the instance needs
+it could have known. For each of them such a runner needs
 an answer — mirrored, pre-installed on the runner image, or dropped — and none of those
-can be decided without the instance. Neither can the module proxy question for a
+can be decided without one in front of us. Neither can the module proxy question for a
 repository that vendors everything and has no `go.sum`.
 
-That half stays open in issue #6, and A18 and A21 carry it from the other side.
+That half stays open in issue #6, which is where it belongs now that it is a question
+about other people's infrastructure rather than about this project's next host.

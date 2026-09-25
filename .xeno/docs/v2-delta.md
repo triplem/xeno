@@ -726,9 +726,11 @@ which is precisely why the responsible human belongs in the author line and not
 there. Squash merges keep trailers only if the squash message carries them over,
 which is a project setting and one v1 already treats as a special case.
 
-GitLab Enterprise can enforce the rule at platform level through approval rules,
-so Xeno records rather than enforces, which is the same division of labour as
-with tracker identity in section 6.
+A host can enforce the rule at platform level, through required reviewers on GitHub
+or approval rules elsewhere, so Xeno records rather than enforces, which is the same
+division of labour as with tracker identity in section 6. Whether the host offers it
+depends on the plan or edition, which is why recording it is the half that always
+works.
 
 The residual risk is that the rule lives in platform configuration, outside the
 repository, where it can be changed without leaving a trace in the trail.
