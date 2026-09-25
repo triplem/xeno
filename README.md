@@ -7,6 +7,7 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     go build ./cmd/xeno
     go test ./...
 
+    xeno init            [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
     xeno phase start     --intent KEY --phase NN [--evidence-from DIR]
     xeno phase finish    --intent KEY --phase NN
     xeno gate run        --intent KEY --phase NN [--evidence-from DIR]
@@ -40,6 +41,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP1 | hashing to Appendix B, finding ids, derived status, decisions carried forward by id, the sealed invariant, the four field sets over frontmatter and YAML alike, `schema_version` read rather than enforced backwards, no decision carried forward for an external finding, a development build naming the commit it came from | `hashing_test`, `TestDecisionCarriesForward…`, `TestNoCommandButFinish…`, `TestDecisionSurvivesForXenoAndNeverFor…`, `gates/schema_test` against `gates/testdata`, `model/version_test` |
 | WP2 | template resolution with project over plugin, anchors the caller never writes, a second language that changes only the headings, a missing bundle that fails rather than falling back | `template/template_test`, `TestSectionSetRendersAnchors…` |
 | WP3 | six shipped templates, both strings bundles, the required section budget | `TestEveryShippedTemplate…`, `TestTheRequiredSectionBudgetHolds` |
+| WP9 | init that changes nothing on a second run, appends to .gitignore without replacing it, stops on a version mismatch, and prints what it cannot do | `init_test` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…` |
 | WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test` |
