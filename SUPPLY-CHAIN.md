@@ -95,28 +95,35 @@ a runner without egress: it can be produced where there is a route out and bound
 
 ## What this does not yet answer
 
-A hosted runner has a route out, so nothing below blocks this repository today. It
-blocks any project adopting Xeno on its own infrastructure, and it would block this one
-the day it moves to a self hosted runner, which is why the plan keeps the requirement:
+A hosted runner has a route out, so none of this blocks the repository today. It blocks
+any project adopting Xeno on its own infrastructure, and it would block this one the day
+it moves to a self hosted runner, which is why WP0 keeps the requirement:
 
-> Every step has to work from what the instance holds, which rules out fetching
+> Every step has to work from what that machine already holds, which rules out fetching
 > toolchains from the public internet at build time and makes the dependency mirror part
 > of the bootstrap rather than an afterthought.
 
-Every row of the second table above is such a fetch. The vulnerability database is the
-one that is fetched on every run rather than pinned, and the paragraph above says what
-the question becomes for it: a mirror and its cadence, not an air gap.
+**Every row of the second table above is such a fetch**, and each of them needs an
+answer for a machine without a route out: mirrored, pre-installed on the runner image,
+or dropped. None of those can be decided without such a machine in front of somebody.
 
-One gap is open regardless of how the database arrives. **A Trivy report records when
-the scan ran and not when its database was built**, so a report cannot be judged for
-coverage from itself. `UpdatedAt` sits in the cache's `metadata.json` and nowhere in the
-output. Where the report becomes a declared `kind: scan` item, that value belongs
-beside
+The Go module question is narrower than it looks. A vendored build reads
+`vendor/modules.txt` and not `go.sum`, so nothing in the release path fetches a module
+at all; only `go mod tidy` and `go mod vendor` reach the proxy, and neither runs in CI.
+What is fetched is the toolchain, which is a row of the table like any other.
+
+The vulnerability database is the row that is fetched on every run rather than pinned,
+and the paragraph above the table says what the question becomes for it: a mirror and
+its cadence, not an air gap.
+
+## One gap that is not about egress at all
+
+**A Trivy report records when the scan ran and not when its database was built.** So a
+report cannot be judged for its coverage from itself, whether or not the machine has a
+route out. `UpdatedAt` sits in the cache's `metadata.json` and nowhere in the output.
+
+Where the report becomes a declared `kind: scan` item, that value belongs beside
 `produced_by` and `result`, or the trail records that a scan ran without recording what
-it could have known. For each of them such a runner needs
-an answer — mirrored, pre-installed on the runner image, or dropped — and none of those
-can be decided without one in front of us. Neither can the module proxy question for a
-repository that vendors everything and has no `go.sum`.
+it could have known.
 
-That half stays open in issue #6, which is where it belongs now that it is a question
-about other people's infrastructure rather than about this project's next host.
+Both halves stay open in issue #6.
