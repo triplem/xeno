@@ -1,0 +1,8 @@
+intent: github.com/triplem/xeno#50
+phase: 00-intake
+created: "2026-09-25T21:01:25Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+9f4b620
+plugin_version: 0.1.0-dev
+evidence_source: ci
+template_source: plugin

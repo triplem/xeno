@@ -12,6 +12,12 @@
 # No gate reads the report. A scanner is evidence in this process, its threshold lives
 # in trivy.yaml, and what stops a merge is this job failing.
 #
+# The run that fails is the one somebody wants to read, and it is the one a report step
+# written after the scan would miss, since the scan fails by design. So the scan carries
+# continue-on-error, everything after it runs, and the last step raises the failure
+# again. The result in the manifest is the outcome the scanner returned and not the
+# absence of an error.
+#
 # Every action is pinned to a commit sha and every tool to an exact version;
 # SUPPLY-CHAIN.md says which and why.
 name: trivy
@@ -21,9 +27,9 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    # A vulnerability is found after the code is written, so the scheduled run is the one
-    # that does the work; the others only keep a new one from arriving. Off the hour,
-    # which is what GitHub asks of a cron that does not need to be there.
+    # A vulnerability is found after the code is written, so the scheduled run is
+    # the one that does the work; the others only keep a new one from arriving. Off
+    # the hour, which is what GitHub asks of a cron that does not need to be there.
     - cron: '17 6 * * *'
 
 permissions:
@@ -42,9 +48,95 @@ jobs:
       - name: build what is scanned
         run: go build -o xeno ./cmd/xeno
 
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, beside the
+      # enforcement report, for the reason A39 gives: it is a job status and never a
+      # commit.
+      - name: make room for the report
+        run: mkdir -p .xeno/local/scan
+
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        id: scan
+        continue-on-error: true
         with:
           version: v0.74.0
           scan-type: rootfs
           scan-ref: xeno
           trivy-config: trivy.yaml
+          format: json
+          output: .xeno/local/scan/trivy.json
+
+      # The report is JSON so that it can be declared and attached later, which leaves
+      # the log unreadable unless something prints it. The fixed version is the column
+      # this is really for: a report that only names a CVE is one somebody has to
+      # research before they can act.
+      - name: what it found
+        if: always()
+        run: |
+          if [ ! -f .xeno/local/scan/trivy.json ]; then
+            echo "no report was written" >&2
+            exit 0
+          fi
+          jq -r '
+            .Results[]?.Vulnerabilities[]?
+            | [.VulnerabilityID, .Severity, .PkgName, .InstalledVersion,
+               (.FixedVersion // "no fix")]
+            | @tsv' .xeno/local/scan/trivy.json
+
+      # The database is fetched on every run and its age is not in the report: UpdatedAt
+      # sits in the cache's metadata.json and nowhere in the output, so a report cannot
+      # be judged for its coverage from itself. The file travels along as its own item.
+      # That is a workaround for a field the process definition does not have, and #11
+      # carries the question of where the value should live.
+      #
+      # The cache is in the workspace and not under HOME: the action sets
+      # TRIVY_CACHE_DIR for its own step and does not export it, so a later step cannot
+      # read it and has to know where to look. Both runs that got this wrong said so by
+      # failing here rather than by uploading a report whose age nobody can read.
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a scan that wrote no report fails here instead.
+          test -f "$out/trivy.json"
+          result=pass
+          if [ "${{ steps.scan.outcome }}" = "failure" ]; then result=fail; fi
+
+          {
+            echo "- kind: scan"
+            echo "  job: trivy"
+            echo "  result: $result"
+            echo "  file: trivy.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+
+          db=$(find "$GITHUB_WORKSPACE/.cache" "$HOME/.cache" -name metadata.json \
+               -path '*trivy*' 2>/dev/null | head -1)
+          # A report whose database age cannot be read is the gap #11 names, so this
+          # is loud rather than skipped, and it says where it looked.
+          if [ -z "$db" ]; then
+            echo "no trivy database metadata under the workspace or HOME" >&2
+            find "$GITHUB_WORKSPACE" "$HOME" -name metadata.json 2>/dev/null >&2
+            exit 1
+          fi
+          cp "$db" "$out/db-metadata.json"
+          {
+            echo "- kind: other"
+            echo "  job: trivy-db"
+            echo "  file: db-metadata.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } >> "$out/manifest.yaml"
+          cat "$out/manifest.yaml" "$out/db-metadata.json"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-trivy
+          path: .xeno/local/scan/
+
+      - name: fail if the scan did
+        if: steps.scan.outcome == 'failure'
+        run: exit 1

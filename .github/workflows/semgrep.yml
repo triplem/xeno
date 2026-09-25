@@ -12,6 +12,12 @@
 # --error is not optional. semgrep exits 0 with findings present without it, so a step
 # written from the obvious invocation would report success on everything.
 #
+# The run that fails is the one somebody wants to read, and it is the one a report step
+# written after the scan would miss, since the scan fails by design. So the scan carries
+# continue-on-error, everything after it runs, and the last step raises the failure
+# again. The result in the manifest is the outcome the scanner returned and not the
+# absence of an error.
+#
 # Every action is pinned to a commit sha and every tool to a digest or an exact version;
 # SUPPLY-CHAIN.md says which and why.
 name: semgrep
@@ -37,10 +43,69 @@ jobs:
       image: semgrep/semgrep@sha256:32e459968daabe7ab86968184a29109b9564aa00392401156f9788452b42786b
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, beside the
+      # enforcement report, for the reason A39 gives: it is a job status and never a
+      # commit.
       - name: scan
+        id: scan
+        continue-on-error: true
         run: |
+          mkdir -p .xeno/local/scan
           semgrep \
             --config .semgrep/golang.yaml \
             --error \
             --metrics off \
+            --json -o .xeno/local/scan/semgrep.json \
             cmd internal
+
+      # The report is JSON so that it can be declared and attached later, and semgrep
+      # writing it to a file prints nothing, so the log would otherwise say only whether
+      # the step failed.
+      - name: what it found
+        if: always()
+        run: |
+          if [ ! -f .xeno/local/scan/semgrep.json ]; then
+            echo "no report was written" >&2
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json
+          with open(".xeno/local/scan/semgrep.json") as f:
+              r = json.load(f)
+          for x in r.get("results", []):
+              print(x["check_id"], x["path"], x["start"]["line"],
+                    x["extra"]["message"], sep="\t")
+          print(len(r.get("results", [])), "findings,",
+                len(r.get("errors", [])), "errors")
+          PY
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a scan that wrote no report fails here instead.
+          test -f "$out/semgrep.json"
+          result=pass
+          if [ "${{ steps.scan.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: scan"
+            echo "  job: semgrep"
+            echo "  result: $result"
+            echo "  file: semgrep.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-semgrep
+          path: .xeno/local/scan/
+
+      - name: fail if the scan did
+        if: steps.scan.outcome == 'failure'
+        run: exit 1
