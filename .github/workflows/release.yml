@@ -10,7 +10,9 @@
 # which is the point of keeping it in the repository (A21).
 #
 # @semantic-release/npm is deliberately absent from the plugin list. It is in the default
-# set and would look for a package.json and try to publish one.
+# set and would look for a package.json and try to publish one. Absent from the list is
+# not absent from the machine: it is a dependency of semantic-release and is installed
+# either way, which is the audit's business rather than this one's.
 #
 # Only push to main triggers it, never pull_request, so nothing from a fork reaches the
 # write permission below. Pushes made with GITHUB_TOKEN trigger no workflow, so the
@@ -22,10 +24,16 @@ on:
   push:
     branches: [main]
 
+# contents: write and nothing else. The other two were here because
+# @semantic-release/github can comment on and label the issues and pull requests a
+# release contains, and open an issue when one fails. Both routines are off in
+# .releaserc.json, and the run that published 0.14.0 shows the plugin touching neither
+# after "Published release"; this repository has no "released" label because none was
+# ever created. What ran with them was a tree of some three hundred packages that npm
+# resolves fresh on every release, so the permissions are worth more removed than
+# watched.
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 concurrency:
   group: release

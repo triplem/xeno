@@ -35,8 +35,9 @@ the code; prose in a file is as readable by a stranger and ages the same way.
 
 Commit subjects are Conventional Commits without an issue reference. The reference goes
 in the footer, `Refs #123`, and `Closes #123` on the commit that finishes the work and
-in the pull request description. `CONTRIBUTING.md` says why, and names the host
-setting it depends on.
+in the pull request description. Several issues take a keyword each, `Closes #1, closes
+#2`, because a host reads only the first reference after one. `CONTRIBUTING.md` says
+why, and names the host settings it depends on.
 
 An intent key is `XENO-` and the issue number padded to four digits, `XENO-0049`, and
 the padding is for sorting alone. Intents sealed before this keep their names: the key

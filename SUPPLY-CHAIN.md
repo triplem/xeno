@@ -81,6 +81,21 @@ mirrored daily it is as fresh as fetching it directly, mirrored weekly it is up 
 days blind. That is a number somebody chooses, and it belongs wherever the scan result
 is read.
 
+**What is watched, and what is not.** Trivy reads the binary a release ships. The
+`audit` workflow reads the tree that produces it: it installs the three pinned
+semantic-release packages exactly as the release does and audits what npm resolved
+around them, which on the day it was written was nineteen findings, almost all of them
+under `node_modules/npm/node_modules/` because semantic-release depends on npm as a
+library. The counts are recorded in `.github/npm-audit-baseline.json` and the job fails
+when one rises, not when one is non-zero: none of them is this project's to fix.
+
+Two things stay unwatched and are written here rather than assumed covered. **Staleness
+is not watched at all** — nothing says whether a pinned action or tool is still the one
+to be on, and a count that does not move is not evidence that it is. And the commit shas
+of the actions themselves have no advisory feed here; Dependabot would give one, and was
+rejected in #11 for a reason that has not changed: its pull requests are changes without
+an intent.
+
 **semgrep's rules go the other way, and the contrast is the point.** They are vendored
 under `.semgrep/` and nothing fetches them at scan time, which was verified by running
 the scan with the network removed. A vulnerability database is facts about the world

@@ -1,0 +1,10 @@
+{
+  "comment": "What npm audit reports for the pinned release toolchain today. The job fails when a count rises, not when a count is non-zero: none of these is this project's to fix, and a check that fires with no action available is one people learn to route around. Raising a number here is a deliberate act and belongs in the commit message that raises it.",
+  "measured": "2026-09-25",
+  "vulnerabilities": {
+    "critical": 0,
+    "high": 15,
+    "moderate": 3,
+    "low": 1
+  }
+}

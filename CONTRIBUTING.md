@@ -65,7 +65,11 @@ the work ran on for three more, and nothing reopens an issue afterwards. A scope
 separates them again, so `fix(gates): #3` does not close — which is worse, because then
 it depends on whether you wrote a scope.
 
-In the footer nothing closes unless you write `Closes`.
+In the footer nothing closes unless you write `Closes`, and each issue needs its own
+keyword. `Closes #50, #11, #12` closed #50 and left the other two open, because GitHub
+reads only the first reference after a keyword; `Closes #50, closes #11, closes #12` is
+the form that works. The first version looks like a list and is read as one item, which
+is why it went unnoticed until somebody asked why two issues were still open.
 
 ## Developer Certificate of Origin
 
