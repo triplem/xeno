@@ -294,7 +294,8 @@ type Language struct {
 
 // Project is the part of project.yaml the core reads.
 type Project struct {
-	Evidence struct {
+	RunnerVersion string `yaml:"runner_version"`
+	Evidence      struct {
 		Source string `yaml:"source"`
 	} `yaml:"evidence"`
 	Language Language `yaml:"language"`

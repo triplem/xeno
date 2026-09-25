@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#38
+phase: 00-intake
+created: 2026-09-25T17:13:44Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+403d78f.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A27 has been carried for days as a limitation of this repository, and reading
+      WP10's acceptance turned it into the test case that package most needs: a host
+      that cannot express a requirement is one of its four "done when" clauses, and this
+      repository is one. The constraint and the fixture were the same fact seen twice.
+    proposal: >-
+      When a package's acceptance names a condition, check the recorded limitations for
+      one that already meets it. A limitation is an environment somebody else would have
+      had to build.
+    target: CLAUDE.md

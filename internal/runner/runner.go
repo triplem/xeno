@@ -35,6 +35,9 @@ type Runner struct {
 	Root         string
 	Now          func() time.Time
 	EvidenceFrom string // stand-in for the CI artifact fetch, see evidence.ManifestEntry
+	// PluginSource is where xeno init copies the shipped plugin from. A released
+	// runner carries it; here it is the repository being developed.
+	PluginSource string
 }
 
 func New(root string) *Runner {

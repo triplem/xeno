@@ -20,6 +20,7 @@ import (
 )
 
 const usage = `usage:
+  xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
   xeno phase finish   --intent KEY --phase NN
   xeno gate run       --intent KEY --phase NN [--evidence-from DIR]
@@ -42,17 +43,22 @@ func run(args []string) int {
 		fmt.Println("xeno", model.RunnerVersion)
 		return 0
 	}
-	if len(args) < 2 {
+	if len(args) < 2 && (len(args) == 0 || args[0] != "init") {
 		fmt.Fprintln(os.Stderr, usage)
 		return 2
 	}
-	cmd := args[0] + " " + args[1]
+	// Commands are two words except init, which is one. The split is where the flags
+	// begin, not a property of the name.
+	cmd, rest0 := args[0]+" "+args[1], args[2:]
+	if args[0] == "init" {
+		cmd, rest0 = "init", args[1:]
+	}
 
 	// A finding id stands before the flags, as the process definition writes these
 	// commands. Go's flag package stops at the first argument that is not a flag, so it
 	// is taken off the front rather than read back out afterwards.
 	finding := ""
-	rest := args[2:]
+	rest := rest0
 	if len(rest) > 0 && !strings.HasPrefix(rest[0], "-") {
 		finding, rest = rest[0], rest[1:]
 	}
@@ -66,11 +72,16 @@ func run(args []string) int {
 	by := fs.String("by", "", "the person deciding")
 	pattern := fs.String("pattern", "conventional-commits", "a shipped pattern name")
 	file := fs.String("file", "", "the message to read, or stdin when absent")
+	vendor := fs.Bool("vendor", false, "copy the plugin in and pin it")
+	project := fs.String("project", "", "the tracker project the intents belong to")
+	mdl := fs.String("model", "", "the default model a phase uses")
+	language := fs.String("language", "en", "the language artifacts are written in")
+	pluginFrom := fs.String("plugin-from", ".xeno/plugin", "where to vendor the plugin from")
 	reason := fs.String("reason", "", "why")
 	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
-	if *key == "" && cmd != "gate verify" && cmd != "check commit-message" {
+	if *key == "" && cmd != "gate verify" && cmd != "check commit-message" && cmd != "init" {
 		fmt.Fprintln(os.Stderr, "--intent is required")
 		return 2
 	}
@@ -79,7 +90,7 @@ func run(args []string) int {
 
 	phase := ""
 	switch cmd {
-	case "intent status", "intent close", "gate verify", "check commit-message":
+	case "intent status", "intent close", "gate verify", "check commit-message", "init":
 	default:
 		p, err := model.ResolvePhase(*phaseArg)
 		if err != nil {
@@ -90,6 +101,17 @@ func run(args []string) int {
 	}
 
 	switch cmd {
+	case "init":
+		r.PluginSource = *pluginFrom
+		res, err := r.Init(runner.InitOptions{
+			TrackerKey: *project, Model: *mdl, Language: *language, Vendor: *vendor,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		printInit(res)
+		return 0
 	case "check commit-message":
 		message, err := readMessage(*file)
 		if err != nil {
@@ -184,6 +206,28 @@ func readMessage(path string) (string, error) {
 	}
 	b, err := io.ReadAll(os.Stdin)
 	return string(b), err
+}
+
+// printInit says what was done, what was left alone, and what a person still has to do.
+// The last list is the point: a first contact that leaves the project believing the gate
+// is binding when it is not is worse than no first contact.
+func printInit(res *runner.InitResult) {
+	for _, p := range res.Created {
+		fmt.Println("  created  ", p)
+	}
+	for _, p := range res.Kept {
+		fmt.Println("  kept     ", p)
+	}
+	if len(res.Outstand) > 0 {
+		fmt.Println("\nNot determined:")
+		for _, s := range res.Outstand {
+			fmt.Println("  -", s)
+		}
+	}
+	fmt.Println("\nXeno cannot make these settings. Somebody with repository administration has to:")
+	for _, s := range res.Manual {
+		fmt.Println("  -", s)
+	}
 }
 
 func report(g *model.Gate, err error) int {
