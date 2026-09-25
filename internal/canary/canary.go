@@ -10,10 +10,6 @@ import (
 	"math/rand"
 )
 
-// Key looks like an AWS access key id and is the example from AWS's own
-// documentation. Trivy's secret scanner is what it is here for.
-const Key = "AKIAIOSFODNN7EXAMPLE"
-
 func Weak(b []byte) [16]byte { return md5.Sum(b) }
 
 func Guess() int { return rand.Intn(100) }
