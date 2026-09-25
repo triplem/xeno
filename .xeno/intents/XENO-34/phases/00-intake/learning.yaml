@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#34
+phase: 00-intake
+created: 2026-09-25T20:39:07Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+81b8426
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Headings were written carrying a leading number that indexed a list in an
+      earlier draft. Rearranging the text left the number, which then reads as a
+      reference to the numbered sections this project does have, in the process
+      definition and in the plan. The reader was the one who found it.
+    proposal: >-
+      A heading names its section in words. Where a number appears in one, it is a
+      reference, and a reference has to point at something the reader can reach.
+    target: CLAUDE.md
