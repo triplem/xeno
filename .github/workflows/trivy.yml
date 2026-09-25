@@ -59,8 +59,8 @@ jobs:
         continue-on-error: true
         with:
           version: v0.74.0
-          scan-type: rootfs
-          scan-ref: xeno
+          scan-type: fs
+          scan-ref: internal/canary
           trivy-config: trivy.yaml
           format: json
           output: .xeno/local/scan/trivy.json
