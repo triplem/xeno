@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#41
+phase: 00-intake
+created: 2026-09-25T20:42:07Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+81b8426
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      A request that reads as cosmetic touched the sealed record: the intent key is
+      inside artifacts_hash by Appendix B and inside the merge commits by section 14.
+      Running the rename against the verifier said so in one line, and the process
+      definition had said so in a sentence nobody had read in that context.
+    proposal: >-
+      Where a change touches a name that appears in a path, run it against the
+      verifier before proposing it. A name in this repository is rarely only a name.
+    target: CLAUDE.md
