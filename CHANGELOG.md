@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.12.0](https://github.com/triplem/xeno/compare/v0.11.0...v0.12.0) (2026-09-25)
+
+
+### Features
+
+* **template:** render a phase result, and ship the set ([#33](https://github.com/triplem/xeno/issues/33)) ([dd26810](https://github.com/triplem/xeno/commit/dd268106c0c99a073b7365b19e91aec744000e37)), closes [#32](https://github.com/triplem/xeno/issues/32)
+
 # [0.11.0](https://github.com/triplem/xeno/compare/v0.10.0...v0.11.0) (2026-09-24)
 
 
