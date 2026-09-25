@@ -1,7 +1,7 @@
 ---
 id: implementation-plan
 title: Xeno, Implementation Plan v1
-revision: 8
+revision: 9
 status: draft, not ratified
 date: 2026-09-20
 location: .xeno/docs/implementation-plan.md
@@ -57,19 +57,26 @@ form, template rendering with the shipped template set and both strings bundles,
 English and German, the rule engine with checked and review rules, the assumption
 register, learning records, indicative cost recording, a symbol index for context
 economy, the agent layer for Claude Code and Codex with hook wiring, evidence
-handling, the GitLab adapter with a `.gitlab-ci.yml` wrapper, a documentation site in
+handling, the GitHub adapter with its generated wrapper, a documentation site in
 English, a token economy with a measured baseline, and a conformance mapping against
 ISO/IEC 42001 as the closing package.
 
-**The target host is a self managed GitLab instance, Community Edition.** That decides
-more than a name in an adapter. There is no canonical endpoint, so the base URL is a
-required setting rather than a default. There are no approval rules on this edition, so
-the four eyes requirement has no enforcement point, for Xeno's own repository as much
-as for any project using it. What does exist is the protected branch with a required
-pipeline, and that is the setting the binding verdict rests on.
+**The target host is GitHub.** That decides more than a name in an adapter. There is a
+canonical endpoint, so the base URL has a default; the adapter takes it as a parameter
+all the same, because GitHub Enterprise Server does not use it and an adapter that
+hard codes an address has a second host's worth of work hidden in it.
 
-**Distribution is internal in v1 and public from 1.1.** In v1 the instance's own
-container and package registries are the channels, releases carry checksums and no
+What the host offers depends on the plan a repository is on, which is the awkward part
+and the one to state plainly. Required reviewers, protected branches and rulesets all
+exist on GitHub and none of them is available for a private repository on the free
+plan, where this project sits. So the four eyes requirement has no enforcement point
+here, and neither does the protected branch that the binding verdict is supposed to rest
+on. That is recorded as A27 rather than assumed away, and it is the same shape of
+problem a Community Edition would have had, arriving through the tier instead of the
+edition.
+
+**Distribution is internal in v1 and public from 1.1.** In v1 releases and the
+container registry of the host are the channels, releases carry checksums and no
 signature, and the plugin is not registered in any marketplace. Publication is decided
 for 1.1, and section 8 lists what v1 owes it, because two of those obligations cannot
 be met retroactively.
@@ -128,9 +135,9 @@ brought in as a CI job rather than as a dependency of this project: an action on
 the common-ci-tasks job on GitLab. A Go repository whose only dependency is one vendored
 YAML library does not grow a Node dependency tree to cut a tag, and the configuration
 moving between the two hosts unchanged is what makes the job replaceable rather than the
-arrangement. GitLab's own changelog API would cover the notes alone; it would not cover
-the version, the tag and the write-back, and one tool doing all four in the same way on
-both hosts is worth more here than the one call it saves.
+arrangement. A host's own changelog feature would cover the notes alone; it would not
+cover the version, the tag and the write-back, and one tool doing all four in the same
+way on every host is worth more here than the one call it saves.
 
 **The repository's own pipeline is a deliverable that grows**, not a file somebody
 adds when it is needed. It exists on day one because the protected branch needs
@@ -146,18 +153,20 @@ something it can require, and jobs arrive with the packages that produce them:
 | WP10 | `xeno enforcement check` as the first job, plus the scheduled run |
 | WP12 | write-back of the result to the merge request |
 
-**Two files are called `.gitlab-ci.yml` and they have nothing to do with each other.**
-This one is Xeno's own pipeline: it builds, tests, publishes and ships. The other is the
-wrapper template WP10 generates into somebody else's repository, which does nothing but
-call `xeno gate run`. Same name, opposite purpose, and mixing them up puts build steps
-into a template or a gate call into this pipeline.
+**Two things are called the workflow and they have nothing to do with each other.**
+Xeno's own pipeline builds, tests, publishes and ships. The wrapper WP10 generates into
+somebody else's repository does nothing but call `xeno gate run`. Same shape, opposite
+purpose, and mixing them up puts build steps into a template or a gate call into this
+pipeline.
 
-**GitLab Pages has to be enabled on the instance.** It is available on the Community
-Edition and not switched on by default, and enabling it is an administrator's act. Same
-class of dependency as the required pipeline: outside the repository, cheap to arrange
-early, annoying to discover in the week the documentation is due.
+**Pages has to be enabled for the repository.** It is an administrator's act and not on
+by default. Same class of dependency as the required pipeline: outside the repository,
+cheap to arrange early, annoying to discover in the week the documentation is due.
 
-**Runners and egress.** The pipeline runs on the instance's own runners, and outbound
+**Runners and egress.** A hosted runner has a route out and the question below does not
+arise on it. It arises for any project adopting Xeno on its own infrastructure, and for
+this project the day it moves to one, so the reasoning stays rather than being deleted
+because the current host makes it cheap. On a self hosted runner outbound
 access is not a given there. Every step has to work from what the instance holds, which
 rules out fetching toolchains from the public internet at build time and makes the
 dependency mirror part of the bootstrap rather than an afterthought.
@@ -706,12 +715,12 @@ project still has to make are on screen rather than in a document nobody opens.
 
 ### WP10 CI wrapper
 
-One thin wrapper generated from a template, `.gitlab-ci.yml`, calling nothing but
+One thin wrapper generated from a template, a workflow calling nothing but
 `xeno gate run --phase <n> --base <ref> --head <ref>` with the runner version pinned.
 Both ends of the range are passed rather than derived, because a CI system may check
 out a merge commit it produced itself and judging that would mean judging a commit
-nobody wrote. GitLab reports both ends as predefined variables of the merge request
-pipeline.
+nobody wrote. GitHub reports both ends on the pull request event, as
+`base.sha` and `head.sha`.
 
 The generator takes the two parameters from the start even though there is one
 wrapper to generate. That is what makes the wrappers of 1.1 a template argument
@@ -883,7 +892,7 @@ not grown without a recorded reason, and when the same phase can be carried out 
 commands alone, with no MCP server and no hooks, producing artifacts a gate cannot tell
 apart from the ones an agent produced.
 
-### WP12 GitLab adapter
+### WP12 GitHub adapter
 
 Reading an issue when a phase starts and writing the gate result back to the merge
 request when CI finishes. One tracker in v1, selected by configuration all the same,
@@ -926,8 +935,8 @@ second host in 1.1 needs no change to the contract.
 ```yaml
 # project.yaml
 tracker:
-  adapter: gitlab
-  base_url: https://<instance>   # required, no default
+  adapter: github
+  base_url: https://api.github.com   # a default, overridden for Enterprise Server
   auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }
 ```
 
@@ -1138,7 +1147,7 @@ which is exactly the rot between documents this package exists to prevent. Stand
 site up early costs one job and turns every later reference into something that fails
 loudly rather than quietly.
 
-**Published from CI to GitLab Pages on the instance.** The documentation is built and
+**Published from CI to Pages.** The documentation is built and
 deployed by the repository's own pipeline on every merge to the default branch, so the
 published site cannot drift from the source. The audience is internal for as long as
 Xeno is, which changes who reads it and not what it has to say. Same principle as
@@ -1367,7 +1376,7 @@ not every boundary somebody can imagine:
 
 | Port | Implementations |
 |---|---|
-| Tracker | GitLab in v1, GitHub and Jira in 1.1 |
+| Tracker | GitHub in v1, GitLab and Jira in 1.1 |
 | Host settings | read by `xeno enforcement check`, one per host |
 | Symbol index | tree-sitter in v1; the `tools` block in `context.lock.yaml` already treats the engine as replaceable |
 | Session logs | one per harness, and the plan already calls their formats non contractual |
@@ -1482,7 +1491,7 @@ into checkable statements, and those statements are what goes into the issue bod
 act of creating the issue is the act of writing the acceptance, not an administrative
 step that follows it.
 
-**`glab`, not an MCP server.** A GitLab MCP server exists and is the wrong trade here.
+**`gh`, not an MCP server.** A GitHub MCP server exists and is the wrong trade here.
 Every tool definition is sent with every request of every session whether it is called
 or not, which is the standing cost WP20 describes for users of the tool and WP11 keeps
 as a budget. For something done a few times a week, a shell command costs nothing
@@ -1497,7 +1506,7 @@ deliberately absent. It should not grow in later either: what a developer does w
 issues is on its way to becoming a tracker front end.
 
 **Branch and commit message carry the intent.** The branch is named after its issue,
-which GitLab does by itself when the branch is created from the issue. The commit
+which the host does by itself when the branch is created from the issue. The commit
 subject is plain Conventional Commits and carries no issue reference:
 
 ```
@@ -1670,7 +1679,7 @@ somewhere else.
 |---|---|
 | Large | WP3 templates, WP4 rule engine, WP7 runner, WP11 agent layer, WP15 symbol index, WP16 documentation, WP17 test strategy |
 | Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context profile, WP10 CI wrapper and enforcement check, WP19 conformance, WP20 token economy |
-| Small | WP5 assumptions, WP9 init, WP12 GitLab adapter, WP13 token recording, WP14 learning |
+| Small | WP5 assumptions, WP9 init, WP12 GitHub adapter, WP13 token recording, WP14 learning |
 | Not sized | WP18 dashboard, specified and deferred to 1.1 |
 
 The distribution says something the sequence hides. Of the twenty packages built for
@@ -1686,19 +1695,22 @@ rather than defended.
 
 ## 7. Risks
 
-**The adapter contract hardens around GitLab.** One adapter built against one code
-host is an adapter written to that host's shape, and nothing in v1 pushes back. The
+**The adapter contract hardens around GitHub.** One adapter built against one code
+host is an adapter written to that host's shape, and nothing in v1 pushes back. The host
+that shaped it has a canonical endpoint and issue keys tied to the repository, which are
+the two things most likely to have been absorbed as if they were general. The
 two countermeasures are cheap and in WP12: no assumed relationship between issue key
 and repository, and endpoint plus authentication scheme as parameters rather than
 constants. Neither is testable against a second system until 1.1, which is the
 residual risk being accepted here knowingly.
 
-**Dogfooding happens in one organisation on one edition.** Xeno's own repository sits
-on a self managed Community Edition instance, so the question whether the process is
-proportionate is answered by one team under one set of constraints, and the four eyes
-requirement cannot be exercised there at all. The answers will be real and they will
-not be representative. The countermeasure is to record the edition alongside every
-finding from the dogfooding stretch rather than to correct for it.
+**Dogfooding happens in one organisation on one plan.** Xeno's own repository is a
+private one on the free plan, so the question whether the process is proportionate is
+answered by one team under one set of constraints, and the four eyes requirement cannot
+be exercised there at all, because the settings that would enforce it are not available
+on that plan. The answers will be real and they will not be representative. The
+countermeasure is to record the plan alongside every finding from the dogfooding stretch
+rather than to correct for it.
 
 **Finding ids are a new failure surface.** Decisions survive a re-run by id. Too
 stable an id carries a release across a change that should have voided it, too
@@ -1732,15 +1744,16 @@ already taken are not rediscovered, and so that requirements raised outside this
 document do not evaporate. It is revisited after the first dogfooding stretch, which is
 what decides whether breadth is the right next move at all.
 
-**Deferred by decision, recorded elsewhere in this document.** Hosts beyond GitLab,
-each with its tracker adapter and its CI wrapper, GitHub next and Jira after it. GitHub
-is the cheaper adapter and buys reach; Jira is the one that tests the contract, because
-its project wide keys have no dependency on a code host, which is the assumption a
-contract built against GitLab alone is most likely to have absorbed. Taking the cheap
-one first is a decision about adoption, so the risk stays open one release longer.
+**Deferred by decision, recorded elsewhere in this document.** Hosts beyond GitHub,
+each with its tracker adapter and its CI wrapper, GitLab next and Jira after it. GitLab
+is the cheaper adapter and buys reach, since the shapes are close; Jira is the one that
+tests the contract, because its project wide keys have no dependency on a code host,
+which is the assumption a contract built against GitHub alone is most likely to have
+absorbed. Taking the cheap one first is a decision about adoption, so the risk stays
+open one release longer.
 
 These are wrapper templates for other people's projects and not pipelines for this one.
-Xeno is developed on GitLab and stays there, whatever hosts it learns to generate
+Xeno is developed on GitHub and stays there, whatever hosts it learns to generate
 wrappers for.
 
 Intents spanning several repositories. Issue commands as a trigger, with whatever

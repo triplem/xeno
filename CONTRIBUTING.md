@@ -40,9 +40,9 @@ something nobody wrote. It is a commit message, not a note about one.
 
 A footer survives a squash only where the squashed message is built from the pull
 request description. On this repository that is *Settings, General, Pull Requests,
-Squash merging*, set to **Pull request title and description**. On GitLab it is
-*Settings, Merge requests, Squash commit message template*, which has to include
-`%{description}`.
+Squash merging*, set to **Pull request title and description**. The same setting exists
+elsewhere under another name; on GitLab it is *Settings, Merge requests, Squash commit
+message template*, which has to include `%{description}`.
 
 **Without that setting the reference is lost at the merge.** It is not a nicety; it is
 what makes the convention work at all.
@@ -52,9 +52,9 @@ discard the description, and the footer with it, so leaving them available would
 the convention depend on which button somebody presses.
 
 On GitHub all three are applied by `scripts/github-settings.sh`, which prints them
-before and after so that a drift is visible rather than assumed. A setting is not a commit and
-no gate covers it, so the script is how it is written down at all. GitLab's template has
-no API call shaped like it and is set in the project's merge request settings by hand.
+before and after so that a drift is visible rather than assumed. A setting is not a
+commit and no gate covers it, so the script is how it is written down at all. Another
+host's equivalent may have no API call shaped like it and be set by hand.
 
 ### Why the reference is not in the subject
 

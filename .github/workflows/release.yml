@@ -5,9 +5,9 @@
 #
 # semantic-release arrives as an action and not as a dependency of this project. There is
 # no package.json and nothing of it is vendored: a Go repository whose only dependency is
-# one vendored YAML library does not grow a Node dependency tree to cut a tag. The GitLab
-# equivalent is the common-ci-tasks semantic-release job, and .releaserc.json moves across
-# unchanged, which is the point of keeping it in the repository (A18, A21).
+# one vendored YAML library does not grow a Node dependency tree to cut a tag. Another
+# host runs the same tool from its own job and .releaserc.json moves across unchanged,
+# which is the point of keeping it in the repository (A21).
 #
 # @semantic-release/npm is deliberately absent from the plugin list. It is in the default
 # set and would look for a package.json and try to publish one.

@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#36
+phase: 00-intake
+created: 2026-09-25T16:05:54Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+69a7600.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: template
+    observation: >-
+      The first artifact rendered by the tool rather than written by hand needed a
+      second, manual step to be complete: the renderer writes what it knows and leaves
+      model, tool, tool_version and secrets_hash out, which A35 records and which makes
+      every phase red until a harness fills them. That is correct and it is also the
+      whole of what WP11 has to deliver before the loop closes.
+    proposal: >-
+      Where the renderer leaves a field out, it should say so on the command line rather
+      than leaving the writer to notice at the gate. One line naming the fields nobody
+      produced, printed after a section write.
+    target: .xeno/plugin/templates/

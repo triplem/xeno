@@ -1,7 +1,7 @@
 ---
 id: process-definition
 title: Xeno, Process Definition v1
-revision: 9
+revision: 10
 status: draft, not ratified
 date: 2026-09-20
 location: .xeno/docs/process-definition.md
@@ -1031,8 +1031,8 @@ and compare against. A phase pushed without its `gate.yaml` leaves CI with nothi
 compare, and it fails for that reason rather than for a failing gate.
 
 One setting carries that last row, and it does not live in this repository: the
-pipeline has to be required for a merge on the protected default branch, which GitLab
-calls "Pipelines must succeed" and other hosts call a required status check. Without
+pipeline has to be required for a merge on the protected default branch, which GitHub
+calls a required status check and other hosts call something else. Without
 it a red gate produces a report that a merge walks past, and every claim in this
 document about a binding verdict is a claim about a setting somebody made elsewhere.
 
@@ -1074,10 +1074,10 @@ that on every keystroke is the kind of hook people turn off.
 
 One runner, one thin wrapper. The CI job calls nothing but
 `xeno gate run --phase <n> --base <ref> --head <ref>`, generated from a template into
-`.gitlab-ci.yml` with the runner version pinned. Both ends of the range are passed
-explicitly, because a CI system may check out a merge commit it produced itself and a
-runner that took that for the head would judge a commit nobody wrote. GitLab reports
-both ends as predefined variables. Locally `--base` defaults to the merge base against
+the host's workflow file with the runner version pinned. Both ends of the range are
+passed explicitly, because a CI system may check out a merge commit it produced itself
+and a runner that took that for the head would judge a commit nobody wrote. GitHub
+reports both ends on the pull request event. Locally `--base` defaults to the merge base against
 the default branch, which git computes offline, and `--head` to `HEAD`.
 
 The range is a parameter rather than something the runner works out for itself,
@@ -1587,12 +1587,12 @@ it.
 **Write-back.** After a gate run, CI writes the result to the issue the intent came
 from: phase, verdict, and the findings with their decisions. It is the only
 visibility for everyone who does not work from a command line, and it costs one call
-from a job that already runs. In v1 the code host is GitLab, self managed; further
-hosts follow in 1.1, and the adapter contract stays small enough for them: resolve an
-intent, read an issue, write a comment, resolve credentials. The endpoint is a
-configured value without a default, because a self managed instance has no canonical
-address, so a second host is configuration plus an adapter and never a change to the
-contract.
+from a job that already runs. In v1 the code host is GitHub; further hosts follow in
+1.1, and the adapter contract stays small enough for them: resolve an intent, read an
+issue, write a comment, resolve credentials. The endpoint is a configured value with a
+default, since this host has a canonical address, and it stays configurable because
+Enterprise Server does not use it. A second host is configuration plus an adapter and
+never a change to the contract.
 
 **Tools.** The agent is a project level choice, set in `project.yaml` and not
 changed while the project runs. Both Claude Code and Codex are supported. The tool
@@ -2075,8 +2075,8 @@ agent:                         # section 12
     default: <off|low|high>
 
 tracker:                       # section 12
-  adapter: gitlab
-  base_url: https://<instance>   # required, no default
+  adapter: github
+  base_url: https://api.github.com   # a default, overridden for Enterprise Server
   auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }
 
 enforcement:                   # section 7, compared against the host by CI
