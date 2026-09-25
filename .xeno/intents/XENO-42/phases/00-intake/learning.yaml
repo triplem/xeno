@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#42
+phase: 00-intake
+created: 2026-09-25T19:00:52Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+73849dd.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Editing into a sentence leaves the words around it behind, and the diff looks
+      small enough that nobody rereads the result. Three passages carry the damage and
+      all three were rewritten across two or three separate changes; every passage
+      replaced whole in the same commits is intact.
+    proposal: >-
+      Where a paragraph is being changed for the second time, replace it rather than
+      edit into it, and read it back as a paragraph rather than as a diff. A small diff
+      is exactly when this is skipped.
+    target: CLAUDE.md

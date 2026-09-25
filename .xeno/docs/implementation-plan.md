@@ -75,9 +75,9 @@ on. That is recorded as A27 rather than assumed away, and it is the same shape o
 problem a Community Edition would have had, arriving through the tier instead of the
 edition.
 
-**Distribution is internal in v1 and public from 1.1.** In v1 releases and the
-container registry of the host are the channels, releases carry checksums and no
-signature, and the plugin is not registered in any marketplace. Publication is decided
+**Distribution is internal in v1 and public from 1.1.** In v1 the channels are the
+host's releases and its container registry, what they carry is checksummed and not
+signed, and the plugin is not registered in any marketplace. Publication is decided
 for 1.1, and section 8 lists what v1 owes it, because two of those obligations cannot
 be met retroactively.
 
@@ -163,13 +163,15 @@ pipeline.
 by default. Same class of dependency as the required pipeline: outside the repository,
 cheap to arrange early, annoying to discover in the week the documentation is due.
 
-**Runners and egress.** A hosted runner has a route out and the question below does not
-arise on it. It arises for any project adopting Xeno on its own infrastructure, and for
-this project the day it moves to one, so the reasoning stays rather than being deleted
-because the current host makes it cheap. On a self hosted runner outbound
-access is not a given there. Every step has to work from what the instance holds, which
-rules out fetching toolchains from the public internet at build time and makes the
-dependency mirror part of the bootstrap rather than an afterthought.
+**Runners and egress.** A hosted runner has a route out, so the requirement below costs
+this project nothing today. It costs any project adopting Xeno on its own
+infrastructure, and it costs this one the day it moves to a self hosted runner, so the
+reasoning stays rather than being deleted because the current host makes it cheap.
+
+Outbound access is not a given on a self hosted runner. Every step has to work from what
+that machine already holds, which rules out fetching toolchains from the public internet
+at build time and makes the dependency mirror part of the bootstrap rather than an
+afterthought.
 
 **One issue label per work package**, `wp0` to `wp20`, created once at setup from the
 list in section 2. Project labels, not group labels: the package numbers are this

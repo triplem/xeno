@@ -18,6 +18,10 @@ Lines wrap at 88 characters, in code and in prose. Go source carries
 `SPDX-License-Identifier: Apache-2.0` and no per file copyright line. One dependency,
 `gopkg.in/yaml.v3`, vendored; adding a second is a decision, not a step.
 
+Where a paragraph is being changed for the second time, replace it rather than edit
+into it, and read it back as a paragraph rather than as a diff. Editing into a sentence
+leaves the words around it behind, and a small diff is exactly when that is not noticed.
+
 A comment or a passage of prose says what the construction is and why it is that way.
 Where the reason is genuinely the thing it replaced, that belongs in the commit message:
 the reader has the current tree and nothing else, and after a squash the history does
