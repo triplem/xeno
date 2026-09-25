@@ -1,0 +1,7 @@
+intent: github.com/triplem/xeno#45
+key: XENO-45
+status: in-progress
+created: 2026-09-25T19:30:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev

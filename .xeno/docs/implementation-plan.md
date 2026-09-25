@@ -72,8 +72,8 @@ exist on GitHub and none of them is available for a private repository on the fr
 plan, where this project sits. So the four eyes requirement has no enforcement point
 here, and neither does the protected branch that the binding verdict is supposed to rest
 on. That is recorded as A27 rather than assumed away, and it is the same shape of
-problem a Community Edition would have had, arriving through the tier instead of the
-edition.
+problem a self managed deployment on its free edition would have had, arriving through
+the tier instead of the edition.
 
 **Distribution is internal in v1 and public from 1.1.** In v1 the channels are the
 host's releases and its container registry, what they carry is checksummed and not
@@ -83,9 +83,9 @@ be met retroactively.
 
 **Licence, copyright and cost** are settled and recorded rather than open. Xeno is
 developed at and for conet, which holds the copyright and licenses under Apache 2.0, in
-v1 internally and from 1.1 publicly. It runs on infrastructure the instance already
-provides, so the only expense that scales with the work is model usage, which is what
-WP13 makes visible.
+v1 internally and from 1.1 publicly. It runs on infrastructure that is already paid for,
+so the only expense that scales with the work is model usage, which is what WP13 makes
+visible.
 
 Out of scope, by decision: gateway for model access, cross project aggregation, risk
 dependent gates, live agent status, a semantic call and type graph, operations and
@@ -115,8 +115,8 @@ mechanism proved against a test bundle is not proved.
 Also `SECURITY.md` with a reporting route, an SBOM produced at release, and a
 `.gitattributes` that fixes line ending handling.
 
-**Releases carry checksums and no signature.** Inside one instance, pulled from a
-registry with access control, the question a signature answers is already answered, and
+**Releases carry checksums and no signature.** While distribution is internal and the
+registry has access control, the question a signature answers is already answered, and
 keyless attestation would publish the identity of an internal pipeline into a public
 transparency log to answer it twice. Signing arrives with publication, in the same
 release, and the first public artifact is the first one that needs it.
@@ -146,7 +146,7 @@ something it can require, and jobs arrive with the packages that produce them:
 | From | Jobs |
 |---|---|
 | Day one, this package | format check, build, unit tests |
-| Release, this package | tag triggered release, SBOM, checksums, binaries and image into the instance's registries |
+| Release, this package | tag triggered release, SBOM, checksums, binaries and image into the host's registries |
 | WP17 | platform matrix and golden files, where line endings and path separators are settled |
 | WP16 | documentation build and the Pages deployment on the default branch |
 | M0 | the gate job itself, from which point Xeno checks its own repository and the hand held record in section 4 stops |
@@ -397,10 +397,10 @@ CI from the same repository state. A rule that needs a range it did not get is r
 **Two git hook templates ship under `examples/hooks/`**, with their limits written on
 them. A `prepare-commit-msg` builds the message from the branch name, which is comfort
 and bypassable and enough for producing one. A `pre-receive` rejects a push, which is
-enforcement and the only kind there is on a Community Edition instance. Installation is
-`core.hooksPath` pointing at a versioned directory, no dependency and no extra tool;
-projects that already run something like husky or lefthook know what to do with a
-script. `xeno init` does not touch a developer's git configuration.
+enforcement, and on a host that offers no push rule it is the only kind there is.
+Installation is `core.hooksPath` pointing at a versioned directory, no dependency and no
+extra tool; projects that already run something like husky or lefthook know what to do
+with a script. `xeno init` does not touch a developer's git configuration.
 
 **Examples rather than switches.** Conventional Commits, the `Xeno-Intent:` trailer
 and the signature rule ship under `examples/rules/` and are adopted by copying into
@@ -601,7 +601,7 @@ because two sessions making them differently costs more than the decisions are w
 | Layout | `cmd/` for the binaries, `internal/` for everything else, with the core and the adapters as separate packages so the import test in section 3 has something to check. No `pkg/` until somebody actually imports something |
 | Module path | the repository's own URL, as `go.mod` states it. The value is not repeated here, because the namespace is deliberately not recorded in this document |
 | YAML | `github.com/goccy/go-yaml`, pinned |
-| Minimum Go version | whatever the instance's runners provide, as the `go` directive in `go.mod` states it |
+| Minimum Go version | the `go` directive in `go.mod`, which the runner installs rather than finds |
 
 **The YAML library does not decide any hash**, which is worth saying because it looks
 as if it might. Every hashed file is written exactly once, `context.lock.yaml` at phase
@@ -758,9 +758,10 @@ enforcement:
 
 Three properties decide whether this is worth anything.
 
-It distinguishes **not set** from **not available**. On the Community Edition the
-approval fields do not exist in the API at all, and reporting that as a missing setting
-would send somebody looking for a checkbox that is not there.
+It distinguishes **not set** from **not available**. A host answers `403` for a
+repository whose plan does not include protected branches, and the approval fields are
+then absent rather than empty; reporting that as a missing setting would send somebody
+looking for a checkbox that is not there.
 
 That distinction is not enough on its own, which is why `waived` exists. A requirement
 the edition cannot express would otherwise be reported as unmet on every run forever,
@@ -809,12 +810,13 @@ predicate judged still exist afterwards, and with squash they do not, which is l
 `xeno enforcement check` therefore reads the merge method too and reports it where a
 commit predicate is active in the rule set.
 
-**On this edition the commit message format cannot be checked at push time.** Push
-rules with an expression on the message are a Premium feature, and server side hooks
-live in Gitaly's storage on the instance, which needs shell access to that node rather
-than administrator rights in the interface. conet's instance offers neither, so the
-client side hook is feedback that `--no-verify` removes, and the format becomes binding
-at the gate and nowhere earlier. This is a missing enforcement point and not a missing
+**The commit message format cannot be checked at push time.** GitHub has no server
+side hook a repository can install and no push rule on the message, so the client side
+hook is feedback that `--no-verify` removes, and the format becomes binding at the gate
+and nowhere earlier. Other hosts put the same capability behind a paid tier or behind
+shell access to the machine, so this is not one host's shortcoming.
+
+This is a missing enforcement point and not a missing
 gate: every gate runs on this edition, the platform simply stops less early. Projects
 on a host that can do it should do it there, and the documentation says which setting
 on which host.
@@ -856,11 +858,11 @@ assumption register or the review checklist, never into an artifact of its own a
 never into a gate verdict. A checklist entry from a lens carries `source: lens` and no
 rule id, so it cannot change the set G-Policy checks for completeness.
 
-**The plugin is served from the instance, not from a public directory.** The
-marketplace wrapper stays and points at the repository on the conet instance, because a
-client can take a marketplace from any git repository it can reach. Nothing is
-registered anywhere public, and nobody should build a path for that. Whether the client
-accepts the instance URL directly is the one thing to verify here rather than assume.
+**The plugin is served from the repository, not from a public directory.** The
+marketplace wrapper stays and points at this repository, because a client can take a
+marketplace from any git repository it can reach. Nothing is registered anywhere public,
+and nobody should build a path for that. Whether the client accepts that URL directly is
+the one thing to verify here rather than assume.
 
 **Two things to verify rather than assume.** The first is the marketplace URL above.
 The second is the gateway: whether it reports the model that actually served a request
@@ -900,9 +902,10 @@ Reading an issue when a phase starts and writing the gate result back to the mer
 request when CI finishes. One tracker in v1, selected by configuration all the same,
 because the selection is what keeps the adapter from becoming the runner's assumption.
 
-**Self managed is the normal case, not a variant.** The base URL is required and has no
-default, and the adapter is tested against an instance rather than against a hosted
-service.
+**A hosted service is the normal case and self managed is not a variant.** The base URL
+has a default and is a parameter all the same, and the adapter is tested against the
+hosted service it is written for. What keeps the other case open is that the address is
+never a constant.
 
 **It is not on the critical path and it is not optional.** Since the trigger is the CLI,
 an intent can be carried through all six phases with the issue content copied in by
@@ -931,8 +934,8 @@ built on the other assumption, and finding that out in 1.1 is fine as long as no
 in the contract has to be redrawn to accommodate it.
 
 Credentials come from the environment, never from `project.yaml`. The endpoint is a
-required setting, because a self managed instance has no canonical address, and a
-second host in 1.1 needs no change to the contract.
+setting with a default, because a self managed deployment has no canonical address, and
+a second host in 1.1 needs no change to the contract.
 
 ```yaml
 # project.yaml
@@ -1444,9 +1447,9 @@ the runner, and the hand held record stops.
    commands, the line width and file layout conventions, and the three standing rules
    below. Short matters, because this file is sent with every request of every session
    for the life of the project.
-4. **Choose the toolchain and set up the dependency mirror**, since the instance's
-   runners may have no route to the public internet. This is WP0 and it is the first
-   package for a reason.
+4. **Choose the toolchain**, and work out what a runner without a route to the public
+   internet would need, since that is the case for any project adopting Xeno on its own
+   infrastructure. This is WP0 and it is the first package for a reason.
 5. **Install `glab` on the machines that will do the work**, since issues are created
    from the session rather than from a browser, as described below.
 6. **Take WP1 and WP7 core as the first piece of real work**, in that order, and do not
@@ -1478,8 +1481,7 @@ intent in this process is one change through six phases ending in exactly one me
 Equating a package with an intent
 produces intents the model cannot carry, and it would do so in the one project that has
 to demonstrate the model. Labels group, issues are the unit of work, and a package's
-progress is a filtered issue list, which the Community Edition provides and epics do
-not.
+progress is a filtered issue list, which every host provides and epics do not.
 
 **Issues are created just in time, from the session.** `glab issue create` from the
 agent's shell, one or two ahead of the work and never sixty at once from the plan. The
@@ -1560,8 +1562,8 @@ subject line is already spoken for. Xeno's own repository does not use it.
 builds the message from the branch name, installed through `core.hooksPath` pointing at
 a versioned directory. It calls `xeno check commit-message` rather than carrying the
 expression, so the same pattern decides in the hook and at the gate. It is feedback,
-not enforcement: `--no-verify` removes it, and on this instance nothing catches that
-before the gate, for the reason given in WP10. Before M0 the convention lives in
+not enforcement: `--no-verify` removes it, and nothing catches that before the gate, for
+the reason given in WP10. Before M0 the convention lives in
 `AGENTS.md` and nothing checks it at all, which is the honest state of it rather than a
 gap to apologise for.
 
@@ -1754,6 +1756,12 @@ which is the assumption a contract built against GitHub alone is most likely to 
 absorbed. Taking the cheap one first is a decision about adoption, so the risk stays
 open one release longer.
 
+**The GitLab that is meant is the Enterprise variant.** It has the approval rules the
+free edition does not, which is the difference that decides whether the four eyes
+requirement has an enforcement point or is recorded as waived. An adapter written
+against the free edition would be written against the weaker of the two and would have
+to be extended rather than configured.
+
 These are wrapper templates for other people's projects and not pipelines for this one.
 Xeno is developed on GitHub and stays there, whatever hosts it learns to generate
 wrappers for.
@@ -1763,25 +1771,17 @@ component receives them. The dashboard, WP18, specified in section 2 and not bui
 The German documentation translation together with the hash binding that keeps it
 current.
 
-The host move is owed, not deferred. This repository is on GitHub while the self
-managed instance is being arranged, and two things are bound to that: the pipeline file,
-and the Go module path with every import that follows it. The pipeline file is expected
-to be replaced; the module path is the one that looks portable and is not, and a module
-served from a private instance needs either a vanity import path or GOPRIVATE with
-the go-import meta tag. It is a search and replace until the first release anybody
-depends on, and a breaking change afterwards.
-
 **Public release, decided rather than deferred.** From 1.1 the repository is public:
 release signatures, a public distribution channel and the marketplace registration of
 the plugin. Three obligations fall on v1 for it, and the first two are the kind that
 cannot be repaired afterwards.
 
 *The history has to be publishable from the first commit.* Publishing a repository
-publishes everything ever committed to it: instance hostnames, customer names in
+publishes everything ever committed to it: internal hostnames, customer names in
 examples or fixtures, anything mistaken for a test credential. Removing it later means
 rewriting history that other people have already cloned. Nothing in the repository may
-assume the instance it is developed on, and that is a rule for v1 rather than a cleanup
-task for 1.1.
+assume the infrastructure it is developed on, and that is a rule for v1 rather than a
+cleanup task for 1.1.
 
 *Xeno's own trail becomes public with it.* From M0 the project is developed through
 Xeno, so `.xeno/intents/` fills with intents, assumptions, learning records and digests

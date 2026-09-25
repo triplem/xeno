@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#45
+phase: 00-intake
+created: 2026-09-25T19:40:30Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+73849dd.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A change of target was carried out by searching for the target's name, and
+      reported as complete. The assumption it removed was carried by other words:
+      "the instance" in about twenty places, and Gitaly and Community Edition, which
+      name that host without containing its name. None of them could be found by the
+      search that was run, and the report of completeness was made on the strength of
+      that search.
+    proposal: >-
+      When a change removes a concept, list the words that carry it before searching,
+      not the name it goes by. The name is the one word the writers were least likely
+      to repeat, because they had already introduced it.
+    target: CLAUDE.md

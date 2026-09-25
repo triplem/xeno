@@ -126,4 +126,5 @@ Where the report becomes a declared `kind: scan` item, that value belongs beside
 `produced_by` and `result`, or the trail records that a scan ran without recording what
 it could have known.
 
-Both halves stay open in issue #6.
+The egress half stays open in issue #6. This one belongs with the evidence
+declaration and is recorded in #11.

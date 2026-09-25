@@ -1671,16 +1671,15 @@ cross cutting and carries its own skill for that reason.
 | Artifact                   | Channel                                    | Recipient           |
 |----------------------------|--------------------------------------------|---------------------|
 | Plugin (skills, mcp.json)  | Agent Plugins 1.0.0, vendored from the repository | developer machine |
-| Runner                     | OCI image in the instance's container registry | CI              |
-| Runner                     | per platform binaries in the instance's package registry, checksum in the release | developer machine |
+| Runner                     | OCI image in the host's container registry | CI                  |
+| Runner                     | per platform binaries attached to the release, with their checksums | developer machine |
 
-**Distribution is internal for now.** Xeno is developed on a self managed instance and
-is not published, so the channels are that instance's registries and nothing else.
-Two consequences follow rather than being decided separately. The marketplace wrapper
-stays and points at the repository on the instance rather than at a public directory,
-since a client can take a marketplace from any git repository it can reach. And the
-release carries checksums rather than signatures, for the reason given under integrity
-below.
+**Distribution is internal for now.** Xeno is not published, so the channels are the
+repository's own releases and registry and nothing else. Two consequences follow rather
+than being decided separately. The marketplace wrapper stays and points at that
+repository rather than at a public directory, since a client can take a marketplace from
+any git repository it can reach. And the release carries checksums rather than
+signatures, for the reason given under integrity below.
 
 The runner reaches the developer machine as well as CI, because hooks and the local
 run start it there. The installation route belongs in onboarding; what belongs here
@@ -1816,12 +1815,12 @@ gives is that a changed shipped set cannot pass unnoticed, and for that a digest
 checked side cannot influence is enough.
 
 The release itself carries checksums and no signature while distribution stays
-internal. A signature answers the question whether an artifact came from where it
-claims to; inside one instance, with access control on the registry it was pushed to,
-that question is already answered, and the obvious way to sign, keyless attestation,
-would publish the identity of an internal pipeline into a public transparency log to
-answer it a second time. When Xeno is published, signing comes with publication and
-not before, and the first public release is the first one that needs it.
+internal. A signature answers the question whether an artifact came from where it claims
+to, and with access control on the registry it was pushed to that question is already
+answered. The obvious way to sign, keyless attestation, would publish the identity of an
+internal pipeline into a public transparency log to answer it a second time. When Xeno
+is published, signing comes with publication and not before, and the first public
+release is the first one that needs it.
 
 ## 14. Extension
 
@@ -2125,7 +2124,7 @@ What each field means, whether it has to be there, and what applies when it is n
 | `agent.thinking.default` | reasoning effort, since those tokens are charged as output | the harness default applies |
 | `tracker` | the whole block is optional: Xeno runs without a tracker, the trigger is the CLI and write-back is comfort | no issue is read and no comment is written; a phase is started with the issue content supplied by hand |
 | `tracker.adapter` | which host adapter to use | the block is incomplete and `xeno phase start` refuses rather than guessing |
-| `tracker.base_url` | the instance, which has no canonical value for a self managed host | same |
+| `tracker.base_url` | the host's API, which has a default and is a parameter all the same, since a self managed deployment has no canonical address | same |
 | `tracker.auth` | the scheme and the environment variable holding the token, never the token | same |
 | `enforcement` | what the project requires of its host, compared against it by `xeno enforcement check` | the check fails. Skipping would make it useless in exactly the projects that never wrote one, and a project that requires nothing can say so explicitly |
 | `enforcement.required_pipeline` | whether a merge needs a green pipeline; this is the setting a binding verdict rests on | treated as required and reported as unmet |

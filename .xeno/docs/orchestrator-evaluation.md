@@ -45,7 +45,7 @@ truth competing with the repository.
 
 | # | Criterion | Why it carries weight |
 |---|---|---|
-| C1 | Self-hostable without a vendor cloud | The target is a self managed instance. Nothing in the trail may depend on a hosted service. |
+| C1 | Self-hostable without a vendor cloud | The target may be self managed. Nothing in the trail may depend on a hosted service. |
 | C2 | Model agnostic through an OpenAI compatible gateway | Model access, cost and routing belong to the existing LiteLLM proxy. A platform bound to one vendor's models moves that decision out of the organisation. |
 | C3 | Deterministic completion barrier | A phase must not be declarable as finished while its gate is red. Without a blocking hook, the process depends on a model's cooperation. |
 | C4 | Sub-agent delegation with separate context | Phase agents delegate to specialists. Separate context is what makes delegation cheaper than a single long conversation rather than more expensive. |
@@ -245,7 +245,7 @@ without network access, and mirroring rather than distributing is the pattern
 v1 already uses for rule levels above the project. A stale mirror is drift: a
 line in the P5 checklist, not a blocked gate. The reference is an identifier
 plus an optional base URI set at organisation level, so that a repository which
-later goes public carries no instance hostname.
+later goes public carries no internal hostname.
 
 ## 6. Risks and mitigations
 
