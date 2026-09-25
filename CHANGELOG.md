@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.14.0](https://github.com/triplem/xeno/compare/v0.13.0...v0.14.0) (2026-09-25)
+
+
+### Features
+
+* **enforcement:** generate the wrapper, and ask the host what it enforces ([#40](https://github.com/triplem/xeno/issues/40)) ([21dfd02](https://github.com/triplem/xeno/commit/21dfd02f12cb1eb1cf16b1bdfe8eeaa702ca2626)), closes [#38](https://github.com/triplem/xeno/issues/38)
+
 # [0.13.0](https://github.com/triplem/xeno/compare/v0.12.0...v0.13.0) (2026-09-25)
 
 
