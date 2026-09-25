@@ -10,11 +10,12 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     xeno init            [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
     xeno phase start     --intent KEY --phase NN [--evidence-from DIR]
     xeno phase finish    --intent KEY --phase NN
-    xeno gate run        --intent KEY --phase NN [--evidence-from DIR]
+    xeno gate run        --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
     xeno gate approve    FINDING --intent KEY --phase NN --by WHO --reason TEXT
     xeno gate override   FINDING --intent KEY --phase NN --by WHO --reason TEXT
     xeno obligation close FINDING --intent KEY --phase NN
     xeno gate verify     [--intent KEY]
+    xeno enforcement check [--branch NAME]
     xeno evidence attach --intent KEY --phase NN --from DIR
     xeno section set     SECTION --intent KEY --phase NN [--file PATH]
     xeno intent status   --intent KEY
@@ -42,6 +43,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP2 | template resolution with project over plugin, anchors the caller never writes, a second language that changes only the headings, a missing bundle that fails rather than falling back | `template/template_test`, `TestSectionSetRendersAnchors…` |
 | WP3 | six shipped templates, both strings bundles, the required section budget | `TestEveryShippedTemplate…`, `TestTheRequiredSectionBudgetHolds` |
 | WP9 | init that changes nothing on a second run, appends to .gitignore without replacing it, stops on a version mismatch, and prints what it cannot do | `init_test` |
+| WP10 | a wrapper that passes both ends of the range, not available told apart from unmet, and a waived requirement that stops being a daily complaint | `enforcement_test`, `TestTheWrapperPassesBothEnds…` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…` |
 | WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test` |

@@ -22,6 +22,7 @@ type InitOptions struct {
 	Model      string // the default model a phase uses
 	Language   string // the language artifacts are written in
 	Vendor     bool   // copy the plugin in and pin it
+	Host       string // which wrapper to generate, github by default
 }
 
 // InitResult is what init did and what it could not do, so that the caller prints both
@@ -71,6 +72,17 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 		if err := r.vendorPlugin(res); err != nil {
 			return nil, err
 		}
+	}
+	host := o.Host
+	if host == "" {
+		host = "github"
+	}
+	h, wrapper, err := Wrapper(host, "", model.RunnerVersion)
+	if err != nil {
+		return nil, refuse("%v", err)
+	}
+	if err := r.create(res, h.Path, wrapper); err != nil {
+		return nil, err
 	}
 
 	// Named and not created, both of them deliberately. They are somebody's act on the
