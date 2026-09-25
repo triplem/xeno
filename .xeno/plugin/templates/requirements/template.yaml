@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/requirements/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: requirements
+version: 1.0.0
+phase: 01-requirements
+sections:
+  - { id: acceptance-criteria, required: true }
+  - { id: non-goals, required: true }
+  - { id: constraints, required: true }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }

@@ -13,6 +13,7 @@ import (
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/template"
 )
 
 const key = "PROJ-1"
@@ -679,5 +680,106 @@ func TestTheIntentHashDoesNotDescendIntoPhases(t *testing.T) {
 	f.must(err)
 	if after != g.ArtifactsHash {
 		t.Fatalf("changing a phase moved the intent hash, %s to %s", g.ArtifactsHash, after)
+	}
+}
+
+// ---- WP2: the renderer reached through a command
+
+// templated copies the shipped set into the fixture, so that these tests exercise the
+// set this repository ships rather than one written to make them pass.
+func (f *fixture) templated() {
+	f.t.Helper()
+	src := filepath.Join("..", "..", ".xeno", "plugin", "templates")
+	ids, err := os.ReadDir(src)
+	f.must(err)
+	for _, id := range ids {
+		files, err := os.ReadDir(filepath.Join(src, id.Name()))
+		f.must(err)
+		for _, file := range files {
+			b, err := os.ReadFile(filepath.Join(src, id.Name(), file.Name()))
+			f.must(err)
+			f.write(filepath.Join(".xeno/plugin/templates", id.Name(), file.Name()), string(b))
+		}
+	}
+}
+
+func TestStartRecordsWhichTemplateItWillRenderFrom(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if lock.TemplateSource != "plugin" {
+		t.Fatalf("template_source is %q, want plugin", lock.TemplateSource)
+	}
+}
+
+// A repository without a vendored plugin records nothing and finds out at the first
+// section write, which is where it matters.
+func TestStartWithoutATemplateRecordsNothingAndDoesNotRefuse(t *testing.T) {
+	f := newFixture(t)
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if lock.TemplateSource != "" {
+		t.Fatalf("template_source is %q, want nothing", lock.TemplateSource)
+	}
+	if _, err := f.r.SectionSet(key, "00-intake", "problem", "x"); err == nil {
+		t.Fatal("a section was written with no template to render it from")
+	}
+}
+
+func TestSectionSetRendersAnchorsTheCallerNeverWrites(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "The thing that is wrong.")
+	f.must(err)
+	_, err = f.r.SectionSet(key, "00-intake", "scope", "What is being done about it.")
+	f.must(err)
+
+	b, err := os.ReadFile(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "output.md"))
+	f.must(err)
+	front, body, err := fm.Split(b)
+	f.must(err)
+
+	for _, want := range []string{"problem", "scope", "context-rationale"} {
+		if !strings.Contains(string(body), template.AnchorPrefix+want+" -->") {
+			t.Errorf("required section %s has no anchor", want)
+		}
+	}
+	if strings.Contains(string(body), "open-questions") {
+		t.Error("an empty optional section was rendered")
+	}
+	sections := template.Parse(string(body))
+	if sections["problem"] != "The thing that is wrong." {
+		t.Errorf("the first section did not survive the second write: %q", sections["problem"])
+	}
+	if !strings.Contains(string(front), "template: intake@1.0.0") {
+		t.Errorf("the frontmatter does not name the template:\n%s", front)
+	}
+	if !strings.Contains(string(front), "strings_hash: ") {
+		t.Error("the frontmatter carries no strings_hash")
+	}
+	// The order of section 5, not the alphabetical order a map would give.
+	if i, j := strings.Index(string(front), "intent:"), strings.Index(string(front), "created:"); i > j {
+		t.Errorf("the frontmatter is not in the order section 5 lists:\n%s", front)
+	}
+}
+
+func TestAnUnknownSectionIsRefusedWithWhatThereIs(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	_, err := f.r.SectionSet(key, "00-intake", "not-a-section", "x")
+	if err == nil {
+		t.Fatal("an unknown section was accepted")
+	}
+	if !strings.Contains(err.Error(), "context-rationale") {
+		t.Errorf("the refusal does not say what the template has: %v", err)
 	}
 }

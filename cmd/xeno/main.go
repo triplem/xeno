@@ -30,6 +30,7 @@ const usage = `usage:
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  --intent KEY
   xeno intent close   --intent KEY --reason TEXT
+  xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno version
 common: --root DIR (default .)`
@@ -99,6 +100,19 @@ func run(args []string) int {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+		return 0
+	case "section set":
+		content, err := readMessage(*file)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		t, err := r.SectionSet(*key, phase, finding, content)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Printf("%s rendered from %s (%s)\n", phase, t.Ref(), t.Source)
 		return 0
 	case "intent close":
 		return report(r.IntentClose(*key, *reason))

@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that wants a different
+# structure puts its own under .xeno/config/templates/review/, which beats this
+# one for that id alone and leaves the rest of the set in place.
+id: review
+version: 1.0.0
+phase: 05-review
+sections:
+  - { id: review-checklist, required: true }
+  - { id: release-notes, required: true }
+  - { id: residual-risk, required: true }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }

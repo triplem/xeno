@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#32
+phase: 00-intake
+created: 2026-09-24T21:09:05Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c7abd5d
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A bottleneck was identified correctly and the conclusion drawn from it was wrong.
+      Three open items depend on WP8, which is true, and the sequence puts WP8 behind
+      five packages that do not exist, which was not checked before proposing it as the
+      next step. The question that caught it took one command to answer.
+    proposal: >-
+      Before proposing the next package, read the sequence against what is in the tree
+      rather than against what is blocking. What blocks most is not what comes next, and
+      the plan already decided the order for reasons its author wrote down.
+    target: CLAUDE.md

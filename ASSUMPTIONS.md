@@ -38,6 +38,9 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A30 | Closing an obligation does not require the verdict to match the directory, while approving and overriding do | an override is taken so that a merge can proceed while artifacts are still missing, so by the time they exist the phase has moved by definition; requiring a matching hash there would make an obligation impossible to close, which is the opposite of the visibility it exists for | `internal/runner` | approved; what it does require is that the finding is still present, since an id that is gone took its override with it |
 | A31 | `xeno intent close` requires the closing learning record to exist already; it does not write one | the working sequence says the command "writes the closing learning record and the intent level `gate.yaml`", and section 7 says G-Complete in that mode "checks … that the closing learning record exists". A gate checking a file the same command just created checks itself, so the reading that leaves the gate meaningful is taken | `internal/runner`, `internal/gates` | open, explained; the record is written like every phase record, by whoever ends the intent |
 | A32 | G-Complete is implemented in its abandoned mode only; the P5 mode stays `not-implemented` in the gate table | the two modes have different conditions and different invocation points, and only one of them can be exercised: no intent in this repository reaches P5, since no phase beyond P0 may run before WP8 closes the G-Freshness gap (A6) | `internal/gates` | open, explained; the phase table still says `not-implemented` rather than claiming a check that did not happen |
+| A33 | The template id is the phase without its ordering prefix, so `02-design` renders from `design` | the prefix orders the phases and says nothing a template needs; the alternative was a mapping table, which is a second place to keep true | `internal/model` | open, explained |
+| A34 | `phase start` records no `template_source` where no template resolves, and does not refuse; `section set` refuses | a repository without a vendored plugin is what every repository looks like before `xeno init`, and refusing at start would make the runner unusable before WP9. The first section write is where a missing template actually prevents something | `internal/runner` | open, explained |
+| A35 | `section set` writes the frontmatter fields the runner knows and leaves the rest out rather than filling them | `model`, `tool` and `tool_version` come from the harness (WP11) and `secrets_hash` from a filter that does not exist; a plausible value in a field nobody produced is worse than an absent one, which is the finding A26 already records | `internal/runner` | open, explained; G-Schema reports them missing, which is the honest state of a phase no session has produced |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Decisions
@@ -74,6 +77,9 @@ G-Freshness (partial, A6), G-Evidence, G-Build, G-Complete (abandoned mode only,
 Gates written as `not-implemented`: G-Supply, G-Secret, G-Test, G-Rules, G-Policy,
 and G-Complete in the P5 mode.
 
+WP2 and WP3: the template engine, resolution, the renderer, and the six shipped
+templates with both strings bundles.
+
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
 procedure, `SECURITY.md`, the module path (A1), the format and vet jobs the package asks
 for on day one, and the release pipeline: version and notes derived from Conventional
@@ -90,5 +96,5 @@ the instance.
 
 Everything that needs a host, a harness or a network: the GitLab adapter, the CI
 wrapper, `enforcement check`, the MCP server, hooks, the plugin, the documentation site.
-Templates, rules, the secret filter and the digest writer. `xeno init`. Five of the
+Rules, the secret filter and the digest writer. `xeno init`. Five of the
 plan's verification points stand before those parts.

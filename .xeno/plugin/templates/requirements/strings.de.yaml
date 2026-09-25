@@ -1,0 +1,11 @@
+# Headings only. The section ids above them belong to the process layer and
+# are always English; adding a language is a bundle and never a change to the
+# structure.
+language: de
+title: Anforderungen
+headings:
+  acceptance-criteria: Abnahmekriterien
+  non-goals: Nicht-Ziele
+  constraints: Randbedingungen
+  open-questions: Offene Fragen
+  decisions: Entscheidungen
