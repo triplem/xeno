@@ -4,6 +4,7 @@
 scan:
   scanners:
     - vuln
+    - secret
 
 severity:
   - HIGH
