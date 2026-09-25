@@ -33,6 +33,11 @@ in the footer, `Refs #123`, and `Closes #123` on the commit that finishes the wo
 in the pull request description. `CONTRIBUTING.md` says why, and names the host
 setting it depends on.
 
+An intent key is `XENO-` and the issue number padded to four digits, `XENO-0049`, and
+the padding is for sorting alone. Intents sealed before this keep their names: the key
+sits inside `artifacts_hash` and inside the merge commits that name them, so renaming
+one changes every verdict in it.
+
 ## Three standing rules
 
 **The documents are not editable by the agent.** Where the code and the specification
