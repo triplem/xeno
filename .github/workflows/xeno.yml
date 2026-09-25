@@ -53,6 +53,18 @@ jobs:
           fi
       - name: vet
         run: go vet ./...
+
+      # A verdict has to be reproducible from the repository alone, so the gate path
+      # does not reach the network. xeno enforcement check does, which is why it is a
+      # command of its own. This is the property that erodes silently: one import in
+      # one gate and every verdict starts depending on whether a service answered.
+      - name: the gate path reaches no network
+        run: |
+          if go list -deps ./internal/gates | grep -qxE 'net|net/http'; then
+            echo "internal/gates now depends on the network:"
+            go list -deps ./internal/gates | grep -xE 'net|net/http'
+            exit 1
+          fi
       - name: test
         run: go test ./...
       - name: build

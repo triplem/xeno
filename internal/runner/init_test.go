@@ -190,3 +190,51 @@ func snapshot(t *testing.T, root string) string {
 	}
 	return b.String()
 }
+
+// WP10: the two host specific things in the wrapper are the expressions for the ends of
+// the commit range, which is what makes another host an entry in a table rather than a
+// second generator.
+func TestTheWrapperPassesBothEndsOfTheRange(t *testing.T) {
+	h, body, err := Wrapper("github", "", "1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.BaseRef == "" || h.HeadRef == "" || h.BaseRef == h.HeadRef {
+		t.Fatalf("the host contributes no distinct range expressions: %+v", h)
+	}
+	for _, want := range []string{"--base " + h.BaseRef, "--head " + h.HeadRef, "1.2.3", "xeno gate run"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the wrapper does not carry %q", want)
+		}
+	}
+	// It calls one command and does nothing else: no build, no test.
+	for _, unwanted := range []string{"go build", "go test", "semantic-release"} {
+		if strings.Contains(body, unwanted) {
+			t.Errorf("the wrapper carries %q, which belongs in the project's own pipeline", unwanted)
+		}
+	}
+	if _, _, err := Wrapper("nowhere", "", "1.2.3"); err == nil {
+		t.Fatal("a wrapper was generated for an unknown host")
+	}
+}
+
+func TestInitGeneratesTheWrapper(t *testing.T) {
+	r := initFixture(t)
+	res, err := r.Init(InitOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := wrapperHosts["github"]
+	if !fm.Exists(filepath.Join(r.Root, h.Path)) {
+		t.Fatalf("%s was not generated", h.Path)
+	}
+	found := false
+	for _, p := range res.Created {
+		if p == h.Path {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("the wrapper is not in what init reports it created: %v", res.Created)
+	}
+}

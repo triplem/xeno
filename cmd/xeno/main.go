@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/evidence"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/model"
@@ -23,11 +24,12 @@ const usage = `usage:
   xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
   xeno phase finish   --intent KEY --phase NN
-  xeno gate run       --intent KEY --phase NN [--evidence-from DIR]
+  xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
   xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno gate override  FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno obligation close FINDING --intent KEY --phase NN
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
+  xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  --intent KEY
   xeno intent close   --intent KEY --reason TEXT
@@ -77,11 +79,20 @@ func run(args []string) int {
 	mdl := fs.String("model", "", "the default model a phase uses")
 	language := fs.String("language", "en", "the language artifacts are written in")
 	pluginFrom := fs.String("plugin-from", ".xeno/plugin", "where to vendor the plugin from")
+	host := fs.String("host", "github", "which CI wrapper to generate")
+	branch := fs.String("branch", "", "the branch whose protection to read, main by default")
+	// Both ends of the commit range. They are an input of the run and are deliberately
+	// not recorded: after a squash a recorded range would point at commits that no
+	// longer exist, and a field that is sometimes wrong is worse than no field. No gate
+	// reads them until WP4 brings the commit predicates.
+	base := fs.String("base", "", "the base of the commit range under review")
+	head := fs.String("head", "", "the head of the commit range under review")
 	reason := fs.String("reason", "", "why")
 	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
-	if *key == "" && cmd != "gate verify" && cmd != "check commit-message" && cmd != "init" {
+	if *key == "" && cmd != "gate verify" && cmd != "check commit-message" && cmd != "init" &&
+		cmd != "enforcement check" {
 		fmt.Fprintln(os.Stderr, "--intent is required")
 		return 2
 	}
@@ -90,7 +101,8 @@ func run(args []string) int {
 
 	phase := ""
 	switch cmd {
-	case "intent status", "intent close", "gate verify", "check commit-message", "init":
+	case "intent status", "intent close", "gate verify", "check commit-message", "init",
+		"enforcement check":
 	default:
 		p, err := model.ResolvePhase(*phaseArg)
 		if err != nil {
@@ -104,13 +116,24 @@ func run(args []string) int {
 	case "init":
 		r.PluginSource = *pluginFrom
 		res, err := r.Init(runner.InitOptions{
-			TrackerKey: *project, Model: *mdl, Language: *language, Vendor: *vendor,
+			TrackerKey: *project, Model: *mdl, Language: *language, Vendor: *vendor, Host: *host,
 		})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 		printInit(res)
+		return 0
+	case "enforcement check":
+		rep, err := r.EnforcementCheck(*branch, enforcement.Token())
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		printEnforcement(rep)
+		if rep.Unmet() > 0 {
+			return 1
+		}
 		return 0
 	case "check commit-message":
 		message, err := readMessage(*file)
@@ -143,6 +166,7 @@ func run(args []string) int {
 	case "phase finish":
 		return report(r.Finish(*key, phase))
 	case "gate run":
+		r.Base, r.Head = *base, *head
 		return report(r.GateRun(*key, phase))
 	case "gate approve":
 		return report(r.Decide(*key, phase, finding, "approved", *by, *reason))
@@ -211,6 +235,25 @@ func readMessage(path string) (string, error) {
 // printInit says what was done, what was left alone, and what a person still has to do.
 // The last list is the point: a first contact that leaves the project believing the gate
 // is binding when it is not is worse than no first contact.
+// printEnforcement prints the report. not-available is its own line rather than folded
+// into unmet, because a setting the host does not have is nobody's oversight and
+// reporting it as one sends somebody looking for a checkbox that is not there.
+func printEnforcement(rep *enforcement.Report) {
+	fmt.Printf("%s, branch %s\n", rep.Repository, rep.Branch)
+	for _, q := range rep.Requirements {
+		fmt.Printf("  %-13s %-20s declared %-6s actual %s\n", q.State, q.Name, q.Declared, q.Actual)
+		if q.Note != "" {
+			fmt.Printf("                  %s\n", q.Note)
+		}
+	}
+	fmt.Printf("\nreport written to %s\n", runner.ReportPath)
+	if rep.Unmet() > 0 {
+		fmt.Printf("\n%d requirement(s) are neither met nor waived. Where the host cannot express one,\n"+
+			"record it as waived in project.yaml with a reason and a date: an unmeetable requirement\n"+
+			"becomes a decision in the repository rather than a complaint on every run.\n", rep.Unmet())
+	}
+}
+
 func printInit(res *runner.InitResult) {
 	for _, p := range res.Created {
 		fmt.Println("  created  ", p)

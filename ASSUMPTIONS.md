@@ -44,6 +44,10 @@ None is confirmed yet; each wants a yes, a no or a replacement from a person.
 | A36 | `xeno init` takes its three answers as flags and prompts for nothing | the plan asks for three questions and defaults for the rest, which is about how much a newcomer is asked rather than about a prompt loop; flags are the same three, work unattended, and are testable | `cmd/xeno` | open, explained |
 | A37 | `xeno init` writes the `.gitignore` entry by appending and touches nothing else in that file | it is the one file init writes that it did not create, because a `.gitignore` belongs to the project and a generated one would replace whatever was there | `internal/runner` | approved |
 | A38 | `xeno init` from a development build writes the stamped version as the pin and reports it as outstanding rather than refusing | a dev stamp names a commit and whether that tree was clean, so nobody else can install it and this machine stops matching after the next commit; refusing would make the tool unusable to the people building it | `internal/runner` | open, explained |
+| A39 | The report of `xeno enforcement check` is written to `.xeno/local/enforcement.yaml`, which is gitignored | it is a pipeline artifact and a job status and never a commit: CI verifies artifacts that exist and produces none, and a second place carrying a verdict beside `gate.yaml` is what the schema forbids | `internal/runner` | approved |
+| A40 | `enforcement check` reads its token from `XENO_ENFORCEMENT_TOKEN`, falling back to `GITHUB_TOKEN` | a token is never in the repository, which is the rule the tracker credential already follows; the fallback is what a workflow provides by itself, so the scheduled job needs no secret of its own | `internal/enforcement` | open, explained |
+| A41 | Only `required_pipeline`, `allow_bypass` and `approvals.required` are compared; `approvals.not_by_author` and `merge_method` are not | the first three map onto what the host reports, and the other two have no field in the answer, so comparing them would invent a result. They are declared and unchecked, which is honest, rather than checked against nothing | `internal/enforcement` | open, explained |
+| A42 | The gate path is kept free of the network by a check in CI rather than by a test | `go list -deps` answers it in one line and a Go test would have to walk the import graph itself; the property is the one the process definition rests a reproducible verdict on, so something has to hold it | `.github/workflows/xeno.yml` | approved |
 | A14 | A question has two to four options plus exactly one free entry, or `no_options: true` | the plan's wording, made countable | `internal/gates` | open, explained |
 
 ## Decisions
@@ -82,6 +86,9 @@ and G-Complete in the P5 mode.
 
 WP2 and WP3: the template engine, resolution, the renderer, and the six shipped
 templates with both strings bundles.
+
+WP9 and WP10: `xeno init` with vendoring and the version check, the generated CI
+wrapper, and `xeno enforcement check` against the host.
 
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
 procedure, `SECURITY.md`, the module path (A1), the format and vet jobs the package asks

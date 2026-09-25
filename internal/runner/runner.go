@@ -38,6 +38,10 @@ type Runner struct {
 	// PluginSource is where xeno init copies the shipped plugin from. A released
 	// runner carries it; here it is the repository being developed.
 	PluginSource string
+	// Base and Head are the commit range under review. An input of the run and
+	// deliberately not recorded: after a squash a recorded range would point at commits
+	// that no longer exist. No gate reads them until WP4.
+	Base, Head string
 }
 
 func New(root string) *Runner {
