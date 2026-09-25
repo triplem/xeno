@@ -16,11 +16,16 @@ build order in `.xeno/docs/implementation-plan.md`. Both are normative.
 
 Lines wrap at 88 characters, in code and in prose. Go source carries
 `SPDX-License-Identifier: Apache-2.0` and no per file copyright line. One dependency,
-`gopkg.in/yaml.v3`, vendored; adding a second is a decision, not a step.
+`go.yaml.in/yaml/v3`, vendored; adding a second is a decision, not a step.
 
 Where a paragraph is being changed for the second time, replace it rather than edit
 into it, and read it back as a paragraph rather than as a diff. Editing into a sentence
 leaves the words around it behind, and a small diff is exactly when that is not noticed.
+
+Headings name their section in words, in issues as much as in files. A leading number
+indexes a list the reader cannot see, and the numbers this project does have belong to
+the process definition's sections and the plan's steps, so a borrowed one reads as a
+reference to them.
 
 A comment or a passage of prose says what the construction is and why it is that way.
 Where the reason is genuinely the thing it replaced, that belongs in the commit message:
