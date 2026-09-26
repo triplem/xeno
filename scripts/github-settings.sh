@@ -44,3 +44,11 @@ echo
 echo "The squashed message is now built from the pull request title and description,"
 echo "so a Closes footer in the description survives the merge, and squash is the only"
 echo "method on offer, so no other path can discard it."
+
+# Private vulnerability reporting, which SECURITY.md names as the channel instead of an
+# address. It exists on a public repository and is off by default, so a file naming it
+# would be pointing at something switched off. Reversible, and off again by DELETE.
+echo
+echo "private vulnerability reporting:"
+gh api -X PUT "/repos/$repo/private-vulnerability-reporting" >/dev/null
+gh api "/repos/$repo/private-vulnerability-reporting" -q '"  enabled: \(.enabled)"'
