@@ -1,0 +1,38 @@
+# The configuration of this repository. Every block names the section that defines it.
+#
+# Written by hand rather than by xeno init: this repository predates WP9, and running
+# init here would regenerate the CI wrapper, which is hand tuned and holds the list of
+# markers a pull request description may not carry. What was needed was the enforcement
+# block, so that xeno enforcement check compares the host against something.
+
+runner_version: 0.1.0-dev      # section 13, xeno init refuses a mismatch
+
+language:                      # section 5
+  artifacts: en                # the process layer stays English
+
+agent:                         # section 12
+  tool: claude-code            # claude-code | codex, fixed for the project
+  model:
+    default: claude-opus-5
+
+tracker:                       # section 12
+  adapter: github
+  project: triplem/xeno
+  base_url: https://api.github.com   # a default, overridden for Enterprise Server
+  auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }
+
+enforcement:                   # section 7, compared against the host by CI
+  required_pipeline: true
+  allow_bypass: false
+  approvals:
+    required: 1
+    not_by_author: true
+
+evidence:                      # section 4
+  source: ci                   # ci | local
+
+retention:                     # section 12
+  local_days: 30
+
+templates:                     # section 4
+  overrides_dir: .xeno/config/templates
