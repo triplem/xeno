@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.16.0](https://github.com/triplem/xeno/compare/v0.15.0...v0.16.0) (2026-09-26)
+
+
+### Features
+
+* **gates:** the register carries the record section 8 defines ([#59](https://github.com/triplem/xeno/issues/59)) ([d7f2e9b](https://github.com/triplem/xeno/commit/d7f2e9bdf77efe5ff262d2dc59e86d4612ca6219)), closes [#55](https://github.com/triplem/xeno/issues/55)
+
 # [0.15.0](https://github.com/triplem/xeno/compare/v0.14.0...v0.15.0) (2026-09-26)
 
 
