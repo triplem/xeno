@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#44
+phase: 00-intake
+created: 2026-09-25T21:36:10Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+fdade9d
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      A scanner was nearly added with a threshold that would have failed on its first
+      run, with nineteen findings in a dependency tree this project does not own and
+      cannot fix. Running the audit before writing the check turned it into a
+      different check.
+    proposal: >-
+      Run the tool against the real input before choosing what makes it fail. A
+      threshold picked before the first result is a guess about the result.
+    target: CLAUDE.md

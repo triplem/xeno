@@ -1,0 +1,112 @@
+# What the pipeline runs, as opposed to what the release ships. Trivy answers the
+# second; this answers the first, for the part of it that is not pinned.
+#
+# semantic_version pins semantic-release one package deep and npm resolves the rest at
+# run time, so the tree that cuts every release is resolved fresh and is the largest
+# unexamined thing in this repository. It is installed here exactly as the release
+# installs it, and audited.
+#
+# The check is on drift and not on presence. The audit reported nineteen findings on
+# the day it was written, almost all of them under node_modules/npm/node_modules/
+# because semantic-release depends on npm as a library, and none of them is this
+# project's to fix. A job that failed on those would fail on its first run with no
+# action available, which is what trivy.yaml already refuses for unfixed findings.
+# .github/npm-audit-baseline.json holds the counts; a twentieth finding fails, because
+# that is a change somebody has to look at.
+#
+# It does not answer staleness. A count that does not move says nothing about whether
+# the pinned versions are still the ones to be on, and #44 keeps that apart on purpose.
+name: audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - '.github/workflows/audit.yml'
+      - '.github/npm-audit-baseline.json'
+      - '.releaserc.json'
+  schedule:
+    # Advisories arrive without anything here changing, which is the same reason the
+    # vulnerability scan runs daily. An hour apart from it, so two failures on one
+    # morning are two mails and not one.
+    - cron: '43 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The same three lines the release workflow passes to the action, and no
+      # package.json in this repository: the tree exists for the length of this job.
+      - name: install what the release installs
+        run: |
+          set -eu
+          mkdir -p /tmp/release-toolchain
+          cd /tmp/release-toolchain
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund \
+            semantic-release@24.2.9 \
+            @semantic-release/changelog@7.0.0 \
+            @semantic-release/git@11.0.1
+
+      - name: audit
+        id: audit
+        run: |
+          set -eu
+          mkdir -p "$GITHUB_WORKSPACE/.xeno/local/scan"
+          cd /tmp/release-toolchain
+          # npm audit exits non-zero when it finds anything, which is every run here,
+          # so the exit code is not the signal; the comparison below is.
+          npm audit --json > "$GITHUB_WORKSPACE/.xeno/local/scan/npm-audit.json" || true
+          cd "$GITHUB_WORKSPACE"
+          python3 - <<'PY'
+          import json, sys
+
+          report = json.load(open(".xeno/local/scan/npm-audit.json"))
+          base = json.load(open(".github/npm-audit-baseline.json"))["vulnerabilities"]
+          got = report["metadata"]["vulnerabilities"]
+
+          risen = []
+          for sev, allowed in base.items():
+              if got.get(sev, 0) > allowed:
+                  risen.append(f"{sev}: {got[sev]} against {allowed} recorded")
+          print("counts:", json.dumps({k: got.get(k, 0) for k in base}))
+          for name, v in sorted(report.get("vulnerabilities", {}).items()):
+              if v["severity"] in ("high", "critical"):
+                  print(v["severity"], name, v["nodes"][0] if v["nodes"] else "")
+
+          if risen:
+              print("above the recorded baseline:", "; ".join(risen), file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a run that wrote no report fails here instead.
+          test -f "$out/npm-audit.json"
+          result=pass
+          if [ "${{ steps.audit.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: scan"
+            echo "  job: npm-audit"
+            echo "  result: $result"
+            echo "  file: npm-audit.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-npm-audit
+          path: .xeno/local/scan/
