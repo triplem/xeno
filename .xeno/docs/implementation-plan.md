@@ -864,12 +864,12 @@ marketplace from any git repository it can reach. Nothing is registered anywhere
 and nobody should build a path for that. Whether the client accepts that URL directly is
 the one thing to verify here rather than assume.
 
-**Two things to verify rather than assume.** The first is the marketplace URL above.
-The second is the gateway: whether it reports the model that actually served a request
-rather than only the virtual name that was asked for, and whether it accepts and records
-request metadata. The record of which model was used depends on the first, and
-attribution of cost below the project depends on the second. Both are a short exercise
-against the proxy and belong before the code that relies on them, not after.
+**One thing left to verify rather than assume.** It is the marketplace URL above. The
+gateway was the second and is answered in section 9: it reports the deployment a request
+was routed to, and it records request metadata sent under its own header names. The
+record of which model was used and the attribution of cost below the project therefore
+both have a source, and what remains of the exercise is sending the values from here,
+which is the export below.
 
 **The MCP tool surface is a budget, not a list.** Five operations here, six once WP15
 adds the index query, and a seventh needs an argument of the kind the index has. A tool
@@ -1953,7 +1953,36 @@ To verify rather than assume, each before the code that relies on it: whether th
 accepts the instance URL for the marketplace --> unsure right now
 
 whether the gateway reports the model that
-actually served a request; whether it accepts and records request metadata --> going to get sorted out later
+actually served a request; whether it accepts and records request metadata --> both yes,
+measured against LiteLLM 1.102.1 (#56). The deployment that served a request is in the
+response headers, `x-litellm-model-name` with `x-litellm-model-id` and
+`x-litellm-model-api-base`, and in the spend log row, where `model` is the served name
+and `model_group` the name that was asked for. The response body carries only the name
+that was asked for. What any of them names is the deployment that was routed to and not
+what the provider says it served, so a recorded `model` is a routing record rather than
+an attestation from the provider. Metadata arrives through headers alone, which is what
+a harness can set, and the two routes that carry it are not equal. `x-litellm-tags`
+lands in `request_tags`, is aggregated per tag with a count and a spend, and is
+documented as gated by nothing; it is the attribution below the project and it is what
+Xeno sends. `x-litellm-spend-logs-metadata` keeps a key value pair verbatim on the row
+and is documented as requiring an enterprise licence, yet the proxy it was measured on
+has no licence set and recorded it anyway, which is a worse foundation than a paid
+feature would be: a release that enforces the gate stops the rows without an error. Per
+key and per user figures need no licence either, through the two spend list endpoints
+`/spend/keys` and `/spend/users` and through `/user/info` for one user, but they
+aggregate above the phase and answer what a project spent rather than what a phase did.
+The two list endpoints sit in `spend_tracking_routes`, so an internal user reaches them
+and not only an administrator, and what each caller gets is scoped: its own rows, an
+empty list where its key carries no `user_id`, and 403 rather than a filtered list where
+it asks after another user. A virtual key restricted to `llm_api_routes`, which is what
+a phase runs under, is refused every one of these routes outright rather than handed an
+empty list, and it sets both metadata routes on its own requests all the same: a request
+through one was recorded with its tags, its key value pairs and the key's own alias on
+the row. The finer scoping, the empty list for a key with no `user_id`, is taken from
+the documentation. The names are not free on either route. A custom header is dropped
+without an error unless the proxy lists it under `extra_spend_tag_headers`, so either
+the harness sends LiteLLM's own names or the proxy configuration becomes part of what an
+adopter arranges.
 
 whether each
 harness forwards custom headers to it, and under which variable --> claude-code: export ANTHROPIC_CUSTOM_HEADERS="X-Custom-Header-1: value1\nX-Custom-Header-2: value2"; codex: X-Custom-Header = "MeinWert"
