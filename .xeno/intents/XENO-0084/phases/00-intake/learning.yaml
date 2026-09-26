@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#84
+phase: 00-intake
+created: 2026-09-26T16:04:01Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+00838d7
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Three host settings were read as three requirements and are one arrangement. A
+      required approval no single maintainer can give forces a bypass, and a bypass
+      covers the required check as well, so two of the three declared requirements
+      were unmet because of the third.
+    proposal: >-
+      Where a declaration lists requirements a host enforces, they are reviewed as a
+      combination and not one line at a time. A requirement that cannot be satisfied
+      does not fail on its own; it takes the others with it.
+    target: CLAUDE.md

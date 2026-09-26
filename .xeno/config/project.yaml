@@ -25,8 +25,12 @@ enforcement:                   # section 7, compared against the host by CI
   required_pipeline: true
   allow_bypass: false
   approvals:
-    required: 1
-    not_by_author: true
+    # Zero, decided in #84 rather than left at the default. One maintainer cannot approve
+    # their own pull request, so a required approval leaves every merge to an
+    # administrator bypass, and a bypass that every merge needs is not a guarantee. What
+    # binds instead is the `verify` check, required of everybody including whoever owns
+    # the repository.
+    required: 0
 
 evidence:                      # section 4
   source: ci                   # ci | local
