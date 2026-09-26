@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#71
+phase: 00-intake
+created: 2026-09-26T21:21:34Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+50001d4
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A verifier that recomputes cannot catch a missing gate, because the
+      recomputation omits the same gate for the same reason. Two runs of one
+      implementation agree on everything the implementation gets wrong.
+    proposal: >-
+      Where a check compares a record against a recomputation, ask what both sides
+      share. Anything derived from the same table or the same code is outside what the
+      comparison can see, and has to be checked against the rule instead.
+    target: CLAUDE.md
