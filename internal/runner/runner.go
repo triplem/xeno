@@ -261,6 +261,11 @@ func (r *Runner) Start(key, phase string) error {
 		return err
 	}
 	lock := model.ContextLock{Common: common, EvidenceSource: r.evidenceSource()}
+	files, err := r.informationBase(key)
+	if err != nil {
+		return err
+	}
+	lock.Files = files
 	// Which template the phase will be rendered from, recorded because otherwise two
 	// projects on the same template version are indistinguishable although one of them
 	// overrode it. A repository without a vendored plugin records nothing here and
@@ -311,6 +316,62 @@ func (r *Runner) Start(key, phase string) error {
 		return err
 	}
 	return fm.WriteYAML(r.marker(key, phase), map[string]string{"phase": phase, "started": r.stamp()})
+}
+
+// informationBase resolves the context profile into the files a phase is given, with a
+// hash each. The profile is P0's artifact and applies to every phase of the intent, which
+// is what section 12 means by a phase reading what it names; a phase does not get a
+// profile of its own, so there is one budget per intent rather than six.
+//
+// A repository without a profile gets an empty list, and the second half of G-Freshness
+// then has nothing to compare, which is the state every intent in this repository is in.
+// That is a smaller claim than an empty profile would be: nothing was declared, rather
+// than nothing was read.
+func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
+	var p model.Profile
+	path := r.abs(model.PhaseDir(key, model.Phases[0]) + "/" + model.ContextProfile)
+	if err := fm.ReadYAML(path, &p); err != nil {
+		return nil, nil // no profile is not an error; it is a project that has not written one
+	}
+	var files []model.ContextFile
+	seen := map[string]bool{}
+	err := filepath.WalkDir(r.Root, func(abs string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		rel, rerr := filepath.Rel(r.Root, abs)
+		if rerr != nil {
+			return rerr
+		}
+		rel = filepath.ToSlash(rel)
+		if strings.HasPrefix(rel, ".git/") || seen[rel] {
+			return nil
+		}
+		if !matchesAny(p.Include, rel) || matchesAny(p.Exclude, rel) {
+			return nil
+		}
+		h, herr := hashing.FileHash(abs)
+		if herr != nil {
+			return herr
+		}
+		seen[rel] = true
+		files = append(files, model.ContextFile{Path: rel, SHA256: h})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
+	return files, nil
+}
+
+func matchesAny(patterns []string, path string) bool {
+	for _, pattern := range patterns {
+		if model.MatchPath(pattern, path) {
+			return true
+		}
+	}
+	return false
 }
 
 // Finish seals the phase: it computes artifacts_hash over what is there now, runs the

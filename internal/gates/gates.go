@@ -709,23 +709,64 @@ func CompleteOnClose(root, key string) model.Check {
 	return ch
 }
 
-// ---- G-Freshness: the first half, the context hash against the predecessor.
+// ---- G-Freshness, both halves: the context hash against the predecessor, and the files a
+// preceding phase was given against the tree.
 
 func freshness(c Ctx) model.Check {
 	idx := model.PhaseIndex(c.Phase)
-	if idx == 0 {
-		return result(nil)
+	var fs []model.Finding
+	if idx > 0 {
+		rel := c.phaseRel(c.Phase) + "/context.lock.yaml"
+		var lock model.ContextLock
+		if err := fm.ReadYAML(c.abs(rel), &lock); err != nil {
+			return result([]model.Finding{finding(rel, "context lock missing", "start the phase with xeno phase start")})
+		}
+		cur, err := hashing.DirHash(c.Root, c.phaseRel(model.Phases[idx-1]), hashing.PhaseExcluded)
+		if err != nil || cur != lock.PredecessorHash {
+			return result([]model.Finding{finding(rel, "predecessor changed after this phase started", "rerun this phase against the current predecessor")})
+		}
 	}
-	rel := c.phaseRel(c.Phase) + "/context.lock.yaml"
-	var lock model.ContextLock
-	if err := fm.ReadYAML(c.abs(rel), &lock); err != nil {
-		return result([]model.Finding{finding(rel, "context lock missing", "start the phase with xeno phase start")})
+	return result(append(fs, staleReads(c, idx)...))
+}
+
+// staleReads is the second half: no file a preceding phase was given has changed since it
+// was given. The lock records the information base with a hash each and is never
+// refreshed, so a file whose hash no longer matches the tree is one this phase, or a later
+// one, moved out from under an earlier phase's reading.
+//
+// It looks at this phase and every phase before it, because the question is whether the
+// work already done still rests on what it was given, and a phase does not stop being
+// stale by having a successor.
+//
+// Where no profile was written the lists are empty and there is nothing to compare, which
+// is every intent in this repository so far: the check is not weaker for it, it has simply
+// been told nothing.
+func staleReads(c Ctx, idx int) []model.Finding {
+	var fs []model.Finding
+	for i := 0; i <= idx; i++ {
+		phase := model.Phases[i]
+		rel := c.phaseRel(phase) + "/context.lock.yaml"
+		var lock model.ContextLock
+		if err := fm.ReadYAML(c.abs(rel), &lock); err != nil {
+			continue // absence is the first half's finding, or a phase that has not run
+		}
+		for _, f := range lock.Files {
+			h, err := hashing.FileHash(c.abs(f.Path))
+			switch {
+			case os.IsNotExist(err):
+				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it is gone",
+					"read the phase again against what is there, or record why the file left"))
+			case err != nil:
+				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it cannot be read: "+err.Error(),
+					"make it readable, or read the phase again against what is there"))
+			case h != f.SHA256:
+				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it has changed since",
+					"read the phase again for what changed; the lock records what it was given, not what is there now"))
+			}
+		}
 	}
-	cur, err := hashing.DirHash(c.Root, c.phaseRel(model.Phases[idx-1]), hashing.PhaseExcluded)
-	if err != nil || cur != lock.PredecessorHash {
-		return result([]model.Finding{finding(rel, "predecessor changed after this phase started", "rerun this phase against the current predecessor")})
-	}
-	return result(nil)
+	sort.Slice(fs, func(i, j int) bool { return fs[i].Cause < fs[j].Cause })
+	return fs
 }
 
 // ---- G-Evidence and G-Build
