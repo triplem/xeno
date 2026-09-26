@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+9313e10
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       Three statements in the hand kept record had been overtaken by decisions
       recorded elsewhere: an adapter's host by #36, a list of what is not built by the

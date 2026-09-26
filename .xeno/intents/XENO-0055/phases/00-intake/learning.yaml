@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+2cb8638
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       A gate can read the right question off the wrong field and pass its tests for
       months. G-Assumptions inferred openness from an empty `confirmed_by`, which

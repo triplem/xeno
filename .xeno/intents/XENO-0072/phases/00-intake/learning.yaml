@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+ba0c9c7
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       A definition that existed only in code was indistinguishable, from the
       document's side, from one that did not exist at all. `strings_hash` was computed
