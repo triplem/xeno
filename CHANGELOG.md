@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.15.0](https://github.com/triplem/xeno/compare/v0.14.0...v0.15.0) (2026-09-26)
+
+
+### Features
+
+* **runner:** say what the next step is ([#54](https://github.com/triplem/xeno/issues/54)) ([195f2cc](https://github.com/triplem/xeno/commit/195f2ccfa251a01439451d903a051c4bb52aa02e)), closes [#35](https://github.com/triplem/xeno/issues/35)
+
 # [0.14.0](https://github.com/triplem/xeno/compare/v0.13.0...v0.14.0) (2026-09-25)
 
 
