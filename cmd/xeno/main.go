@@ -36,7 +36,7 @@ const usage = `usage:
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno version
-common: --root DIR (default .)`
+common: --root DIR (default .), --no-next to leave out the next step`
 
 func main() { os.Exit(run(os.Args[1:])) }
 
@@ -88,6 +88,10 @@ func run(args []string) int {
 	base := fs.String("base", "", "the base of the commit range under review")
 	head := fs.String("head", "", "the head of the commit range under review")
 	reason := fs.String("reason", "", "why")
+	// The suggestion is off by default nowhere and on by default nowhere either: the
+	// commands that change state say it, the ones a pipeline or a hook runs do not, and
+	// this turns it off for the scripts that are neither.
+	noNext := fs.Bool("no-next", false, "do not say what the next step is")
 	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
@@ -158,22 +162,24 @@ func run(args []string) int {
 			return 1
 		}
 		fmt.Printf("%s rendered from %s (%s)\n", phase, t.Ref(), t.Source)
-		return 0
+		return suggest(r, *key, *noNext, 0)
 	case "intent close":
-		return report(r.IntentClose(*key, *reason))
+		return suggest(r, *key, *noNext, report(r.IntentClose(*key, *reason)))
 	case "phase start":
-		return report(nil, r.Start(*key, phase))
+		return suggest(r, *key, *noNext, report(nil, r.Start(*key, phase)))
 	case "phase finish":
-		return report(r.Finish(*key, phase))
+		return suggest(r, *key, *noNext, report(r.Finish(*key, phase)))
 	case "gate run":
 		r.Base, r.Head = *base, *head
-		return report(r.GateRun(*key, phase))
+		return suggest(r, *key, *noNext, report(r.GateRun(*key, phase)))
 	case "gate approve":
-		return report(r.Decide(*key, phase, finding, "approved", *by, *reason))
+		return suggest(r, *key, *noNext,
+			report(r.Decide(*key, phase, finding, "approved", *by, *reason)))
 	case "gate override":
-		return report(r.Decide(*key, phase, finding, "overridden", *by, *reason))
+		return suggest(r, *key, *noNext,
+			report(r.Decide(*key, phase, finding, "overridden", *by, *reason)))
 	case "obligation close":
-		return report(r.CloseObligation(*key, phase, finding))
+		return suggest(r, *key, *noNext, report(r.CloseObligation(*key, phase, finding)))
 	case "evidence attach":
 		a, p, err := evidence.Attach(*root, *key, phase, *src)
 		if err != nil {
@@ -181,7 +187,7 @@ func run(args []string) int {
 			return 2
 		}
 		fmt.Printf("attached %d, pending %d; run xeno gate run to carry the verdict forward\n", a, p)
-		return 0
+		return suggest(r, *key, *noNext, 0)
 	case "gate verify":
 		res, err := r.Verify(*key)
 		if err != nil {
@@ -215,7 +221,7 @@ func run(args []string) int {
 			}
 			fmt.Println(line)
 		}
-		return 0
+		return suggest(r, *key, *noNext, 0)
 	}
 	fmt.Fprintln(os.Stderr, usage)
 	return 2
@@ -271,6 +277,28 @@ func printInit(res *runner.InitResult) {
 	for _, s := range res.Manual {
 		fmt.Println("  -", s)
 	}
+}
+
+// suggest prints the next step of the working sequence and passes the exit code through.
+// It runs after the command, so the state it reads is the state the command left behind
+// and not the one it found. An internal error says nothing: a suggestion derived from a
+// state the runner could not read would be a guess.
+//
+// A refusal does get one, and it is worth the most there: a phase start refused because
+// its predecessor is red is exactly the moment somebody wants to be told what to do.
+func suggest(r *runner.Runner, key string, off bool, code int) int {
+	if off || code == 2 {
+		return code
+	}
+	s := r.Next(key)
+	fmt.Printf("\nnext: %s\n", s.Text)
+	if s.Command != "" {
+		fmt.Printf("  %s\n", s.Command)
+	}
+	for _, o := range s.Owed {
+		fmt.Printf("  owed, whenever somebody gets to it:\n  %s\n", o)
+	}
+	return code
 }
 
 func report(g *model.Gate, err error) int {
