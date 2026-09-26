@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#72
+phase: 00-intake
+created: 2026-09-26T13:44:03Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0c9c7
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      A definition that existed only in code was indistinguishable, from the
+      document's side, from one that did not exist at all. `strings_hash` was computed
+      the same way by every artifact in the repository and a verifier reading the
+      process definition had no way to know it.
+    proposal: >-
+      Where a field is named in the documents and computed in the code, the definition
+      belongs in the documents, and the code is where it is implemented rather than
+      where it is decided. A field whose only definition is an implementation cannot
+      be verified independently, which is the property the trail is for.
+    target: process-definition.md
