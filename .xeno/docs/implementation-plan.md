@@ -82,8 +82,8 @@ for 1.1, and section 8 lists what v1 owes it, because two of those obligations c
 be met retroactively.
 
 **Licence, copyright and cost** are settled and recorded rather than open. Xeno is
-developed at and for conet, which holds the copyright and licenses under Apache 2.0, in
-v1 internally and from 1.1 publicly. It runs on infrastructure that is already paid for,
+developed at and for javafreedom.org, which holds the copyright and licenses under
+Apache 2.0, in v1 internally and from 1.1 publicly. It runs on infrastructure that is already paid for,
 so the only expense that scales with the work is model usage, which is what WP13 makes
 visible.
 

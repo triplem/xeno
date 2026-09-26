@@ -1899,9 +1899,9 @@ same repository, so the README must say plainly that they are two different thin
 the copyright line, an `SPDX-License-Identifier` header per source file, and a
 separate notice under `templates/`.
 
-**Who holds it.** Xeno is developed at and for conet, which holds the copyright and
-licenses it under Apache 2.0. Distribution is internal in v1 and public from 1.1, which
-the licence already permits without relicensing.
+**Who holds it.** Xeno is developed at and for javafreedom.org, which holds the
+copyright and licenses it under Apache 2.0. Distribution is internal in v1 and public
+from 1.1, which the licence already permits without relicensing.
 
 Stating the holder plainly is worth more than leaving it to be inferred from a
 `NOTICE` file: a tool that asks organisations to run it inside their pipelines should
@@ -1910,7 +1910,8 @@ parts carry an opinion.
 
 The licence makes the practical answer the same either way. The patent grant, the
 absence of any claim on results and the DCO route above apply to every user
-including conet, and nothing in the process depends on who the copyright holder is.
+including javafreedom.org, and nothing in the process depends on who the copyright
+holder is.
 
 ## 16. Deliberate limitations of v1
 
