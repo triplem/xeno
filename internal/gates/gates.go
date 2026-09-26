@@ -193,7 +193,10 @@ func schemaVersion(file string, raw map[string]any) []model.Finding {
 }
 
 // A hash field carries sixty four lowercase hex characters or the placeholder, per
-// Appendix B. The placeholder is honest in two cases and wrong in a third, which is why
+// Appendix B, and where it carries a hash the hash is recomputed and compared. Both
+// belong here rather than in G-Freshness: what is checked is a field against the file it
+// names, inside one phase, where G-Freshness compares a phase against its predecessor.
+// The placeholder is honest in two cases and wrong in a third, which is why
 // this cannot be one regexp: `secrets_hash` and `rules_hash` have no writer yet, and an
 // artifact with `tool: manual` was produced by nothing at all, so both may say `by-hand`.
 // In `context_hash` or `strings_hash` of an artifact a session produced, a writer exists
@@ -235,6 +238,7 @@ func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
 		honest := byHand || writerless[f] || (f == "strings_hash" && goneBundle)
 		switch {
 		case hashShape.MatchString(v):
+			fs = append(fs, recomputed(c, file, f, v, goneBundle, raw)...)
 		case v == placeholder && honest:
 		case v == placeholder:
 			fs = append(fs, finding(file, f+" says "+placeholder+" where a writer exists",
@@ -245,6 +249,38 @@ func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
 		}
 	}
 	return fs
+}
+
+// recomputed compares a value against the file it covers. Two of the four can be
+// recomputed: `context_hash` against the lock file beside the artifact, and
+// `strings_hash` against the bundle the phase rendered from, where that bundle is still
+// the one the repository carries. The other two have no writer and therefore nothing to
+// recompute against, which Appendix B says outright.
+func recomputed(c Ctx, file, field, value string, goneBundle bool, raw map[string]any) []model.Finding {
+	var want, covers string
+	switch {
+	case field == "context_hash":
+		covers = c.phaseRel(c.Phase) + "/context.lock.yaml"
+		h, err := hashing.FileHash(c.abs(covers))
+		if err != nil {
+			return nil // the file's absence is G-Freshness's finding, not a hash mismatch
+		}
+		want = h
+	case field == "strings_hash" && !goneBundle:
+		t, err := template.Load(c.Root, model.TemplateID(c.Phase), language(raw))
+		if err != nil {
+			return nil // an unresolvable template is the section writer's finding
+		}
+		covers = "the strings bundle of " + t.Ref()
+		want = t.StringsHash
+	default:
+		return nil
+	}
+	if value == want {
+		return nil
+	}
+	return []model.Finding{finding(file, field+" does not match "+covers,
+		"recompute it as Appendix B defines, or write the artifact from the file it names")}
 }
 
 func missing(raw map[string]any, fields ...[]string) []string {
