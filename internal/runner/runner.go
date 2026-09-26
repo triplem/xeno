@@ -194,6 +194,9 @@ func (r *Runner) Verify(key string) (*VerifyResult, error) {
 				res.Divergences = append(res.Divergences, Divergence{k, p,
 					fmt.Sprintf("committed status %s, recomputed %s", committed.Status, got.Status)})
 			}
+			for _, d := range gateSet(committed, p) {
+				res.Divergences = append(res.Divergences, Divergence{k, p, d})
+			}
 			switch got.Status {
 			case "red":
 				res.Red = append(res.Red, label)
@@ -203,6 +206,38 @@ func (r *Runner) Verify(key string) (*VerifyResult, error) {
 		}
 	}
 	return res, nil
+}
+
+// gateSet compares the gates a committed verdict carries against the ones that apply at
+// its phase. Without it an absence says two things: that a gate does not apply yet, and
+// that it did not run. Recomputing cannot tell them apart, because the recomputation uses
+// the same table and leaves out the same gate, so the comparison has to be against the
+// table rather than against another run.
+//
+// It reports in both directions. A gate that vanished is the case worth catching, and a
+// gate that appears before its phase is the same defect pointing the other way: a verdict
+// claiming a check that could not have happened.
+func gateSet(committed *model.Gate, phase string) []string {
+	present := map[string]bool{}
+	for _, ch := range committed.Checks {
+		present[ch.Gate] = true
+	}
+	var out []string
+	for _, id := range gates.Applicable(phase) {
+		if !present[id] {
+			out = append(out, id+" applies at this phase and the verdict does not carry it")
+		}
+		delete(present, id)
+	}
+	ids := make([]string, 0, len(present))
+	for id := range present {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		out = append(out, id+" is in the verdict and does not apply at this phase")
+	}
+	return out
 }
 
 // Start begins a phase. The sequence is a property of the tool: a phase whose

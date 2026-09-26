@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/template"
@@ -1218,4 +1219,55 @@ func TestHashFieldShape(t *testing.T) {
 			t.Errorf("%s: got %s, wanted %s", tc.name, g.Status, tc.want)
 		}
 	}
+}
+
+// A verdict's gate set is compared against the table rather than against another run,
+// because a recomputation uses the same table and leaves out the same gate. Without that
+// comparison an absence says both "does not apply yet" and "did not run".
+func TestVerifyComparesTheGateSet(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	rel := model.PhaseDir(key, "00-intake") + "/gate.yaml"
+
+	var g model.Gate
+	f.must(fm.ReadYAML(filepath.Join(f.root, rel), &g))
+	full := len(g.Checks)
+	if full != len(gates.Applicable("00-intake")) {
+		t.Fatalf("a fresh verdict carries %d checks and %d apply", full, len(gates.Applicable("00-intake")))
+	}
+
+	// A gate that silently did not run leaves a verdict one check short, and every hash
+	// still matches, because gate.yaml is not covered by artifacts_hash.
+	dropped := g
+	dropped.Checks = nil
+	for _, ch := range g.Checks {
+		if ch.Gate != "G-Trace" {
+			dropped.Checks = append(dropped.Checks, ch)
+		}
+	}
+	f.must(fm.WriteYAML(filepath.Join(f.root, rel), dropped))
+	res, err := f.r.Verify(key)
+	f.must(err)
+	if !divergenceNames(res, "G-Trace applies") {
+		t.Fatalf("a missing gate was not reported: %+v", res.Divergences)
+	}
+
+	// The same defect the other way: a verdict claiming a gate whose phase has not come.
+	early := g
+	early.Checks = append(append([]model.Check{}, g.Checks...), model.Check{Gate: "G-Questions", Result: "pass"})
+	f.must(fm.WriteYAML(filepath.Join(f.root, rel), early))
+	res, err = f.r.Verify(key)
+	f.must(err)
+	if !divergenceNames(res, "G-Questions is in the verdict") {
+		t.Fatalf("a gate before its phase was not reported: %+v", res.Divergences)
+	}
+}
+
+func divergenceNames(res *VerifyResult, want string) bool {
+	for _, d := range res.Divergences {
+		if strings.Contains(d.What, want) {
+			return true
+		}
+	}
+	return false
 }

@@ -55,6 +55,25 @@ var table = []spec{
 	{"G-Complete", 5, notImplemented},
 }
 
+// Applicable is the set of gates that apply at a phase, in the order of the table above,
+// which is the table in section 7 of the process definition. A verdict carries exactly
+// these, and the one caller that does not run gates reads it from here rather than from a
+// list of its own: two lists of applicability would answer differently the first time a
+// gate's From column moved.
+func Applicable(phase string) []string {
+	idx := model.PhaseIndex(phase)
+	if idx < 0 {
+		return nil
+	}
+	var ids []string
+	for _, s := range table {
+		if idx >= s.from {
+			ids = append(ids, s.id)
+		}
+	}
+	return ids
+}
+
 // ExternalProvenance marks a check whose findings were produced by foreign code.
 const ExternalProvenance = "external"
 
