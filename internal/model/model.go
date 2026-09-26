@@ -228,6 +228,7 @@ type Assumption struct {
 	Confidence  string `yaml:"confidence,omitempty"`
 	Status      string `yaml:"status"`
 	ConfirmedBy string `yaml:"confirmed_by,omitempty"`
+	RejectedBy  string `yaml:"rejected_by,omitempty"`
 	Resolves    string `yaml:"resolves,omitempty"`
 }
 
@@ -242,6 +243,16 @@ var (
 // Open says whether the gate of the assumption's phase goes red for it. Rejected is
 // decided and not confirmed: the assumption was examined and dropped.
 func (a Assumption) Open() bool { return a.Status != "confirmed" && a.Status != "rejected" }
+
+// DecidedBy is the person behind whichever decided state the record is in. Section 8
+// gives each state its own field and says exactly one of them is present, so this reads
+// the one that belongs to the status rather than whichever is filled in.
+func (a Assumption) DecidedBy() string {
+	if a.Status == "rejected" {
+		return a.RejectedBy
+	}
+	return a.ConfirmedBy
+}
 
 type Assumptions struct {
 	Common      `yaml:",inline"`
