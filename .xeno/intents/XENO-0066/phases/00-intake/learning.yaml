@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#66
+phase: 00-intake
+created: 2026-09-26T21:31:31Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+9a233d5
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      An assumption recorded a rule that held by routing and said a test would not
+      catch a breach. It was filed as a constraint on a later package, and the
+      property it promised was checkable in the finished verdict all along: a derived
+      id can be recomputed from what it reports.
+    proposal: >-
+      Where a rule holds because of how code is wired, ask what the wiring leaves
+      behind in the result. A property visible in the output is enforceable now; a
+      property only visible in the call graph waits for whoever changes the call
+      graph.
+    target: CLAUDE.md
