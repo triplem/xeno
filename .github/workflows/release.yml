@@ -42,6 +42,10 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # The targets are written once. The build loop and the module set check both read
+    # them, and two lists of targets would drift apart without anything noticing.
+    env:
+      TARGETS: linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -96,13 +100,22 @@ jobs:
           # Runner and plugin share one number, taken from one derivation, which removes
           # the mistake G-Supply exists to catch instead of catching it.
           ldflags="-s -w -X github.com/triplem/xeno/internal/model.RunnerVersion=$VERSION -X github.com/triplem/xeno/internal/model.PluginVersion=$VERSION"
-          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+          for target in $TARGETS; do
             os=${target%/*}; arch=${target#*/}
             ext=""
             if [ "$os" = windows ]; then ext=".exe"; fi
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
               go build -trimpath -ldflags "$ldflags" -o "dist/xeno-$VERSION-$os-$arch$ext" ./cmd/xeno
           done
+
+      # One document is shipped for all five targets, which holds only while every target
+      # selects the same modules; build constraints can change that selection. The check
+      # is here rather than in an audit because what has to fail is the release: a
+      # document describing one target and claiming five is worse than a release that
+      # stops. A24 in ASSUMPTIONS.md records the condition.
+      - name: the targets select one module set
+        if: steps.release.outputs.new_release_published == 'true'
+        run: scripts/module-set.sh $TARGETS
 
       # bin rather than app: it reads the binary this release ships instead of the module
       # it was built from, and -version says what the main component is called without
