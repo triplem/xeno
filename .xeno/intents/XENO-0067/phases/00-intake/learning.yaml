@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#67
+phase: 00-intake
+created: 2026-09-26T21:54:49Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0ea4806
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two issues this week deferred work on dependencies the specification does not
+      state: #68 on `merge_method`, which section 13 says is not checked, and #67 on
+      G-Complete's review mode, which section 7 defines as reading the preceding
+      verdicts and nothing more. Both were written from the code and the register, and
+      both spent weeks looking like schedule.
+    proposal: >-
+      An issue that defers work names the sentence that makes it wait, quoted. Where
+      no sentence can be quoted, the dependency is a guess and the issue says so,
+      which is cheap to write and expensive to leave out.
+    target: CLAUDE.md
