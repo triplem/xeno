@@ -13,10 +13,8 @@
 # script exists so that every one of them is written down here and can be re-applied
 # rather than remembered. Running it twice changes nothing the second time.
 #
-# Two things are reported and not set. The visibility, because the flip publishes every
-# commit and the whole trail at once and is #47, a decision a person made. And the two
-# enforcement requirements #84 leaves open, because they interact with how a one person
-# project merges.
+# One thing is reported and not set: the visibility, because the flip publishes every
+# commit and the whole trail at once and is #47, a decision a person made.
 #
 # The GitLab equivalent of the merge group is the squash commit message template, which
 # has to contain %{description}; it is set in the project's merge request settings and
@@ -66,23 +64,31 @@ gh api -X PUT "/repos/$repo/private-vulnerability-reporting" >/dev/null
 gh api "/repos/$repo/private-vulnerability-reporting" -q '"  enabled: \(.enabled)"'
 
 # The protection of the default branch, per section 7 and the enforcement block of
-# project.yaml. What is applied is what the project has decided: a pull request with one
-# approval, and no force push or deletion. Force pushing the default branch would break
-# every content hash a verdict rests on, which is why it is written down rather
-# than left to habit.
+# project.yaml, and it is what #84 decided.
 #
-# Requiring the verify check and removing the administrator bypass are the two
-# requirements xeno enforcement check reports as unmet, and #84 holds that decision
-# with the calls written out. They are not commented out here, so that nothing in this
-# file reads as almost done.
+# `verify` is required and administrators cannot bypass it, which together are the only
+# arrangement in which a red gate stops a merge: the gate recomputes every verdict, and
+# a requirement an administrator can step over is a report rather than a barrier.
+#
+# No approval is required, and that is deliberate rather than an omission. A single
+# maintainer cannot approve their own pull request, so a required approval leaves
+# every merge to a bypass, which is what made the bypass load bearing before this. The
+# machine gate binds everybody instead, including whoever owns the repository.
+#
+# `strict` is false: a branch does not have to be rebased onto the current head before
+# it merges. `verify` still has to pass on the branch, and requiring more would have
+# made today's stacked branches unmergeable without a rebase apiece.
+#
+# Force push and deletion stay refused. A force push to the default branch would break
+# every content hash a verdict rests on.
 echo
 echo "== branch protection =="
 branch=$(gh api "/repos/$repo" -q .default_branch)
 gh api -X PUT "/repos/$repo/branches/$branch/protection" --input - >/dev/null <<JSON
 {
-  "required_status_checks": null,
-  "enforce_admins": false,
-  "required_pull_request_reviews": { "required_approving_review_count": 1 },
+  "required_status_checks": { "strict": false, "contexts": ["verify"] },
+  "enforce_admins": true,
+  "required_pull_request_reviews": null,
   "restrictions": null,
   "allow_force_pushes": false,
   "allow_deletions": false
@@ -92,11 +98,11 @@ echo "  branch:         $branch"
 # One call, one expression per line, so that no line of it runs past the width the
 # project wraps at.
 gh api "/repos/$repo/branches/$branch/protection" -q '
+	"  checks:         \(.required_status_checks.contexts // ["none"] | join(", "))",
+	"  up to date:     \(.required_status_checks.strict // false)",
 	"  approvals:      \(.required_pull_request_reviews
-	                       .required_approving_review_count)",
+	                       .required_approving_review_count // 0)",
+	"  admins bypass:  \(.enforce_admins.enabled | not)",
 	"  force pushes:   \(.allow_force_pushes.enabled)",
-	"  deletions:      \(.allow_deletions.enabled)",
-	"  admins bypass:  \(.enforce_admins.enabled | not)   see #84",
-	"  checks:         \(.required_status_checks.contexts // ["none"]
-	                       | join(", "))   see #84"
+	"  deletions:      \(.allow_deletions.enabled)"
 '
