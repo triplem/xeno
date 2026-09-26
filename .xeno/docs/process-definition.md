@@ -1693,11 +1693,13 @@ cross cutting and carries its own skill for that reason.
 | Runner                     | OCI image in the host's container registry | CI                  |
 | Runner                     | per platform binaries attached to the release, with their checksums | developer machine |
 
-**Distribution is internal for now.** Xeno is not published, so the channels are the
-repository's own releases and registry and nothing else. Two consequences follow rather
-than being decided separately. The marketplace wrapper stays and points at that
-repository rather than at a public directory, since a client can take a marketplace from
-any git repository it can reach. And the release carries checksums rather than
+**The repository is public; distribution is not yet.** The two are separable and are
+separated here. The repository is readable by anyone, which is what gives the host the
+branch protection the sequence guarantee rests on, and the channels are still the
+repository's own releases and registry and nothing else. Two consequences follow
+rather than being decided separately. The marketplace wrapper stays and points at that
+repository rather than at a public directory, since a client can take a marketplace
+from any git repository it can reach. And the release carries checksums rather than
 signatures, for the reason given under integrity below.
 
 The runner reaches the developer machine as well as CI, because hooks and the local
@@ -1900,8 +1902,9 @@ the copyright line, an `SPDX-License-Identifier` header per source file, and a
 separate notice under `templates/`.
 
 **Who holds it.** Xeno is developed at and for javafreedom.org, which holds the
-copyright and licenses it under Apache 2.0. Distribution is internal in v1 and public
-from 1.1, which the licence already permits without relicensing.
+copyright and licenses it under Apache 2.0. The repository is public from v1 and the
+distribution channels follow in 1.1, both of which the licence already permits without
+relicensing.
 
 Stating the holder plainly is worth more than leaving it to be inferred from a
 `NOTICE` file: a tool that asks organisations to run it inside their pipelines should
