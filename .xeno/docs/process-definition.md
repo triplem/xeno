@@ -1458,6 +1458,15 @@ Learning never changes behaviour directly. It produces a merge request against t
 rule set. Only after merge does it take effect, and it then applies to subsequent
 sessions.
 
+`target` is the file that merge request would change. A rule the engine applies
+names a path under `.xeno/config/rules/learned/project/`. Until that engine exists,
+a learning whose category is `project-convention` may instead name the file a
+project already reads before it acts, and the length of that file is what decides
+whether a convention earns a line in it: it is sent with every request of every
+session, so a line there costs more than a rule the engine loads when it applies.
+Either way the route is the same, a record in a phase and a merge request somebody
+reviews, and never an edit made where it was noticed.
+
 Learning looks at its own phase only. Harvesting repetitions across intents is on the
 1.1 list, because it finds nothing before the third intent and therefore delivers no
 value until dogfooding is running anyway.
