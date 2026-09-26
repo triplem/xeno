@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#56
+phase: 00-intake
+created: 2026-09-26T11:14:43Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+f5114fa
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      The plan records a verification point as a variable name,
+      `ANTHROPIC_CUSTOM_HEADERS` for claude-code, and that reads as though the point
+      were settled. What a harness
+      offers to send and what the receiver keeps are two questions, and the second one
+      decided this intent: the header names Xeno chooses are dropped without an error.
+    proposal: >-
+      Where a verification point is annotated, the annotation says what was run and what
+      came back, not only which mechanism exists. An annotation that names a mechanism
+      leaves the point open.
+    target: implementation-plan.md
