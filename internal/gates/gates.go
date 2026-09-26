@@ -161,6 +161,16 @@ func result(fs []model.Finding) model.Check {
 	return model.Check{Result: r, Provenance: "xeno", Findings: fs}
 }
 
+// oneOf is the closed set test the specification's enumerations need.
+func oneOf(v string, set []string) bool {
+	for _, s := range set {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
 func finding(file, cause, next string) model.Finding {
 	return model.Finding{File: file, Cause: cause, Next: next}
 }
@@ -532,22 +542,86 @@ func learning(c Ctx) model.Check {
 	return result(learningFindings(c.abs(c.phaseRel(c.Phase)+"/learning.yaml"), c.phaseRel(c.Phase)+"/learning.yaml"))
 }
 
-// learningFindings is the same judgement wherever a learning record sits: present, and
-// carrying something beyond the header fields every process file has. A7.
+// The shape section 10 defines: `category` from a closed set, and an entry that carries
+// an observation, a proposal and a target. A record that says nothing says `no_finding`,
+// which is the honest empty case and not a missing one.
+var (
+	learningCategories = []string{"template", "prompt", "context-rule", "project-convention"}
+	learningKeys       = []string{"category", "observation", "proposal", "target"}
+	learningHeader     = []string{"intent", "phase", "created", "schema_version", "runner_version", "plugin_version"}
+)
+
+// learningFindings is the same judgement wherever a learning record sits: present, saying
+// something beyond the header fields, and shaped as section 10 defines. Counting keys
+// was A7's gap: a record could invent `observations:` with a category of its own and pass,
+// which is how the gap was found rather than how it was predicted.
 func learningFindings(abs, rel string) []model.Finding {
 	raw := map[string]any{}
 	err := fm.ReadYAML(abs, &raw)
 	if os.IsNotExist(err) {
 		return []model.Finding{finding(rel, "learning record missing", "write one, even when the result is no finding")}
 	}
+	var fs []model.Finding
+	body := false
 	for k := range raw {
+		if oneOf(k, learningHeader) {
+			continue
+		}
+		body = true
 		switch k {
-		case "intent", "phase", "created", "schema_version", "runner_version", "plugin_version":
+		case "no_finding", "learnings":
 		default:
-			return nil
+			fs = append(fs, finding(rel, "unknown key "+k+" in the learning record",
+				"section 10 defines learnings and no_finding; anything else is not read by anybody"))
 		}
 	}
-	return []model.Finding{finding(rel, "learning record is empty", "record an observation or state no_finding: true")}
+	if !body {
+		return []model.Finding{finding(rel, "learning record is empty", "record an observation or state no_finding: true")}
+	}
+	fs = append(fs, learningEntries(rel, raw["learnings"])...)
+	sort.Slice(fs, func(i, j int) bool { return fs[i].Cause < fs[j].Cause })
+	return fs
+}
+
+// learningEntries judges the list itself. An entry is a mapping with four keys, and the
+// category is one of four words, because a free category is a word the rule set cannot
+// route and the merge request section 10 asks for would have nowhere to go.
+func learningEntries(rel string, v any) []model.Finding {
+	if v == nil {
+		return nil
+	}
+	list, ok := v.([]any)
+	if !ok {
+		return []model.Finding{finding(rel, "learnings is not a list",
+			"section 10 defines it as a list of entries, each with category, observation, proposal and target")}
+	}
+	var fs []model.Finding
+	for i, e := range list {
+		at := fmt.Sprintf("entry %d", i+1)
+		entry, ok := e.(map[string]any)
+		if !ok {
+			fs = append(fs, finding(rel, at+" is not a mapping",
+				"write category, observation, proposal and target under it"))
+			continue
+		}
+		for _, k := range learningKeys {
+			if s, isString := entry[k].(string); !isString || strings.TrimSpace(s) == "" {
+				fs = append(fs, finding(rel, at+" has no "+k,
+					"section 10 defines all four; a record missing one is not a proposal anybody can act on"))
+			}
+		}
+		for k := range entry {
+			if !oneOf(k, learningKeys) {
+				fs = append(fs, finding(rel, at+" carries unknown key "+k,
+					"section 10 defines category, observation, proposal and target"))
+			}
+		}
+		if cat, isString := entry["category"].(string); isString && cat != "" && !oneOf(cat, learningCategories) {
+			fs = append(fs, finding(rel, at+" has category "+cat,
+				"section 10 fixes the set: "+strings.Join(learningCategories, ", ")))
+		}
+	}
+	return fs
 }
 
 // CompleteOnClose is G-Complete in its second mode, the one an abandoned intent meets.

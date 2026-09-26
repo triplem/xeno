@@ -2,11 +2,11 @@ intent: github.com/triplem/xeno#50
 phase: 00-intake
 created: "2026-09-25T21:01:50Z"
 schema_version: "1.0"
-runner_version: 0.1.0-dev+9f4b620
+runner_version: 0.1.0-dev+732085b.dirty
 plugin_version: 0.1.0-dev
 status: green
-run_at: "2026-09-25T21:01:50Z"
-artifacts_hash: 7873e323a3f448f80f062512995ade240f28964f0c2524175acf15bbc4ac316f
+run_at: "2026-09-26T21:09:54Z"
+artifacts_hash: bf9681b9a4d519e12a0fa6a57c028e760390ab8c3c85ed0231c3a62ec7d60a2d
 checks:
     - gate: G-Supply
       result: not-implemented

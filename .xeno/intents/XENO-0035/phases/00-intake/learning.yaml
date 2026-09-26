@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+5b66fcd.dirty
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       The suggestion follows the working sequence and offered to start P1 of an intent
       in a repository where no phase beyond P0 may run. The hold is a decision written

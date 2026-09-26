@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+f5114fa
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       The plan records a verification point as a variable name,
       `ANTHROPIC_CUSTOM_HEADERS` for claude-code, and that reads as though the point
@@ -17,7 +17,7 @@ learnings:
       came back, not only which mechanism exists. An annotation that names a mechanism
       leaves the point open.
     target: implementation-plan.md
-  - category: process
+  - category: project-convention
     observation: >-
       The measurement agreed with the proxy and disagreed with its documentation. One of
       the two metadata routes is documented as requiring an enterprise licence and was

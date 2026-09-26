@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+fdade9d
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       A scanner was nearly added with a threshold that would have failed on its first
       run, with nineteen findings in a dependency tree this project does not own and

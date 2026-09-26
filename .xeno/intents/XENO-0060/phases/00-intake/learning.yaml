@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+374fea6
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       A49 was recorded as an open assumption and answered within the hour, because the
       issue that carried it framed the choice and what either answer costs instead of

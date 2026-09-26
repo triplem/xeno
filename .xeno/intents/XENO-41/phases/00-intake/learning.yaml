@@ -5,7 +5,7 @@ schema_version: "1.0"
 runner_version: 0.1.0-dev+81b8426
 plugin_version: 0.1.0-dev
 learnings:
-  - category: process
+  - category: project-convention
     observation: >-
       A request that reads as cosmetic touched the sealed record: the intent key is
       inside artifacts_hash by Appendix B and inside the merge commits by section 14.
