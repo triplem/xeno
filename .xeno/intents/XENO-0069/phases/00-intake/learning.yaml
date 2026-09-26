@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#69
+phase: 00-intake
+created: 2026-09-26T13:21:23Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+9313e10
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      Three statements in the hand kept record had been overtaken by decisions
+      recorded elsewhere: an adapter's host by #36, a list of what is not built by the
+      section above it, a count of open verification points by #56. Each was true when
+      written and none was noticed by the commits that made it false.
+    proposal: >-
+      A record kept by hand is reread on a schedule, not only when it is being added
+      to. The cheapest occasion is the commit that changes what a row describes, and
+      the next cheapest is a pass over the file when a milestone closes.
+    target: CLAUDE.md
