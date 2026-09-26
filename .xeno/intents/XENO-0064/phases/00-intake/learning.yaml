@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#64
+phase: 00-intake
+created: 2026-09-26T21:11:32Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+d9f41c4
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A closed set in the documents was enforced by nothing, and the word that filled
+      the gap, `process`, was a synonym of one already in the set. Ten records chose
+      it, six of them today, and every one of them was a project convention by any
+      reading.
+    proposal: >-
+      Where the documents fix a closed set, the gate reads the set from the start. A
+      value outside it is cheap to correct in the first record and a decision about
+      the trail by the tenth.
+    target: CLAUDE.md
