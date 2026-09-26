@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#75
+phase: 00-intake
+created: 2026-09-26T14:02:04Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+850b546
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A presence check let a placeholder pass as a hash, and the test fixtures used
+      values, `s` and `c`, that the specification does not allow. The gate and its
+      tests agreed with each other and with nothing else, which is why nothing failed
+      until a shape was defined.
+    proposal: >-
+      Where a field's value has a shape in the documents, the fixture carries a value
+      of that shape. A fixture that would be a finding proves the gate runs and not
+      that it judges.
+    target: .xeno/config/rules/learned/project/fixtures-carry-legal-values.yaml

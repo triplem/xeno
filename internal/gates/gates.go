@@ -15,6 +15,7 @@ import (
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/template"
 )
 
 // Ctx is what a gate run knows about.
@@ -191,6 +192,61 @@ func schemaVersion(file string, raw map[string]any) []model.Finding {
 	return nil
 }
 
+// A hash field carries sixty four lowercase hex characters or the placeholder, per
+// Appendix B. The placeholder is honest in two cases and wrong in a third, which is why
+// this cannot be one regexp: `secrets_hash` and `rules_hash` have no writer yet, and an
+// artifact with `tool: manual` was produced by nothing at all, so both may say `by-hand`.
+// In `context_hash` or `strings_hash` of an artifact a session produced, a writer exists
+// and the value was skipped.
+var (
+	hashShape   = regexp.MustCompile(`^[0-9a-f]{64}$`)
+	hashFields  = []string{"context_hash", "secrets_hash", "strings_hash", "rules_hash"}
+	writerless  = map[string]bool{"secrets_hash": true, "rules_hash": true}
+	placeholder = "by-hand"
+)
+
+// language is the artifact's own, because the bundle a phase rendered from is the one in
+// that language and no other.
+func language(raw map[string]any) string {
+	if l, ok := raw["language"].(string); ok && l != "" {
+		return l
+	}
+	return "en"
+}
+
+func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
+	// Nothing produced a manual artifact, so none of its hashes had a writer.
+	byHand := raw["tool"] == "manual"
+	// A bundle the repository no longer carries cannot be hashed by anybody. The
+	// artifact names the version it rendered from, and where that is not the version
+	// here, the value is unrecoverable rather than skipped.
+	goneBundle := false
+	if ref, ok := raw["template"].(string); ok {
+		if t, err := template.Load(c.Root, model.TemplateID(c.Phase), language(raw)); err == nil {
+			goneBundle = ref != t.Ref()
+		}
+	}
+	var fs []model.Finding
+	for _, f := range hashFields {
+		v, ok := raw[f].(string)
+		if !ok || v == "" {
+			continue // absence is the missing field finding, not this one
+		}
+		honest := byHand || writerless[f] || (f == "strings_hash" && goneBundle)
+		switch {
+		case hashShape.MatchString(v):
+		case v == placeholder && honest:
+		case v == placeholder:
+			fs = append(fs, finding(file, f+" says "+placeholder+" where a writer exists",
+				"write the hash Appendix B defines; the placeholder is for a field nothing writes yet"))
+		default:
+			fs = append(fs, finding(file, f+" is neither a sha256 nor "+placeholder,
+				"write sixty four lowercase hex characters, as Appendix B defines it"))
+		}
+	}
+	return fs
+}
+
 func missing(raw map[string]any, fields ...[]string) []string {
 	var m []string
 	for _, group := range fields {
@@ -220,6 +276,7 @@ func schema(c Ctx) model.Check {
 			fs = append(fs, finding(out, "required field missing: "+f, "add "+f+" to the frontmatter"))
 		}
 		fs = append(fs, schemaVersion(out, raw)...)
+		fs = append(fs, hashes(c, out, raw)...)
 		fs = append(fs, questionShape(out, o)...)
 		fs = append(fs, decisionShape(out, o)...)
 	}
@@ -238,6 +295,7 @@ func schema(c Ctx) model.Check {
 			fs = append(fs, finding(dig, "required field missing: "+f, "add "+f+" to the frontmatter"))
 		}
 		fs = append(fs, schemaVersion(dig, r)...)
+		fs = append(fs, hashes(c, dig, r)...)
 	}
 
 	// Section 5 states its field sets for frontmatter and for the equivalent top level
@@ -389,8 +447,8 @@ func assumptions(c Ctx) model.Check {
 		switch {
 		case a.Open():
 			fs = append(fs, finding(rel, "assumption "+a.ID+" is open", "confirm it, reject it, or replace it with a decision"))
-		case a.Status == "confirmed" && a.ConfirmedBy == "":
-			fs = append(fs, finding(rel, "assumption "+a.ID+" is confirmed by nobody", "name who confirmed it, since the confirmation is what the gate reads"))
+		case a.DecidedBy() == "":
+			fs = append(fs, finding(rel, "assumption "+a.ID+" is "+a.Status+" by nobody", "name who decided it: section 8 gives each decided state its person"))
 		}
 	}
 	return result(fs)

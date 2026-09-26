@@ -1151,12 +1151,22 @@ assumptions:
     confidence: <high|medium|low>
     status: <open|confirmed|rejected>
     confirmed_by: <person>
+    rejected_by: <person>
 ```
 
 Every open assumption turns the gate of its phase red. At phase boundaries with
 open assumptions the process is therefore effectively human in the loop.
 Confirmation is recorded in the repository and pushed, because CI cannot reliably
 see the tracker.
+
+Both decided states name their person, and exactly one of the two fields is
+present: `confirmed_by` where the status is confirmed, `rejected_by` where it
+is rejected. Rejecting is a statement by a person in the same way confirming
+is, and the register is the record of who made it. The gate is green either
+way, so nothing downstream reads the name; what reads it is somebody asking
+months later who dropped an assumption and why the work went the way it did,
+which is the question the trail exists to answer without asking anybody to
+remember.
 
 ### Decisions are not assumptions
 
@@ -2154,7 +2164,7 @@ than more correct.
 
 ## Appendix B. Hashes and identifiers
 
-Both values are recomputed by whoever verifies the trail, so they are defined to the
+Every value here is recomputed by whoever verifies the trail, so they are defined to the
 byte rather than described.
 
 **`artifacts_hash`.** Over a phase: every file lying directly in the phase directory,
@@ -2185,6 +2195,29 @@ carries the intent key and the phase inside it, and moving or renaming an intent
 directory changes every verdict in it. And `evidence/` lies outside, which is why an
 evidence item is bound through the `sha256` in its declaration rather than through this
 value.
+
+**`context_hash`.** The sha256 of the normalised content of `context.lock.yaml`, as
+lowercase hex, normalised as in step 1 above. One file, so no line format and no path
+enter: this value says what a phase was produced from, and the path it was produced
+from is fixed by the phase directory that carries both files.
+
+**`strings_hash`.** The same computation over the strings bundle the phase rendered
+from, the file the `template` field resolves to. Where a project overrides a bundle,
+the value covers the bundle actually used and not the one it replaced, which is what
+makes the pair of fields say where the words came from.
+
+**`secrets_hash` and `rules_hash`** are defined by the package that first writes them.
+Each covers an effective set rather than one file, and how a set of several files
+reduces to one value is a decision that belongs with the code that assembles the set
+rather than ahead of it.
+
+**The placeholder.** A hash field carries sixty four lowercase hex characters or the
+value `by-hand`, and nothing else. `by-hand` says that no writer stood behind the
+value, which is the honest state in three cases: where the field has no writer yet;
+where the artifact declares `tool: manual`, because then nothing produced the artifact
+either; and in `strings_hash` where the bundle version the artifact names is not the
+one the repository carries, because a bundle that is gone cannot be hashed by anybody.
+Elsewhere it is wrong rather than honest: a writer exists and the value was skipped.
 
 **Finding id.** A sha256 over four fields, each terminated with `\n`: gate id, rule id,
 path relative to the repository root, cause. The rule id is empty for the gates that

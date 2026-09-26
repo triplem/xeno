@@ -134,3 +134,73 @@ func TestSchemaVersionAbsentIsReadableAndMalformedIsNot(t *testing.T) {
 		t.Fatalf("a malformed schema_version passed:\n%s", causes(got))
 	}
 }
+
+// setField rewrites one flat frontmatter line, the counterpart of dropField.
+func setField(t *testing.T, root, file, field, value string) {
+	t.Helper()
+	p := filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]), file)
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var kept []string
+	for _, line := range strings.Split(string(b), "\n") {
+		if strings.HasPrefix(line, field+":") {
+			line = field + ": " + value
+		}
+		kept = append(kept, line)
+	}
+	if err := os.WriteFile(p, []byte(strings.Join(kept, "\n")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// pluginTemplate writes a template the loader can resolve, so the artifact's `template`
+// field can be compared against the version the repository carries.
+func pluginTemplate(t *testing.T, root, version string) {
+	t.Helper()
+	dir := filepath.Join(root, ".xeno/plugin/templates/intake")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, content string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("template.yaml", "id: intake\nversion: "+version+"\ntitle_key: title\nsections:\n  - id: problem\n    required: true\n")
+	write("strings.en.yaml", "title: Intake\nheadings:\n  problem: Problem\n")
+}
+
+// Appendix B: a hash field carries a sha256 or the placeholder, and the placeholder is
+// honest only where nothing could have written the value.
+func TestHashFieldShape(t *testing.T) {
+	for _, tc := range []struct {
+		name, field, value, tool, pluginVersion string
+		wantFinding                             bool
+	}{
+		{name: "a sha256 passes", field: "context_hash", value: strings.Repeat("a", 64), tool: "claude-code"},
+		{name: "a truncated hash is a finding", field: "context_hash", value: "abc123", tool: "claude-code", wantFinding: true},
+		{name: "an invented value is a finding", field: "context_hash", value: "todo", tool: "claude-code", wantFinding: true},
+		{name: "an uppercase hash is a finding", field: "context_hash", value: strings.Repeat("A", 64), tool: "claude-code", wantFinding: true},
+		{name: "by-hand is a finding where a session wrote", field: "context_hash", value: "by-hand", tool: "claude-code", wantFinding: true},
+		{name: "by-hand passes a manual artifact", field: "context_hash", value: "by-hand", tool: "manual"},
+		{name: "by-hand passes where no writer exists", field: "secrets_hash", value: "by-hand", tool: "claude-code"},
+		{name: "by-hand passes where the bundle is gone", field: "strings_hash", value: "by-hand", tool: "claude-code", pluginVersion: "2.0.0"},
+		{name: "by-hand is a finding where the bundle is here", field: "strings_hash", value: "by-hand", tool: "claude-code", pluginVersion: "1.0.0", wantFinding: true},
+	} {
+		root, _ := corpus(t)
+		if tc.pluginVersion != "" {
+			pluginTemplate(t, root, tc.pluginVersion)
+			setField(t, root, "output.md", "template", "intake@1.0.0")
+		}
+		for _, file := range []string{"output.md", "digest.md"} {
+			setField(t, root, file, "tool", tc.tool)
+			setField(t, root, file, tc.field, tc.value)
+		}
+		causes := causes(schema(ctxFor(root)))
+		if strings.Contains(causes, tc.field) != tc.wantFinding {
+			t.Errorf("%s: wanted finding=%v; causes: %s", tc.name, tc.wantFinding, causes)
+		}
+	}
+}

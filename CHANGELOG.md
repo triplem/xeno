@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.17.0](https://github.com/triplem/xeno/compare/v0.16.0...v0.17.0) (2026-09-26)
+
+
+### Features
+
+* **gates:** a rejected assumption names who rejected it ([#62](https://github.com/triplem/xeno/issues/62)) ([1246cf1](https://github.com/triplem/xeno/commit/1246cf153b86ae8151597d3ef4b2de61e70b2068)), closes [#59](https://github.com/triplem/xeno/issues/59) [#61](https://github.com/triplem/xeno/issues/61) [#61](https://github.com/triplem/xeno/issues/61) [#55](https://github.com/triplem/xeno/issues/55) [#59](https://github.com/triplem/xeno/issues/59) [#60](https://github.com/triplem/xeno/issues/60)
+
 # [0.16.0](https://github.com/triplem/xeno/compare/v0.15.0...v0.16.0) (2026-09-26)
 
 

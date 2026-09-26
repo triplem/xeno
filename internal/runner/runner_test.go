@@ -18,6 +18,9 @@ import (
 
 const key = "PROJ-1"
 
+// hex64 is a sha256 shaped value for a fixture: sixty four of one hex digit.
+func hex64(c byte) string { return strings.Repeat(string(c), 64) }
+
 type fixture struct {
 	t    *testing.T
 	root string
@@ -50,8 +53,12 @@ func (f *fixture) write(rel, content string) {
 func (f *fixture) output(phase, extra string) {
 	d := model.PhaseDir(key, phase)
 	common := "intent: git.example/group/proj#1\nphase: " + phase + "\ncreated: 2026-09-20T10:00:00Z\nrunner_version: 0.1.0-dev\nplugin_version: 0.1.0-dev\n"
-	session := "language: en\nsecrets_hash: s\ncontext_hash: c\nmodel: m\ntool: claude-code\ntool_version: 1\n"
-	f.write(d+"/output.md", "---\n"+common+session+"template: t@1\nstrings_hash: s\nrules_hash: r\n"+extra+"---\n\n# Result\n")
+	// The hash fields carry sha256 shaped values because Appendix B fixes the shape and
+	// G-Schema checks it: a fixture with `s` would be a finding rather than a phase.
+	session := "language: en\nsecrets_hash: " + hex64('1') + "\ncontext_hash: " + hex64('2') +
+		"\nmodel: m\ntool: claude-code\ntool_version: 1\n"
+	f.write(d+"/output.md", "---\n"+common+session+"template: t@1\nstrings_hash: "+hex64('3')+
+		"\nrules_hash: "+hex64('4')+"\n"+extra+"---\n\n# Result\n")
 	f.write(d+"/digest.md", "---\n"+common+session+"---\nsummary\n")
 	f.write(d+"/learning.yaml", common+"no_finding: true\n")
 }
@@ -1062,7 +1069,7 @@ func TestAssumptionStatusDecidesTheGate(t *testing.T) {
 		{"open", "red"},
 		{"", "red"},
 		{"confirmed\n    confirmed_by: m.example", "green"},
-		{"rejected", "green"},
+		{"rejected\n    rejected_by: m.example", "green"},
 	} {
 		f := newFixture(t)
 		f.write(model.IntentDir(key)+"/assumptions.yaml", register+tc.status+"\n")
@@ -1072,13 +1079,30 @@ func TestAssumptionStatusDecidesTheGate(t *testing.T) {
 	}
 }
 
-// Confirmation is what the gate reads, so a confirmation with nobody behind it is a
-// finding of its own rather than a pass.
-func TestConfirmedByNobodyIsAFinding(t *testing.T) {
+// Section 8 gives each decided state its person, so a decision with nobody behind it is a
+// finding of its own rather than a pass, in both states.
+func TestDecidedByNobodyIsAFinding(t *testing.T) {
+	for _, status := range []string{"confirmed", "rejected"} {
+		f := newFixture(t)
+		f.write(model.IntentDir(key)+"/assumptions.yaml", register+status+"\n")
+		if g := f.run("00-intake", ""); g.Status != "red" {
+			t.Errorf("%s with no person behind it passed: %s", status, g.Status)
+		}
+	}
+}
+
+// The person goes into the field that belongs to the status, and the other stays absent:
+// a rejected assumption was not confirmed by anybody.
+func TestRejectionNamesItsPersonInItsOwnField(t *testing.T) {
 	f := newFixture(t)
-	f.write(model.IntentDir(key)+"/assumptions.yaml", register+"confirmed\n")
-	if g := f.run("00-intake", ""); g.Status != "red" {
-		t.Fatalf("a confirmation with no person behind it passed: %s", g.Status)
+	f.must2nd(f.r.RecordAssumption(key, "02-design", "the cache is warm", "rules", "high", ""))
+	a, err := f.r.DecideAssumption(key, "A-001", "rejected", "m.example")
+	f.must(err)
+	if a.RejectedBy != "m.example" || a.ConfirmedBy != "" {
+		t.Fatalf("a rejection recorded %+v", a)
+	}
+	if a.DecidedBy() != "m.example" {
+		t.Fatalf("the person behind the rejection reads as %q", a.DecidedBy())
 	}
 }
 
@@ -1126,6 +1150,9 @@ func TestDecideAssumption(t *testing.T) {
 	if a.Status != "rejected" || a.ConfirmedBy != "" {
 		t.Fatalf("a rejection recorded %+v; confirmed_by belongs to a confirmation", a)
 	}
+	if a.RejectedBy != "m.example" {
+		t.Fatalf("the rejection named %q", a.RejectedBy)
+	}
 	if _, err := f.r.DecideAssumption(key, "A-001", "confirmed", "m.example"); err == nil {
 		t.Error("a decided assumption was decided again")
 	}
@@ -1138,3 +1165,35 @@ func TestDecideAssumption(t *testing.T) {
 }
 
 func (f *fixture) must2nd(_ *model.Assumption, err error) { f.t.Helper(); f.must(err) }
+
+// Appendix B fixes what a hash field may carry. The placeholder is honest where nothing
+// wrote the value and wrong where something should have.
+func TestHashFieldShape(t *testing.T) {
+	for _, tc := range []struct {
+		name, tool, context, secrets, want string
+	}{
+		{"a sha256 passes", "claude-code", hex64('a'), hex64('b'), "green"},
+		{"by-hand passes where no writer exists", "claude-code", hex64('a'), "by-hand", "green"},
+		{"by-hand passes a manual artifact", "manual", "by-hand", "by-hand", "green"},
+		{"by-hand fails where a session wrote", "claude-code", "by-hand", hex64('b'), "red"},
+		{"a truncated hash fails", "claude-code", "abc123", hex64('b'), "red"},
+		{"an invented value fails", "claude-code", "todo", hex64('b'), "red"},
+	} {
+		f := newFixture(t)
+		d := model.PhaseDir(key, "00-intake")
+		common := "intent: git.example/group/proj#1\nphase: 00-intake\ncreated: 2026-09-20T10:00:00Z\n" +
+			"runner_version: 0.1.0-dev\nplugin_version: 0.1.0-dev\n"
+		session := "language: en\nsecrets_hash: " + tc.secrets + "\ncontext_hash: " + tc.context +
+			"\nmodel: m\ntool: " + tc.tool + "\ntool_version: 1\n"
+		f.write(d+"/output.md", "---\n"+common+session+"template: t@1\nstrings_hash: "+hex64('3')+
+			"\nrules_hash: by-hand\n---\n\n# Result\n")
+		f.write(d+"/digest.md", "---\n"+common+session+"---\nsummary\n")
+		f.write(d+"/learning.yaml", common+"no_finding: true\n")
+		f.must(f.r.Start(key, "00-intake"))
+		g, err := f.r.Finish(key, "00-intake")
+		f.must(err)
+		if g.Status != tc.want {
+			t.Errorf("%s: got %s, wanted %s", tc.name, g.Status, tc.want)
+		}
+	}
+}
