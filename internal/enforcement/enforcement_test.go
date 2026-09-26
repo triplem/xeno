@@ -60,9 +60,11 @@ func TestAnUnprotectedBranchDoesNotPassQuietly(t *testing.T) {
 // within a fortnight.
 func TestWaivedTurnsAStandingComplaintIntoADecision(t *testing.T) {
 	d := declared()
+	// Four requirements, because the declaration carries four: the pipeline, the bypass,
+	// the count of approvals and whether one may be the author's.
 	before := Compare("o/r", "main", d, Protection{Available: false, Reason: "not on this plan"}, time.Now())
-	if before.Unmet() != 3 {
-		t.Fatalf("%d unmet before waiving, want 3", before.Unmet())
+	if before.Unmet() != 4 {
+		t.Fatalf("%d unmet before waiving, want 4", before.Unmet())
 	}
 
 	d.Waived = "not expressible on this plan, recorded 2026-09-25"
@@ -134,5 +136,61 @@ func TestARejectedTokenIsAnError(t *testing.T) {
 	defer srv.Close()
 	if _, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t"); err == nil {
 		t.Fatal("a rejected token was read as an answer")
+	}
+}
+
+// Section 13 says the approvals block covers whether the author may give one, so the
+// second half is compared rather than read and ignored. What satisfies it is the host's
+// own rule and not a setting: GitHub refuses an approval from the pull request's author.
+func TestNotByAuthorIsCompared(t *testing.T) {
+	d := declared()
+	protected := func(count int, lastPush bool) Protection {
+		return Protection{Available: true, Protected: true, RequiredStatusChecks: true,
+			EnforceAdmins: true, ReviewsExpressible: true, RequiredApprovals: count,
+			LastPushApproval: lastPush}
+	}
+
+	r := Compare("o/r", "main", d, protected(1, false), time.Now())
+	if s, note := stateOf(r, "approvals.not_by_author"); s != Met || note == "" {
+		t.Fatalf("with one approval required the state is %q with note %q, want met and the stronger form named", s, note)
+	}
+
+	r = Compare("o/r", "main", d, protected(1, true), time.Now())
+	if s, note := stateOf(r, "approvals.not_by_author"); s != Met || note != "" {
+		t.Fatalf("with the last push covered the state is %q with note %q, want met and nothing left to add", s, note)
+	}
+
+	// An approval that does not exist is nobody's, so the absence does not satisfy a
+	// requirement about who gives one.
+	r = Compare("o/r", "main", d, protected(0, false), time.Now())
+	if s, _ := stateOf(r, "approvals.not_by_author"); s != Unmet {
+		t.Fatalf("with no approval required the state is %q, want %q", s, Unmet)
+	}
+
+	// Not declared is not compared: a project that says nothing about it gets no line,
+	// which is what stateOf reports as the empty state.
+	d.Approvals.NotByAuthor = false
+	r = Compare("o/r", "main", d, protected(1, false), time.Now())
+	if s, _ := stateOf(r, "approvals.not_by_author"); s != "" {
+		t.Fatalf("an undeclared requirement produced a line with state %q", s)
+	}
+}
+
+// merge_method is declared and not compared, which section 13 says outright. Reporting it
+// as unchecked is what keeps a project from believing otherwise.
+func TestMergeMethodIsReportedAsUnchecked(t *testing.T) {
+	d := declared()
+	d.MergeMethod = "no-squash"
+	r := Compare("o/r", "main", d, Protection{Available: true, Protected: true}, time.Now())
+	s, note := stateOf(r, "merge_method")
+	if s != Unknown {
+		t.Fatalf("state is %q, want %q", s, Unknown)
+	}
+	if note == "" {
+		t.Fatal("nothing says why it is not compared")
+	}
+	// Unknown is neither met nor unmet, so it does not fail a run on its own.
+	if before := Compare("o/r", "main", declared(), Protection{Available: true, Protected: true}, time.Now()); r.Unmet() != before.Unmet() {
+		t.Fatalf("declaring merge_method changed the unmet count from %d to %d", before.Unmet(), r.Unmet())
 	}
 }
