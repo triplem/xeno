@@ -53,14 +53,27 @@ func (f *fixture) write(rel, content string) {
 func (f *fixture) output(phase, extra string) {
 	d := model.PhaseDir(key, phase)
 	common := "intent: git.example/group/proj#1\nphase: " + phase + "\ncreated: 2026-09-20T10:00:00Z\nrunner_version: 0.1.0-dev\nplugin_version: 0.1.0-dev\n"
-	// The hash fields carry sha256 shaped values because Appendix B fixes the shape and
-	// G-Schema checks it: a fixture with `s` would be a finding rather than a phase.
-	session := "language: en\nsecrets_hash: " + hex64('1') + "\ncontext_hash: " + hex64('2') +
+	// The hash fields carry sha256 shaped values because Appendix B fixes the shape, and
+	// context_hash carries the hash of the lock file this phase was started with, because
+	// the gate recomputes it. A fixture with `s`, or with a hash of nothing, would be a
+	// finding rather than a phase.
+	session := "language: en\nsecrets_hash: " + hex64('1') + "\ncontext_hash: " + f.lockHash(phase) +
 		"\nmodel: m\ntool: claude-code\ntool_version: 1\n"
 	f.write(d+"/output.md", "---\n"+common+session+"template: t@1\nstrings_hash: "+hex64('3')+
 		"\nrules_hash: "+hex64('4')+"\n"+extra+"---\n\n# Result\n")
 	f.write(d+"/digest.md", "---\n"+common+session+"---\nsummary\n")
 	f.write(d+"/learning.yaml", common+"no_finding: true\n")
+}
+
+// lockHash is what Appendix B computes over the lock file the phase was started with,
+// which is what the artifact's context_hash has to carry. Before a phase is started there
+// is no lock, and a value of the right shape is enough for the tests that never start one.
+func (f *fixture) lockHash(phase string) string {
+	h, err := hashing.FileHash(filepath.Join(f.root, model.PhaseDir(key, phase), "context.lock.yaml"))
+	if err != nil {
+		return hex64('2')
+	}
+	return h
 }
 
 func (f *fixture) must2(_ *model.Gate, err error) { f.t.Helper(); f.must(err) }
@@ -1166,30 +1179,39 @@ func TestDecideAssumption(t *testing.T) {
 
 func (f *fixture) must2nd(_ *model.Assumption, err error) { f.t.Helper(); f.must(err) }
 
-// Appendix B fixes what a hash field may carry. The placeholder is honest where nothing
-// wrote the value and wrong where something should have.
+// Appendix B fixes what a hash field may carry, and G-Schema turns that into a verdict.
+// The cases are exhaustive in internal/gates; what this asserts is the colour a phase comes
+// out as, which is what a developer sees.
 func TestHashFieldShape(t *testing.T) {
+	const ofTheLock = "<the lock's hash>"
 	for _, tc := range []struct {
 		name, tool, context, secrets, want string
 	}{
-		{"a sha256 passes", "claude-code", hex64('a'), hex64('b'), "green"},
-		{"by-hand passes where no writer exists", "claude-code", hex64('a'), "by-hand", "green"},
+		{"the lock's own hash passes", "claude-code", ofTheLock, hex64('b'), "green"},
+		{"by-hand passes where no writer exists", "claude-code", ofTheLock, "by-hand", "green"},
 		{"by-hand passes a manual artifact", "manual", "by-hand", "by-hand", "green"},
 		{"by-hand fails where a session wrote", "claude-code", "by-hand", hex64('b'), "red"},
+		{"a hash of the wrong content fails", "claude-code", hex64('a'), hex64('b'), "red"},
 		{"a truncated hash fails", "claude-code", "abc123", hex64('b'), "red"},
 		{"an invented value fails", "claude-code", "todo", hex64('b'), "red"},
 	} {
 		f := newFixture(t)
 		d := model.PhaseDir(key, "00-intake")
+		// Started first, because the lock file is what the hash covers and phase start is
+		// what writes it.
+		f.must(f.r.Start(key, "00-intake"))
+		context := tc.context
+		if context == ofTheLock {
+			context = f.lockHash("00-intake")
+		}
 		common := "intent: git.example/group/proj#1\nphase: 00-intake\ncreated: 2026-09-20T10:00:00Z\n" +
 			"runner_version: 0.1.0-dev\nplugin_version: 0.1.0-dev\n"
-		session := "language: en\nsecrets_hash: " + tc.secrets + "\ncontext_hash: " + tc.context +
+		session := "language: en\nsecrets_hash: " + tc.secrets + "\ncontext_hash: " + context +
 			"\nmodel: m\ntool: " + tc.tool + "\ntool_version: 1\n"
 		f.write(d+"/output.md", "---\n"+common+session+"template: t@1\nstrings_hash: "+hex64('3')+
 			"\nrules_hash: by-hand\n---\n\n# Result\n")
 		f.write(d+"/digest.md", "---\n"+common+session+"---\nsummary\n")
 		f.write(d+"/learning.yaml", common+"no_finding: true\n")
-		f.must(f.r.Start(key, "00-intake"))
 		g, err := f.r.Finish(key, "00-intake")
 		f.must(err)
 		if g.Status != tc.want {

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
 )
 
@@ -114,8 +115,11 @@ func TestSchemaVersionAbsentIsReadableAndMalformedIsNot(t *testing.T) {
 	for _, file := range []string{"output.md", "digest.md", "context.lock.yaml", "learning.yaml"} {
 		root, _ := corpus(t)
 		dropField(t, root, file, "schema_version")
-		if got := schema(ctxFor(root)); len(got.Findings) != 0 {
-			t.Fatalf("%s without schema_version was rejected:\n%s", file, causes(got))
+		// Nothing about schema_version, rather than nothing at all: dropping a line from
+		// context.lock.yaml changes the file, so the artifacts' context_hash stops
+		// matching it, which is a finding of its own and the subject of another test.
+		if got := causes(schema(ctxFor(root))); strings.Contains(got, "schema_version") {
+			t.Fatalf("%s without schema_version was rejected:\n%s", file, got)
 		}
 	}
 
@@ -179,7 +183,7 @@ func TestHashFieldShape(t *testing.T) {
 		name, field, value, tool, pluginVersion string
 		wantFinding                             bool
 	}{
-		{name: "a sha256 passes", field: "context_hash", value: strings.Repeat("a", 64), tool: "claude-code"},
+		{name: "the lock's own hash passes", field: "context_hash", value: lockHash, tool: "claude-code"},
 		{name: "a truncated hash is a finding", field: "context_hash", value: "abc123", tool: "claude-code", wantFinding: true},
 		{name: "an invented value is a finding", field: "context_hash", value: "todo", tool: "claude-code", wantFinding: true},
 		{name: "an uppercase hash is a finding", field: "context_hash", value: strings.Repeat("A", 64), tool: "claude-code", wantFinding: true},
@@ -190,6 +194,9 @@ func TestHashFieldShape(t *testing.T) {
 		{name: "by-hand is a finding where the bundle is here", field: "strings_hash", value: "by-hand", tool: "claude-code", pluginVersion: "1.0.0", wantFinding: true},
 	} {
 		root, _ := corpus(t)
+		if tc.value == lockHash {
+			tc.value = fixtureLockHash(t, root)
+		}
 		if tc.pluginVersion != "" {
 			pluginTemplate(t, root, tc.pluginVersion)
 			setField(t, root, "output.md", "template", "intake@1.0.0")
@@ -202,5 +209,44 @@ func TestHashFieldShape(t *testing.T) {
 		if strings.Contains(causes, tc.field) != tc.wantFinding {
 			t.Errorf("%s: wanted finding=%v; causes: %s", tc.name, tc.wantFinding, causes)
 		}
+	}
+}
+
+// lockHash is a placeholder in the table above, replaced per case with the hash of that
+// root's own lock file: the table cannot know it, because corpus copies the fixture into a
+// fresh directory for every case.
+const lockHash = "<the lock's hash>"
+
+func fixtureLockHash(t *testing.T, root string) string {
+	t.Helper()
+	h, err := hashing.FileHash(filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]), "context.lock.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+// A hash of the right shape over the wrong content is the case a shape check cannot catch,
+// and the one a trail rests on: the value says what the phase was produced from.
+func TestHashValueIsRecomputed(t *testing.T) {
+	root, _ := corpus(t)
+	if got := causes(schema(ctxFor(root))); got != "" {
+		t.Fatalf("the fixture does not match its own lock file:\n%s", got)
+	}
+
+	root, _ = corpus(t)
+	setField(t, root, "output.md", "context_hash", strings.Repeat("d", 64))
+	if got := causes(schema(ctxFor(root))); !strings.Contains(got, "context_hash does not match") {
+		t.Fatalf("a well shaped hash over the wrong content passed:\n%s", got)
+	}
+
+	// The same for the bundle: the artifact names a version the repository carries, so the
+	// value is recomputable and has to be right.
+	root, _ = corpus(t)
+	pluginTemplate(t, root, "1.0.0")
+	setField(t, root, "output.md", "template", "intake@1.0.0")
+	setField(t, root, "output.md", "strings_hash", strings.Repeat("e", 64))
+	if got := causes(schema(ctxFor(root))); !strings.Contains(got, "strings_hash does not match") {
+		t.Fatalf("a well shaped strings_hash over the wrong bundle passed:\n%s", got)
 	}
 }

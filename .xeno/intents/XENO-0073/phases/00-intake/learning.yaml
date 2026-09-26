@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#73
+phase: 00-intake
+created: 2026-09-26T16:20:12Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+bcb6994
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two test fixtures carried hashes of the right shape over content they did not
+      cover, and every phase built from them passed. The gate and its tests agreed
+      with each other, so the missing comparison was invisible from inside the
+      package.
+    proposal: >-
+      A fixture carries values a real artifact could carry, computed the way the
+      artifact computes them. Where a fixture states a value the specification says is
+      derived, it derives it.
+    target: CLAUDE.md
