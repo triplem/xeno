@@ -3,6 +3,13 @@
 Derived from the commit history by semantic-release. The commits are the source;
 editing this file by hand changes the rendering and not what it renders.
 
+# [0.18.0](https://github.com/triplem/xeno/compare/v0.17.0...v0.18.0) (2026-09-26)
+
+
+### Features
+
+* **gates:** G-Schema checks the shape of a hash ([#76](https://github.com/triplem/xeno/issues/76)) ([43b97e0](https://github.com/triplem/xeno/commit/43b97e0d13700d514746374ea2223e4bb22efead)), closes [#64](https://github.com/triplem/xeno/issues/64) [#74](https://github.com/triplem/xeno/issues/74) [#70](https://github.com/triplem/xeno/issues/70) [#74](https://github.com/triplem/xeno/issues/74) [#75](https://github.com/triplem/xeno/issues/75)
+
 # [0.17.0](https://github.com/triplem/xeno/compare/v0.16.0...v0.17.0) (2026-09-26)
 
 
