@@ -389,8 +389,8 @@ func assumptions(c Ctx) model.Check {
 		switch {
 		case a.Open():
 			fs = append(fs, finding(rel, "assumption "+a.ID+" is open", "confirm it, reject it, or replace it with a decision"))
-		case a.Status == "confirmed" && a.ConfirmedBy == "":
-			fs = append(fs, finding(rel, "assumption "+a.ID+" is confirmed by nobody", "name who confirmed it, since the confirmation is what the gate reads"))
+		case a.DecidedBy() == "":
+			fs = append(fs, finding(rel, "assumption "+a.ID+" is "+a.Status+" by nobody", "name who decided it: section 8 gives each decided state its person"))
 		}
 	}
 	return result(fs)

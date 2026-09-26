@@ -1062,7 +1062,7 @@ func TestAssumptionStatusDecidesTheGate(t *testing.T) {
 		{"open", "red"},
 		{"", "red"},
 		{"confirmed\n    confirmed_by: m.example", "green"},
-		{"rejected", "green"},
+		{"rejected\n    rejected_by: m.example", "green"},
 	} {
 		f := newFixture(t)
 		f.write(model.IntentDir(key)+"/assumptions.yaml", register+tc.status+"\n")
@@ -1072,13 +1072,30 @@ func TestAssumptionStatusDecidesTheGate(t *testing.T) {
 	}
 }
 
-// Confirmation is what the gate reads, so a confirmation with nobody behind it is a
-// finding of its own rather than a pass.
-func TestConfirmedByNobodyIsAFinding(t *testing.T) {
+// Section 8 gives each decided state its person, so a decision with nobody behind it is a
+// finding of its own rather than a pass, in both states.
+func TestDecidedByNobodyIsAFinding(t *testing.T) {
+	for _, status := range []string{"confirmed", "rejected"} {
+		f := newFixture(t)
+		f.write(model.IntentDir(key)+"/assumptions.yaml", register+status+"\n")
+		if g := f.run("00-intake", ""); g.Status != "red" {
+			t.Errorf("%s with no person behind it passed: %s", status, g.Status)
+		}
+	}
+}
+
+// The person goes into the field that belongs to the status, and the other stays absent:
+// a rejected assumption was not confirmed by anybody.
+func TestRejectionNamesItsPersonInItsOwnField(t *testing.T) {
 	f := newFixture(t)
-	f.write(model.IntentDir(key)+"/assumptions.yaml", register+"confirmed\n")
-	if g := f.run("00-intake", ""); g.Status != "red" {
-		t.Fatalf("a confirmation with no person behind it passed: %s", g.Status)
+	f.must2nd(f.r.RecordAssumption(key, "02-design", "the cache is warm", "rules", "high", ""))
+	a, err := f.r.DecideAssumption(key, "A-001", "rejected", "m.example")
+	f.must(err)
+	if a.RejectedBy != "m.example" || a.ConfirmedBy != "" {
+		t.Fatalf("a rejection recorded %+v", a)
+	}
+	if a.DecidedBy() != "m.example" {
+		t.Fatalf("the person behind the rejection reads as %q", a.DecidedBy())
 	}
 }
 
@@ -1125,6 +1142,9 @@ func TestDecideAssumption(t *testing.T) {
 	f.must(err)
 	if a.Status != "rejected" || a.ConfirmedBy != "" {
 		t.Fatalf("a rejection recorded %+v; confirmed_by belongs to a confirmation", a)
+	}
+	if a.RejectedBy != "m.example" {
+		t.Fatalf("the rejection named %q", a.RejectedBy)
 	}
 	if _, err := f.r.DecideAssumption(key, "A-001", "confirmed", "m.example"); err == nil {
 		t.Error("a decided assumption was decided again")
