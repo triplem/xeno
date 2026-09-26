@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#79
+phase: 00-intake
+created: 2026-09-26T14:56:18Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+15b30d0
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      An assumption said a condition held and nothing checked it, and the first
+      plausible check, comparing dependencies per target, would have compared the
+      wrong thing: package sets differ on every platform through the standard library.
+      The level the artifact describes is the level to compare.
+    proposal: >-
+      Where a condition is turned into a check, the check is run against the current
+      tree before it is committed, both for the passing case and for what it would
+      flag. A check that cannot pass today and a check that cannot fail tomorrow look
+      the same in a diff.
+    target: CLAUDE.md

@@ -33,6 +33,14 @@ Each release carries a CycloneDX bill of materials generated from the shipped bi
 rather than from `go.mod`, so it records what the artifact contains and not what the
 module declares. It also records its own generator with that generator's hashes.
 
+One document covers all five binaries, and that is a checked condition rather than an
+observation. Build constraints can make a target select different modules, and the
+document describes modules, so before it is generated the release compares the module
+set of every target it builds and stops where two of them disagree. Package sets are not
+compared: they differ on every platform by way of the standard library and say nothing
+about the document. The day a platform dependent dependency enters the tree, the release
+fails and the repair is one document per target.
+
 ## In the pipeline
 
 Every entry is pinned to something that cannot move: a commit sha for an action, an
