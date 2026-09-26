@@ -74,7 +74,12 @@ type Protection struct {
 	// ReviewsExpressible says whether the host reports a review requirement at all.
 	// Not the same as none being configured.
 	ReviewsExpressible bool
-	Reason             string
+	// LastPushApproval is the host's stronger form of "not by the author": the most
+	// recent push has to be approved by somebody who did not make it. GitHub already
+	// refuses an approval from the pull request's own author, so this is the part of the
+	// requirement a setting can add rather than the whole of it.
+	LastPushApproval bool
+	Reason           string
 }
 
 // Fetch asks the host what the branch is configured to require.
@@ -120,7 +125,8 @@ func Fetch(client *http.Client, baseURL, repo, branch, token string) (Protection
 			Enabled bool `json:"enabled"`
 		} `json:"enforce_admins"`
 		Reviews *struct {
-			Count int `json:"required_approving_review_count"`
+			Count            int  `json:"required_approving_review_count"`
+			LastPushApproval bool `json:"require_last_push_approval"`
 		} `json:"required_pull_request_reviews"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
@@ -131,6 +137,7 @@ func Fetch(client *http.Client, baseURL, repo, branch, token string) (Protection
 	p.EnforceAdmins = body.EnforceAdmins != nil && body.EnforceAdmins.Enabled
 	if body.Reviews != nil {
 		p.ReviewsExpressible, p.RequiredApprovals = true, body.Reviews.Count
+		p.LastPushApproval = body.Reviews.LastPushApproval
 	}
 	return p, nil
 }
@@ -197,6 +204,45 @@ func Compare(repo, branch string, d Declared, p Protection, now time.Time) Repor
 		default:
 			add("approvals.required", declared, fmt.Sprintf("%d", p.RequiredApprovals), waiveOr(w, Unmet), w)
 		}
+	}
+	// Section 13 says the approvals block covers how many are required and whether the
+	// author may give one, so the second half is compared here rather than read and
+	// ignored. What the host contributes is not a setting: GitHub refuses an approval from
+	// a pull request's own author, so an approval that exists is somebody else's. The
+	// setting adds the stronger form, that the last push is approved by another person
+	// too, and it is reported because the difference is one somebody may care about.
+	//
+	// With no approval required there is nothing to be somebody else's, which is unmet
+	// rather than met: a requirement about approvals cannot be satisfied by their absence.
+	if d.Approvals.NotByAuthor {
+		w := d.Approvals.Waived
+		if w == "" {
+			w = d.Waived
+		}
+		switch {
+		case !p.Available || !p.ReviewsExpressible:
+			add("approvals.not_by_author", "true", "not available", waiveOr(w, NotAvailable), noteOf(w, p.Reason))
+		case p.RequiredApprovals < 1:
+			add("approvals.not_by_author", "true", "no approval is required",
+				waiveOr(w, Unmet), noteOf(w, "an approval that does not exist is nobody's"))
+		case p.LastPushApproval:
+			add("approvals.not_by_author", "true", "the author cannot approve, and the last push needs another approval", Met, "")
+		default:
+			add("approvals.not_by_author", "true", "the host refuses an approval from the author", Met,
+				"require_last_push_approval would extend it to whoever pushed last")
+		}
+	}
+
+	// merge_method is declared and deliberately not compared. Section 13 says "not
+	// checked" for it, and the plan says it is only meaningful with a commit predicate
+	// active, which no gate in this runner has yet: a squash replaces the commits a
+	// predicate judged, so the requirement exists for a consumer that does not. Comparing
+	// it would be a check the specification says is not made, which is a spec change
+	// first. The field is reported as unchecked rather than left silent, so that a project
+	// declaring it learns that nothing reads it.
+	if d.MergeMethod != "" {
+		add("merge_method", d.MergeMethod, "not compared", Unknown,
+			"section 13 leaves it unchecked; it is meaningful once a commit predicate is active")
 	}
 	return rep
 }

@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#68
+phase: 00-intake
+created: 2026-09-26T21:27:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+a420490
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      An issue asked for two fields to be compared and the specification answers one
+      of them: its own table gives `merge_method` the behaviour "not checked". The
+      issue was written from the code and the register, and the table was not read
+      until the work started.
+    proposal: >-
+      Where an issue proposes a check, the sentence in the documents that governs the
+      field is quoted in it. A gap found in the code is not yet a gap in the
+      specification, and the two are answered in different places.
+    target: CLAUDE.md
