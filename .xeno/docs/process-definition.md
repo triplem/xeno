@@ -1151,12 +1151,22 @@ assumptions:
     confidence: <high|medium|low>
     status: <open|confirmed|rejected>
     confirmed_by: <person>
+    rejected_by: <person>
 ```
 
 Every open assumption turns the gate of its phase red. At phase boundaries with
 open assumptions the process is therefore effectively human in the loop.
 Confirmation is recorded in the repository and pushed, because CI cannot reliably
 see the tracker.
+
+Both decided states name their person, and exactly one of the two fields is
+present: `confirmed_by` where the status is confirmed, `rejected_by` where it
+is rejected. Rejecting is a statement by a person in the same way confirming
+is, and the register is the record of who made it. The gate is green either
+way, so nothing downstream reads the name; what reads it is somebody asking
+months later who dropped an assumption and why the work went the way it did,
+which is the question the trail exists to answer without asking anybody to
+remember.
 
 ### Decisions are not assumptions
 
