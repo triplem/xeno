@@ -1961,12 +1961,18 @@ and `model_group` the name that was asked for. The response body carries only th
 that was asked for. What any of them names is the deployment that was routed to and not
 what the provider says it served, so a recorded `model` is a routing record rather than
 an attestation from the provider. Metadata arrives through headers alone, which is what
-a harness can set: `x-litellm-spend-logs-metadata` is kept verbatim on the row, and
-`x-litellm-tags` is aggregated per tag with a count and a spend, which is the
-attribution below the project. The names are not free. A custom header is dropped
-without an error unless the proxy lists it under `extra_spend_tag_headers`, so either
-the harness sends LiteLLM's own names or the proxy configuration becomes part of what an
-adopter arranges.
+a harness can set, and the two routes that carry it are not equal. `x-litellm-tags`
+lands in `request_tags`, is aggregated per tag with a count and a spend, and is
+documented as gated by nothing; it is the attribution below the project and it is what
+Xeno sends. `x-litellm-spend-logs-metadata` keeps a key value pair verbatim on the row
+and is documented as requiring an enterprise licence, yet the proxy it was measured on
+has no licence set and recorded it anyway, which is a worse foundation than a paid
+feature would be: a release that enforces the gate stops the rows without an error. Per key and per user figures
+need no licence either, through `/spend/keys`, `/spend/users` and `/user/info`, but they
+aggregate above the phase and answer what a project spent rather than what a phase did.
+The names are not free on either route. A custom header is dropped without an error
+unless the proxy lists it under `extra_spend_tag_headers`, so either the harness sends
+LiteLLM's own names or the proxy configuration becomes part of what an adopter arranges.
 
 whether each
 harness forwards custom headers to it, and under which variable --> claude-code: export ANTHROPIC_CUSTOM_HEADERS="X-Custom-Header-1: value1\nX-Custom-Header-2: value2"; codex: X-Custom-Header = "MeinWert"
