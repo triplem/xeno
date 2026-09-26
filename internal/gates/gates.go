@@ -379,11 +379,18 @@ func readAssumptions(c Ctx) model.Assumptions {
 	return a
 }
 
+// Section 8: every open assumption turns the gate of its phase red. The state is in
+// status, so a rejected assumption is decided rather than unconfirmed, which is the
+// difference an empty confirmed_by cannot express.
 func assumptions(c Ctx) model.Check {
+	rel := model.IntentDir(c.Key) + "/assumptions.yaml"
 	var fs []model.Finding
 	for _, a := range readAssumptions(c).Assumptions {
-		if a.ConfirmedBy == "" {
-			fs = append(fs, finding(model.IntentDir(c.Key)+"/assumptions.yaml", "assumption "+a.ID+" is not confirmed", "confirm it, or replace it with a decision"))
+		switch {
+		case a.Open():
+			fs = append(fs, finding(rel, "assumption "+a.ID+" is open", "confirm it, reject it, or replace it with a decision"))
+		case a.Status == "confirmed" && a.ConfirmedBy == "":
+			fs = append(fs, finding(rel, "assumption "+a.ID+" is confirmed by nobody", "name who confirmed it, since the confirmation is what the gate reads"))
 		}
 	}
 	return result(fs)
@@ -411,8 +418,8 @@ func questions(c Ctx) model.Check {
 		}
 	}
 	for _, a := range readAssumptions(c).Assumptions {
-		if a.Resolves != "" && a.ConfirmedBy != "" {
-			resolved[a.Resolves] = true
+		if a.Resolves != "" && a.Status == "confirmed" {
+			resolved[a.Resolves] = true // section 8's second exit: somebody accepts a placeholder
 		}
 	}
 	var fs []model.Finding

@@ -28,6 +28,9 @@ const usage = `usage:
   xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno gate override  FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno obligation close FINDING --intent KEY --phase NN
+  xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
+  xeno assumption confirm ID --intent KEY --by WHO
+  xeno assumption reject  ID --intent KEY --by WHO
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno evidence attach --intent KEY --phase NN --from DIR
@@ -88,6 +91,10 @@ func run(args []string) int {
 	base := fs.String("base", "", "the base of the commit range under review")
 	head := fs.String("head", "", "the head of the commit range under review")
 	reason := fs.String("reason", "", "why")
+	text := fs.String("text", "", "the statement being assumed")
+	origin := fs.String("origin", "", "where the assumption came from")
+	confidence := fs.String("confidence", "", "how much weight it carries")
+	resolves := fs.String("resolves", "", "the open question this assumption answers")
 	// The suggestion is off by default nowhere and on by default nowhere either: the
 	// commands that change state say it, the ones a pipeline or a hook runs do not, and
 	// this turns it off for the scripts that are neither.
@@ -106,7 +113,7 @@ func run(args []string) int {
 	phase := ""
 	switch cmd {
 	case "intent status", "intent close", "gate verify", "check commit-message", "init",
-		"enforcement check":
+		"enforcement check", "assumption confirm", "assumption reject":
 	default:
 		p, err := model.ResolvePhase(*phaseArg)
 		if err != nil {
@@ -178,6 +185,26 @@ func run(args []string) int {
 	case "gate override":
 		return suggest(r, *key, *noNext,
 			report(r.Decide(*key, phase, finding, "overridden", *by, *reason)))
+	case "assumption record":
+		a, err := r.RecordAssumption(*key, phase, *text, *origin, *confidence, *resolves)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Printf("%s recorded, open, from %s with %s confidence\n", a.ID, a.Origin, a.Confidence)
+		return suggest(r, *key, *noNext, 0)
+	case "assumption confirm", "assumption reject":
+		status := "confirmed"
+		if cmd == "assumption reject" {
+			status = "rejected"
+		}
+		a, err := r.DecideAssumption(*key, finding, status, *by)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Printf("%s %s by %s\n", a.ID, a.Status, *by)
+		return suggest(r, *key, *noNext, 0)
 	case "obligation close":
 		return suggest(r, *key, *noNext, report(r.CloseObligation(*key, phase, finding)))
 	case "evidence attach":

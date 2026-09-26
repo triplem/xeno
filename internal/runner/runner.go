@@ -606,3 +606,108 @@ func (r *Runner) IntentClose(key, reason string) (*model.Gate, error) {
 	}
 	return g, fm.WriteYAML(r.abs(model.IntentDir(key)+"/gate.yaml"), g)
 }
+
+// ---- The assumption register
+
+// assumptionsPath is at intent level: the register is carried forward across all phases
+// and is therefore not part of any phase's artifacts_hash.
+func (r *Runner) assumptionsPath(key string) string {
+	return r.abs(model.IntentDir(key) + "/assumptions.yaml")
+}
+
+func (r *Runner) readRegister(key string) (*model.Assumptions, error) {
+	var reg model.Assumptions
+	if err := fm.ReadYAML(r.assumptionsPath(key), &reg); err != nil {
+		return nil, refuse("%s has no assumption register; %s is missing", key, model.IntentDir(key)+"/assumptions.yaml")
+	}
+	return &reg, nil
+}
+
+func (r *Runner) writeRegister(key string, reg *model.Assumptions) error {
+	reg.Updated = r.stamp()
+	return fm.WriteYAML(r.assumptionsPath(key), reg)
+}
+
+func oneOf(value string, set []string) bool {
+	for _, s := range set {
+		if s == value {
+			return true
+		}
+	}
+	return false
+}
+
+// nextAssumptionID continues the register's own numbering rather than counting its
+// entries, so that a removed record does not hand its id to the next one.
+func nextAssumptionID(reg *model.Assumptions) string {
+	high := 0
+	for _, a := range reg.Assumptions {
+		var n int
+		if _, err := fmt.Sscanf(a.ID, "A-%d", &n); err == nil && n > high {
+			high = n
+		}
+	}
+	return fmt.Sprintf("A-%03d", high+1)
+}
+
+// RecordAssumption adds an open assumption to the register. Origin and confidence are
+// what make it readable by somebody who did not write it, so both are required here
+// although the schema leaves them out of a record that predates them.
+func (r *Runner) RecordAssumption(key, phase, text, origin, confidence, resolves string) (*model.Assumption, error) {
+	if text == "" {
+		return nil, refuse("an assumption needs --text: the statement being assumed")
+	}
+	if !oneOf(origin, model.AssumptionOrigins) {
+		return nil, refuse("--origin is one of %s", strings.Join(model.AssumptionOrigins, ", "))
+	}
+	if !oneOf(confidence, model.AssumptionConfidences) {
+		return nil, refuse("--confidence is one of %s", strings.Join(model.AssumptionConfidences, ", "))
+	}
+	reg, err := r.readRegister(key)
+	if err != nil {
+		return nil, err
+	}
+	a := model.Assumption{
+		ID: nextAssumptionID(reg), Phase: phase, Assumption: text,
+		Origin: origin, Confidence: confidence, Status: "open", Resolves: resolves,
+	}
+	reg.Assumptions = append(reg.Assumptions, a)
+	if err := r.writeRegister(key, reg); err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// DecideAssumption confirms or rejects one. Both are a statement by a person, and only
+// confirmation has a field for them in section 8, so a rejection records the status and
+// says who in the commit that carries it.
+func (r *Runner) DecideAssumption(key, id, status, by string) (*model.Assumption, error) {
+	if status != "confirmed" && status != "rejected" {
+		return nil, refuse("an assumption is confirmed or rejected, not %q", status)
+	}
+	if by == "" {
+		return nil, refuse("--by is required: confirming or rejecting an assumption is a statement by a person")
+	}
+	reg, err := r.readRegister(key)
+	if err != nil {
+		return nil, err
+	}
+	for i := range reg.Assumptions {
+		a := &reg.Assumptions[i]
+		if a.ID != id {
+			continue
+		}
+		if !a.Open() {
+			return nil, refuse("%s is already %s; a decision is not replaced, it is made once", id, a.Status)
+		}
+		a.Status = status
+		if status == "confirmed" {
+			a.ConfirmedBy = by
+		}
+		if err := r.writeRegister(key, reg); err != nil {
+			return nil, err
+		}
+		return a, nil
+	}
+	return nil, refuse("%s has no assumption %s", key, id)
+}

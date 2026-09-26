@@ -316,7 +316,8 @@ func TestQuestionResolvedByConfirmedAssumption(t *testing.T) {
 	f.run("00-intake", "")
 	f.run("01-requirements", question)
 	f.write(model.IntentDir(key)+"/assumptions.yaml",
-		"assumptions:\n  - id: A-1\n    text: fail fast is acceptable\n    resolves: Q-1\n    confirmed_by: m.example\n")
+		"assumptions:\n  - id: A-001\n    assumption: fail fast is acceptable\n    origin: user-input\n"+
+			"    confidence: medium\n    status: confirmed\n    confirmed_by: m.example\n    resolves: Q-1\n")
 	for _, p := range model.Phases[2:5] {
 		f.run(p, "")
 	}
@@ -1046,3 +1047,94 @@ func TestAnUncoveredStateIsSaidToBeOne(t *testing.T) {
 		t.Fatalf("an unknown status got %+v", s)
 	}
 }
+
+// ---- The assumption register, section 8
+
+const register = "assumptions:\n  - id: A-001\n    assumption: the cache is warm\n" +
+	"    origin: repo-convention\n    confidence: low\n    status: "
+
+// An open assumption turns the gate of its phase red, and a rejected one does not: it was
+// examined and dropped, which an empty confirmed_by cannot say.
+func TestAssumptionStatusDecidesTheGate(t *testing.T) {
+	for _, tc := range []struct {
+		status, want string
+	}{
+		{"open", "red"},
+		{"", "red"},
+		{"confirmed\n    confirmed_by: m.example", "green"},
+		{"rejected", "green"},
+	} {
+		f := newFixture(t)
+		f.write(model.IntentDir(key)+"/assumptions.yaml", register+tc.status+"\n")
+		if g := f.run("00-intake", ""); g.Status != tc.want {
+			t.Errorf("status %q gave %s, wanted %s", tc.status, g.Status, tc.want)
+		}
+	}
+}
+
+// Confirmation is what the gate reads, so a confirmation with nobody behind it is a
+// finding of its own rather than a pass.
+func TestConfirmedByNobodyIsAFinding(t *testing.T) {
+	f := newFixture(t)
+	f.write(model.IntentDir(key)+"/assumptions.yaml", register+"confirmed\n")
+	if g := f.run("00-intake", ""); g.Status != "red" {
+		t.Fatalf("a confirmation with no person behind it passed: %s", g.Status)
+	}
+}
+
+func TestRecordAssumption(t *testing.T) {
+	f := newFixture(t)
+	a, err := f.r.RecordAssumption(key, "02-design", "the cache is warm", "rules", "high", "Q-1")
+	f.must(err)
+	if a.ID != "A-001" || a.Status != "open" {
+		t.Fatalf("recorded %+v", a)
+	}
+	b, err := f.r.RecordAssumption(key, "02-design", "and stays warm", "rules", "high", "")
+	f.must(err)
+	if b.ID != "A-002" {
+		t.Fatalf("the second id was %s", b.ID)
+	}
+	var reg model.Assumptions
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir(key), "assumptions.yaml"), &reg))
+	if reg.Updated == "" {
+		t.Error("the register was not stamped as updated")
+	}
+	if len(reg.Assumptions) != 2 || reg.Assumptions[0].Origin != "rules" {
+		t.Fatalf("register is %+v", reg.Assumptions)
+	}
+}
+
+// Origin and confidence are closed sets, and the command is where that is enforced: a
+// register full of spellings the reader has to guess at is worse than an empty one.
+func TestRecordRefusesValuesOutsideTheSets(t *testing.T) {
+	f := newFixture(t)
+	for _, tc := range [][2]string{{"", "high"}, {"invented", "high"}, {"rules", ""}, {"rules", "certain"}} {
+		if _, err := f.r.RecordAssumption(key, "02-design", "text", tc[0], tc[1], ""); err == nil {
+			t.Errorf("origin %q confidence %q was accepted", tc[0], tc[1])
+		}
+	}
+	if _, err := f.r.RecordAssumption(key, "02-design", "", "rules", "high", ""); err == nil {
+		t.Error("an assumption with no statement was accepted")
+	}
+}
+
+func TestDecideAssumption(t *testing.T) {
+	f := newFixture(t)
+	f.must2nd(f.r.RecordAssumption(key, "02-design", "the cache is warm", "rules", "high", ""))
+	a, err := f.r.DecideAssumption(key, "A-001", "rejected", "m.example")
+	f.must(err)
+	if a.Status != "rejected" || a.ConfirmedBy != "" {
+		t.Fatalf("a rejection recorded %+v; confirmed_by belongs to a confirmation", a)
+	}
+	if _, err := f.r.DecideAssumption(key, "A-001", "confirmed", "m.example"); err == nil {
+		t.Error("a decided assumption was decided again")
+	}
+	if _, err := f.r.DecideAssumption(key, "A-002", "confirmed", "m.example"); err == nil {
+		t.Error("an assumption that does not exist was confirmed")
+	}
+	if _, err := f.r.DecideAssumption(key, "A-001", "confirmed", ""); err == nil {
+		t.Error("a decision with nobody behind it was accepted")
+	}
+}
+
+func (f *fixture) must2nd(_ *model.Assumption, err error) { f.t.Helper(); f.must(err) }
