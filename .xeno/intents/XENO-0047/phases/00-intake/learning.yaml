@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#47
+phase: 00-intake
+created: 2026-09-26T15:15:43Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+a336153
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A question stayed open for weeks because it was written as one decision.
+      Visibility and distribution were a single sentence in both documents, so
+      publishing the repository read as publishing a release, and the cheap half
+      waited for the expensive one.
+    proposal: >-
+      Where a sentence in the documents joins two things that can move separately, it
+      is worth splitting before it is decided rather than after. An open question that
+      bundles a cheap change with an expensive one is answered at the price of the
+      expensive one.
+    target: CLAUDE.md

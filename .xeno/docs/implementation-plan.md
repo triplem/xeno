@@ -75,15 +75,19 @@ on. That is recorded as A27 rather than assumed away, and it is the same shape o
 problem a self managed deployment on its free edition would have had, arriving through
 the tier instead of the edition.
 
-**Distribution is internal in v1 and public from 1.1.** In v1 the channels are the
-host's releases and its container registry, what they carry is checksummed and not
-signed, and the plugin is not registered in any marketplace. Publication is decided
-for 1.1, and section 8 lists what v1 owes it, because two of those obligations cannot
-be met retroactively.
+**The repository is public in v1; the distribution channels stay internal until 1.1.**
+In v1 the channels are the host's releases and its container registry, what they carry
+is checksummed and not signed, and the plugin is not registered in any marketplace.
+What moved forward is the visibility of the repository, because the host grants branch
+protection to a public repository and to no other, and that setting is what the
+sequence guarantee rests on. The three obligations section 8 lists were met before the
+visibility changed rather than after, which is the only order in which two of them can
+be met at all.
 
 **Licence, copyright and cost** are settled and recorded rather than open. Xeno is
 developed at and for javafreedom.org, which holds the copyright and licenses under
-Apache 2.0, in v1 internally and from 1.1 publicly. It runs on infrastructure that is already paid for,
+Apache 2.0, with the repository public from v1 and the distribution channels following
+in 1.1. It runs on infrastructure that is already paid for,
 so the only expense that scales with the work is model usage, which is what WP13 makes
 visible.
 
@@ -1771,10 +1775,12 @@ component receives them. The dashboard, WP18, specified in section 2 and not bui
 The German documentation translation together with the hash binding that keeps it
 current.
 
-**Public release, decided rather than deferred.** From 1.1 the repository is public:
-release signatures, a public distribution channel and the marketplace registration of
-the plugin. Three obligations fall on v1 for it, and the first two are the kind that
-cannot be repaired afterwards.
+**Public release, decided rather than deferred, and the repository went first.** The
+repository is public from v1. What waits for 1.1 is the release: signatures, a public
+distribution channel and the marketplace registration of the plugin. Three obligations
+fell on v1 for it, and the first two are the kind that cannot be repaired afterwards,
+which is why they were measured against the whole history before the visibility
+changed rather than audited after.
 
 *The history has to be publishable from the first commit.* Publishing a repository
 publishes everything ever committed to it: internal hostnames, customer names in
