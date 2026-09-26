@@ -678,9 +678,9 @@ func (r *Runner) RecordAssumption(key, phase, text, origin, confidence, resolves
 	return &a, nil
 }
 
-// DecideAssumption confirms or rejects one. Both are a statement by a person, and only
-// confirmation has a field for them in section 8, so a rejection records the status and
-// says who in the commit that carries it.
+// DecideAssumption confirms or rejects one. Both are a statement by a person and section
+// 8 gives each state its own field, so the person goes into the one that belongs to the
+// status and the other stays absent.
 func (r *Runner) DecideAssumption(key, id, status, by string) (*model.Assumption, error) {
 	if status != "confirmed" && status != "rejected" {
 		return nil, refuse("an assumption is confirmed or rejected, not %q", status)
@@ -703,6 +703,8 @@ func (r *Runner) DecideAssumption(key, id, status, by string) (*model.Assumption
 		a.Status = status
 		if status == "confirmed" {
 			a.ConfirmedBy = by
+		} else {
+			a.RejectedBy = by
 		}
 		if err := r.writeRegister(key, reg); err != nil {
 			return nil, err
