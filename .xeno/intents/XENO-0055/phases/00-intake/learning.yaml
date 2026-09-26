@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#55
+phase: 00-intake
+created: 2026-09-26T12:40:09Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+2cb8638
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      A gate can read the right question off the wrong field and pass its tests for
+      months. G-Assumptions inferred openness from an empty `confirmed_by`, which
+      agrees with `status` in every case the tests covered and disagrees in the one
+      nobody could write down, because the field that would have expressed it was
+      missing from the code.
+    proposal: >-
+      Where a gate's rule is quoted from the specification, the test cites the same
+      sentence and covers the states the specification enumerates, not the states the
+      code can currently reach.
+    target: implementation-plan.md
