@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#60
+phase: 00-intake
+created: 2026-09-26T12:49:59Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+374fea6
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      A49 was recorded as an open assumption and answered within the hour, because the
+      issue that carried it framed the choice and what either answer costs instead of
+      asking whether a field was missing.
+    proposal: >-
+      Where a finding about the documents is written down, it says what the two
+      readings are and what each costs. A finding that only reports the gap waits for
+      somebody to do that work before it can be decided.
+    target: CLAUDE.md
