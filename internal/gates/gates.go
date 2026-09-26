@@ -74,6 +74,39 @@ func Applicable(phase string) []string {
 	return ids
 }
 
+// Invariants is what the routing through carryForward is supposed to guarantee, checked
+// rather than promised. A25 recorded the promise: every finding reaches a verdict through
+// that one function, so every id is the hash the appendix defines and no external finding
+// carries a decision. Nothing enforced it, and a test of carryForward cannot, because what
+// would break the rule is a second path into the verdict rather than a change to the
+// function.
+//
+// So the verdict is checked instead of the path. A finding with no id, an id that is not
+// the hash of what it reports, or a decision on foreign code fails the run where it is
+// produced, whichever code produced it.
+//
+// The rule id is empty until WP4 brings rules; when a finding carries one, it enters the
+// hash here exactly as it does in carryForward, which is why both read it from the same
+// place.
+func Invariants(checks []model.Check) error {
+	for _, ch := range checks {
+		for _, f := range ch.Findings {
+			switch {
+			case f.ID == "":
+				return fmt.Errorf("%s produced a finding with no id (%s): every finding is routed through carryForward",
+					ch.Gate, f.Cause)
+			case f.ID != hashing.FindingID(ch.Gate, "", f.File, f.Cause):
+				return fmt.Errorf("%s finding %s does not carry the id its content hashes to: an id is derived and never written",
+					ch.Gate, f.ID)
+			case ch.Provenance == ExternalProvenance && f.Decision != nil:
+				return fmt.Errorf("%s finding %s is external and carries a decision: a release on foreign wording is taken again, not kept",
+					ch.Gate, f.ID)
+			}
+		}
+	}
+	return nil
+}
+
 // ExternalProvenance marks a check whose findings were produced by foreign code.
 const ExternalProvenance = "external"
 

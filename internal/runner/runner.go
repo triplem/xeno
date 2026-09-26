@@ -119,6 +119,11 @@ func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 	}
 	prev, _ := r.readGate(key, phase)
 	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h, QualifiedID: common.Intent}, prev)
+	// Checked where the verdict is produced rather than where the findings are, so that a
+	// second path into it, an external gate above all, meets the same rule as the first.
+	if err := gates.Invariants(checks); err != nil {
+		return nil, refuse("%v", err)
+	}
 	status, err := gates.Status(checks)
 	if err != nil {
 		return nil, err
