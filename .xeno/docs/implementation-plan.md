@@ -1967,12 +1967,18 @@ documented as gated by nothing; it is the attribution below the project and it i
 Xeno sends. `x-litellm-spend-logs-metadata` keeps a key value pair verbatim on the row
 and is documented as requiring an enterprise licence, yet the proxy it was measured on
 has no licence set and recorded it anyway, which is a worse foundation than a paid
-feature would be: a release that enforces the gate stops the rows without an error. Per key and per user figures
-need no licence either, through `/spend/keys`, `/spend/users` and `/user/info`, but they
+feature would be: a release that enforces the gate stops the rows without an error. Per
+key and per user figures need no licence either, through the two spend list endpoints
+`/spend/keys` and `/spend/users` and through `/user/info` for one user, but they
 aggregate above the phase and answer what a project spent rather than what a phase did.
-The names are not free on either route. A custom header is dropped without an error
-unless the proxy lists it under `extra_spend_tag_headers`, so either the harness sends
-LiteLLM's own names or the proxy configuration becomes part of what an adopter arranges.
+The two list endpoints sit in `spend_tracking_routes`, so an internal user reaches them
+and not only an administrator, and what each caller gets is scoped: its own rows, an
+empty list where its key carries no `user_id`, and 403 rather than a filtered list where
+it asks after another user. Every figure here was read with the master key, so the
+scoping is taken from the documentation and not from a measurement. The names are not
+free on either route. A custom header is dropped without an error unless the proxy lists
+it under `extra_spend_tag_headers`, so either the harness sends LiteLLM's own names or
+the proxy configuration becomes part of what an adopter arranges.
 
 whether each
 harness forwards custom headers to it, and under which variable --> claude-code: export ANTHROPIC_CUSTOM_HEADERS="X-Custom-Header-1: value1\nX-Custom-Header-2: value2"; codex: X-Custom-Header = "MeinWert"
