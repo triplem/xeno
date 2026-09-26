@@ -2,8 +2,10 @@
 
 ## Reporting a vulnerability
 
-Do not open a public issue. Report it to <security contact, to be fixed before
-publication>, with a description and, where possible, a way to reproduce it.
+Do not open a public issue. Use GitHub's private vulnerability reporting, on this
+repository's Security tab, with a description and, where possible, a way to reproduce
+it. It opens a channel only the maintainers can read, and it keeps the report with the
+repository rather than in somebody's mailbox, which is why no address is named here.
 
 ## Scope
 
