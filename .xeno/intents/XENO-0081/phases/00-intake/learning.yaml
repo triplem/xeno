@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#81
+phase: 00-intake
+created: 2026-09-26T15:03:33Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+d4f92bf
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A value described as a placeholder in one file was stated as fact in two others,
+      and the register's row named only the file. Replacing what the row pointed at
+      would have left the tree contradicting itself in the documents that are
+      normative.
+    proposal: >-
+      Where a row calls a value a placeholder, it names every file that states the
+      value, not the one where it is most visible. The search costs one grep and the
+      omission costs a contradiction that no gate reads.
+    target: CLAUDE.md
