@@ -2200,8 +2200,15 @@ makes the pair of fields say where the words came from.
 **`secrets_hash` and `rules_hash`** are defined by the package that first writes them.
 Each covers an effective set rather than one file, and how a set of several files
 reduces to one value is a decision that belongs with the code that assembles the set
-rather than ahead of it. Until then an artifact carries what produced it, and a value
-no writer stands behind is written as such rather than as a hash.
+rather than ahead of it.
+
+**The placeholder.** A hash field carries sixty four lowercase hex characters or the
+value `by-hand`, and nothing else. `by-hand` says that no writer stood behind the
+value, which is the honest state in three cases: where the field has no writer yet;
+where the artifact declares `tool: manual`, because then nothing produced the artifact
+either; and in `strings_hash` where the bundle version the artifact names is not the
+one the repository carries, because a bundle that is gone cannot be hashed by anybody.
+Elsewhere it is wrong rather than honest: a writer exists and the value was skipped.
 
 **Finding id.** A sha256 over four fields, each terminated with `\n`: gate id, rule id,
 path relative to the repository root, cause. The rule id is empty for the gates that
