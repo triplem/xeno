@@ -1352,3 +1352,48 @@ func causeOf(g *model.Gate, gate string) string {
 	}
 	return b.String()
 }
+
+// Section 7's first mode of G-Complete: a merging intent reaches review with every
+// preceding phase present and green, approved or overridden. A32 recorded that only the
+// abandoned mode was implemented, and the phase table said so in every verdict.
+func TestCompleteInReviewReadsEveryPrecedingPhase(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases[:5] {
+		f.run(p, "")
+	}
+	g := f.run("05-review", "")
+	if g.Status != "green" {
+		t.Fatalf("an intent with five judged phases is %s: %s", g.Status, causeOf(g, "G-Complete"))
+	}
+	if check(g, "G-Complete").Result != "pass" {
+		t.Fatalf("G-Complete is %s, want pass", check(g, "G-Complete").Result)
+	}
+
+	// A phase whose verdict is gone was never judged, which is a different repair from a
+	// phase that was judged and failed.
+	f2 := newFixture(t)
+	for _, p := range model.Phases[:5] {
+		f2.run(p, "")
+	}
+	f2.must(os.Remove(filepath.Join(f2.root, model.PhaseDir(key, "02-design"), "gate.yaml")))
+	g = f2.run("05-review", "")
+	if g.Status != "red" || !strings.Contains(causeOf(g, "G-Complete"), "02-design holds no verdict") {
+		t.Fatalf("a missing verdict gave %s: %s", g.Status, causeOf(g, "G-Complete"))
+	}
+
+	// A red predecessor cannot be reached through phase start, which refuses it, so the
+	// gate is what catches a verdict edited after the fact.
+	f3 := newFixture(t)
+	for _, p := range model.Phases[:5] {
+		f3.run(p, "")
+	}
+	rel := filepath.Join(f3.root, model.PhaseDir(key, "03-implementation"), "gate.yaml")
+	var edited model.Gate
+	f3.must(fm.ReadYAML(rel, &edited))
+	edited.Status = "red"
+	f3.must(fm.WriteYAML(rel, &edited))
+	g = f3.run("05-review", "")
+	if !strings.Contains(causeOf(g, "G-Complete"), "03-implementation is red") {
+		t.Fatalf("a red predecessor gave: %s", causeOf(g, "G-Complete"))
+	}
+}
