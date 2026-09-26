@@ -1271,3 +1271,84 @@ func divergenceNames(res *VerifyResult, want string) bool {
 	}
 	return false
 }
+
+// WP8's half of G-Freshness: a phase records the information base it was given, with a
+// hash each, and a file that changes afterwards is a finding. A6 accepted the gap as
+// temporary and said a pass here said more than was checked.
+func TestGivenFilesAreComparedAgainstTheTree(t *testing.T) {
+	f := newFixture(t)
+	f.write("src/payment/card.go", "package payment\n")
+	f.write("src/payment/testdata/golden.json", "{}\n")
+	f.write("docs/adr/0012-payments.md", "# payments\n")
+	f.write("src/shipping/box.go", "package shipping\n")
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile,
+		"include:\n  - src/payment/**\n  - docs/adr/*.md\nexclude:\n  - \"**/testdata/**\"\nbudget:\n  files: 120\n")
+
+	f.must(f.r.Start(key, "00-intake"))
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+
+	var paths []string
+	for _, c := range lock.Files {
+		paths = append(paths, c.Path)
+	}
+	want := []string{"docs/adr/0012-payments.md", "src/payment/card.go"}
+	if strings.Join(paths, " ") != strings.Join(want, " ") {
+		t.Fatalf("the information base is %v, want %v: the profile's exclude and the files it does not name", paths, want)
+	}
+
+	f.output("00-intake", "")
+	if g := f.finish("00-intake"); g.Status != "green" {
+		t.Fatalf("a phase whose files are untouched is %s", g.Status)
+	}
+
+	// The file the phase was given changes after it was given. The lock is not refreshed,
+	// which is what makes this visible at all.
+	f.write("src/payment/card.go", "package payment // and more\n")
+	g, err := f.r.GateRun(key, "00-intake")
+	f.must(err)
+	if g.Status != "red" {
+		t.Fatalf("a changed input left the phase %s", g.Status)
+	}
+	if !strings.Contains(causeOf(g, "G-Freshness"), "src/payment/card.go") {
+		t.Fatalf("the finding does not name the file: %s", causeOf(g, "G-Freshness"))
+	}
+
+	// Gone is its own case, since the repair differs: there is nothing to read again.
+	f.must(os.Remove(filepath.Join(f.root, "src/payment/card.go")))
+	g, err = f.r.GateRun(key, "00-intake")
+	f.must(err)
+	if !strings.Contains(causeOf(g, "G-Freshness"), "is gone") {
+		t.Fatalf("a file that left was reported as: %s", causeOf(g, "G-Freshness"))
+	}
+}
+
+// A phase with no profile records no information base, which is a smaller claim than an
+// empty one: nothing was declared rather than nothing read.
+func TestNoProfileRecordsNoInformationBase(t *testing.T) {
+	f := newFixture(t)
+	f.must(f.r.Start(key, "00-intake"))
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if len(lock.Files) != 0 {
+		t.Fatalf("a repository without a profile recorded %v", lock.Files)
+	}
+	f.output("00-intake", "")
+	if g := f.finish("00-intake"); g.Status != "green" {
+		t.Fatalf("a phase without a profile is %s", g.Status)
+	}
+}
+
+func causeOf(g *model.Gate, gate string) string {
+	var b strings.Builder
+	for _, ch := range g.Checks {
+		if ch.Gate != gate {
+			continue
+		}
+		for _, f := range ch.Findings {
+			b.WriteString(f.Cause)
+			b.WriteString("; ")
+		}
+	}
+	return b.String()
+}

@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#63
+phase: 00-intake
+created: 2026-09-26T21:40:56Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e9f4b9
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A gate implemented half a rule for months and said so in its verdict, and the
+      consequence, that no phase beyond P0 may run, was carried in a register row and
+      a guide rather than in anything the tool reads. The half that was missing needed
+      one field in one file.
+    proposal: >-
+      Where a gate implements part of its rule, the missing part names the field it
+      waits for. A gap described by its effect gets deferred; a gap described by what
+      it needs gets closed.
+    target: CLAUDE.md

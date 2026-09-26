@@ -271,6 +271,34 @@ type ContextLock struct {
 	// overrode it. Empty where no template could be resolved, which is what a
 	// repository without a vendored plugin looks like until xeno init puts one there.
 	TemplateSource string `yaml:"template_source,omitempty"`
+	// Files is the information base the phase was given, resolved from the context
+	// profile when the phase started and never refreshed: the lock describes the input
+	// state, and one rewritten at the end would describe nothing. G-Freshness compares
+	// these hashes against the tree for every preceding phase.
+	Files []ContextFile `yaml:"files,omitempty"`
+}
+
+// ContextFile is one entry of the information base, as section 5 writes it.
+type ContextFile struct {
+	Path   string `yaml:"path"`
+	SHA256 string `yaml:"sha256"`
+}
+
+// Profile is the context profile section 12 defines: a budget, produced by P0 and read by
+// every phase. Links are declared and never inferred, and the runner records them without
+// resolving them: what they are for is the agent's reading, not the gate's.
+type Profile struct {
+	Common  `yaml:",inline"`
+	Include []string `yaml:"include"`
+	Exclude []string `yaml:"exclude,omitempty"`
+	Links   []struct {
+		Component string `yaml:"component"`
+		Docs      string `yaml:"docs"`
+	} `yaml:"links,omitempty"`
+	Budget struct {
+		Files int `yaml:"files,omitempty"`
+		Bytes int `yaml:"bytes,omitempty"`
+	} `yaml:"budget,omitempty"`
 }
 
 type DecisionOnFinding struct {
