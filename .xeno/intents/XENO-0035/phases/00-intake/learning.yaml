@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#35
+phase: 00-intake
+created: 2026-09-26T07:32:23Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+5b66fcd.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: process
+    observation: >-
+      The suggestion follows the working sequence and offered to start P1 of an intent
+      in a repository where no phase beyond P0 may run. The hold is a decision written
+      in M0.md, so it is invisible to the runner, and the advice was correct about the
+      process and wrong about the project.
+    proposal: >-
+      Where a project suspends part of the process, the suspension belongs somewhere the
+      tool can read, or every derived statement will contradict it.
+    target: .xeno/docs/implementation-plan.md

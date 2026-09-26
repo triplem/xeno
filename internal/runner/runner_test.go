@@ -860,3 +860,189 @@ func TestTheScanWorkflowsWriteTheManifestThisExpects(t *testing.T) {
 		}
 	}
 }
+
+// ---- WP7: the next step of the working sequence, read off the state
+
+// redByRendering finishes P0 from the renderer rather than from the fixture's
+// frontmatter, which is red on G-Schema: section set writes the fields the runner knows
+// and leaves the rest out, which is A35. It is the shortest honest way to a red verdict.
+func (f *fixture) redByRendering() *model.Gate {
+	f.t.Helper()
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	for _, id := range []string{"problem", "scope", "context-rationale"} {
+		_, err := f.r.SectionSet(key, "00-intake", id, "written")
+		f.must(err)
+	}
+	g := f.finish("00-intake")
+	if g.Status != "red" {
+		f.t.Fatalf("this fixture is meant to be red, got %s", g.Status)
+	}
+	return g
+}
+
+func TestTheSuggestionAsksForTheSectionsThatAreMissing(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	s := f.r.Next(key)
+	if !strings.Contains(s.Text, "problem") || !strings.Contains(s.Command, "xeno section set problem") {
+		t.Fatalf("a running phase did not name a missing section: %+v", s)
+	}
+	if !strings.Contains(s.Command, "--phase 00") || !strings.Contains(s.Command, "--intent "+key) {
+		t.Errorf("the command cannot be run as printed: %q", s.Command)
+	}
+
+	for _, id := range []string{"problem", "scope", "context-rationale"} {
+		_, err := f.r.SectionSet(key, "00-intake", id, "written")
+		f.must(err)
+	}
+	if s := f.r.Next(key); !strings.Contains(s.Command, "xeno phase finish") {
+		t.Fatalf("a complete phase was not sent to be judged: %+v", s)
+	}
+}
+
+func TestTheSuggestionMovesOnAndBackWithTheVerdict(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+
+	s := f.r.Next(key)
+	if !strings.Contains(s.Command, "xeno phase start") || !strings.Contains(s.Command, "--phase 01") {
+		t.Fatalf("a decided phase did not point at its successor: %+v", s)
+	}
+
+	f.write(model.PhaseDir(key, "00-intake")+"/output.md", "edited\n")
+	if s := f.r.Next(key); !strings.Contains(s.Command, "xeno phase finish") ||
+		!strings.Contains(s.Text, "changed after its verdict") {
+		t.Fatalf("a changed phase was not sent back to be judged: %+v", s)
+	}
+}
+
+// A red verdict is the one place a suggestion could push somebody into a decision, so it
+// names the finding and both ways out and offers neither as a command.
+func TestTheSuggestionNamesAFindingAndDecidesNothing(t *testing.T) {
+	f := newFixture(t)
+	g := f.redByRendering()
+
+	s := f.r.Next(key)
+	if !strings.Contains(s.Text, "is red on F-") {
+		t.Fatalf("the finding was not named: %+v", s)
+	}
+	if s.Command != "" {
+		t.Fatalf("a red verdict offered a command to run: %q", s.Command)
+	}
+	for _, want := range []string{"gate approve", "gate override", "second person"} {
+		if !strings.Contains(s.Text, want) {
+			t.Errorf("the way out through a decision does not mention %q: %q", want, s.Text)
+		}
+	}
+	if !strings.Contains(s.Text, firstFinding(g).Next) {
+		t.Errorf("the finding's own repair is not passed on: %q", s.Text)
+	}
+}
+
+// An override lets the work go on, so the obligation it leaves is not the next step. It
+// is listed, because section 6 puts it at "later, whoever owes it", and later is
+// otherwise never.
+func TestAnOverrideIsOwedAndDoesNotBlockTheSequence(t *testing.T) {
+	f := newFixture(t)
+	// Every finding, because one decision on a verdict with several leaves it red, and
+	// this test is about what an override does once the phase is decided.
+	var ids []string
+	for _, c := range f.redByRendering().Checks {
+		for _, fn := range c.Findings {
+			ids = append(ids, fn.ID)
+		}
+	}
+	for _, id := range ids {
+		f.must2(f.r.Decide(key, "00-intake", id, "overridden", "a second person", "shipping"))
+	}
+
+	s := f.r.Next(key)
+	if !strings.Contains(s.Command, "xeno phase start") {
+		t.Fatalf("an overridden phase did not let the sequence go on: %+v", s)
+	}
+	if len(s.Owed) != len(ids) {
+		t.Fatalf("%d obligations open, %d listed: %+v", len(ids), len(s.Owed), s.Owed)
+	}
+	if !strings.Contains(s.Owed[0], "xeno obligation close "+ids[0]) {
+		t.Fatalf("the obligation is not runnable as printed: %q", s.Owed[0])
+	}
+
+	for _, id := range ids {
+		f.must2(f.r.CloseObligation(key, "00-intake", id))
+	}
+	if s := f.r.Next(key); len(s.Owed) != 0 {
+		t.Fatalf("a closed obligation is still owed: %+v", s.Owed)
+	}
+}
+
+func firstFinding(g *model.Gate) *model.Finding {
+	for i := range g.Checks {
+		if len(g.Checks[i].Findings) > 0 {
+			return &g.Checks[i].Findings[0]
+		}
+	}
+	return nil
+}
+
+// The pipeline owes the evidence, and nothing here can produce it. A suggestion that
+// offered a command would be offering one that cannot help.
+func TestAProvisionalVerdictSuggestsNoCommand(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases[:4] {
+		f.run(p, "")
+	}
+	f.must(f.r.Start(key, "04-verification"))
+	f.output("04-verification", pendingTest)
+	f.finish("04-verification")
+
+	s := f.r.Next(key)
+	if s.Command != "" {
+		t.Fatalf("a provisional verdict offered %q", s.Command)
+	}
+	if !strings.Contains(s.Text, "provisional") || !strings.Contains(s.Text, "pipeline") {
+		t.Fatalf("it does not say who owes what: %q", s.Text)
+	}
+}
+
+// The merge is a step of the sequence and not a subcommand, and the last phase has to
+// say so rather than pointing at a phase that does not exist.
+func TestAfterP5TheNextStepIsNotACommand(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases {
+		f.run(p, "")
+	}
+	s := f.r.Next(key)
+	if s.Command != "" {
+		t.Fatalf("something was offered after P5: %q", s.Command)
+	}
+	if !strings.Contains(s.Text, "merge") {
+		t.Fatalf("the merge is not named: %q", s.Text)
+	}
+}
+
+func TestWithoutAnIntentTheSuggestionSaysWhatIsMissing(t *testing.T) {
+	f := newFixture(t)
+	s := f.r.Next("PROJ-404")
+	if s.Command != "" || !strings.Contains(s.Text, "no intent PROJ-404") {
+		t.Fatalf("an intent that does not exist got %+v", s)
+	}
+}
+
+// A state the working sequence does not cover says so. A confident wrong suggestion is
+// worse than none, because it is followed.
+func TestAnUncoveredStateIsSaidToBeOne(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+	g, err := f.r.readGate(key, "00-intake")
+	f.must(err)
+	g.Status = "sideways"
+	f.must(fm.WriteYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "gate.yaml"), g))
+
+	s := f.r.Next(key)
+	if s.Command != "" || !strings.Contains(s.Text, "does not cover") {
+		t.Fatalf("an unknown status got %+v", s)
+	}
+}

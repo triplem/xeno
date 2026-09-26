@@ -23,6 +23,10 @@ evidence attachment. Built by hand before M0; the assumptions made on the way ar
     xeno check commit-message [--pattern NAME] [--file PATH]
     xeno version
 
+Every command that changes something ends by naming the next step of the working
+sequence, and so does `xeno intent status`. `--no-next` leaves it out; the commands a
+pipeline or a git hook runs never print it.
+
 Xeno collects no telemetry. Nothing it writes leaves the repository it writes in, and
 there is no endpoint for it to leave towards.
 
@@ -46,7 +50,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP10 | a wrapper that passes both ends of the range, not available told apart from unmet, and a waived requirement that stops being a daily complaint | `enforcement_test`, `TestTheWrapperPassesBothEnds…` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected, a scan report from the pipeline attaching with its database age | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…`, `TestAScanReportFromThePipeline…`, `TestTheScanWorkflowsWrite…` |
-| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test` |
+| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern, the next step of the working sequence read off the state and deciding nothing | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test`, `TestTheSuggestion…`, `TestAnOverrideIsOwed…` |
 
 Two deliberate mutations were run against the suite, removing the sequence check and
 letting attachment write into a sealed artifact; both were caught.
