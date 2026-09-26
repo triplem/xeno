@@ -213,16 +213,39 @@ type Attached struct {
 	Commit   string `yaml:"commit,omitempty"`
 }
 
+// Assumption is the record section 8 defines. Status carries the state, and an empty
+// status reads as open: absent means nothing has decided it yet, which is the same
+// answer a register written by hand before the field existed gives.
+//
+// Resolves is not in section 8's schema. The same section resolves an open question as
+// an assumption somebody confirms, which needs the question's key on the record to be
+// checkable, and G-Questions reads it for exactly that.
 type Assumption struct {
 	ID          string `yaml:"id"`
 	Phase       string `yaml:"phase,omitempty"`
-	Text        string `yaml:"text"`
-	Resolves    string `yaml:"resolves,omitempty"`
+	Assumption  string `yaml:"assumption"`
+	Origin      string `yaml:"origin,omitempty"`
+	Confidence  string `yaml:"confidence,omitempty"`
+	Status      string `yaml:"status"`
 	ConfirmedBy string `yaml:"confirmed_by,omitempty"`
+	Resolves    string `yaml:"resolves,omitempty"`
 }
+
+// The closed sets of section 8. A value outside one of them is refused where a record is
+// written, so that the register cannot fill up with spellings the reader has to guess at.
+var (
+	AssumptionOrigins     = []string{"template-default", "repo-convention", "rules", "user-input"}
+	AssumptionConfidences = []string{"high", "medium", "low"}
+	AssumptionStatuses    = []string{"open", "confirmed", "rejected"}
+)
+
+// Open says whether the gate of the assumption's phase goes red for it. Rejected is
+// decided and not confirmed: the assumption was examined and dropped.
+func (a Assumption) Open() bool { return a.Status != "confirmed" && a.Status != "rejected" }
 
 type Assumptions struct {
 	Common      `yaml:",inline"`
+	Updated     string       `yaml:"updated,omitempty"`
 	Assumptions []Assumption `yaml:"assumptions"`
 }
 
