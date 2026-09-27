@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#96
+phase: 00-intake
+created: 2026-09-27T09:31:15Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+8dbd563.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A directory named for the tool held the tool's own specification, so one path
+      meant the project's documents here and an adopter's state there. Nothing broke,
+      which is why it survived twenty intents: the cost was a reader following a path
+      into the wrong repository.
+    proposal: >-
+      Where a name belongs to the tool, what the project keeps for itself goes
+      somewhere else, even while the project and the tool are the same repository.
+      Dogfooding makes the two look identical and they are not.
+    target: CLAUDE.md
