@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#98
+phase: 00-intake
+created: 2026-09-27T09:44:22Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+5ddcaab
+plugin_version: 0.1.0-dev
+learnings:
+  - category: template
+    observation: >-
+      A file an adopter is meant to edit lived as a string literal with positional
+      arguments. The override was the request; the argument order was the defect
+      nobody had hit yet, and both had the same cause, which is that the file was
+      code.
+    proposal: >-
+      What a tool writes into somebody else's repository is a file in the tool, not a
+      literal in a function. The override follows for free, and so does losing the
+      positional arguments.
+    target: CLAUDE.md
