@@ -1,3 +1,4 @@
+.env*
 .xeno/local/
 /xeno
 /dist/
