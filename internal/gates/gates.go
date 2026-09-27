@@ -52,7 +52,7 @@ var table = []spec{
 	{"G-Test", 4, notImplemented},
 	{"G-Rules", 0, notImplemented},
 	{"G-Policy", 0, notImplemented},
-	{"G-Complete", 5, notImplemented},
+	{"G-Complete", 5, completeInReview},
 }
 
 // Applicable is the set of gates that apply at a phase, in the order of the table above,
@@ -676,14 +676,49 @@ func learningEntries(rel string, v any) []model.Finding {
 	return fs
 }
 
+// completeInReview is G-Complete in the mode a merging intent meets, as part of P5.
+// Section 7: it checks that the artifacts of all preceding phases are present and green,
+// approved or overridden, and nothing about the merge itself, which has not happened when
+// the gate runs.
+//
+// A verdict is what "present" means here. An artifact without one was never judged, and a
+// phase judged provisional is waiting for evidence rather than decided, so it is reported
+// with the word the verdict carries: a red phase, a provisional one and a phase nobody ran
+// are three different repairs.
+//
+// It reads the committed verdicts rather than recomputing them. Recomputation is
+// `gate verify`'s work and it covers every phase anyway, so doing it again here would
+// report the same divergence twice under a different name, and a gate that recomputed its
+// predecessors would also be judging what another gate already judged.
+func completeInReview(c Ctx) model.Check {
+	var fs []model.Finding
+	for _, phase := range model.Phases[:model.PhaseIndex(c.Phase)] {
+		rel := c.phaseRel(phase) + "/gate.yaml"
+		var g model.Gate
+		if err := fm.ReadYAML(c.abs(rel), &g); err != nil {
+			fs = append(fs, finding(rel, phase+" holds no verdict",
+				"run xeno phase finish for it; an intent reaches review with every phase judged"))
+			continue
+		}
+		switch g.Status {
+		case "green", "approved", "overridden":
+		case "provisional":
+			fs = append(fs, finding(rel, phase+" is provisional, waiting for evidence",
+				"attach what the pipeline produced and judge it again"))
+		default:
+			fs = append(fs, finding(rel, phase+" is "+g.Status,
+				"decide every failing finding in it: fix it, approve it or override it"))
+		}
+	}
+	return result(fs)
+}
+
 // CompleteOnClose is G-Complete in its second mode, the one an abandoned intent meets.
 // It has two invocation points because an intent has two ways of ending, and the mode
 // follows from where the gate was invoked rather than from a field.
 //
-// Run as part of P5 it checks the preceding phases; that mode is in the table above and
-// is not implemented, since no intent in this repository reaches P5 yet. Run from
-// `xeno intent close` it checks what the process definition names for this mode: that
-// the intent carries a reason, and that the closing learning record exists.
+// Run from `xeno intent close` it checks what the process definition names for this mode:
+// that the intent carries a reason, and that the closing learning record exists.
 //
 // Why a reason has to be checked at all, when the command requires one: the command is
 // not the only way a file gets written, and a gate that trusts the writer checks
