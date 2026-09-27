@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#105
+phase: 00-intake
+created: 2026-09-27T13:34:26Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0b3a547.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      G-Build read a `kind` no document defines, and the fixtures declared the same
+      undefined spelling, so code and tests agreed with each other while neither agreed
+      with section 4. Coverage showed the gate's loop body had never run. The defect was
+      invisible to the test suite by construction: a fixture written from the code cannot
+      find a gate that reads the wrong value.
+    proposal: >-
+      Where a document fixes a closed set, the fixtures are written from the document and
+      the set is judged in G-Schema, so that a value nobody defined cannot pass by being
+      spelled consistently. D-1 already says the G-Schema corpus is written out of section
+      5 for this reason; the rule holds for every closed set, not only for required fields.
+    target: internal/gates

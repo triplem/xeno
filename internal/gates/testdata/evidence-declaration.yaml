@@ -1,0 +1,28 @@
+# The closed sets of an evidence declaration, taken from section 4 of the process
+# definition and from nowhere else.
+#
+# It exists for the reason required-fields.yaml exists, and this file is why the reason
+# matters. G-Build read `build` for as long as nothing checked these values, and the
+# fixtures declared `kind: test`; both spellings are absent from the set below, and code
+# and corpus agreed with each other while neither agreed with the document. Written from
+# the document the two lists are independent, and a disagreement between them is a finding.
+#
+# `build_kind` names the one G-Build reads. It is a member of kinds and is called out
+# separately because that is the value the gate compares against, and the defect was a
+# comparison against a word that is not here.
+kinds:
+  - test-report
+  - coverage
+  - build-log
+  - scan
+  - sbom
+  - other
+results:
+  - pass
+  - fail
+# Required on these because G-Test and G-Build read it. Elsewhere the field follows the
+# producer: written where a run reports against a threshold, absent where it does not.
+result_required_on:
+  - test-report
+  - build-log
+build_kind: build-log

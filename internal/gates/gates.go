@@ -373,7 +373,49 @@ func phaseResult(c Ctx, dir string) (model.Output, []model.Finding) {
 	fs = append(fs, hashes(c, out, raw)...)
 	fs = append(fs, questionShape(out, o)...)
 	fs = append(fs, decisionShape(out, o)...)
+	fs = append(fs, evidenceShape(out, o)...)
 	return o, fs
+}
+
+// evidenceShape judges a declaration against the two closed sets of section 4. It is here
+// and not in G-Evidence because this is shape, read off one file, and G-Evidence resolves
+// content: a gate that reads a result should not also be deciding whether the word is one
+// the document allows.
+//
+// `result` is required on `test-report` and `build-log` and written elsewhere only where
+// the producer reports against a threshold, so a missing one is a finding on those two
+// kinds alone. Demanding it everywhere would contradict the sentence that lets a bill of
+// materials report nothing, and limitation 8 of section 16 rests on exactly that
+// asymmetry: the omission shows on the two kinds that carry it and nowhere else.
+//
+// A pending item is exempt from that requirement and not from the set. Section 4 says an
+// item a pipeline has yet to produce "declares only its kind and its job", so it has no
+// result to carry: the run that would report one has not happened, and the value arrives
+// in `evidence/attached.yaml` as the job's own verdict. Requiring it here would make every
+// declaration of future evidence a finding, which is the state P4 is designed to be in
+// between its finish and its pipeline. The kind is known at declaration time either way.
+func evidenceShape(file string, o model.Output) []model.Finding {
+	var fs []model.Finding
+	for _, e := range o.Evidence {
+		at := "evidence item " + e.Kind + "/" + e.Job
+		if !model.OneOf(e.Kind, model.EvidenceKinds) {
+			fs = append(fs, finding(file, at+" has a kind section 4 does not define",
+				"section 4 fixes the set: "+strings.Join(model.EvidenceKinds, ", ")))
+		}
+		switch {
+		case e.Result == "":
+			if model.OneOf(e.Kind, model.ResultRequiredKinds) && !e.Pending() {
+				fs = append(fs, finding(file, at+" carries no result",
+					"section 4 requires it on "+strings.Join(model.ResultRequiredKinds, " and ")+
+						", because G-Test and G-Build read it"))
+			}
+		case !model.OneOf(e.Result, model.EvidenceResults):
+			fs = append(fs, finding(file, at+" has result "+e.Result,
+				"section 4 fixes the set: "+strings.Join(model.EvidenceResults, ", ")+
+					"; it is what the run reported against its own threshold"))
+		}
+	}
+	return fs
 }
 
 // digestFindings guards digest.md. Section 4 lists it among the files every phase holds and
@@ -885,6 +927,13 @@ func evidence(c Ctx) model.Check {
 	return ch
 }
 
+// BuildKind is the kind G-Build reads, as section 4 spells it. Named rather than written
+// into the comparison below because the gate read `build` for as long as nothing checked
+// the closed set, and matched no conformant declaration the whole time: a declared build
+// with `result: fail` passed. The set now lives in one place and G-Schema judges a value
+// against it, so a spelling nobody defined cannot reach this gate again.
+const BuildKind = "build-log"
+
 func build(c Ctx) model.Check {
 	items, err := Collect(c)
 	if err != nil {
@@ -893,7 +942,7 @@ func build(c Ctx) model.Check {
 	var fs []model.Finding
 	pending := false
 	for _, r := range items {
-		if r.Decl.Kind != "build" {
+		if r.Decl.Kind != BuildKind {
 			continue
 		}
 		res := r.Decl.Result

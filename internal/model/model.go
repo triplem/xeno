@@ -255,6 +255,14 @@ var (
 	HashFields      = []string{"context_hash", "secrets_hash", "strings_hash", "rules_hash"}
 	WriterlessHash  = []string{"secrets_hash", "rules_hash"}
 	HashPlaceholder = "by-hand"
+	// Section 4: what an evidence declaration's kind may be, and what its result may say.
+	EvidenceKinds   = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
+	EvidenceResults = []string{"pass", "fail"}
+	// The two kinds that must carry a result, because G-Test and G-Build read it.
+	// Elsewhere the field follows the producer: a run with a threshold reports against it
+	// and one without reports nothing, so an absent result there is a producer that had
+	// nothing to say rather than a writer who forgot.
+	ResultRequiredKinds = []string{"test-report", "build-log"}
 )
 
 // The closed sets of section 8. A value outside one of them is refused where a record is
