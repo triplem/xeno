@@ -22,7 +22,7 @@ import (
 
 const usage = `usage:
   xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
-  xeno phase start    --intent KEY --phase NN [--evidence-from DIR]
+  xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN
   xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
   xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
@@ -99,6 +99,9 @@ func run(args []string) int {
 	// commands that change state say it, the ones a pipeline or a hook runs do not, and
 	// this turns it off for the scripts that are neither.
 	noNext := fs.Bool("no-next", false, "do not say what the next step is")
+	// Print what a shell can eval instead of saying what the next step is. Both on one
+	// stream would make the eval swallow a sentence meant for a person.
+	export := fs.Bool("export", false, "print the phase's environment for a shell to eval")
 	if err := fs.Parse(rest); err != nil {
 		return 2
 	}
@@ -173,7 +176,19 @@ func run(args []string) int {
 	case "intent close":
 		return suggest(r, *key, *noNext, report(r.IntentClose(*key, *reason)))
 	case "phase start":
-		return suggest(r, *key, *noNext, report(nil, r.Start(*key, phase)))
+		if code := report(nil, r.Start(*key, phase)); code != 0 {
+			return code
+		}
+		if *export {
+			env, err := r.PhaseEnv(*key, phase)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+			fmt.Print(env)
+			return 0
+		}
+		return suggest(r, *key, *noNext, 0)
 	case "phase finish":
 		return suggest(r, *key, *noNext, report(r.Finish(*key, phase)))
 	case "gate run":
