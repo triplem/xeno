@@ -3,13 +3,13 @@
 package runner
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/scaffold"
 )
 
 // InitOptions are the three things xeno init asks and the flags around them.
@@ -62,7 +62,11 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 		}
 	}
 
-	if err := r.create(res, cfgPath, projectYAML(o)); err != nil {
+	cfg, err := r.projectYAML(o)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.create(res, cfgPath, cfg); err != nil {
 		return nil, err
 	}
 	if err := r.appendGitignore(res); err != nil {
@@ -77,7 +81,7 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 	if host == "" {
 		host = "github"
 	}
-	h, wrapper, err := Wrapper(host, "", model.RunnerVersion)
+	h, wrapper, err := Wrapper(r.Root, host, model.RunnerVersion)
 	if err != nil {
 		return nil, refuse("%v", err)
 	}
@@ -191,10 +195,11 @@ func (r *Runner) vendorPlugin(res *InitResult) error {
 	return nil
 }
 
-// projectYAML is Appendix A with three answers in it and a defensible default
-// everywhere else. Every block carries the section that defines it, because a reader
-// who wants to change one needs to know what it means before they do.
-func projectYAML(o InitOptions) string {
+// projectYAML renders the initial configuration from the scaffold, so that a repository
+// or an organisation can replace it without forking the runner. The three answers xeno
+// init asks for are named fields rather than positional arguments: a fourth in the wrong
+// order used to produce a file that looked right.
+func (r *Runner) projectYAML(o InitOptions) (string, error) {
 	key := o.TrackerKey
 	if key == "" {
 		key = "<owner/repository>"
@@ -203,43 +208,8 @@ func projectYAML(o InitOptions) string {
 	if mdl == "" {
 		mdl = "<model identifier>"
 	}
-	return fmt.Sprintf(`# The configuration of one repository. Every block names the section that defines it.
-# Three values were asked for at xeno init; the rest are defaults a project changes when
-# it has a reason to.
-
-runner_version: %s          # section 13, xeno init refuses a mismatch
-
-language:                      # section 5
-  artifacts: %s                # the process layer stays English
-
-agent:                         # section 12
-  tool: claude-code            # claude-code | codex, fixed for the project
-  model:
-    default: %s
-
-tracker:                       # section 12
-  adapter: github
-  project: %s
-  base_url: https://api.github.com   # a default, overridden for Enterprise Server
-  auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }
-
-enforcement:                   # section 7, compared against the host by CI
-  # Written from defaults. xeno enforcement check compares them against the host once
-  # there is a token, and records what the host cannot express as waived, so that an
-  # unmeetable requirement becomes a decision here rather than a daily complaint.
-  required_pipeline: true
-  allow_bypass: false
-  approvals:
-    required: 1
-    not_by_author: true
-
-evidence:                      # section 4
-  source: ci                   # ci | local
-
-retention:                     # section 12
-  local_days: 30
-
-templates:                     # section 4
-  overrides_dir: .xeno/config/templates
-`, model.RunnerVersion, o.Language, mdl, key)
+	body, _, err := scaffold.RenderProject(r.Root, scaffold.Project{
+		RunnerVersion: model.RunnerVersion, Language: o.Language, Model: mdl, TrackerProject: key,
+	})
+	return body, err
 }
