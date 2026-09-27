@@ -348,11 +348,19 @@ func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
 		return "", refuse("%s changed after its verdict; run xeno phase finish for it again", pred)
 	}
 	if g.Status == "provisional" {
-		if _, _, err := evidence.Attach(r.Root, key, pred, r.EvidenceFrom); err != nil {
+		att, err := evidence.Attach(r.Root, key, pred, r.EvidenceFrom)
+		if err != nil {
 			return "", err
 		}
 		if g, err = r.evaluate(key, pred); err != nil {
 			return "", err
+		}
+		// An entry the pipeline published wrong keeps the phase provisional exactly as a
+		// missing one does, and waiting is the wrong advice for it: nothing arrives by
+		// waiting for a job that has already run. So the refusal names it instead.
+		if g.Status == "provisional" && len(att.Unbindable) > 0 {
+			return "", refuse("%s waits for evidence the pipeline published in a form nothing can bind:\n  %s\nRepublish it with a sha256, or declare it differently; waiting will not help.",
+				pred, strings.Join(att.Unbindable, "\n  "))
 		}
 		if g.Status == "provisional" {
 			return "", refuse("%s still waits for evidence from the pipeline; start again once it has run", pred)
@@ -440,7 +448,7 @@ func (r *Runner) Finish(key, phase string) (*model.Gate, error) {
 // GateRun recomputes a verdict. It attaches first, because P5 has no successor whose
 // start could do it.
 func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
-	if _, _, err := evidence.Attach(r.Root, key, phase, r.EvidenceFrom); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if _, err := evidence.Attach(r.Root, key, phase, r.EvidenceFrom); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 	return r.evaluate(key, phase)

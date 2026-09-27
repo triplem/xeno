@@ -28,13 +28,35 @@ type ManifestEntry struct {
 	Commit   string `yaml:"commit,omitempty"`
 }
 
-// Attach fills pending declarations of one phase from source. It returns how many
-// items were attached in this call and how many remain pending.
-func Attach(root, key, phase, source string) (attached, pending int, err error) {
+// Result is what one attach did. It carries what was declined as well as what was
+// counted, because Attach writes no output and is called from three places: `phase
+// start`, `gate run` and `evidence attach`. A refusal it swallowed would leave the item
+// pending with no explanation anywhere, which is a worse failure than the one this
+// refusal prevents, so the reason is returned and each caller says it in its own voice.
+type Result struct {
+	Attached int
+	Pending  int
+	// Unbindable names the entries the pipeline published that cannot be bound, one
+	// sentence each. They are counted in Pending, because pending is what they were and
+	// declining to record one changes nothing about the phase.
+	Unbindable []string
+}
+
+// Attach fills pending declarations of one phase from source.
+//
+// An entry it cannot bind is declined rather than recorded. A8 says an item with a `uri`
+// is bound by its declared hash alone, since resolving a uri needs a network the gate path
+// never has, so an entry arriving without one is bound by nothing: section 4 pays for
+// attaching outside the `artifacts_hash` with the hash `gate.yaml` records, and there is
+// nothing to record. Recorded anyway, it would reach G-Evidence as a record that cannot be
+// judged and no longer says whether the pipeline published it wrong or somebody edited the
+// file, which is why this is refused here and not there.
+func Attach(root, key, phase, source string) (Result, error) {
+	var res Result
 	dir := filepath.Join(root, model.PhaseDir(key, phase))
 	var o model.Output
 	if _, err := fm.ReadFront(filepath.Join(dir, "output.md"), &o); err != nil {
-		return 0, 0, err
+		return res, err
 	}
 	attPath := filepath.Join(dir, "evidence", "attached.yaml")
 	var att []model.Attached
@@ -51,7 +73,7 @@ func Attach(root, key, phase, source string) (attached, pending int, err error) 
 	var manifest []ManifestEntry
 	if source != "" {
 		if err := fm.ReadYAML(filepath.Join(source, "manifest.yaml"), &manifest); err != nil && !os.IsNotExist(err) {
-			return 0, 0, err
+			return res, err
 		}
 	}
 	find := func(kind, job string) *ManifestEntry {
@@ -69,7 +91,7 @@ func Attach(root, key, phase, source string) (attached, pending int, err error) 
 		}
 		m := find(d.Kind, d.Job)
 		if m == nil {
-			pending++
+			res.Pending++
 			continue
 		}
 		a := model.Attached{Kind: d.Kind, Job: d.Job, State: "attached", Result: m.Result,
@@ -77,27 +99,49 @@ func Attach(root, key, phase, source string) (attached, pending int, err error) 
 		if m.File != "" {
 			b, err := os.ReadFile(filepath.Join(source, m.File))
 			if err != nil {
-				return attached, pending, err
+				return res, err
 			}
 			name := filepath.Base(m.File)
 			if err := os.MkdirAll(filepath.Join(dir, "evidence"), 0o755); err != nil {
-				return attached, pending, err
+				return res, err
 			}
 			if err := os.WriteFile(filepath.Join(dir, "evidence", name), b, 0o644); err != nil {
-				return attached, pending, err
+				return res, err
 			}
 			a.Path = "evidence/" + name
 			a.SHA256 = hashing.Hex(hashing.Normalise(b))
+		} else if why := unbindable(*m); why != "" {
+			res.Unbindable = append(res.Unbindable, d.Kind+"/"+d.Job+" "+why)
+			res.Pending++
+			continue
 		} else {
 			a.URI, a.SHA256 = m.URI, m.SHA256
 		}
 		att = append(att, a)
-		attached++
+		res.Attached++
 	}
-	if attached > 0 {
+	if res.Attached > 0 {
 		if err := fm.WriteYAML(attPath, att); err != nil {
-			return attached, pending, err
+			return res, err
 		}
 	}
-	return attached, pending, nil
+	return res, nil
+}
+
+// unbindable says why an entry with no file cannot be bound, or "" where it can. A file
+// backed entry never reaches this: its hash is computed from the bytes that were copied.
+//
+// The two cases are one defect with different amounts to look at. An entry with a uri and
+// no hash names where something lives and nothing about what it is; one with neither names
+// a result and nothing it belongs to.
+func unbindable(m ManifestEntry) string {
+	switch {
+	case m.URI == "":
+		return "was published with no file, no uri and no hash, so it names a result and " +
+			"nothing it belongs to"
+	case m.SHA256 == "":
+		return "was published with a uri and no sha256, and a uri is bound by its hash " +
+			"alone, because resolving one needs a network the gate path never has"
+	}
+	return ""
 }
