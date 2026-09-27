@@ -4,7 +4,7 @@ title: Xeno, Orchestrator Evaluation for v2
 revision: 2
 status: draft, not ratified
 date: 2026-09-20
-location: .xeno/docs/orchestrator-evaluation.md
+location: docs/orchestrator-evaluation.md
 ---
 
 # Xeno, Orchestrator Evaluation for v2
