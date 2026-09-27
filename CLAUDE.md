@@ -1,8 +1,8 @@
 # Xeno
 
 A network free runner for a six phase process: hashing, gates, the phase sequence,
-evidence attachment. The process is defined in `.xeno/docs/process-definition.md`, the
-build order in `.xeno/docs/implementation-plan.md`. Both are normative.
+evidence attachment. The process is defined in `docs/process-definition.md`, the build
+order in `docs/implementation-plan.md`. Both are normative.
 
 ## Build and test
 

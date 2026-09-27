@@ -4,7 +4,7 @@ title: Xeno, Implementation Plan v1
 revision: 9
 status: draft, not ratified
 date: 2026-09-20
-location: .xeno/docs/implementation-plan.md
+location: docs/implementation-plan.md
 ---
 
 # Xeno, Implementation Plan v1
@@ -17,10 +17,10 @@ Drafts written during planning to think with do not travel into the repository. 
 README, the template set and the onboarding texts are written in their own work
 packages, against what the tool can actually do at that point; a draft copied in is
 already out of date on its first line. The process definition and this plan are the
-exception: they are results rather than scaffolding, and they live under
-`.xeno/docs/`.
+exception: they are results rather than scaffolding, and they live under `docs/`, at the
+root of the repository rather than inside the directory the tool keeps its own state in.
 
-**The documents under `.xeno/docs/`.** There are four, and the count is rising, so what
+**The documents under `docs/`.** There are four, and the count is rising, so what
 each one decides is worth stating rather than inferring.
 
 | Document | Decides | Does not decide |
@@ -1102,7 +1102,7 @@ actually see them.
   three documents and reconciling the changes in one's head, and it is the list most
   often quoted, by people looking for weaknesses. Generated rather than written,
   because a hand maintained copy of it would be wrong within a release.
-- *The documents.* The four under `.xeno/docs/`, published as they are rather than
+- *The documents.* The four under `docs/`, published as they are rather than
   rewritten: process definition, implementation plan, orchestrator evaluation, v2 delta.
   They are results rather than scaffolding, and they answer the questions a reader has
   before deciding whether any of this applies to them. The conformance mapping is the
@@ -1440,7 +1440,7 @@ the runner, and the hand held record stops.
 
 ### First steps, in order
 
-1. **Create the repository and commit the two documents into `.xeno/docs/` before any
+1. **Create the repository and commit the two documents into `docs/` before any
    code.** They are the context every session loads and the reference every disagreement
    settles against.
 2. **Protect the default branch and make the pipeline required for merging.** Do it on

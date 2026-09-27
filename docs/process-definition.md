@@ -4,7 +4,7 @@ title: Xeno, Process Definition v1
 revision: 10
 status: draft, not ratified
 date: 2026-09-20
-location: .xeno/docs/process-definition.md
+location: docs/process-definition.md
 ---
 
 # Xeno, Process Definition v1

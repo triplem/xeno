@@ -4,7 +4,7 @@ title: Xeno v2, Delta against Process Definition v1
 revision: 2
 status: draft, not ratified
 date: 2026-09-20
-location: .xeno/docs/v2-delta.md
+location: docs/v2-delta.md
 ---
 
 # Xeno v2, Delta against Process Definition v1
