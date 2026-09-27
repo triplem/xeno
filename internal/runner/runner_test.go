@@ -1397,3 +1397,43 @@ func TestCompleteInReviewReadsEveryPrecedingPhase(t *testing.T) {
 		t.Fatalf("a red predecessor gave: %s", causeOf(g, "G-Complete"))
 	}
 }
+
+// The plan asks phase start to export the intent and the phase into the environment a
+// harness reads for request headers. A child cannot set its parent's environment, so it
+// writes them where a later process reads them, and a phase that has ended attributes
+// nothing.
+func TestPhaseEnvIsWrittenAndRemoved(t *testing.T) {
+	f := newFixture(t)
+	env := filepath.Join(f.root, ".xeno/local/phase.env")
+
+	f.must(f.r.Start(key, "00-intake"))
+	b, err := os.ReadFile(env)
+	f.must(err)
+	got := string(b)
+	for _, want := range []string{`export XENO_INTENT="git.example/group/proj#1"`, `export XENO_PHASE="00-intake"`} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("the phase environment is %q, want a line %q", got, want)
+		}
+	}
+	// The qualified id and not the directory name: a request tagged with a guess is worse
+	// than one tagged with nothing.
+	if strings.Contains(got, key) {
+		t.Fatalf("the environment carries the directory name: %q", got)
+	}
+
+	f.output("00-intake", "")
+	f.finish("00-intake")
+	if _, err := os.Stat(env); !os.IsNotExist(err) {
+		t.Fatal("the phase environment outlived the phase")
+	}
+
+	// The same content is what --export prints, so the file and the print cannot drift.
+	f.must(f.r.Start(key, "01-requirements"))
+	printed, err := f.r.PhaseEnv(key, "01-requirements")
+	f.must(err)
+	b, err = os.ReadFile(env)
+	f.must(err)
+	if printed != string(b) {
+		t.Fatalf("print is %q and the file is %q", printed, string(b))
+	}
+}

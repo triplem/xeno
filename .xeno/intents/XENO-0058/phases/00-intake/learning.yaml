@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#58
+phase: 00-intake
+created: 2026-09-27T08:35:30Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+081dec4
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The plan said export and meant something a process cannot do to its parent. The
+      sentence read as settled for months, and what it actually needed was a decision
+      about where the values live and who maps them to headers.
+    proposal: >-
+      Where a document says a command exports, records or publishes something, ask
+      which process holds the result afterwards. A verb that hides a boundary between
+      processes hides the decision with it.
+    target: CLAUDE.md

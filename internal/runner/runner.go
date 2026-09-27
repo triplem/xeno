@@ -55,6 +55,39 @@ func (r *Runner) marker(key, phase string) string {
 	return r.abs(filepath.Join(".xeno/local/runs", key, phase+".lock"))
 }
 
+// phaseEnv is where the running phase is written for whatever makes model requests. It
+// lives beside the run marker, under the gitignored local directory (A9), because it
+// describes a machine's current state and not the trail.
+func (r *Runner) phaseEnv() string { return r.abs(".xeno/local/phase.env") }
+
+// PhaseEnv is what a harness wrapper or a hook sources so that a model request can carry
+// the intent and the phase it belongs to. The plan asks `phase start` to export them; a
+// child process cannot set its parent's environment, so it writes them where a later
+// process can read them, and prints the same on request (A56).
+//
+// The names are the runner's own and say nothing about a harness or a gateway. Turning
+// them into request headers is the plugin's work, per WP11: which variable a harness reads
+// and which header a gateway keeps are both agent specific, and the runner holds no agent
+// specific logic. The CI wrapper already reads these two names for `gate run`.
+func (r *Runner) PhaseEnv(key, phase string) (string, error) {
+	id, err := r.qualified(key)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("export XENO_INTENT=%q\nexport XENO_PHASE=%q\n", id, phase), nil
+}
+
+func (r *Runner) writePhaseEnv(key, phase string) error {
+	content, err := r.PhaseEnv(key, phase)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(r.phaseEnv()), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(r.phaseEnv(), []byte(content), 0o644)
+}
+
 // qualified reads the qualified intent id. It never falls back to the directory name:
 // a guessed id would make every trace comparison against it meaningless.
 func (r *Runner) qualified(key string) (string, error) {
@@ -315,6 +348,9 @@ func (r *Runner) Start(key, phase string) error {
 	if err := fm.WriteYAML(filepath.Join(dir, "context.lock.yaml"), lock); err != nil {
 		return err
 	}
+	if err := r.writePhaseEnv(key, phase); err != nil {
+		return err
+	}
 	return fm.WriteYAML(r.marker(key, phase), map[string]string{"phase": phase, "started": r.stamp()})
 }
 
@@ -385,6 +421,9 @@ func (r *Runner) Finish(key, phase string) (*model.Gate, error) {
 		return nil, err
 	}
 	_ = os.Remove(r.marker(key, phase))
+	// A phase that has ended attributes nothing. Left behind, the file would put the next
+	// session's requests on a phase that is sealed, which is worse than attributing none.
+	_ = os.Remove(r.phaseEnv())
 	return g, nil
 }
 
