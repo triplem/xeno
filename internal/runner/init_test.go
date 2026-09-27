@@ -10,6 +10,7 @@ import (
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/scaffold"
 )
 
 func initFixture(t *testing.T) *Runner {
@@ -195,7 +196,7 @@ func snapshot(t *testing.T, root string) string {
 // the commit range, which is what makes another host an entry in a table rather than a
 // second generator.
 func TestTheWrapperPassesBothEndsOfTheRange(t *testing.T) {
-	h, body, err := Wrapper("github", "", "1.2.3")
+	h, body, err := Wrapper("", "github", "1.2.3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +214,7 @@ func TestTheWrapperPassesBothEndsOfTheRange(t *testing.T) {
 			t.Errorf("the wrapper carries %q, which belongs in the project's own pipeline", unwanted)
 		}
 	}
-	if _, _, err := Wrapper("nowhere", "", "1.2.3"); err == nil {
+	if _, _, err := Wrapper("", "nowhere", "1.2.3"); err == nil {
 		t.Fatal("a wrapper was generated for an unknown host")
 	}
 }
@@ -236,5 +237,68 @@ func TestInitGeneratesTheWrapper(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("the wrapper is not in what init reports it created: %v", res.Created)
+	}
+}
+
+// The scaffolds are files, so a repository replaces one without forking the runner, and
+// the generated file says which copy it came from: the first question anybody asks of a
+// generated file that does not look like they expect.
+func TestAProjectOverridesAScaffold(t *testing.T) {
+	r := initFixture(t)
+	dir := filepath.Join(r.Root, scaffold.OverrideDir)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := "# ours, from {{.Source}}\nname: xeno gate\nsteps: [{run: xeno gate run --base {{.BaseRef}}}]\n"
+	if err := os.WriteFile(filepath.Join(dir, "ci-github.yml"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, generated, err := Wrapper(r.Root, "github", "1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(generated, "# ours") {
+		t.Fatalf("the override was not used:\n%s", generated)
+	}
+	if !strings.Contains(generated, string(scaffold.FromProject)) {
+		t.Fatalf("the generated file does not name its source:\n%s", generated)
+	}
+	// The host still contributes the range expressions, so an override inherits them
+	// rather than hard coding one host's syntax.
+	if !strings.Contains(generated, "${{ github.event.pull_request.base.sha }}") {
+		t.Fatalf("the override did not receive the host's base ref:\n%s", generated)
+	}
+
+	// Without an override the runner's own default is used, and says so.
+	r2 := initFixture(t)
+	_, fallback, err := Wrapper(r2.Root, "github", "1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(fallback, string(scaffold.FromRunner)) {
+		t.Fatalf("the default does not name itself:\n%s", fallback)
+	}
+}
+
+// The same for project.yaml, which is the other file init writes into somebody else's
+// repository, and the one where a positional argument in the wrong place used to produce
+// a file that looked right.
+func TestTheProjectConfigurationComesFromTheScaffold(t *testing.T) {
+	r := initFixture(t)
+	res, err := r.Init(InitOptions{TrackerKey: "o/r", Model: "m", Language: "de"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = res
+	b, err := os.ReadFile(filepath.Join(r.Root, ".xeno/config/project.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	for _, want := range []string{"project: o/r", "default: m", "artifacts: de", string(scaffold.FromRunner)} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the configuration does not carry %q:\n%s", want, got)
+		}
 	}
 }
