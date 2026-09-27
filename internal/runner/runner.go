@@ -308,35 +308,9 @@ func (r *Runner) Start(key, phase string) error {
 	}
 
 	if idx > 0 {
-		pred := model.Phases[idx-1]
-		g, err := r.readGate(key, pred)
-		if err != nil {
-			return refuse("%s has no verdict yet; run xeno phase finish for it first", pred)
-		}
-		h, err := r.hash(key, pred)
+		h, err := r.predecessorAllowsStart(key, model.Phases[idx-1])
 		if err != nil {
 			return err
-		}
-		if g.ArtifactsHash != h {
-			return refuse("%s changed after its verdict; run xeno phase finish for it again", pred)
-		}
-		// Pull what the pipeline has produced for the predecessor, then carry its
-		// verdict forward. Only evidence/ and gate.yaml of that one phase are written.
-		if g.Status == "provisional" {
-			if _, _, err := evidence.Attach(r.Root, key, pred, r.EvidenceFrom); err != nil {
-				return err
-			}
-			if g, err = r.evaluate(key, pred); err != nil {
-				return err
-			}
-			if g.Status == "provisional" {
-				return refuse("%s still waits for evidence from the pipeline; start again once it has run", pred)
-			}
-		}
-		// The next phase starts only on a decided predecessor. Building on a red
-		// verdict moves the failure downstream instead of resolving it.
-		if g.Status == "red" {
-			return refuse("%s is red; decide every failing finding first: fix it, approve it or override it", pred)
 		}
 		lock.PredecessorHash = h
 	}
@@ -352,6 +326,42 @@ func (r *Runner) Start(key, phase string) error {
 		return err
 	}
 	return fm.WriteYAML(r.marker(key, phase), map[string]string{"phase": phase, "started": r.stamp()})
+}
+
+// predecessorAllowsStart is A12: the next phase starts only on a decided predecessor. It
+// returns the hash the lock records, which is what G-Freshness compares against later.
+//
+// Building on a red verdict moves the failure downstream instead of resolving it, and
+// building on a provisional one builds on evidence that has not arrived. So a provisional
+// predecessor is attached to and judged again first: the pipeline may have finished since,
+// and only evidence/ and gate.yaml of that one phase are written.
+func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
+	g, err := r.readGate(key, pred)
+	if err != nil {
+		return "", refuse("%s has no verdict yet; run xeno phase finish for it first", pred)
+	}
+	h, err := r.hash(key, pred)
+	if err != nil {
+		return "", err
+	}
+	if g.ArtifactsHash != h {
+		return "", refuse("%s changed after its verdict; run xeno phase finish for it again", pred)
+	}
+	if g.Status == "provisional" {
+		if _, _, err := evidence.Attach(r.Root, key, pred, r.EvidenceFrom); err != nil {
+			return "", err
+		}
+		if g, err = r.evaluate(key, pred); err != nil {
+			return "", err
+		}
+		if g.Status == "provisional" {
+			return "", refuse("%s still waits for evidence from the pipeline; start again once it has run", pred)
+		}
+	}
+	if g.Status == "red" {
+		return "", refuse("%s is red; decide every failing finding first: fix it, approve it or override it", pred)
+	}
+	return h, nil
 }
 
 // informationBase resolves the context profile into the files a phase is given, with a
@@ -768,15 +778,6 @@ func (r *Runner) writeRegister(key string, reg *model.Assumptions) error {
 	return fm.WriteYAML(r.assumptionsPath(key), reg)
 }
 
-func oneOf(value string, set []string) bool {
-	for _, s := range set {
-		if s == value {
-			return true
-		}
-	}
-	return false
-}
-
 // nextAssumptionID continues the register's own numbering rather than counting its
 // entries, so that a removed record does not hand its id to the next one.
 func nextAssumptionID(reg *model.Assumptions) string {
@@ -797,10 +798,10 @@ func (r *Runner) RecordAssumption(key, phase, text, origin, confidence, resolves
 	if text == "" {
 		return nil, refuse("an assumption needs --text: the statement being assumed")
 	}
-	if !oneOf(origin, model.AssumptionOrigins) {
+	if !model.OneOf(origin, model.AssumptionOrigins) {
 		return nil, refuse("--origin is one of %s", strings.Join(model.AssumptionOrigins, ", "))
 	}
-	if !oneOf(confidence, model.AssumptionConfidences) {
+	if !model.OneOf(confidence, model.AssumptionConfidences) {
 		return nil, refuse("--confidence is one of %s", strings.Join(model.AssumptionConfidences, ", "))
 	}
 	reg, err := r.readRegister(key)

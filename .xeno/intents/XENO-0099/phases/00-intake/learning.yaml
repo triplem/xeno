@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#99
+phase: 00-intake
+created: 2026-09-27T12:39:28Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+915578b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A helper of four lines was written twice, weeks apart, once for the learning
+      categories and once for the assumption sets. Both times the closed set it tested
+      lived in a third package. Nothing flagged it, because each copy was local and
+      small.
+    proposal: >-
+      Where a closed set comes from the documents, it lives with the type it belongs
+      to and the test for membership lives beside it. A four line helper is the
+      cheapest thing in a codebase to duplicate and the easiest to notice only on the
+      third copy.
+    target: CLAUDE.md

@@ -232,6 +232,31 @@ type Assumption struct {
 	Resolves    string `yaml:"resolves,omitempty"`
 }
 
+// OneOf is the closed set test every enumeration in the documents needs. It lived twice,
+// once in the gates and once in the runner, which is how a helper of four lines becomes
+// two helpers of four lines.
+func OneOf(value string, set []string) bool {
+	for _, s := range set {
+		if s == value {
+			return true
+		}
+	}
+	return false
+}
+
+// The closed sets the documents fix. They are here rather than in the packages that read
+// them because they are the specification's enumerations, not one gate's detail, and a
+// reader looking for what a field may carry looks for the type it belongs to.
+var (
+	// Section 10: what a learning record's category may be, and the four keys of an entry.
+	LearningCategories = []string{"template", "prompt", "context-rule", "project-convention"}
+	LearningKeys       = []string{"category", "observation", "proposal", "target"}
+	// Appendix B: the fields that carry a hash, and the two that have no writer yet.
+	HashFields      = []string{"context_hash", "secrets_hash", "strings_hash", "rules_hash"}
+	WriterlessHash  = []string{"secrets_hash", "rules_hash"}
+	HashPlaceholder = "by-hand"
+)
+
 // The closed sets of section 8. A value outside one of them is refused where a record is
 // written, so that the register cannot fill up with spellings the reader has to guess at.
 var (
