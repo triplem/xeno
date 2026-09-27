@@ -167,3 +167,56 @@ func TestAPendingBuildIsPendingAndNotAFailure(t *testing.T) {
 		t.Errorf("a build the pipeline owes read %s, want pending\n%s", got.Result, causes(got))
 	}
 }
+
+// ---- G-Evidence on an attachment that binds nothing
+
+// attachedPhase writes a phase with one pending declaration and one attached record, which
+// is the state only a hand edit can now produce: the attach declines to write it.
+func attachedPhase(t *testing.T, record string) Ctx {
+	t.Helper()
+	c := phaseWith(t, "04-verification", "  - kind: scan\n    job: trivy\n")
+	evDir := c.abs(c.phaseRel(c.Phase) + "/evidence")
+	if err := os.MkdirAll(evDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(evDir, "attached.yaml"), []byte(record), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// `evidence/attached.yaml` lies outside the artifacts_hash by design, so it is the one file
+// in a judged phase that a person can edit without making any verdict stale. This check is
+// what the missing seal is replaced by, and it is the reason the guard exists twice.
+func TestAnAttachmentWithAUriAndNoHashIsAFinding(t *testing.T) {
+	c := attachedPhase(t, "- kind: scan\n  job: trivy\n  state: attached\n  result: pass\n"+
+		"  uri: https://ci.example/a/7\n  sha256: \"\"\n")
+	got := evidence(c)
+	if got.Result != "fail" {
+		t.Fatalf("an attachment nothing binds read %s, want fail\n%s", got.Result, causes(got))
+	}
+	if !strings.Contains(causes(got), "nothing binds it") {
+		t.Errorf("the finding does not say what is wrong:\n%s", causes(got))
+	}
+	// It belongs to the file somebody had to edit, not to the declaration, which is correct.
+	if !strings.Contains(causes(got), "evidence/attached.yaml") {
+		t.Errorf("the finding does not name attached.yaml:\n%s", causes(got))
+	}
+}
+
+func TestAnAttachmentWithAUriAndAHashPasses(t *testing.T) {
+	c := attachedPhase(t, "- kind: scan\n  job: trivy\n  state: attached\n  result: pass\n"+
+		"  uri: https://ci.example/a/7\n  sha256: "+strings.Repeat("3", 64)+"\n")
+	if got := evidence(c); got.Result != "pass" {
+		t.Fatalf("a bound attachment read %s, want pass\n%s", got.Result, causes(got))
+	}
+}
+
+// Nothing attached at all is still pending rather than failing: the pipeline owes it and
+// has not answered. The two states were never confused and this keeps them apart.
+func TestNothingAttachedIsStillPending(t *testing.T) {
+	c := phaseWith(t, "04-verification", "  - kind: scan\n    job: trivy\n")
+	if got := evidence(c); got.Result != "pending" {
+		t.Fatalf("an unanswered declaration read %s, want pending\n%s", got.Result, causes(got))
+	}
+}

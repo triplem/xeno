@@ -894,7 +894,11 @@ func evidence(c Ctx) model.Check {
 	}
 	var fs []model.Finding
 	pending := false
-	verify := func(label, sum, path, uri string) {
+	// where names the file a finding belongs in. A declaration's failure is output.md's,
+	// and an attachment's is attached.yaml's, which is the file somebody would have had to
+	// edit for it to be in that state.
+	attachedRel := dir + "/evidence/attached.yaml"
+	verify := func(label, where, sum, path, uri string) {
 		switch {
 		case path != "":
 			got, err := hashing.FileHash(c.abs(dir + "/" + path))
@@ -904,20 +908,29 @@ func evidence(c Ctx) model.Check {
 				fs = append(fs, finding(dir+"/"+path, label+" content does not match its hash", "the file changed after it was declared"))
 			}
 		case uri == "":
-			fs = append(fs, finding(dir+"/output.md", label+" has neither path nor uri", "declare where it lives"))
+			fs = append(fs, finding(where, label+" has neither path nor uri", "declare where it lives"))
+		case sum == "":
+			// A uri is bound through its hash and nothing else, so one without a hash is
+			// bound by nothing: the verdict would record that evidence arrived without
+			// being able to say what arrived. The attach declines to write this, and it is
+			// checked here because attached.yaml lies outside the artifacts_hash by
+			// design, so it is the one file in a judged phase that can be edited without
+			// making any verdict stale. What the missing seal costs is paid by this check.
+			fs = append(fs, finding(where, label+" has a uri and no hash, so nothing binds it",
+				"record the sha256 the pipeline published, or let the attach decline it and republish"))
 		}
-		// A uri is bound through its hash only; resolving it needs a network, which the
-		// gate path never has.
+		// Whether the bytes behind a uri still match is not asked: resolving one needs a
+		// network, which the gate path never has.
 	}
 	for _, r := range items {
 		label := "evidence " + r.Decl.Kind + "/" + r.Decl.Job
 		switch {
 		case !r.Decl.Pending():
-			verify(label, r.Decl.SHA256, r.Decl.Path, r.Decl.URI)
+			verify(label, dir+"/output.md", r.Decl.SHA256, r.Decl.Path, r.Decl.URI)
 		case r.Attached == nil:
 			pending = true
 		default:
-			verify(label, r.Attached.SHA256, r.Attached.Path, r.Attached.URI)
+			verify(label, attachedRel, r.Attached.SHA256, r.Attached.Path, r.Attached.URI)
 		}
 	}
 	ch := result(fs)

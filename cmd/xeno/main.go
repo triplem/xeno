@@ -304,12 +304,23 @@ func cmdObligationClose(o *opts) int {
 }
 
 func cmdEvidenceAttach(o *opts) int {
-	a, p, err := evidence.Attach(o.root, o.key, o.phase, o.src)
+	res, err := evidence.Attach(o.root, o.key, o.phase, o.src)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	fmt.Printf("attached %d, pending %d; run xeno gate run to carry the verdict forward\n", a, p)
+	fmt.Printf("attached %d, pending %d; run xeno gate run to carry the verdict forward\n",
+		res.Attached, res.Pending)
+	// Named on stderr and counted as pending: an entry nothing can bind was not attached,
+	// and a run that only printed the counts would report it as evidence still to come
+	// from a job that has already produced it.
+	for _, u := range res.Unbindable {
+		fmt.Fprintln(os.Stderr, "  not attached:", u)
+	}
+	if len(res.Unbindable) > 0 {
+		fmt.Fprintln(os.Stderr, "  republish with a sha256; a uri is bound by its hash alone.")
+		return o.next(1)
+	}
 	return o.next(0)
 }
 

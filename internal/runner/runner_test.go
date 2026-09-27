@@ -1437,3 +1437,51 @@ func TestPhaseEnvIsWrittenAndRemoved(t *testing.T) {
 		t.Fatalf("print is %q and the file is %q", printed, string(b))
 	}
 }
+
+// brokenPipeline publishes the unit test result with a uri and no hash, which is a
+// pipeline that ran and published wrongly rather than one that has not answered.
+func (f *fixture) brokenPipeline() string {
+	dir := filepath.Join(f.t.TempDir(), "artifacts")
+	_ = os.MkdirAll(dir, 0o755)
+	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
+		"- kind: test-report\n  job: unit\n  result: pass\n  uri: https://ci.example/a/7\n"), 0o644)
+	return dir
+}
+
+// The refusal has to say which entry and why. An item the pipeline published wrong keeps
+// the phase provisional exactly as a missing one does, and "start again once it has run" is
+// the wrong advice for it: the job has run, and nothing arrives by waiting.
+func TestStartNamesAnEntryThePipelinePublishedWrong(t *testing.T) {
+	f := newFixture(t)
+	for _, p := range model.Phases[:4] {
+		f.run(p, "")
+	}
+	f.must(f.r.Start(key, "04-verification"))
+	f.output("04-verification", pendingTest)
+	f.finish("04-verification")
+	sealed := f.hash("04-verification")
+
+	f.r.EvidenceFrom = f.brokenPipeline()
+	var ref *Refusal
+	err := f.r.Start(key, "05-review")
+	if !errors.As(err, &ref) {
+		t.Fatalf("P5 started on an attachment nothing binds: %v", err)
+	}
+	for _, want := range []string{"test-report/unit", "sha256", "waiting will not help"} {
+		if !strings.Contains(ref.Reason, want) {
+			t.Errorf("the refusal does not mention %q:\n%s", want, ref.Reason)
+		}
+	}
+	// Nothing was recorded, so the phase is exactly where it was and a corrected pipeline
+	// still attaches cleanly.
+	if f.hash("04-verification") != sealed {
+		t.Fatal("declining an entry changed the artifacts_hash of the sealed phase")
+	}
+	f.r.EvidenceFrom = f.pipeline("pass")
+	f.must(f.r.Start(key, "05-review"))
+	g, err := f.r.readGate(key, "04-verification")
+	f.must(err)
+	if g.Status != "green" {
+		t.Fatalf("the corrected pipeline did not carry the verdict forward: %s", g.Status)
+	}
+}

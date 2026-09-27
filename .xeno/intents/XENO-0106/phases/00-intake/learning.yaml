@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#106
+phase: 00-intake
+created: 2026-09-27T14:31:59Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0b3a547.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The defect was a value copied without being required, and it passed because the
+      reader downstream treated an empty hash as an item bound some other way. Both halves
+      were written from section 4's shape without asking what makes an item bindable, and
+      the guard that was missing is the one sentence A8 states outright.
+    proposal: >-
+      Where a record is bound by a hash and nothing else, the writer requires the hash and
+      the reader treats its absence as a finding rather than as another case. Reading the
+      one file that lies outside the `artifacts_hash` as the place where a missing seal
+      has to be replaced by a gate is the general form, and it is worth stating once.
+    target: internal/evidence
