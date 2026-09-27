@@ -194,3 +194,73 @@ func TestMergeMethodIsReportedAsUnchecked(t *testing.T) {
 		t.Fatalf("declaring merge_method changed the unmet count from %d to %d", before.Unmet(), r.Unmet())
 	}
 }
+
+// The split of Fetch into transport and decode is what makes these two possible: the status
+// mapping without a body, and the body without a server.
+func TestFetchMapsTheAnswersAHostCanGive(t *testing.T) {
+	for _, tc := range []struct {
+		status    int
+		available bool
+		protected bool
+		wantErr   bool
+	}{
+		{status: 200, available: true, protected: true},
+		{status: 403},                  // not on this plan, and not an error
+		{status: 404, available: true}, // the branch is not protected
+		{status: 401, wantErr: true},   // the token was rejected
+		{status: 500, wantErr: true},
+	} {
+		body := `{"enforce_admins":{"enabled":true}}`
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got := r.Header.Get("Authorization"); got != "Bearer t" {
+				t.Errorf("the token was not sent: %q", got)
+			}
+			w.WriteHeader(tc.status)
+			if tc.status == 200 {
+				_, _ = w.Write([]byte(body))
+			}
+		}))
+		p, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t")
+		srv.Close()
+		if (err != nil) != tc.wantErr {
+			t.Fatalf("%d gave err=%v, wanted error=%v", tc.status, err, tc.wantErr)
+		}
+		if err != nil {
+			continue
+		}
+		if p.Available != tc.available || p.Protected != tc.protected {
+			t.Errorf("%d gave available=%v protected=%v, wanted %v and %v",
+				tc.status, p.Available, p.Protected, tc.available, tc.protected)
+		}
+		if !tc.available && p.Reason == "" {
+			t.Errorf("%d says nothing about why", tc.status)
+		}
+	}
+}
+
+func TestDecodeProtectionReadsTheHostsFieldNames(t *testing.T) {
+	raw := []byte(`{
+	  "required_status_checks": {"contexts": ["verify"]},
+	  "enforce_admins": {"enabled": true},
+	  "required_pull_request_reviews": {"required_approving_review_count": 2,
+	                                    "require_last_push_approval": true}
+	}`)
+	p, err := decodeProtection(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.RequiredStatusChecks || !p.EnforceAdmins || p.RequiredApprovals != 2 ||
+		!p.ReviewsExpressible || !p.LastPushApproval {
+		t.Fatalf("decoded %+v", p)
+	}
+
+	// A branch with no review requirement at all: expressible is false, which is not the
+	// same as zero approvals configured.
+	p, err = decodeProtection([]byte(`{"enforce_admins":{"enabled":false}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.ReviewsExpressible || p.RequiredApprovals != 0 || p.EnforceAdmins {
+		t.Fatalf("decoded %+v", p)
+	}
+}

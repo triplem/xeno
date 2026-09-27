@@ -213,16 +213,6 @@ func result(fs []model.Finding) model.Check {
 	return model.Check{Result: r, Provenance: "xeno", Findings: fs}
 }
 
-// oneOf is the closed set test the specification's enumerations need.
-func oneOf(v string, set []string) bool {
-	for _, s := range set {
-		if s == v {
-			return true
-		}
-	}
-	return false
-}
-
 func finding(file, cause, next string) model.Finding {
 	return model.Finding{File: file, Cause: cause, Next: next}
 }
@@ -263,12 +253,7 @@ func schemaVersion(file string, raw map[string]any) []model.Finding {
 // artifact with `tool: manual` was produced by nothing at all, so both may say `by-hand`.
 // In `context_hash` or `strings_hash` of an artifact a session produced, a writer exists
 // and the value was skipped.
-var (
-	hashShape   = regexp.MustCompile(`^[0-9a-f]{64}$`)
-	hashFields  = []string{"context_hash", "secrets_hash", "strings_hash", "rules_hash"}
-	writerless  = map[string]bool{"secrets_hash": true, "rules_hash": true}
-	placeholder = "by-hand"
-)
+var hashShape = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 // language is the artifact's own, because the bundle a phase rendered from is the one in
 // that language and no other.
@@ -292,21 +277,21 @@ func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
 		}
 	}
 	var fs []model.Finding
-	for _, f := range hashFields {
+	for _, f := range model.HashFields {
 		v, ok := raw[f].(string)
 		if !ok || v == "" {
 			continue // absence is the missing field finding, not this one
 		}
-		honest := byHand || writerless[f] || (f == "strings_hash" && goneBundle)
+		honest := byHand || model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
 		switch {
 		case hashShape.MatchString(v):
 			fs = append(fs, recomputed(c, file, f, v, goneBundle, raw)...)
-		case v == placeholder && honest:
-		case v == placeholder:
-			fs = append(fs, finding(file, f+" says "+placeholder+" where a writer exists",
+		case v == model.HashPlaceholder && honest:
+		case v == model.HashPlaceholder:
+			fs = append(fs, finding(file, f+" says "+model.HashPlaceholder+" where a writer exists",
 				"write the hash Appendix B defines; the placeholder is for a field nothing writes yet"))
 		default:
-			fs = append(fs, finding(file, f+" is neither a sha256 nor "+placeholder,
+			fs = append(fs, finding(file, f+" is neither a sha256 nor "+model.HashPlaceholder,
 				"write sixty four lowercase hex characters, as Appendix B defines it"))
 		}
 	}
@@ -359,46 +344,64 @@ func missing(raw map[string]any, fields ...[]string) []string {
 
 func schema(c Ctx) model.Check {
 	dir := c.phaseRel(c.Phase)
-	var fs []model.Finding
+	o, fs := phaseResult(c, dir)
+	fs = append(fs, digestFindings(c, dir)...)
+	fs = append(fs, yamlFindings(c, dir)...)
+	fs = append(fs, directoryFindings(c, dir)...)
+	fs = append(fs, undeclaredEvidence(c, dir, o)...)
+	return result(fs)
+}
 
+// phaseResult judges output.md and returns it, because three of the four checks below need
+// nothing from it and the fourth, the undeclared evidence, needs all of it.
+func phaseResult(c Ctx, dir string) (model.Output, []model.Finding) {
 	out := dir + "/output.md"
 	var o model.Output
 	raw, err := fm.ReadFront(c.abs(out), &o)
 	switch {
 	case os.IsNotExist(err):
-		fs = append(fs, finding(out, "output.md is missing", "write the phase result through the MCP operation or its command"))
+		return o, []model.Finding{finding(out, "output.md is missing",
+			"write the phase result through the MCP operation or its command")}
 	case err != nil:
-		fs = append(fs, finding(out, "frontmatter unreadable: "+err.Error(), "repair the frontmatter"))
-	default:
-		for _, f := range missing(raw, commonFields, sessionFields, renderedFields) {
-			fs = append(fs, finding(out, "required field missing: "+f, "add "+f+" to the frontmatter"))
-		}
-		fs = append(fs, schemaVersion(out, raw)...)
-		fs = append(fs, hashes(c, out, raw)...)
-		fs = append(fs, questionShape(out, o)...)
-		fs = append(fs, decisionShape(out, o)...)
+		return o, []model.Finding{finding(out, "frontmatter unreadable: "+err.Error(), "repair the frontmatter")}
 	}
+	var fs []model.Finding
+	for _, f := range missing(raw, commonFields, sessionFields, renderedFields) {
+		fs = append(fs, finding(out, "required field missing: "+f, "add "+f+" to the frontmatter"))
+	}
+	fs = append(fs, schemaVersion(out, raw)...)
+	fs = append(fs, hashes(c, out, raw)...)
+	fs = append(fs, questionShape(out, o)...)
+	fs = append(fs, decisionShape(out, o)...)
+	return o, fs
+}
 
-	// Section 4 lists digest.md among the files every phase directory holds, and no
-	// other gate looks for it: G-Learning guards learning.yaml, G-Freshness guards
-	// context.lock.yaml from P1, and cost.yaml is deliberately unguarded because it may
-	// arrive after the gate ran. Without this check a phase finished without its digest
-	// is green, which is a verdict on a phase that is not complete.
+// digestFindings guards digest.md. Section 4 lists it among the files every phase holds and
+// no other gate looks for it: G-Learning guards learning.yaml, G-Freshness guards
+// context.lock.yaml from P1, and cost.yaml is deliberately unguarded because it may arrive
+// after the gate ran. Without this a phase finished without its digest is green, which is a
+// verdict on a phase that is not complete.
+func digestFindings(c Ctx, dir string) []model.Finding {
 	dig := dir + "/digest.md"
 	if !fm.Exists(c.abs(dig)) {
-		fs = append(fs, finding(dig, "digest.md is missing", "write the digest of the session; a phase without one is incomplete"))
-	} else {
-		r, _ := fm.ReadFront(c.abs(dig), nil)
-		for _, f := range missing(r, commonFields, sessionFields) {
-			fs = append(fs, finding(dig, "required field missing: "+f, "add "+f+" to the frontmatter"))
-		}
-		fs = append(fs, schemaVersion(dig, r)...)
-		fs = append(fs, hashes(c, dig, r)...)
+		return []model.Finding{finding(dig, "digest.md is missing",
+			"write the digest of the session; a phase without one is incomplete")}
 	}
+	r, _ := fm.ReadFront(c.abs(dig), nil)
+	var fs []model.Finding
+	for _, f := range missing(r, commonFields, sessionFields) {
+		fs = append(fs, finding(dig, "required field missing: "+f, "add "+f+" to the frontmatter"))
+	}
+	fs = append(fs, schemaVersion(dig, r)...)
+	return append(fs, hashes(c, dig, r)...)
+}
 
-	// Section 5 states its field sets for frontmatter and for the equivalent top level
-	// keys in YAML artifacts alike, so the YAML ones are checked here rather than left
-	// to G-Trace, which looks at two fields and judges binding rather than shape.
+// yamlFindings checks the phase's YAML artifacts. Section 5 states its field sets for
+// frontmatter and for the equivalent top level keys alike, so the YAML ones are checked
+// here rather than left to G-Trace, which looks at two fields and judges binding rather
+// than shape.
+func yamlFindings(c Ctx, dir string) []model.Finding {
+	var fs []model.Finding
 	for _, y := range []string{"context.lock.yaml", "learning.yaml"} {
 		rel := dir + "/" + y
 		raw := map[string]any{}
@@ -410,23 +413,31 @@ func schema(c Ctx) model.Check {
 		}
 		fs = append(fs, schemaVersion(rel, raw)...)
 	}
+	return fs
+}
 
+// directoryFindings reports what is in the phase directory and should not be. Every file a
+// hash covers is one Xeno wrote, which is the property Appendix B's normalisation rests on,
+// so anything else is a finding before it reaches a hash.
+func directoryFindings(c Ctx, dir string) []model.Finding {
 	entries, _ := os.ReadDir(c.abs(dir))
+	var fs []model.Finding
 	for _, e := range entries {
 		name := e.Name()
 		if e.IsDir() {
 			if name != "evidence" {
-				fs = append(fs, finding(dir+"/"+name, "unknown directory in the phase directory", "remove it or move it outside .xeno/"))
+				fs = append(fs, finding(dir+"/"+name, "unknown directory in the phase directory",
+					"remove it or move it outside .xeno/"))
 			}
 			continue
 		}
 		if model.KnownPhaseFiles[name] || (name == model.ContextProfile && c.Phase == model.Phases[0]) {
 			continue
 		}
-		fs = append(fs, finding(dir+"/"+name, "unknown file in the phase directory", "remove it; only files Xeno writes belong here"))
+		fs = append(fs, finding(dir+"/"+name, "unknown file in the phase directory",
+			"remove it; only files Xeno writes belong here"))
 	}
-	fs = append(fs, undeclaredEvidence(c, dir, o)...)
-	return result(fs)
+	return fs
 }
 
 // A question carries two to four options plus the free entry, or states that none
@@ -597,11 +608,9 @@ func learning(c Ctx) model.Check {
 // The shape section 10 defines: `category` from a closed set, and an entry that carries
 // an observation, a proposal and a target. A record that says nothing says `no_finding`,
 // which is the honest empty case and not a missing one.
-var (
-	learningCategories = []string{"template", "prompt", "context-rule", "project-convention"}
-	learningKeys       = []string{"category", "observation", "proposal", "target"}
-	learningHeader     = []string{"intent", "phase", "created", "schema_version", "runner_version", "plugin_version"}
-)
+// The header fields every process file carries, which is what a learning record has to
+// say something beyond. The rest of section 10's shape lives in internal/model.
+var learningHeader = []string{"intent", "phase", "created", "schema_version", "runner_version", "plugin_version"}
 
 // learningFindings is the same judgement wherever a learning record sits: present, saying
 // something beyond the header fields, and shaped as section 10 defines. Counting keys
@@ -616,7 +625,7 @@ func learningFindings(abs, rel string) []model.Finding {
 	var fs []model.Finding
 	body := false
 	for k := range raw {
-		if oneOf(k, learningHeader) {
+		if model.OneOf(k, learningHeader) {
 			continue
 		}
 		body = true
@@ -656,21 +665,21 @@ func learningEntries(rel string, v any) []model.Finding {
 				"write category, observation, proposal and target under it"))
 			continue
 		}
-		for _, k := range learningKeys {
+		for _, k := range model.LearningKeys {
 			if s, isString := entry[k].(string); !isString || strings.TrimSpace(s) == "" {
 				fs = append(fs, finding(rel, at+" has no "+k,
 					"section 10 defines all four; a record missing one is not a proposal anybody can act on"))
 			}
 		}
 		for k := range entry {
-			if !oneOf(k, learningKeys) {
+			if !model.OneOf(k, model.LearningKeys) {
 				fs = append(fs, finding(rel, at+" carries unknown key "+k,
 					"section 10 defines category, observation, proposal and target"))
 			}
 		}
-		if cat, isString := entry["category"].(string); isString && cat != "" && !oneOf(cat, learningCategories) {
+		if cat, isString := entry["category"].(string); isString && cat != "" && !model.OneOf(cat, model.LearningCategories) {
 			fs = append(fs, finding(rel, at+" has category "+cat,
-				"section 10 fixes the set: "+strings.Join(learningCategories, ", ")))
+				"section 10 fixes the set: "+strings.Join(model.LearningCategories, ", ")))
 		}
 	}
 	return fs
