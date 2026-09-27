@@ -208,14 +208,14 @@ func TestNoCommandButFinishTouchesAFinishedPhase(t *testing.T) {
 
 // ---- WP6: evidence comes from CI, pulled, never pushed
 
-const pendingTest = "evidence:\n  - kind: test\n    job: unit\n"
+const pendingTest = "evidence:\n  - kind: test-report\n    job: unit\n"
 
 func (f *fixture) pipeline(result string) string {
 	dir := filepath.Join(f.t.TempDir(), "artifacts")
 	_ = os.MkdirAll(dir, 0o755)
 	os.WriteFile(filepath.Join(dir, "junit.xml"), []byte("<testsuite failures=\"0\"/>\n"), 0o644)
 	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
-		"- kind: test\n  job: unit\n  result: "+result+"\n  file: junit.xml\n  pipeline: \"4711\"\n  commit: abc123\n"), 0o644)
+		"- kind: test-report\n  job: unit\n  result: "+result+"\n  file: junit.xml\n  pipeline: \"4711\"\n  commit: abc123\n"), 0o644)
 	return dir
 }
 
