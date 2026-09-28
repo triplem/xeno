@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#107
+phase: 02-design
+created: 2026-09-28T18:51:26Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Guarding twice was the right answer in #114 and the wrong one here, and the
+      difference is set theory rather than taste: there the two guards covered two
+      different producers, here one caller set contains the other. The precedent was
+      reached for first and had to be argued away, which is how a pattern that worked
+      once becomes a habit.
+    proposal: >-
+      Before a state is guarded in two places, the callers of each guard are counted.
+      Two guards earn their keep where neither caller set contains the other; where one
+      does, the second guard is the same check on a subset and the argument for it is
+      borrowed.
+    target: internal/gates
