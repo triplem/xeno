@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#111
+phase: 05-review
+created: 2026-09-28T17:39:07Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A doc comment separated from its function by nothing is read by godoc as belonging
+      to whatever follows it, and no check in this repository sees it. gofmt keeps the
+      blank line between a comment and the brace above it and says nothing about the one
+      below. The fix closed one instance and the class stays open.
+    proposal: >-
+      A doc comment naming the function it documents is what makes this visible at all,
+      which this repository already does everywhere. Where a paragraph is moved or added
+      above a function, the blank line below the preceding one is checked by reading the
+      rendered godoc rather than the diff, since the diff shows the comment beside the
+      right function.
+    target: cmd/xeno
