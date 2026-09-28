@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:13:04Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The new key sequence starts at 0200 rather than at the next free number, and the
+      gap is the whole mechanism: it marks which scheme a key belongs to without a rule
+      anybody has to read. Starting at 0122 would have been tidier and would have needed
+      a sentence explaining where the boundary is, and the boundary would have moved
+      when an issue reached 122.
+    proposal: >-
+      Where a numbering scheme is replaced and the old numbers cannot move, the new
+      sequence starts beyond any number the old one can reach, so that the scheme a name
+      follows is legible from the name. A gap costs nothing and a boundary rule is read
+      once.
+    target: CLAUDE.md
