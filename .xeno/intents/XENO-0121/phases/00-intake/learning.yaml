@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#121
+phase: 00-intake
+created: 2026-09-28T19:39:51Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A23's status column named the exact condition that later broke it, a protected
+      main refusing the commit unless the token is on the bypass list, and #86 removed
+      that list two months later without anything connecting the two. The assumption was
+      written as a caveat rather than as a dependency, so nothing looked at it when its
+      condition changed.
+    proposal: >-
+      Where an assumption depends on a host setting, the row names the setting and the
+      script that applies it, so that a change to the setting meets the assumption. A
+      caveat in a status column is read once, at the time it is written.
+    target: ASSUMPTIONS.md
