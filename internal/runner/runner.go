@@ -430,9 +430,24 @@ func matchesAny(patterns []string, path string) bool {
 
 // Finish seals the phase: it computes artifacts_hash over what is there now, runs the
 // gates and writes the verdict. It does not wait for the pipeline.
-func (r *Runner) Finish(key, phase string) (*model.Gate, error) {
+//
+// A summary writes digest.md first. Section 5 divides the labour — the agent supplies the summary
+// text, the runner writes the file — and section 6's working sequence puts the digest here, which
+// is also the earliest honest moment to summarise a phase. Before the gates, because the digest is
+// inside artifacts_hash: written afterwards it would seal a hash over a tree that lacked the file
+// and no verdict would ever match the directory again.
+//
+// An empty summary writes nothing. Section 5 says the supported path is not an enforced one, so a
+// phase finished without a summary is judged exactly as before, with G-Schema reporting the digest
+// missing where it is missing.
+func (r *Runner) Finish(key, phase, summary string) (*model.Gate, error) {
 	if model.PhaseIndex(phase) < 0 {
 		return nil, fmt.Errorf("unknown phase %q", phase)
+	}
+	if strings.TrimSpace(summary) != "" {
+		if err := r.writeDigest(key, phase, summary); err != nil {
+			return nil, err
+		}
 	}
 	g, err := r.evaluate(key, phase)
 	if err != nil {
@@ -445,6 +460,48 @@ func (r *Runner) Finish(key, phase string) (*model.Gate, error) {
 	return g, nil
 }
 
+// writeDigest writes the summary of a phase with the frontmatter section 5 requires of a file
+// produced in a session. Three groups, not two: a digest is neither rendered nor covered by a
+// rule set, so it carries no template, no strings_hash and no rules_hash.
+//
+// It carries no secrets_hash either, and that absence is the honest half of this writer. Section
+// 5 gives the runner two jobs, filtering and writing, and there is no filter to do the first: the
+// effective filter is a shipped pattern file plus a project's additions, and no such file exists
+// in this tree. A hash over nothing would assert that a digest passed through a filter, which is
+// the one claim in a digest a reader would take on trust. G-Schema reports the field missing,
+// which is what is true. Whoever ships the filter adds the filtering here.
+func (r *Runner) writeDigest(key, phase, summary string) error {
+	common, err := r.common(key, phase)
+	if err != nil {
+		return err
+	}
+	front := map[string]any{
+		"intent": common.Intent, "phase": common.Phase, "created": common.Created,
+		"schema_version": common.SchemaVersion,
+		"runner_version": common.RunnerVersion, "plugin_version": common.PluginVersion,
+		"language": r.language(),
+	}
+	if h, err := hashing.FileHash(r.abs(model.PhaseDir(key, phase) + "/context.lock.yaml")); err == nil {
+		front["context_hash"] = h
+	}
+	if tool, mdl := r.agent(); tool != "" || mdl != "" {
+		if mdl != "" {
+			front["model"] = mdl
+		}
+		if tool != "" {
+			front["tool"] = tool
+		}
+	}
+	body := strings.TrimRight(summary, "\n") + "\n"
+	out := "---\n" + frontmatter(front) + "---\n" + body
+	path := r.abs(model.PhaseDir(key, phase) + "/digest.md")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(out), 0o644)
+}
+
+// GateRun recomputes a verdict. It attaches first, because P5 has no successor whose
 // GateRun recomputes a verdict. It attaches first, because P5 has no successor whose
 // start could do it.
 func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
@@ -452,6 +509,22 @@ func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
 		return nil, err
 	}
 	return r.evaluate(key, phase)
+}
+
+// agent returns the tool and the model a project records, and empty strings where the file,
+// the block or a field is absent. Section 12 puts both in project.yaml, so they are not among
+// the fields that come from the harness: A35 listed five and the reason covers three, which is
+// what this reads (#120).
+//
+// Absent rather than defaulted, because the row being amended says why: a plausible value in a
+// field nobody produced is worse than an absent one, and the only tool this repository has ever
+// used would be exactly such a plausible value.
+func (r *Runner) agent() (tool, mdl string) {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err != nil {
+		return "", ""
+	}
+	return p.Agent.Tool, p.Agent.Model.Default
 }
 
 // language is the language artifacts are written in. English unless a project says
@@ -515,6 +588,16 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 	front["language"] = t.Bundle.Language
 	front["template"] = t.Ref()
 	front["strings_hash"] = t.StringsHash
+	// Section 12 records both in project.yaml, so they are not among the fields that come
+	// from the harness; absent where the project does not say, never defaulted (A35, #120).
+	if tool, mdl := r.agent(); tool != "" || mdl != "" {
+		if mdl != "" {
+			front["model"] = mdl
+		}
+		if tool != "" {
+			front["tool"] = tool
+		}
+	}
 	lockPath := r.abs(model.PhaseDir(key, phase) + "/context.lock.yaml")
 	if h, err := hashing.FileHash(lockPath); err == nil {
 		front["context_hash"] = h

@@ -394,4 +394,13 @@ type Project struct {
 		Source string `yaml:"source"`
 	} `yaml:"evidence"`
 	Language Language `yaml:"language"`
+	// Section 12's agent block. The runner reads it for the two session fields that have a
+	// source in the repository: a plausible value in a field nobody produced is worse than an
+	// absent one (A35), and these two are produced here.
+	Agent struct {
+		Tool  string `yaml:"tool"`
+		Model struct {
+			Default string `yaml:"default"`
+		} `yaml:"model"`
+	} `yaml:"agent"`
 }
