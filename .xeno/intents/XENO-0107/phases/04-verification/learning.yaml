@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#107
+phase: 04-verification
+created: 2026-09-28T18:57:33Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: template
+    observation: >-
+      The mapping needed a third column, whether the row fails without the change, and
+      the shipped verification template has two. Without it a suite of nine tests reads
+      as nine proofs, and the tests that guard what a change must not disturb are
+      indistinguishable from the tests that prove it does something.
+    proposal: >-
+      The test-mapping section of the verification template asks for what proves a
+      criterion and whether that proof fails without the change. Two intents in a row
+      have added the distinction by hand, which is the signal that it belongs in the
+      template rather than in the habit of whoever writes the phase.
+    target: .xeno/plugin/templates/verification

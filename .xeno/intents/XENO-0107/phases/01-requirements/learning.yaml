@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#107
+phase: 01-requirements
+created: 2026-09-28T18:50:39Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Three of the four results a check may carry have no findings by design, so the
+      defect is not "a check without findings" but one specific pairing of result and
+      findings. Written the loose way the rule would have turned every passing gate in
+      the repository into a refusal, and the acceptance criteria are where that surfaced
+      rather than the tests.
+    proposal: >-
+      Where a rule is about a disagreement between two fields, the criteria enumerate
+      the legitimate combinations of both rather than the illegitimate value of one,
+      since a rule stated over the single suspicious field catches the ordinary cases
+      with it.
+    target: internal/gates

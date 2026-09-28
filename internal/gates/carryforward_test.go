@@ -107,3 +107,90 @@ func TestInvariantsRejectWhatCarryForwardWouldNeverProduce(t *testing.T) {
 		t.Fatalf("a decision on a finding of this runner was rejected: %v", err)
 	}
 }
+
+// ---- a check that fails without saying what failed
+
+// No gate of this runner can produce it, because every one returns through result(). The
+// writer this is for is an external gate, or a hand edited gate.yaml, which lies outside
+// artifacts_hash by design.
+func TestAFailWithoutAFindingIsRefusedRatherThanRead(t *testing.T) {
+	checks := []model.Check{{Gate: "G-External", Result: "fail", Provenance: ExternalProvenance}}
+
+	status, err := Status(checks)
+	if err == nil {
+		t.Fatalf("a fail carrying no finding produced the status %q instead of a refusal", status)
+	}
+	if status != "" {
+		t.Errorf("the refusal returned the status %q as well", status)
+	}
+	if !strings.Contains(err.Error(), "G-External") {
+		t.Errorf("the refusal does not name the gate: %v", err)
+	}
+}
+
+// The malformed check is refused whatever stands beside it, and a well formed check earlier
+// in the list does not decide the run first.
+func TestAMalformedCheckIsNotMaskedByAWellFormedOne(t *testing.T) {
+	id := hashing.FindingID("G-Schema", "", "a.md", "because")
+	checks := []model.Check{
+		{Gate: "G-Schema", Result: "fail", Provenance: "xeno",
+			Findings: []model.Finding{{ID: id, File: "a.md", Cause: "because"}}},
+		{Gate: "G-External", Result: "fail", Provenance: ExternalProvenance},
+	}
+
+	if _, err := Status(checks); err == nil {
+		t.Fatal("a malformed check beside a red one was accepted")
+	}
+}
+
+// Three results carry no finding as their ordinary state, which is why the rule reads the
+// result and the findings together rather than the findings alone. Every passing gate in the
+// tree is the first row.
+func TestTheResultsThatCarryNoFindingAreUndisturbed(t *testing.T) {
+	for _, tc := range []struct {
+		result, want string
+	}{
+		{"pass", "green"},
+		{"pending", "provisional"},
+		{"not-implemented", "green"},
+	} {
+		got, err := Status([]model.Check{{Gate: "G-Example", Result: tc.result, Provenance: "xeno"}})
+		if err != nil {
+			t.Errorf("a check reporting %s with no finding was refused: %v", tc.result, err)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("a check reporting %s with no finding gave %q, want %q", tc.result, got, tc.want)
+		}
+	}
+}
+
+// The case the rule must not touch: a failure that says what failed is red, which is what it
+// was before this rule existed.
+func TestAFailWithAFindingIsStillRed(t *testing.T) {
+	id := hashing.FindingID("G-Schema", "", "a.md", "because")
+	got, err := Status([]model.Check{{Gate: "G-Schema", Result: "fail", Provenance: "xeno",
+		Findings: []model.Finding{{ID: id, File: "a.md", Cause: "because"}}}})
+	if err != nil {
+		t.Fatalf("a failure carrying its finding was refused: %v", err)
+	}
+	if got != "red" {
+		t.Fatalf("status is %q, want red", got)
+	}
+}
+
+// The refusal that was already there keeps its own words, so the new one did not displace it.
+func TestTheIdCollisionRefusalIsUnchanged(t *testing.T) {
+	id := hashing.FindingID("G-Schema", "", "a.md", "because")
+	one := model.Finding{ID: id, File: "a.md", Cause: "because"}
+	_, err := Status([]model.Check{
+		{Gate: "G-Schema", Result: "fail", Provenance: "xeno", Findings: []model.Finding{one}},
+		{Gate: "G-Trace", Result: "fail", Provenance: "xeno", Findings: []model.Finding{one}},
+	})
+	if err == nil {
+		t.Fatal("two findings sharing an id were accepted")
+	}
+	if !strings.Contains(err.Error(), "finding id collision") {
+		t.Errorf("the collision refusal changed its wording: %v", err)
+	}
+}

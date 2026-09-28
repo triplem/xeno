@@ -1547,3 +1547,39 @@ func TestStartNamesAnEntryThePipelinePublishedWrong(t *testing.T) {
 		t.Fatalf("the corrected pipeline did not carry the verdict forward: %s", g.Status)
 	}
 }
+
+// ---- a check that fails without saying what failed, through a caller
+
+// gate.yaml lies outside artifacts_hash by design, so it is the one file of a judged phase
+// that can be edited without staling a hash. A malformed check written there reaches Status
+// through rewriteStatus, which is why the rule is not in Invariants: that runs on checks a
+// gate just produced and never on these.
+func TestAMalformedCheckInAStoredVerdictRefusesTheDecision(t *testing.T) {
+	f := newFixture(t)
+	g := f.run("00-intake", "open_questions:\n  - key: Q-9\n    text: bare\n")
+	if g.Status != "red" {
+		t.Fatalf("the fixture phase is %s, want red so that there is a finding to decide", g.Status)
+	}
+	var id string
+	for _, c := range g.Checks {
+		if len(c.Findings) > 0 {
+			id = c.Findings[0].ID
+			break
+		}
+	}
+	if id == "" {
+		t.Fatal("a red phase carried no finding to decide")
+	}
+
+	// Written as a person with an editor would, into the one file no hash covers.
+	g.Checks = append(g.Checks, model.Check{Gate: "G-External", Result: "fail", Provenance: "external"})
+	f.must(fm.WriteYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "gate.yaml"), g))
+
+	_, err := f.r.Decide(key, "00-intake", id, "approved", "a.person", "assessed")
+	if err == nil {
+		t.Fatal("a decision on a verdict carrying a fail with no finding was written")
+	}
+	if !strings.Contains(err.Error(), "G-External") {
+		t.Errorf("the refusal does not name the gate that failed without saying what: %v", err)
+	}
+}

@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#107
+phase: 03-implementation
+created: 2026-09-28T18:56:39Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Six of the nine tests pass against the tree without the change, because they guard
+      the states the rule must not disturb rather than the state it adds. Counted
+      together with the three that fail, the suite would have claimed nine tests for one
+      defect; separated, it says three prove the rule and six hold its blast radius.
+    proposal: >-
+      A test suite for a new refusal is reported in two parts, the tests that fail
+      without it and the tests that must pass with and without it, since a rule that
+      refuses something is as likely to be wrong about what it spares as about what it
+      catches.
+    target: internal/gates
