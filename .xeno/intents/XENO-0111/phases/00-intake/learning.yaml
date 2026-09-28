@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#111
+phase: 00-intake
+created: 2026-09-28T17:31:43Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Both defects are correct against the data that exists and wrong against the data
+      section 4 permits. A basename key agrees with a flat directory, and a comment
+      without a blank line reads correctly to whoever opens the function it was written
+      for. Neither a test nor a gate can see either one, and both were found by reading.
+    proposal: >-
+      Where a check compares against a directory listing, the key it compares is the
+      path the declaration carries rather than a part of it, since agreement that rests
+      on the shape of today's data is indistinguishable from correctness until the shape
+      changes.
+    target: internal/gates
