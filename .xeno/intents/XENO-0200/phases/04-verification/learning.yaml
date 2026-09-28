@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:16:38Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: template
+    observation: >-
+      The criterion that caught the defect named two records by key and asserted their
+      order. The criteria that proved nothing were the ones phrased as properties, that
+      the listing is ordered by creation, which the broken implementation also satisfied
+      for every pair the author happened to think of. Two names beat a property.
+    proposal: >-
+      An acceptance criterion about an order names concrete records whose relative
+      position is known and surprising, rather than stating the ordering rule. The rule
+      is what the code already claims; the named pair is what disagrees with it.
+    target: .xeno/plugin/templates/requirements
