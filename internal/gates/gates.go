@@ -166,10 +166,29 @@ func Run(c Ctx, previous *model.Gate) []model.Check {
 
 // Status derives the phase status from the checks. Nothing writes it directly.
 // Order, loudest first: red, overridden, provisional, approved, green.
+//
+// A check reporting fail without carrying a finding is refused rather than turned into a
+// status. Red is a promise that something can be decided: a red phase carries a failure
+// somebody approves or overrides by a finding's id, and there is no id here, so the verdict
+// would name no cause and clear only by editing the file it came from. No gate of this runner
+// reaches the state, because every one returns through result(), which writes fail only where
+// there are findings; what reaches it is a second writer. Section 14 makes external gates the
+// extension point, and a scanner wrapper reporting a failure it cannot attribute to a file is
+// ordinary rather than malformed. So is a hand edited gate.yaml, which lies outside
+// artifacts_hash by design and comes back through rewriteStatus.
+//
+// The rule is here and not in Invariants for that last path: Invariants runs from evaluate
+// alone, on checks just produced, while every derivation of a status passes through here. The
+// condition reads both fields, because pass, pending and not-implemented carry no finding as
+// their ordinary state.
 func Status(checks []model.Check) (string, error) {
 	seen := map[string]bool{}
 	undecided, overridden, pending, approved := false, false, false, false
 	for _, ch := range checks {
+		if ch.Result == "fail" && len(ch.Findings) == 0 {
+			return "", fmt.Errorf("%s reports fail and carries no finding: "+
+				"a check that failed without saying what failed is not a verdict", ch.Gate)
+		}
 		if ch.Result == "pending" {
 			pending = true
 		}
