@@ -1,0 +1,64 @@
+# XENO-0107 verification, 907c220 with the working tree of the intent
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	0.374s
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the nine tests of this intent, named
+=== RUN   TestAFailWithoutAFindingIsRefusedRatherThanRead
+--- PASS: TestAFailWithoutAFindingIsRefusedRatherThanRead (0.00s)
+=== RUN   TestAMalformedCheckIsNotMaskedByAWellFormedOne
+--- PASS: TestAMalformedCheckIsNotMaskedByAWellFormedOne (0.00s)
+=== RUN   TestTheResultsThatCarryNoFindingAreUndisturbed
+--- PASS: TestTheResultsThatCarryNoFindingAreUndisturbed (0.00s)
+=== RUN   TestAFailWithAFindingIsStillRed
+--- PASS: TestAFailWithAFindingIsStillRed (0.00s)
+=== RUN   TestTheIdCollisionRefusalIsUnchanged
+--- PASS: TestTheIdCollisionRefusalIsUnchanged (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/gates	0.003s
+=== RUN   TestAMalformedCheckInAStoredVerdictRefusesTheDecision
+--- PASS: TestAMalformedCheckInAStoredVerdictRefusesTheDecision (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/runner	0.005s
+
+# the same, against the tree with internal/gates/gates.go reverted
+# three fail; the six guards pass with and without the change
+=== RUN   TestAFailWithoutAFindingIsRefusedRatherThanRead
+    carryforward_test.go:121: a fail carrying no finding produced the status "green" instead of a refusal
+--- FAIL: TestAFailWithoutAFindingIsRefusedRatherThanRead (0.00s)
+=== RUN   TestAMalformedCheckIsNotMaskedByAWellFormedOne
+    carryforward_test.go:142: a malformed check beside a red one was accepted
+--- FAIL: TestAMalformedCheckIsNotMaskedByAWellFormedOne (0.00s)
+=== RUN   TestTheResultsThatCarryNoFindingAreUndisturbed
+--- PASS: TestTheResultsThatCarryNoFindingAreUndisturbed (0.00s)
+=== RUN   TestAFailWithAFindingIsStillRed
+--- PASS: TestAFailWithAFindingIsStillRed (0.00s)
+=== RUN   TestTheIdCollisionRefusalIsUnchanged
+--- PASS: TestTheIdCollisionRefusalIsUnchanged (0.00s)
+FAIL
+FAIL	github.com/triplem/xeno/internal/gates	0.004s
+FAIL
+=== RUN   TestAMalformedCheckInAStoredVerdictRefusesTheDecision
+    runner_test.go:1580: a decision on a verdict carrying a fail with no finding was written
+--- FAIL: TestAMalformedCheckInAStoredVerdictRefusesTheDecision (0.00s)
+FAIL
+FAIL	github.com/triplem/xeno/internal/runner	0.005s
+FAIL
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 67 verdicts
