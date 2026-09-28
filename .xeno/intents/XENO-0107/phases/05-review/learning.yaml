@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#107
+phase: 05-review
+created: 2026-09-28T18:58:17Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The rule refuses rather than reports, which means a malformed foreign check stops
+      the pipeline instead of appearing in a verdict as a failure somebody can decide.
+      That is right for a verdict nobody can act on and it puts the loudest possible
+      response on the least trusted input, which is the first thing WP4 will meet in
+      practice.
+    proposal: >-
+      Where the runner refuses on the shape of foreign input rather than reporting it,
+      the error names the producer, and the external gate contract says that a failure
+      must name what failed. A refusal a project cannot attribute to its own tool reads
+      as the tool being broken.
+    target: internal/gates
