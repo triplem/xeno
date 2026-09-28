@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#111
+phase: 01-requirements
+created: 2026-09-28T17:32:20Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two of the seven criteria say that a change to how a directory is read must not
+      invent a new finding, and they were written because the obvious implementation of
+      the fix does invent one: a walk that treats a directory as an entry would report a
+      directory whose files are all declared. The criterion found the trap before the
+      code did.
+    proposal: >-
+      Where a check that reads a directory is widened, a criterion states what must not
+      become a finding, since widening what is read widens what can be reported and the
+      new report looks as legitimate as the old ones.
+    target: internal/gates
