@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#121
+phase: 01-requirements
+created: 2026-09-28T19:40:34Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The plugin set is named in three places, .releaserc.json, release.yml and
+      audit.yml, and pinned with versions in a fourth, SUPPLY-CHAIN.md. Removing a
+      plugin therefore means four edits and nothing checks that they agree; the document
+      that exists to prevent supply chain drift is itself maintained by hand against
+      three other files.
+    proposal: >-
+      Where a tool set is listed in more than one file, the criteria enumerate every
+      file that names it, since the one left behind pins a version of something nobody
+      installs and reads as a dependency that is still there.
+    target: SUPPLY-CHAIN.md

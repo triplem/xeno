@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#121
+phase: 04-verification
+created: 2026-09-28T19:44:53Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Every gate in this intent is green and none of them looked at what the intent
+      changed. Nothing in the repository reads .releaserc.json or the workflow files
+      except CI, so a configuration that is valid and wrong passes every local check,
+      and the verdict measures the artifacts of the phase rather than the change they
+      describe.
+    proposal: >-
+      Where an intent changes only files no gate reads, the verification says which
+      criterion the next push proves rather than the branch, since a green phase over
+      untested configuration is a statement about the record and not about the pipeline.
+    target: docs/process-definition.md

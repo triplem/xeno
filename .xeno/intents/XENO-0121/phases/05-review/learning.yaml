@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#121
+phase: 05-review
+created: 2026-09-28T19:45:41Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two correct decisions produced a broken pipeline, and nothing connected them for
+      two days: A23 depended on a bypass list, #86 removed that list on purpose, and the
+      only record of the dependency was a caveat in a status column nobody re-read. The
+      repository noticed by the release workflow going red, which is the slowest signal
+      available.
+    proposal: >-
+      Where a decision removes a capability a recorded assumption depends on, the
+      assumption is searched for by the capability's name before the decision lands. A
+      caveat that predicted the failure is worth nothing if it is only read by whoever
+      wrote it.
+    target: ASSUMPTIONS.md
