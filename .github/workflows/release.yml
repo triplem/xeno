@@ -1,7 +1,13 @@
 # The release pipeline of Xeno's own repository. semantic-release derives the version
-# from the Conventional Commits history, writes CHANGELOG.md back, tags and publishes;
-# this workflow only builds what the release carries. The configuration is .releaserc.json
-# in the repository, so what a release does is read here and not in a workflow input.
+# from the Conventional Commits history, tags and publishes; this workflow only builds what
+# the release carries. The configuration is .releaserc.json in the repository, so what a
+# release does is read here and not in a workflow input.
+#
+# Nothing here writes to main. A changelog committed back to the branch is what this
+# pipeline used to do, and it could not survive the protection #86 set: a push made with
+# GITHUB_TOKEN triggers no workflow, so the required `verify` check is never reported for
+# such a commit and never satisfied, and enforce_admins leaves nothing to step over. The
+# release notes of each release carry what the file rendered (#121, and #122 for the plan).
 #
 # semantic-release arrives as an action and not as a dependency of this project. There is
 # no package.json and nothing of it is vendored: a Go repository whose only dependency is
@@ -15,9 +21,8 @@
 # either way, which is the audit's business rather than this one's.
 #
 # Only push to main triggers it, never pull_request, so nothing from a fork reaches the
-# write permission below. Pushes made with GITHUB_TOKEN trigger no workflow, so the
-# changelog commit starts nothing. Every action is pinned to a commit sha and every tool
-# to an exact version; SUPPLY-CHAIN.md says which and why.
+# write permission below. Every action is pinned to a commit sha and every tool to an exact
+# version; SUPPLY-CHAIN.md says which and why.
 name: release
 
 on:
@@ -84,9 +89,6 @@ jobs:
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
           semantic_version: 24.2.9
-          extra_plugins: |
-            @semantic-release/changelog@7.0.0
-            @semantic-release/git@11.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

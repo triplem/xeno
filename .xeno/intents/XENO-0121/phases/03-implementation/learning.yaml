@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#121
+phase: 03-implementation
+created: 2026-09-28T19:43:35Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The design listed the files to change and missed one: the Built section of
+      ASSUMPTIONS.md described the pipeline as writing the changelog back, a heading
+      away from the row being superseded. A grep for the file name found it; reading the
+      design's list would not have. Prose about the present ages exactly like a comment
+      and sits in documents nobody thinks of as code.
+    proposal: >-
+      Where a mechanism is removed, the name of the thing removed is grepped across the
+      repository rather than taken from the design's list of files, and the sections
+      that describe the present state are read as part of the change rather than after
+      it.
+    target: ASSUMPTIONS.md

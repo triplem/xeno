@@ -41,18 +41,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The same three lines the release workflow passes to the action, and no
-      # package.json in this repository: the tree exists for the length of this job.
+      # What the release workflow installs, and no package.json in this repository: the
+      # tree exists for the length of this job. One package since #121, which dropped the
+      # two plugins that wrote a changelog back to main.
       - name: install what the release installs
         run: |
           set -eu
           mkdir -p /tmp/release-toolchain
           cd /tmp/release-toolchain
           npm init -y > /dev/null
-          npm install --no-audit --no-fund \
-            semantic-release@24.2.9 \
-            @semantic-release/changelog@7.0.0 \
-            @semantic-release/git@11.0.1
+          npm install --no-audit --no-fund semantic-release@24.2.9
 
       - name: audit
         id: audit

@@ -55,8 +55,6 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
 | `cycjimmy/semantic-release-action` | `b12c8f6015dc215fe37bc154d4ad456dd3833c90`, v6.0.0 | github.com |
 | semantic-release | 24.2.9 | npm |
-| `@semantic-release/changelog` | 7.0.0 | npm |
-| `@semantic-release/git` | 11.0.1 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
 | `actions/upload-artifact` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`, v7.0.1 | github.com |
