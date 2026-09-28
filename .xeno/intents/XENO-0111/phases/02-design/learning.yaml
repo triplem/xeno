@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#111
+phase: 02-design
+created: 2026-09-28T17:33:06Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      One rejected alternative would have made the flat assumption true by forbidding
+      the nesting section 4 permits. It is the cheapest fix and it is a specification
+      change wearing the clothes of a code change, which the second standing rule
+      catches only if somebody asks which document grants the permission being removed.
+    proposal: >-
+      Where a fix would make a check correct by narrowing what is allowed, the design
+      names the document that allows it and treats the narrowing as a specification
+      change, since enforcing an assumption reads exactly like repairing one.
+    target: docs/process-definition.md

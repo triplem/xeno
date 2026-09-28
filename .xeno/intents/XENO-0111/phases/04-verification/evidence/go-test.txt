@@ -1,0 +1,53 @@
+# XENO-0111 verification, 0e77cc2 with the working tree of the intent
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the four tests of this intent, named
+=== RUN   TestAPendingDeclarationDeclaresNoFile
+--- PASS: TestAPendingDeclarationDeclaresNoFile (0.00s)
+=== RUN   TestADeclarationUnderASubdirectoryDeclaresThatFileAlone
+--- PASS: TestADeclarationUnderASubdirectoryDeclaresThatFileAlone (0.00s)
+=== RUN   TestADirectoryOfDeclaredFilesIsNoFinding
+--- PASS: TestADirectoryOfDeclaredFilesIsNoFinding (0.00s)
+=== RUN   TestAPathOutsideEvidenceDeclaresNothingInside
+--- PASS: TestAPathOutsideEvidenceDeclaresNothingInside (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/gates	0.004s
+
+# the same four against the tree with internal/gates/gates.go reverted
+# (git stash push internal/gates/gates.go, run, git stash pop)
+=== RUN   TestAPendingDeclarationDeclaresNoFile
+--- PASS: TestAPendingDeclarationDeclaresNoFile (0.00s)
+=== RUN   TestADeclarationUnderASubdirectoryDeclaresThatFileAlone
+    schema_test.go:341: a file of the same basename at another depth was taken as declared:
+        .xeno/intents/PROJ-1/phases/00-intake/evidence/logs
+--- FAIL: TestADeclarationUnderASubdirectoryDeclaresThatFileAlone (0.00s)
+=== RUN   TestADirectoryOfDeclaredFilesIsNoFinding
+    schema_test.go:353: a directory whose files are all declared was reported:
+        .xeno/intents/PROJ-1/phases/00-intake/evidence/logs
+--- FAIL: TestADirectoryOfDeclaredFilesIsNoFinding (0.00s)
+=== RUN   TestAPathOutsideEvidenceDeclaresNothingInside
+    schema_test.go:365: a path outside evidence/ was taken to declare a file inside it:
+--- FAIL: TestAPathOutsideEvidenceDeclaresNothingInside (0.00s)
+FAIL
+FAIL	github.com/triplem/xeno/internal/gates	0.004s
+FAIL
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 61 verdicts

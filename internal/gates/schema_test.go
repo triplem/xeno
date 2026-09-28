@@ -250,3 +250,118 @@ func TestHashValueIsRecomputed(t *testing.T) {
 		t.Fatalf("a well shaped strings_hash over the wrong bundle passed:\n%s", got)
 	}
 }
+
+// ---- undeclared evidence, keyed on the path relative to evidence/
+
+// evidenceFile writes one file under evidence/ of the corpus phase, at a path relative to
+// that directory, so a test can put one inside a subdirectory.
+func evidenceFile(t *testing.T, root, rel, content string) {
+	t.Helper()
+	p := filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]), "evidence", rel)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// declare appends an evidence block to the corpus output.md, one item per path given. A
+// path of "" is the declaration that carries none, which is a pending item.
+func declare(t *testing.T, root string, paths ...string) {
+	t.Helper()
+	p := filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]), "output.md")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var block strings.Builder
+	block.WriteString("evidence:\n")
+	for i, path := range paths {
+		block.WriteString("  - kind: other\n    job: j" + string(rune('a'+i)) + "\n")
+		if path != "" {
+			block.WriteString("    path: " + path + "\n")
+			block.WriteString("    sha256: " + strings.Repeat("4", 64) + "\n")
+		}
+	}
+	edited := strings.Replace(string(b), "---\n\n# Intake", block.String()+"---\n\n# Intake", 1)
+	if edited == string(b) {
+		t.Fatal("the corpus output.md no longer ends its frontmatter where this expects")
+	}
+	if err := os.WriteFile(p, []byte(edited), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// undeclared returns the causes of the findings this check produces, and nothing else the
+// schema gate reports, so that a declaration added by hand cannot pass the test by
+// producing a different finding.
+func undeclared(t *testing.T, root string) string {
+	t.Helper()
+	var b strings.Builder
+	for _, f := range schema(ctxFor(root)).Findings {
+		if strings.Contains(f.Cause, "undeclared file in evidence/") {
+			b.WriteString(f.File + "\n")
+		}
+	}
+	return b.String()
+}
+
+// A pending item carries a kind and a job and no path, and declares no file. This passed
+// before the change as well: filepath.Base of an empty string is ".", which matched no entry,
+// so the set carried something inert rather than something wrong. The test is here because
+// the entry is gone now and nothing else would notice if a later key brought it back.
+func TestAPendingDeclarationDeclaresNoFile(t *testing.T) {
+	root, _ := corpus(t)
+	evidenceFile(t, root, "junit.xml", "<testsuite/>\n")
+	declare(t, root, "")
+
+	got := undeclared(t, root)
+	if !strings.Contains(got, "evidence/junit.xml") {
+		t.Fatalf("a file no declaration names was not reported:\n%s", got)
+	}
+	if strings.Contains(got, "evidence/.") {
+		t.Errorf("the set carried an entry keyed on a basename of nothing:\n%s", got)
+	}
+}
+
+// Section 4 forbids no subdirectory under evidence/. A declaration names the file it names
+// and nothing at another depth.
+func TestADeclarationUnderASubdirectoryDeclaresThatFileAlone(t *testing.T) {
+	root, _ := corpus(t)
+	evidenceFile(t, root, "logs/a.txt", "nested\n")
+	evidenceFile(t, root, "a.txt", "top level\n")
+	declare(t, root, "evidence/logs/a.txt")
+
+	got := undeclared(t, root)
+	if strings.Contains(got, "evidence/logs/a.txt") {
+		t.Errorf("the declared file was reported undeclared:\n%s", got)
+	}
+	if !strings.Contains(got, "evidence/a.txt") {
+		t.Errorf("a file of the same basename at another depth was taken as declared:\n%s", got)
+	}
+}
+
+// The directory holding a declared file is not itself something a declaration can name, so
+// widening what is read must not widen what is reported.
+func TestADirectoryOfDeclaredFilesIsNoFinding(t *testing.T) {
+	root, _ := corpus(t)
+	evidenceFile(t, root, "logs/a.txt", "nested\n")
+	declare(t, root, "evidence/logs/a.txt")
+
+	if got := undeclared(t, root); got != "" {
+		t.Fatalf("a directory whose files are all declared was reported:\n%s", got)
+	}
+}
+
+// A path that names nothing inside evidence/ declares nothing inside it, which is what a
+// basename key did by accident and this does by construction.
+func TestAPathOutsideEvidenceDeclaresNothingInside(t *testing.T) {
+	root, _ := corpus(t)
+	evidenceFile(t, root, "digest.md", "not the phase digest\n")
+	declare(t, root, "digest.md")
+
+	if got := undeclared(t, root); !strings.Contains(got, "evidence/digest.md") {
+		t.Fatalf("a path outside evidence/ was taken to declare a file inside it:\n%s", got)
+	}
+}
