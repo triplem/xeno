@@ -405,6 +405,10 @@ func report(g *model.Gate, err error) int {
 	}
 	return 0
 }
+
+// printInit says what was done, what was left alone, and what a person still has to do.
+// The last list is the point: a first contact that leaves the project believing the gate
+// is binding when it is not is worse than no first contact.
 func printInit(res *runner.InitResult) {
 	for _, p := range res.Created {
 		fmt.Println("  created  ", p)
@@ -424,9 +428,6 @@ func printInit(res *runner.InitResult) {
 	}
 }
 
-// printInit says what was done, what was left alone, and what a person still has to do.
-// The last list is the point: a first contact that leaves the project believing the gate
-// is binding when it is not is worse than no first contact.
 // printEnforcement prints the report. not-available is its own line rather than folded
 // into unmet, because a setting the host does not have is nobody's oversight and
 // reporting it as one sends somebody looking for a checkbox that is not there.

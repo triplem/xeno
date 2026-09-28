@@ -527,30 +527,65 @@ func decisionShape(file string, o model.Output) []model.Finding {
 }
 
 // Nothing may sit in evidence/ that no declaration and no attachment points at.
+//
+// Both sides of the comparison are paths relative to evidence/: a declaration carries one
+// relative to the phase directory, which the prefix below removes, and the walk produces
+// one per file. Section 4 forbids no subdirectory under evidence/, and a set keyed on
+// basenames agrees with the paths only while the directory is flat, which is the shape
+// Attach happens to write and not a property of the check. Two items of the same name in
+// different directories would then stand in for each other.
+//
+// The walk skips directories rather than reporting them, because a directory is not
+// something a declaration can name; the files in it are judged one by one.
 func undeclaredEvidence(c Ctx, dir string, o model.Output) []model.Finding {
 	evDir := dir + "/evidence"
-	entries, err := os.ReadDir(c.abs(evDir))
-	if err != nil {
+	root := c.abs(evDir)
+	if s, err := os.Stat(root); err != nil || !s.IsDir() {
 		return nil
 	}
 	known := map[string]bool{"attached.yaml": true}
+	declare := func(p string) {
+		if rel, ok := insideEvidence(p); ok {
+			known[rel] = true
+		}
+	}
 	for _, e := range o.Evidence {
-		known[filepath.Base(e.Path)] = e.Path != ""
+		declare(e.Path)
 	}
 	var att []model.Attached
 	_ = fm.ReadYAML(c.abs(evDir+"/attached.yaml"), &att)
 	for _, a := range att {
-		if a.Path != "" {
-			known[filepath.Base(a.Path)] = true
-		}
+		declare(a.Path)
 	}
 	var fs []model.Finding
-	for _, e := range entries {
-		if !known[e.Name()] {
-			fs = append(fs, finding(evDir+"/"+e.Name(), "undeclared file in evidence/", "declare it in output.md or remove it"))
+	_ = filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
 		}
-	}
+		rel, rerr := filepath.Rel(root, p)
+		if rerr != nil {
+			return nil
+		}
+		rel = filepath.ToSlash(rel)
+		if !known[rel] {
+			fs = append(fs, finding(evDir+"/"+rel, "undeclared file in evidence/", "declare it in output.md or remove it"))
+		}
+		return nil
+	})
 	return fs
+}
+
+// insideEvidence turns a declared path into the key this check compares, the path relative
+// to evidence/. A path that names nothing inside evidence/ yields no key rather than a
+// meaningless one: an empty path gave filepath.Base the value ".", which matched no entry
+// and sat in the set saying nothing, and a path pointing elsewhere in the phase directory
+// declares nothing here either.
+func insideEvidence(p string) (string, bool) {
+	rel := strings.TrimPrefix(filepath.ToSlash(p), "evidence/")
+	if rel == "" || rel == p || strings.HasPrefix(rel, "../") {
+		return "", false
+	}
+	return rel, true
 }
 
 // ---- G-Trace

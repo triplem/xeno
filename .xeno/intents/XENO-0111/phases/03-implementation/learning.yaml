@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#111
+phase: 03-implementation
+created: 2026-09-28T17:35:35Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      One of the four tests passes against the tree before the change, because the
+      defect it covers was inert rather than wrong. Running the new tests against the
+      old code is what told the difference, and without that step all four would have
+      been reported as catching the defect and one of them would have been a claim
+      nobody had checked.
+    proposal: >-
+      A test written for a fix is run against the tree without the fix, and one that
+      passes there says so in its own comment rather than standing beside the others as
+      though it had failed. A latent defect and a live one need different words.
+    target: internal/gates
