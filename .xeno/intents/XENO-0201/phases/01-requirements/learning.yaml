@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-28T20:29:30Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Three of the nine criteria say what the runner must not write: no secrets_hash, no
+      guessed model, no digest at all without a summary. Building a writer invites the
+      opposite instinct, to fill every field the schema names, and the field that cannot
+      be honestly filled is the one a reader would trust most, since a hash looks like
+      evidence.
+    proposal: >-
+      Where a writer is given to fields that were absent, the criteria enumerate the
+      fields it must leave absent and why, because a schema reads as a list of things to
+      fill and absence is the only honest value for a field whose source does not exist.
+    target: internal/runner
