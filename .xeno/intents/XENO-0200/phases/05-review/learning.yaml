@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:17:22Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Three conventions this session had no check behind them: a doc comment reaching
+      its function, a supply chain table agreeing with three other files, and now the
+      key scheme. Each was found by reading, each was fixed by hand, and each can be
+      broken again the same afternoon. The gate list is a budget, so not every
+      convention can have one, and which ones do is being decided by whichever defect
+      surfaced most recently.
+    proposal: >-
+      Where a convention is recorded in CLAUDE.md and enforced by nothing, the intent
+      says so in its residual risk and the question of whether it earns a check is asked
+      once, against the gate budget, rather than each time a convention is written down.
+    target: docs/process-definition.md
