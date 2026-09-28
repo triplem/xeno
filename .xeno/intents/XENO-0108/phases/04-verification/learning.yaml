@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#108
+phase: 04-verification
+created: 2026-09-28T17:00:16Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The phase that declares evidence found that the pipeline publishes none. CI runs
+      the tests and uploads nothing, so a declaration can only ever bind a local run
+      through the stand-in directory, and G-Evidence would look the same either way. The
+      gate cannot tell a bound pipeline artifact from a bound local file.
+    proposal: >-
+      Where an attached item did not come from a pipeline, the phase says so in words,
+      since the record carries a hash and a state and nothing that distinguishes what
+      produced the bytes. A green evidence gate over a local run is a true statement
+      about a weaker fact than the one the phase is for.
+    target: internal/evidence
