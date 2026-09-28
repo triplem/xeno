@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:15:46Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The first implementation reproduced the defect it was written to remove.
+      Truncating the timestamp to a date for display looked like formatting and was done
+      before the sort, so intents of one day fell through to the key tie break and came
+      out in issue order again. The acceptance criterion named the pair, which is why it
+      was caught rather than shipped.
+    proposal: >-
+      Where a value is both sorted on and displayed, the sort reads the whole value and
+      the display formats a copy, and an acceptance criterion names two concrete records
+      whose order is known. A formatting step placed before a comparison is invisible in
+      review.
+    target: internal/runner

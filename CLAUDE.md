@@ -39,10 +39,17 @@ in the pull request description. Several issues take a keyword each, `Closes #1,
 #2`, because a host reads only the first reference after one. `CONTRIBUTING.md` says
 why, and names the host settings it depends on.
 
-An intent key is `XENO-` and the issue number padded to four digits, `XENO-0049`, and
-the padding is for sorting alone. Intents sealed before this keep their names: the key
-sits inside `artifacts_hash` and inside the merge commits that name them, so renaming
-one changes every verdict in it.
+An intent key is `XENO-` and the next number of a sequence of its own, padded to four
+digits, beginning at `XENO-0200`. The issue it belongs to is the `intent` field of
+`intent.yaml`, which carries the host and the repository with it; the key does not
+repeat it. `xeno intent status` without an intent lists them in the order they were
+created, which is what the key used to be asked to express and could not.
+
+Keys assigned before this were the issue number, and they stay: the key sits inside
+`artifacts_hash` and inside the merge commits that name them, so renaming one changes
+every verdict in it. Those numbers reach `XENO-0121`, so the sequence starts beyond
+anything they can collide with, and the gap is how a reader tells which scheme a key
+follows.
 
 ## Three standing rules
 
