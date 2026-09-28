@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-28T20:29:03Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A35 justified leaving five fields out because they come from the harness, and two
+      of them are in project.yaml, in the block section 12 defines for exactly that
+      purpose. The runner reads that file for the artifact language through a struct
+      that models one block of it, so the source was present and unmodelled. This is the
+      second time this row has been read as a list of members rather than a list of
+      reasons.
+    proposal: >-
+      Where a field is said to have no source, the configuration the section defining it
+      describes is read before the claim is accepted. A struct that models part of a
+      file makes the rest of the file invisible, and the absence then looks like a
+      property of the system.
+    target: internal/runner
