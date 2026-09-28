@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:12:16Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The issue carries no work package label, and writing the constraints showed why:
+      the key scheme belongs to no package and the listing belongs to the runner. The
+      standing rule that every change belongs to a package met a change that is half
+      convention, and the honest answer was to record that rather than to pick a label
+      that fitted one half.
+    proposal: >-
+      Where a change spans a convention and a package, the intent says so in its
+      constraints instead of borrowing the label of whichever half is larger, since a
+      label chosen for tidiness makes the other half invisible to whoever reads the
+      package later.
+    target: CLAUDE.md

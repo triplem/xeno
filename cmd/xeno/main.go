@@ -34,7 +34,7 @@ const usage = `usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno evidence attach --intent KEY --phase NN --from DIR
-  xeno intent status  --intent KEY
+  xeno intent status  [--intent KEY]            without one, every intent by creation
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
@@ -77,7 +77,7 @@ var commands = map[string]command{
 	"enforcement check":    {run: cmdEnforcementCheck},
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
-	"intent status":        {needsKey: true, run: cmdIntentStatus},
+	"intent status":        {run: cmdIntentStatus},
 	"intent close":         {needsKey: true, run: cmdIntentClose},
 	"assumption confirm":   {needsKey: true, run: cmdAssumptionDecide},
 	"assumption reject":    {needsKey: true, run: cmdAssumptionDecide},
@@ -346,7 +346,17 @@ func cmdGateVerify(o *opts) int {
 	return 0
 }
 
+// cmdIntentStatus answers one of two questions. Without a key it lists every intent in the
+// order it was created, which the key cannot express because it carried the issue number and
+// issues are filed in a different order than work happens (#118). With one it reports the
+// phases of that intent, unchanged.
+//
+// needsKey is false for this command alone in its family, so the key is checked here. gate
+// verify takes --intent optionally in the same way.
 func cmdIntentStatus(o *opts) int {
+	if o.key == "" {
+		return cmdIntentList(o)
+	}
 	states, err := o.r.Status(o.key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -360,6 +370,37 @@ func cmdIntentStatus(o *opts) int {
 		fmt.Println(line)
 	}
 	return o.next(0)
+}
+
+// cmdIntentList prints the intents oldest first. A row whose intent.yaml could not be read
+// says so in place of its date rather than going missing.
+func cmdIntentList(o *opts) int {
+	intents, err := o.r.Intents()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	for _, s := range intents {
+		verdict := s.Verdict
+		if s.Phase != "" {
+			verdict = s.Phase + "  " + s.Verdict
+		}
+		// The date, not the timestamp: the order is what matters and a column of identical
+		// times reads worse than a column of dates. The runner sorted on the whole value.
+		date := s.Created
+		if len(date) > 10 {
+			date = date[:10]
+		}
+		if date == "" {
+			date = "?"
+		}
+		line := fmt.Sprintf("%-10s  %-12s %-12s %s", date, s.Key, s.Status, verdict)
+		if s.Problem != "" {
+			line += "  (" + s.Problem + ")"
+		}
+		fmt.Println(strings.TrimRight(line, " "))
+	}
+	return 0
 }
 
 func suggest(r *runner.Runner, key string, off bool, code int) int {

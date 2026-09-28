@@ -578,6 +578,85 @@ func (r *Runner) evidenceSource() string {
 	return "ci"
 }
 
+// IntentsRoot is where intent directories lie, relative to the repository root.
+const IntentsRoot = ".xeno/intents"
+
+// IntentSummary is one row of the listing: what an intent asserts about itself, plus how far
+// it got. Nothing here is stored; it is read from intent.yaml and the phase verdicts.
+type IntentSummary struct {
+	Key     string
+	Created string // intent.yaml's created, whole, or empty where it cannot be read
+	Status  string // the intent's own status, in-progress | abandoned
+	Phase   string // the furthest phase carrying a verdict, and that verdict
+	Verdict string
+	Problem string // why this row could not be read, where that happened
+}
+
+// Intents lists every intent in the order it was created.
+//
+// The order is read from the created field rather than from the key, which is the point: a key
+// sorts one way and a recorded field can be asked in any order. Intent keys carried the issue
+// number for exactly this purpose and sorted by when an issue was filed, which is not when the
+// work happened (#118).
+//
+// An intent whose intent.yaml cannot be read, or which records no created, is listed with the
+// reason in place of the date rather than left out. A record missing from a listing is worse
+// than one that looks wrong in it, and the empty date sorts it to the front of an ascending
+// order, which is deliberate: it belongs where somebody will see it.
+//
+// Ties break on the key, so two runs over one tree print the same thing. That is the only
+// decision the key is still allowed to make.
+func (r *Runner) Intents() ([]IntentSummary, error) {
+	entries, err := os.ReadDir(r.abs(IntentsRoot))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil // a repository that has started no intent is not in error
+		}
+		return nil, err
+	}
+	var out []IntentSummary
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		out = append(out, r.summarise(e.Name()))
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Created != out[j].Created {
+			return out[i].Created < out[j].Created
+		}
+		return out[i].Key < out[j].Key
+	})
+	return out, nil
+}
+
+// summarise reads one intent. It reports rather than fails: the listing's job is to show what
+// is there, and an unreadable intent is something to show.
+func (r *Runner) summarise(key string) IntentSummary {
+	s := IntentSummary{Key: key}
+	var in model.Intent
+	if err := fm.ReadYAML(r.abs(model.IntentDir(key)+"/intent.yaml"), &in); err != nil {
+		s.Problem = "intent.yaml cannot be read"
+		return s
+	}
+	s.Status = in.Status
+	// Kept whole, because the sort is over it: two intents of one day are ordered by their
+	// time, and truncating to the date here would fall through to the key tie break and
+	// reproduce the order this listing exists to correct. The command prints the date.
+	s.Created = in.Created
+	if s.Created == "" {
+		s.Problem = "intent.yaml records no created"
+	}
+	if states, err := r.Status(key); err == nil {
+		for _, st := range states {
+			if st.Status != "" {
+				s.Phase, s.Verdict = st.Phase, st.Status
+			}
+		}
+	}
+	return s
+}
+
 // PhaseState is computed, never stored: there is no position that could go stale.
 type PhaseState struct {
 	Phase  string

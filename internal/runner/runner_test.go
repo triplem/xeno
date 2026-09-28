@@ -1583,3 +1583,145 @@ func TestAMalformedCheckInAStoredVerdictRefusesTheDecision(t *testing.T) {
 		t.Errorf("the refusal does not name the gate that failed without saying what: %v", err)
 	}
 }
+
+// ---- the listing, in the order the work happened
+
+// intentAt writes a bare intent directory with a created value, which is all the listing reads.
+func (f *fixture) intentAt(key, created string) {
+	f.t.Helper()
+	body := "intent: \"git.example/group/proj#1\"\nkey: " + key + "\nstatus: in-progress\n"
+	if created != "" {
+		body += "created: \"" + created + "\"\n"
+	}
+	f.write(model.IntentDir(key)+"/intent.yaml", body)
+}
+
+func keysOf(t *testing.T, got []IntentSummary) []string {
+	t.Helper()
+	var out []string
+	for _, s := range got {
+		out = append(out, s.Key)
+	}
+	return out
+}
+
+// The case #118 is about: keys that sort one way and work that happened in another. The key
+// carried the issue number, and issues are filed in a different order than work is done.
+func TestIntentsAreListedInTheOrderTheyWereCreated(t *testing.T) {
+	f := newFixture(t)
+	f.intentAt("XENO-0108", "2026-09-28T09:00:00Z")
+	f.intentAt("XENO-0111", "2026-09-28T18:00:00Z")
+	f.intentAt("XENO-0107", "2026-09-28T19:00:00Z")
+	f.intentAt("XENO-0121", "2026-09-28T20:00:00Z")
+
+	got, err := f.r.Intents()
+	f.must(err)
+	want := []string{"PROJ-1", "XENO-0108", "XENO-0111", "XENO-0107", "XENO-0121"}
+	if strings.Join(keysOf(t, got), ",") != strings.Join(want, ",") {
+		t.Fatalf("listed %v, want %v", keysOf(t, got), want)
+	}
+}
+
+// Two intents of one day are ordered by their time. Truncating the value to a date before
+// sorting would fall through to the key tie break and reproduce the order being corrected.
+func TestTwoIntentsOfOneDayAreOrderedByTheirTime(t *testing.T) {
+	f := newFixture(t)
+	f.intentAt("XENO-0300", "2026-10-01T18:00:00Z")
+	f.intentAt("XENO-0201", "2026-10-01T19:00:00Z")
+
+	got, err := f.r.Intents()
+	f.must(err)
+	if got[len(got)-1].Key != "XENO-0201" {
+		t.Fatalf("the later intent of the day is %s, want XENO-0201: %v", got[len(got)-1].Key, keysOf(t, got))
+	}
+}
+
+// A record that cannot be dated is listed with the reason, because one missing from a listing
+// is worse than one that looks wrong in it. The empty value sorts it to the front, where
+// somebody sees it.
+func TestAnIntentWithoutACreatedIsListedWithTheReason(t *testing.T) {
+	f := newFixture(t)
+	f.intentAt("XENO-0202", "2026-10-02T10:00:00Z")
+	f.intentAt("XENO-0203", "")
+
+	got, err := f.r.Intents()
+	f.must(err)
+	var undated *IntentSummary
+	for i := range got {
+		if got[i].Key == "XENO-0203" {
+			undated = &got[i]
+		}
+	}
+	if undated == nil {
+		t.Fatal("an intent with no created was left out of the listing")
+	}
+	if undated.Problem == "" {
+		t.Error("the row gives no reason for its missing date")
+	}
+	// Before the dated one, not necessarily first: the fixture's own intent carries no
+	// created either, so the undated ones sort together at the front.
+	var undatedAt, datedAt int
+	for i := range got {
+		switch got[i].Key {
+		case "XENO-0203":
+			undatedAt = i
+		case "XENO-0202":
+			datedAt = i
+		}
+	}
+	if undatedAt > datedAt {
+		t.Errorf("the undated intent sorts after a dated one, so it is not where somebody looks: %v",
+			keysOf(t, got))
+	}
+}
+
+// Ties break on the key, so two runs over one tree print the same thing.
+func TestTheOrderIsStableForIdenticalTimes(t *testing.T) {
+	f := newFixture(t)
+	f.intentAt("XENO-0205", "2026-10-03T10:00:00Z")
+	f.intentAt("XENO-0204", "2026-10-03T10:00:00Z")
+
+	first, err := f.r.Intents()
+	f.must(err)
+	second, err := f.r.Intents()
+	f.must(err)
+	if strings.Join(keysOf(t, first), ",") != strings.Join(keysOf(t, second), ",") {
+		t.Fatalf("two runs disagree: %v then %v", keysOf(t, first), keysOf(t, second))
+	}
+	if first[len(first)-2].Key != "XENO-0204" || first[len(first)-1].Key != "XENO-0205" {
+		t.Errorf("identical times did not break on the key: %v", keysOf(t, first))
+	}
+}
+
+// A repository that has started no intent is not in error.
+func TestNoIntentDirectoryListsNothingAndDoesNotFail(t *testing.T) {
+	r := New(t.TempDir())
+	got, err := r.Intents()
+	if err != nil {
+		t.Fatalf("an empty repository reported an error: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("listed %d intents in an empty repository", len(got))
+	}
+}
+
+// The row carries where an intent got to, which is what saves opening it.
+func TestTheRowNamesTheFurthestPhaseWithAVerdict(t *testing.T) {
+	f := newFixture(t)
+	f.run("00-intake", "")
+
+	got, err := f.r.Intents()
+	f.must(err)
+	var own *IntentSummary
+	for i := range got {
+		if got[i].Key == key {
+			own = &got[i]
+		}
+	}
+	if own == nil {
+		t.Fatal("the fixture intent is not in the listing")
+	}
+	if own.Phase != "00-intake" || own.Verdict != "green" {
+		t.Fatalf("the row says %q %q, want 00-intake green", own.Phase, own.Verdict)
+	}
+}

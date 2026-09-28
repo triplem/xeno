@@ -1,0 +1,57 @@
+# XENO-0200 verification, 57e9207 with the working tree of the intent
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the six tests of this intent, named
+=== RUN   TestIntentsAreListedInTheOrderTheyWereCreated
+--- PASS: TestIntentsAreListedInTheOrderTheyWereCreated (0.00s)
+=== RUN   TestTwoIntentsOfOneDayAreOrderedByTheirTime
+--- PASS: TestTwoIntentsOfOneDayAreOrderedByTheirTime (0.00s)
+=== RUN   TestAnIntentWithoutACreatedIsListedWithTheReason
+--- PASS: TestAnIntentWithoutACreatedIsListedWithTheReason (0.00s)
+=== RUN   TestTheOrderIsStableForIdenticalTimes
+--- PASS: TestTheOrderIsStableForIdenticalTimes (0.00s)
+=== RUN   TestNoIntentDirectoryListsNothingAndDoesNotFail
+--- PASS: TestNoIntentDirectoryListsNothingAndDoesNotFail (0.00s)
+=== RUN   TestTheRowNamesTheFurthestPhaseWithAVerdict
+--- PASS: TestTheRowNamesTheFurthestPhaseWithAVerdict (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/runner	0.014s
+
+# the listing over this repository: the session's four intents, in the order they happened
+2026-09-27  XENO-0106    in-progress  00-intake  green
+2026-09-28  XENO-0108    in-progress  05-review  green
+2026-09-28  XENO-0111    in-progress  05-review  green
+2026-09-28  XENO-0107    in-progress  05-review  green
+2026-09-28  XENO-0121    in-progress  05-review  green
+2026-09-28  XENO-0200    in-progress  03-implementation  green
+
+# the single intent form, unchanged
+00-intake          finished               green
+01-requirements    finished               green
+02-design          finished               green
+03-implementation  finished               green
+04-verification    finished               green
+05-review          finished               green
+
+# the usage line
+  xeno intent status  [--intent KEY]            without one, every intent by creation
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 79 verdicts
