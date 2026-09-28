@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#121
+phase: 02-design
+created: 2026-09-28T19:41:23Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c2ba6b1.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Three intents in a row amended an assumption row, and this one had to supersede.
+      The difference is whether the row's subject still happens: an amendment finishes a
+      sentence that was right, and a row asserting something that has stopped being true
+      grows a qualification contradicting itself. The habit was reached for before the
+      difference was.
+    proposal: >-
+      An assumption row is amended where its claim still holds and was merely
+      unfinished, and superseded where the claim has stopped holding. The test is
+      whether the row's own subject is still what happens, not whether the row was
+      written in good faith.
+    target: ASSUMPTIONS.md
