@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#111
+phase: 04-verification
+created: 2026-09-28T17:38:14Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0e77cc2.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The criterion that no gate can reach is the one the fix was filed for: a doc
+      comment attached to the wrong function. G-Schema is green either way, so a reader
+      of the verdict learns nothing about it, and the only record that it was checked at
+      all is a sentence in the mapping saying who checked it.
+    proposal: >-
+      Where an acceptance criterion is proved by reading rather than by a gate, the
+      mapping says so in the row, since a green verdict beside an unrelated criterion
+      reads as coverage of it.
+    target: docs/process-definition.md
