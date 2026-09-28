@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#108
+phase: 02-design
+created: 2026-09-28T16:58:24Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Three of the four rejected alternatives were rejected on ownership rather than on
+      cost: which writer may create the rendered file, which gate may speak about a
+      missing file, and which layer a finding belongs to. The mechanics were fine in
+      each case, and reading the choice as a cost question would have picked the wrong
+      one.
+    proposal: >-
+      Where two components could produce a value, the one that owns the file it is
+      written into produces it, and a finding about a missing file belongs to the gate
+      that owns that file rather than to whichever writer noticed first.
+    target: internal/runner

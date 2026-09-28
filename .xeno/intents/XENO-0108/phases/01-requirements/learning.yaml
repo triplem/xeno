@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#108
+phase: 01-requirements
+created: 2026-09-28T16:57:03Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The issue named one criterion and the phase found five. Four of them are
+      boundaries rather than behaviour: what the change must leave alone, what happens
+      where the file it reads is absent, and what a second write must not do. None would
+      have been tested if the criteria had been read off the issue's title.
+    proposal: >-
+      An acceptance criterion that says what a change leaves untouched is written
+      alongside the one that says what it does, since a field written where a writer
+      exists invites filling the neighbouring fields that have none.
+    target: docs/process-definition.md

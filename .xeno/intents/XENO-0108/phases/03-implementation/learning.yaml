@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#108
+phase: 03-implementation
+created: 2026-09-28T16:59:08Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The work was done and committed before the phases that decide it were written, and
+      nothing in the tool noticed, because the sequence it enforces is over artifacts
+      and verdicts rather than over the working tree. Every intent in this repository so
+      far stops at the intake, so the gap had never been visible.
+    proposal: >-
+      Where an intent is carried past the intake, the phases are written in their order
+      and the implementation commit follows the design phase rather than preceding it. A
+      record assembled backwards is still checkable and still says less than one that
+      was not, and the deviations section is where that has to be admitted.
+    target: docs/process-definition.md

@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#108
+phase: 05-review
+created: 2026-09-28T17:01:15Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The field's stability depends on a property of another writer, that `phase start`
+      never refreshes the lock, and nothing checks that property. The review found it by
+      asking what would break the guarantee rather than by asking whether the change was
+      correct, and the answer is a comment in a file the other writer does not read.
+    proposal: >-
+      Where one writer's guarantee rests on another writer not doing something, the
+      dependency is stated as a test over both rather than as a comment on one, since a
+      comment is read by whoever changes the file it sits in and by nobody else.
+    target: internal/runner

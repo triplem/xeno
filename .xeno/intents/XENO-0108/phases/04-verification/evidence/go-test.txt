@@ -1,0 +1,26 @@
+# go test ./... on d39537a with the working tree of XENO-0108
+
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the two tests of this intent, named
+=== RUN   TestSectionSetWritesTheContextHashOfTheLockBesideIt
+--- PASS: TestSectionSetWritesTheContextHashOfTheLockBesideIt (0.00s)
+=== RUN   TestTheSupportedWalkIsNotRedOnTheContextHash
+--- PASS: TestTheSupportedWalkIsNotRedOnTheContextHash (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/runner	0.005s
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)

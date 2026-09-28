@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#108
+phase: 00-intake
+created: 2026-09-28T16:39:11Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+023193e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A row that lists the reasons for an omission was read as listing the omissions.
+      A35 named five fields with no writer and `context_hash` was left out beside them
+      for two work packages, although its writer stood in the same directory. Nothing
+      caught it because the only artifacts anybody looked at had the field written by
+      hand, so the supported path was never the path that produced the evidence.
+    proposal: >-
+      Where a gate requires a field the runner could fill, the check that it is filled
+      runs against an artifact the tool produced rather than a fixture, since a fixture
+      that writes the field by hand hides both the missing writer and the untested half
+      of the check. The general form is that a document listing exceptions is read as a
+      list of reasons, not as a list of members.
+    target: internal/runner
