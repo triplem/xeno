@@ -129,7 +129,7 @@ The README states plainly that Xeno collects no telemetry, rather than leaving i
 be inferred from its absence.
 
 **Release automation.** Xeno's own repository uses Conventional Commits, and the
-pipeline derives the version, the tag, the `CHANGELOG.md` and the release from the
+pipeline derives the version, the tag, the release notes and the release from the
 commit history. The shared version number of plugin and runner is set by that
 tooling rather than by hand, which removes the one mistake G-Supply exists to catch
 in the first place.
