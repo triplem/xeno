@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"go.yaml.in/yaml/v3"
+
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
@@ -75,6 +77,19 @@ func (f *fixture) lockHash(phase string) string {
 		return hex64('2')
 	}
 	return h
+}
+
+// frontField reads one frontmatter field of a phase's output.md as it lies on disk.
+func (f *fixture) frontField(phase, field string) string {
+	f.t.Helper()
+	b, err := os.ReadFile(filepath.Join(f.root, model.PhaseDir(key, phase), "output.md"))
+	f.must(err)
+	front, _, err := fm.Split(b)
+	f.must(err)
+	var m map[string]any
+	f.must(yaml.Unmarshal(front, &m))
+	s, _ := m[field].(string)
+	return s
 }
 
 func (f *fixture) must2(_ *model.Gate, err error) { f.t.Helper(); f.must(err) }
@@ -789,6 +804,53 @@ func TestSectionSetRendersAnchorsTheCallerNeverWrites(t *testing.T) {
 	// The order of section 5, not the alphabetical order a map would give.
 	if i, j := strings.Index(string(front), "intent:"), strings.Index(string(front), "created:"); i > j {
 		t.Errorf("the frontmatter is not in the order section 5 lists:\n%s", front)
+	}
+}
+
+// The field the runner knows, written rather than left to a hand that edits the
+// frontmatter afterwards. The second write is what shows the value does not drift inside a
+// phase: the lock is written once at start and nothing refreshes it.
+func TestSectionSetWritesTheContextHashOfTheLockBesideIt(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "The thing that is wrong.")
+	f.must(err)
+	first := f.frontField("00-intake", "context_hash")
+	if first != f.lockHash("00-intake") {
+		t.Fatalf("context_hash is %q, want the hash of the lock beside it", first)
+	}
+	_, err = f.r.SectionSet(key, "00-intake", "scope", "What is being done about it.")
+	f.must(err)
+	if second := f.frontField("00-intake", "context_hash"); second != first {
+		t.Errorf("context_hash moved within the phase: %q then %q", first, second)
+	}
+}
+
+// The walk section 5 supports, without a hand editing the frontmatter: the gate still
+// reports what A35 leaves out and reports nothing about context_hash.
+func TestTheSupportedWalkIsNotRedOnTheContextHash(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	for section, content := range map[string]string{
+		"problem":           "The thing that is wrong.",
+		"scope":             "What is being done about it.",
+		"context-rationale": "Why these files.",
+	} {
+		_, err := f.r.SectionSet(key, "00-intake", section, content)
+		f.must(err)
+	}
+
+	g, err := f.r.evaluate(key, "00-intake")
+	f.must(err)
+	for _, c := range g.Checks {
+		for _, fd := range c.Findings {
+			if strings.Contains(fd.Cause, "context_hash") || strings.Contains(fd.Next, "context_hash") {
+				t.Errorf("%s reports on context_hash: %s / %s", c.Gate, fd.Cause, fd.Next)
+			}
+		}
 	}
 }
 

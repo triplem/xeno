@@ -475,6 +475,13 @@ func (r *Runner) language() string {
 // something plausible: model, tool and tool_version come from the harness, and
 // secrets_hash from a filter that does not exist yet. G-Schema reports them missing,
 // which is the honest state of a phase nothing has produced yet.
+//
+// context_hash is written on every render, not only on the first one, because the
+// frontmatter of an existing file is carried over from whatever wrote it. The value does
+// not drift within a phase: phase start writes context.lock.yaml once and nothing
+// refreshes it, so every section write of one phase hashes the same bytes. Where the lock
+// is absent the field is left out, which is the case of a file written outside a started
+// phase; its absence there is G-Freshness's finding about the lock.
 func (r *Runner) SectionSet(key, phase, section, content string) (*template.Resolved, error) {
 	if model.PhaseIndex(phase) < 0 {
 		return nil, fmt.Errorf("unknown phase %q", phase)
@@ -508,6 +515,10 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 	front["language"] = t.Bundle.Language
 	front["template"] = t.Ref()
 	front["strings_hash"] = t.StringsHash
+	lockPath := r.abs(model.PhaseDir(key, phase) + "/context.lock.yaml")
+	if h, err := hashing.FileHash(lockPath); err == nil {
+		front["context_hash"] = h
+	}
 	sections[section] = content
 
 	out := "---\n" + frontmatter(front) + "---\n\n" + t.Render(sections)
