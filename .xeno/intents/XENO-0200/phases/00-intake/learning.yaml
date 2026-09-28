@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#118
+created: 2026-09-28T20:11:37Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57e9207.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The key encoded the issue number so that the directory would sort, and the sort it
+      produced was over the wrong thing. The field that answers the question, created,
+      was recorded in every intent from the first one and read by nothing. An identifier
+      was carrying a job that belonged to a query.
+    proposal: >-
+      Where a name is chosen so that a listing comes out in a useful order, the order is
+      read from the field that records it instead, since a name can only ever sort one
+      way and a field can be asked in any order without renaming anything.
+    target: CLAUDE.md
