@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#107
+phase: 00-intake
+created: 2026-09-28T18:50:02Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev+907c220.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The issue described the second writer as a future external gate, and the intake
+      found one in the tree: gate.yaml lies outside artifacts_hash on purpose, so it is
+      editable without staling any hash, and rewriteStatus reads it back to derive a
+      status again. The arrangement that makes evidence attachable is the same one that
+      makes a verdict editable, and only the second half was being guarded.
+    proposal: >-
+      Where a file is deliberately left outside a hash, every reader of it is treated as
+      a second writer's path, since the exclusion that lets one writer work late lets
+      any writer work late. Counting the callers is what turns a hypothetical into a
+      caller.
+    target: internal/gates
