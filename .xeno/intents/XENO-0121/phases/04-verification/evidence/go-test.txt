@@ -1,0 +1,54 @@
+# XENO-0121 verification, c2ba6b1 with the working tree of the intent
+
+# .releaserc.json parses, and its plugin list
+valid json
+plugins: ['@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator', '@semantic-release/github']
+
+# the three workflows parse as yaml
+.github/workflows/release.yml ok
+.github/workflows/audit.yml ok
+.github/workflows/xeno.yml ok
+
+# release.yml passes no extra_plugins
+occurrences: 0
+
+# outside this intent's own artifacts, only A23 names the plugins or the file
+ASSUMPTIONS.md:34:| A23 | `CHANGELOG.md` is written back to `main` by `@semantic-release/changelog` and `@semantic-release/git` | WP0 wants the changelog derived from the history; the loop is closed as before, since a push made with `GITHUB_TOKEN` triggers no workflow, and the commit carries `[skip ci]` besides | `.releaserc.json` | **superseded** (#121): the condition this row named came true. #86 removed the bypass list on purpose, so a protected `main` refused the commit, and the release workflow failed on every merge from 2026-09-26 until both plugins were dropped. Nothing is written back to the tree; the release notes of each release carry what `CHANGELOG.md` rendered, and #122 changed the plan first |
+
+# CHANGELOG.md is gone from the tree
+ls: cannot access 'CHANGELOG.md': No such file or directory
+
+# the settings script is untouched by this branch
+diff against main: 0 lines
+
+# the release job's own gates, still in order
+65:      - name: format
+71:      - name: vet
+73:      - name: test
+75:      - name: verify
+87:      - name: release
+95:      - name: build
+118:      - name: the targets select one module set
+126:      - name: bill of materials
+133:      - name: checksums and upload
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 73 verdicts
