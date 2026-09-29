@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:32:50Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Every criterion about the tool was measurable and every criterion about the
+      workflow was read, because nothing in this repository runs a workflow file to
+      check it. A CI change is therefore verified by a reader until the first pull
+      request, and a transcript of the tool behaving correctly says nothing about the
+      job that will invoke it.
+    proposal: >-
+      Where an intent adds or changes a workflow, the verification separates what was
+      measured from what was read, and names the first run as the evidence that is still
+      outstanding rather than letting a green transcript stand in for a green job.
+    target: .github/workflows
