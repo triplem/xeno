@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T20:06:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A phase whose deliverable is a decision has nothing to test, and the template asks
+      for a test mapping all the same. Filling it by mapping each criterion to the reading
+      that checks it, and naming gate verify as the check that the record hashes to what
+      was judged, produced a usable section; reporting "not applicable" would have left
+      seven criteria unverified in a phase that passed.
+    proposal: >-
+      Where a phase adds no code, map each acceptance criterion to the observation that
+      settles it rather than declaring the section inapplicable. The absence of tests is
+      not the absence of verification, and a decision recorded in an unverified phase
+      cannot later be shown to be the one that was judged.
+    target: .xeno/plugin/templates/verification

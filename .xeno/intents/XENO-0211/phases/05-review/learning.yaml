@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T20:10:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Writing a review checklist item that says what a reviewer should push back on, and
+      naming the counter-argument #97 had already recorded, was the most useful line in
+      this phase. The judgement call in the intent is one substitution, and a checklist
+      that only listed what passed would have hidden it among seven items that could not
+      fail.
+    proposal: >-
+      Where a phase made a judgement call rather than followed a rule, name it in the
+      review section as the thing to contest, with the strongest argument against it.
+      A review that records only what held is a record of the author's confidence, and the
+      one decision worth a second person's time is the one that could have gone otherwise.
+    target: .xeno/plugin/templates/review

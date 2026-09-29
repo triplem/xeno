@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T20:02:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The 88 column rule cannot hold inside the assumption table, because a markdown row
+      does not wrap and the existing rows run to 438 characters. The rule is about prose
+      and code, and a reader running a line length check over the repository finds this
+      file and has no way to tell whether it is an exception or a lapse.
+    proposal: >-
+      Where a file is exempt from a formatting rule by its format rather than by choice,
+      say so in the file or in the convention, since an unstated exception is
+      indistinguishable from an unnoticed violation and the next person to run the check
+      has to rediscover the reason.
+    target: CLAUDE.md
