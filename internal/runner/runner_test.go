@@ -16,6 +16,7 @@ import (
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
 )
 
@@ -1905,5 +1906,95 @@ func TestTheDigestCarriesTheFieldOrderOfSectionFive(t *testing.T) {
 		if at(pair[0]) > at(pair[1]) {
 			t.Errorf("%s comes after %s:\n%s", pair[0], pair[1], front)
 		}
+	}
+}
+
+// ---- the digest passes through a filter (#120)
+
+const shippedFilter = `patterns:
+  - id: aws-access-key
+    regex: '\b(?:AKIA|ASIA)[0-9A-Z]{16}\b'
+paths_never_digested:
+  - "**/*.pem"
+`
+
+// Section 16: the runner holds the text between the summary and the file, so the filtering is
+// deterministic and outside the model's reach. This is the test of that sentence.
+func TestTheDigestIsFilteredAndSaysWhichFilter(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.write(secrets.Shipped, shippedFilter)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	f.must2(f.r.Finish(key, "00-intake", "the run used AKIAIOSFODNN7EXAMPLE against the bucket"))
+
+	front, body := digestFront(t, f.root, "00-intake")
+	if strings.Contains(body, "AKIAIOSFODNN7EXAMPLE") {
+		t.Fatalf("the secret reached the digest: %q", body)
+	}
+	if !strings.Contains(body, "[redacted: aws-access-key]") {
+		t.Errorf("the redaction does not name the pattern: %q", body)
+	}
+	if !strings.Contains(body, "against the bucket") {
+		t.Errorf("the line around the match was destroyed: %q", body)
+	}
+	want, err := secrets.Load(f.root)
+	f.must(err)
+	if front["secrets_hash"] != want.Hash() {
+		t.Errorf("secrets_hash is %v, want the hash of the effective filter %s", front["secrets_hash"], want.Hash())
+	}
+}
+
+// output.md carries the field and is not itself redacted: section 16 puts the filtering on the
+// digest, and a filter over the agent's prose would redact a discussion of a pattern by that
+// pattern. This repository's own records are the case that proves it.
+func TestSectionSetWritesTheHashAndDoesNotRedactTheProse(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.write(secrets.Shipped, shippedFilter)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	const prose = "A key looks like AKIAIOSFODNN7EXAMPLE, which is what the pattern catches."
+	_, err := f.r.SectionSet(key, "00-intake", "problem", prose)
+	f.must(err)
+
+	want, err := secrets.Load(f.root)
+	f.must(err)
+	if got := f.frontField("00-intake", "secrets_hash"); got != want.Hash() {
+		t.Errorf("output.md carries secrets_hash %q, want %q", got, want.Hash())
+	}
+	b, err := os.ReadFile(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "output.md"))
+	f.must(err)
+	if !strings.Contains(string(b), prose) {
+		t.Error("the agent's prose was redacted, which section 16 does not ask for")
+	}
+}
+
+// A repository before its plugin is vendored. No filter, no field, nothing redacted, and the
+// phase still finishes: absence is the value for an empty set, and by-hand is reserved for a
+// person.
+func TestWithoutAFilterNothingIsRedactedAndNoHashIsWritten(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	const summary = "the run used AKIAIOSFODNN7EXAMPLE against the bucket"
+	f.must2(f.r.Finish(key, "00-intake", summary))
+
+	front, body := digestFront(t, f.root, "00-intake")
+	if !strings.Contains(body, "AKIAIOSFODNN7EXAMPLE") {
+		t.Error("something redacted with no filter in the repository")
+	}
+	if _, ok := front["secrets_hash"]; ok {
+		t.Errorf("a digest that passed through no filter carries secrets_hash: %v", front["secrets_hash"])
+	}
+	if got := f.frontField("00-intake", "secrets_hash"); got != "" {
+		t.Errorf("output.md carries secrets_hash %q with no filter", got)
 	}
 }
