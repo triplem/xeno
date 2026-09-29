@@ -1998,3 +1998,98 @@ func TestWithoutAFilterNothingIsRedactedAndNoHashIsWritten(t *testing.T) {
 		t.Errorf("output.md carries secrets_hash %q with no filter", got)
 	}
 }
+
+// ---- the listing computes the state (#132)
+
+// abandonedIntent writes an intent whose own status carries the one value that field can carry.
+func (f *fixture) abandonedIntent(key, reason string) {
+	f.t.Helper()
+	f.write(model.IntentDir(key)+"/intent.yaml",
+		"intent: \"git.example/group/proj#9\"\nkey: "+key+"\nstatus: abandoned\nreason: "+
+			reason+"\ncreated: \"2026-09-20T10:00:00Z\"\n")
+}
+
+func stateOf(t *testing.T, r *Runner, key string) string {
+	t.Helper()
+	got, err := r.Intents()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range got {
+		if s.Key == key {
+			return s.State
+		}
+	}
+	t.Fatalf("%s is not in the listing", key)
+	return ""
+}
+
+// The three states, and the reason the column is computed: intent.yaml's status can only say
+// whether an intent was abandoned, so printing it read every finished intent as unfinished.
+func TestTheListingComputesAbandonedCompleteAndInFlight(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	for _, p := range model.Phases {
+		f.run(p, "")
+	}
+	if got := stateOf(t, f.r, key); got != "complete" {
+		t.Errorf("an intent whose P5 is decided reads %q, want complete", got)
+	}
+
+	f.abandonedIntent("PROJ-9", "the requirement went away")
+	if got := stateOf(t, f.r, "PROJ-9"); got != "abandoned" {
+		t.Errorf("an abandoned intent reads %q", got)
+	}
+
+	// In flight: phases up to P2 only.
+	g := newFixture(t)
+	g.templated()
+	g.run("00-intake", "")
+	g.run("01-requirements", "")
+	if got := stateOf(t, g.r, key); got != "01-requirements" {
+		t.Errorf("an intent in flight reads %q, want the phase it reached", got)
+	}
+}
+
+// A P5 that is red or provisional is in flight, not complete: it is the state the sequence refuses
+// to build on, so the listing must not call it finished.
+func TestAnUndecidedFinalPhaseIsNotComplete(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	for _, p := range model.Phases[:len(model.Phases)-1] {
+		f.run(p, "")
+	}
+	// A question without options turns the phase red.
+	g := f.run("05-review", "open_questions:\n  - key: Q-1\n    text: bare\n")
+	if g.Status != "red" {
+		t.Fatalf("the fixture P5 is %s, want red", g.Status)
+	}
+	if got := stateOf(t, f.r, key); got == "complete" {
+		t.Error("a red P5 was reported complete, which the sequence would refuse to build on")
+	}
+}
+
+// An intent directory with nothing in it says so rather than reading as complete beside a blank
+// verdict.
+func TestAnIntentWithNoPhasesSaysSo(t *testing.T) {
+	f := newFixture(t)
+	if got := stateOf(t, f.r, key); got != "no phases" {
+		t.Errorf("an intent with no phases reads %q", got)
+	}
+}
+
+// The predicate the listing uses is the one the sequence enforces, so the two cannot disagree about
+// whether a phase is settled.
+func TestDecidedIsTheSequencesOwnTest(t *testing.T) {
+	for _, tc := range []struct {
+		status string
+		want   bool
+	}{
+		{"green", true}, {"approved", true}, {"overridden", true},
+		{"red", false}, {"provisional", false},
+	} {
+		if got := Decided(tc.status); got != tc.want {
+			t.Errorf("Decided(%q) is %v, want %v", tc.status, got, tc.want)
+		}
+	}
+}

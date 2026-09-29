@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:18:17Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The field was renamed from Status to State rather than left alongside a new one.
+      The per-phase listing already used State for something computed and Status for a
+      verdict, so the two listings had used the same two words for opposite things, and
+      the rename is what made them agree rather than an aesthetic choice.
+    proposal: >-
+      Where a struct carries both a stored value and a computed one, the names
+      distinguish which is which and match whatever neighbouring type already made that
+      distinction, since two types using one word for opposite things is how a reader
+      learns to distrust both.
+    target: internal/runner
