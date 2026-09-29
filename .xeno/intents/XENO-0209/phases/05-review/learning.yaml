@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:45:23Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Two maps of filenames are now transcribed by hand from section 4, and nothing
+      connects the document to either. A file added to the document at either level
+      would be reported as unknown by the check meant to enforce the document, which is
+      the failure in the safe direction and is still a failure nobody would see coming.
+    proposal: >-
+      Where a check enforces a list a document holds, the list's source is named in the
+      code beside it and the phase records that nothing keeps the two in step, since the
+      check will contradict the document silently and in the direction that looks like
+      correctness.
+    target: internal/model

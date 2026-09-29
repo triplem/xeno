@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:44:46Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Adding the check exposed a defect the check could not work without: two findings
+      on a close made Status refuse, because that path never routed findings through
+      carryForward. The gap had been invisible for as long as the path produced at most
+      one finding, whose empty id collided with nothing, and the first feature to
+      produce two found it immediately.
+    proposal: >-
+      Where a code path has only ever produced one of something, adding a second is the
+      first real test of everything downstream that handles a collection, and the phase
+      expects to find a latent defect there rather than treating it as unrelated.
+    target: internal/gates

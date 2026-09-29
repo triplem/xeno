@@ -1,0 +1,56 @@
+# XENO-0209 verification, 3ec2429 with the working tree of the intent
+
+# the five tests of this intent
+--- PASS: TestAStrayFileInTheIntentDirectoryIsAFinding (0.00s)
+--- PASS: TestAStrayDirectoryIsAFindingOfItsOwn (0.00s)
+--- PASS: TestTheFilesSectionFourNamesAreSilent (0.00s)
+--- PASS: TestTheTwoLevelsDoNotShareTheirFileLists (0.00s)
+--- PASS: TestFindingsOnACloseCarryTheirIds (0.00s)
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+
+# go test ./...
+ok  	github.com/triplem/xeno/cmd/xeno	(cached)
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	(cached)
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the before and after as two binaries, since the new tests name new symbols and
+# cannot compile against the old tree. The same scratch intent in both, with a stray
+# file and a stray directory in it.
+old: xeno 0.1.0-dev+3ec2429
+new: xeno 0.1.0-dev+3ec2429.dirty
+
+## old, which is main:
+github.com/triplem/xeno#109 : green
+  G-Complete     pass
+   and the verdict it wrote, over a directory holding the stray file:
+     status: green
+     artifacts_hash: bf49ef355e4c0552d7266bdc3d4040fbe62353fa0690aac06b6be27187f2a3d3
+
+## new:
+github.com/triplem/xeno#109 : red
+  G-Complete     fail
+      F-4c6e7e .xeno/intents/PROBE-1/notes.txt: unknown file in the intent directory
+        next: remove it; only files Xeno writes belong here
+      F-6ef9ca .xeno/intents/PROBE-1/scratch: unknown directory in the intent directory
+        next: remove it or move it outside .xeno/
+   and the verdict it wrote:
+     status: red
+     artifacts_hash: bf49ef355e4c0552d7266bdc3d4040fbe62353fa0690aac06b6be27187f2a3d3
+
+# the second defect this exposed, #138: two findings on a close used to make Status
+# refuse with an id collision, because CompleteOnClose's findings never passed through
+# carryForward. Both ids above are real, and Invariants now runs on this path.
+
+# gofmt / vet / verify
+(gofmt: no output)
+(vet: clean)
+verified 133 verdicts

@@ -3,6 +3,8 @@
 package gates
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -192,5 +194,145 @@ func TestTheIdCollisionRefusalIsUnchanged(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "finding id collision") {
 		t.Errorf("the collision refusal changed its wording: %v", err)
+	}
+}
+
+// ---- the intent directory is judged too (#109)
+
+func intentDir(t *testing.T) (root, key string) {
+	t.Helper()
+	root, key = t.TempDir(), "PROJ-1"
+	dir := filepath.Join(root, model.IntentDir(key))
+	if err := os.MkdirAll(filepath.Join(dir, model.PhasesDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("intent.yaml", "intent: "+fixtureIntent+"\nkey: "+key+
+		"\nstatus: abandoned\nreason: the requirement went away\n")
+	write("assumptions.yaml", "assumptions: []\n")
+	write("learning.yaml", "learnings:\n  - category: context-rule\n    observation: o\n"+
+		"    proposal: p\n    target: internal/gates\n")
+	return root, key
+}
+
+func causesOf(c model.Check) string {
+	var b strings.Builder
+	for _, f := range c.Findings {
+		b.WriteString(f.File + ": " + f.Cause + "\n")
+	}
+	return b.String()
+}
+
+// Appendix B rests the normalisation of a hash on every file it covers being one Xeno wrote, and
+// calls that checked rather than assumed. The phase level had the check; the intent level hash,
+// which only an abandoned intent has, had none.
+func TestAStrayFileInTheIntentDirectoryIsAFinding(t *testing.T) {
+	root, key := intentDir(t)
+	if got := CompleteOnClose(root, key); len(got.Findings) != 0 {
+		t.Fatalf("a tidy abandoned intent was rejected:\n%s", causesOf(got))
+	}
+
+	stray := filepath.Join(root, model.IntentDir(key), "notes.txt")
+	if err := os.WriteFile(stray, []byte("a half written note\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := CompleteOnClose(root, key)
+	if !strings.Contains(causesOf(got), "unknown file in the intent directory") {
+		t.Fatalf("a stray file entered the hash unjudged:\n%s", causesOf(got))
+	}
+	if !strings.Contains(causesOf(got), "notes.txt") {
+		t.Errorf("the finding does not name the file:\n%s", causesOf(got))
+	}
+}
+
+// DirHash does not descend, so a stray directory cannot change the value. It is reported because a
+// directory nobody wrote is where files appear next.
+func TestAStrayDirectoryIsAFindingOfItsOwn(t *testing.T) {
+	root, key := intentDir(t)
+	if err := os.MkdirAll(filepath.Join(root, model.IntentDir(key), "scratch"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := causesOf(CompleteOnClose(root, key))
+	if !strings.Contains(got, "unknown directory in the intent directory") {
+		t.Fatalf("a stray directory was accepted:\n%s", got)
+	}
+	// Its own wording, as the phase level distinguishes the two.
+	if strings.Contains(got, "unknown file in the intent directory") {
+		t.Errorf("a directory was reported as a file:\n%s", got)
+	}
+}
+
+// The four section 4 names, and phases/, are what an ordinary abandonment holds. None of them may
+// produce a finding, or every abandonment would be red on its own contents.
+func TestTheFilesSectionFourNamesAreSilent(t *testing.T) {
+	root, key := intentDir(t)
+	// gate.yaml is written by the close itself, so it is there on a second run.
+	if err := os.WriteFile(filepath.Join(root, model.IntentDir(key), "gate.yaml"),
+		[]byte("status: red\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := CompleteOnClose(root, key); len(got.Findings) != 0 {
+		t.Fatalf("the files section 4 names produced findings:\n%s", causesOf(got))
+	}
+	for name := range model.KnownIntentFiles {
+		if !model.KnownIntentFiles[name] {
+			t.Errorf("%s is not known", name)
+		}
+	}
+	if len(model.KnownIntentFiles) != 4 {
+		t.Errorf("%d known intent files, want the four section 4 lists", len(model.KnownIntentFiles))
+	}
+}
+
+// The two levels hold different files, so one map would accept output.md in an intent directory.
+func TestTheTwoLevelsDoNotShareTheirFileLists(t *testing.T) {
+	if model.KnownIntentFiles["output.md"] {
+		t.Error("output.md is accepted at the intent level")
+	}
+	if model.KnownPhaseFiles["assumptions.yaml"] {
+		t.Error("assumptions.yaml is accepted at the phase level")
+	}
+}
+
+// Two findings on a close used to make Status refuse with an id collision, because CompleteOnClose's
+// findings never passed through carryForward and both ids were empty. A25 promises every finding is
+// routed through that function and Invariants exists to check the promise; this path was written
+// after the invariant and met neither (#138).
+func TestFindingsOnACloseCarryTheirIds(t *testing.T) {
+	root, key := intentDir(t)
+	dir := filepath.Join(root, model.IntentDir(key))
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "scratch"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	ch := CompleteOnClose(root, key)
+	if len(ch.Findings) != 2 {
+		t.Fatalf("%d findings, want the file and the directory:\n%s", len(ch.Findings), causesOf(ch))
+	}
+	for _, f := range ch.Findings {
+		if f.ID == "" {
+			t.Errorf("a finding carries no id: %s", f.Cause)
+		}
+		if f.ID != hashing.FindingID(ch.Gate, "", f.File, f.Cause) {
+			t.Errorf("%s does not carry the id its content hashes to", f.ID)
+		}
+	}
+	// The invariant the runner now checks on this path, and the status it can then derive.
+	if err := Invariants([]model.Check{ch}); err != nil {
+		t.Errorf("what CompleteOnClose produced failed the invariants: %v", err)
+	}
+	status, err := Status([]model.Check{ch})
+	if err != nil {
+		t.Fatalf("two findings on a close still refuse: %v", err)
+	}
+	if status != "red" {
+		t.Errorf("status is %q, want red", status)
 	}
 }

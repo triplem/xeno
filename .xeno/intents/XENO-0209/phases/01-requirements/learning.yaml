@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:36:12Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A criterion had to require that a stray directory is reported although the hash
+      cannot be affected by one, because DirHash does not descend. The reason is not the
+      hash but what a directory becomes: a place files appear later, unjudged. The phase
+      level check had that right and the reason was not written down anywhere.
+    proposal: >-
+      Where a check guards a hash, it also reports what cannot affect the hash but can
+      come to contain something that would, and the criterion says which of the two
+      reasons it is serving.
+    target: internal/gates

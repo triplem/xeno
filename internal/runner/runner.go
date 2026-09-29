@@ -1019,6 +1019,12 @@ func (r *Runner) IntentClose(key, reason string) (*model.Gate, error) {
 		return nil, err
 	}
 	check := gates.CompleteOnClose(r.Root, key)
+	// As evaluate does for a phase, and for the reason Invariants gives about itself: what breaks
+	// A25's rule is a second path into a verdict rather than a change to carryForward, and this is
+	// that second path (#138).
+	if err := gates.Invariants([]model.Check{check}); err != nil {
+		return nil, refuse("%v", err)
+	}
 	status, err := gates.Status([]model.Check{check})
 	if err != nil {
 		return nil, err

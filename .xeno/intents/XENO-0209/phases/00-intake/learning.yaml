@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:35:20Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Appendix B says the normalisation rests on a checked property rather than an
+      assumption, and names the phase level check as the thing that checks it. The
+      intent level hash was added later with no equivalent, so the appendix's sentence
+      was true of one of the two hashes it covers and read as true of both.
+    proposal: >-
+      Where a document justifies a rule by naming the check that enforces it, a second
+      thing the rule covers needs its own check or the justification stops being true
+      without the document changing.
+    target: docs/process-definition.md

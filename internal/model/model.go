@@ -121,6 +121,20 @@ var KnownPhaseFiles = map[string]bool{
 	"gate.yaml": true, "learning.yaml": true, "cost.yaml": true,
 }
 
+// Files an intent directory may hold, per section 4, which lists these four and the phases
+// directory beside them. Anything else is a G-Complete finding when the intent is closed.
+//
+// Two maps rather than one, because the two levels hold different files and a single map would
+// accept output.md in an intent directory and assumptions.yaml in a phase, so neither check would
+// distinguish what section 4 distinguishes (#109).
+var KnownIntentFiles = map[string]bool{
+	"intent.yaml": true, "assumptions.yaml": true,
+	"learning.yaml": true, "gate.yaml": true,
+}
+
+// PhasesDir is the one directory an intent directory may hold, as evidence is the one a phase may.
+const PhasesDir = "phases"
+
 const ContextProfile = "context-profile.yaml" // P0 only
 
 // TemplateID is the phase without its ordering prefix: 02-design is rendered from the
