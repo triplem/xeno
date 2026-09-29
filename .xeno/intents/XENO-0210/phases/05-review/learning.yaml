@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:14:14Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Making the writers explicit moved the risk into main, which is the one line no
+      test covers: the two writers are supplied there in an order nothing checks, and
+      reversing them would send verdicts to standard error and refusals to standard
+      output while every test in the package passed, because each test supplies its own
+      two buffers in the right order.
+    proposal: >-
+      Where dependencies are injected to make a package testable, the injection site is
+      the one place the tests cannot reach, so the phase names it rather than treating
+      the package as covered.
+    target: cmd/xeno
