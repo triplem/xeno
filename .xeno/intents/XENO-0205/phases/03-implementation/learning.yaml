@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:39:29Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A comment above GateRun had been duplicated since #125, both lines identical,
+      because the script that inserted writeDigest used that line as an anchor and
+      re-appended it. Nothing caught it: gofmt is content with it, no gate reads a
+      comment, and a reviewer sees the right words beside the right function. It is
+      #111's defect produced by a tool rather than a hand.
+    proposal: >-
+      Where a comment is inserted by matching an anchor, the anchor is not part of what
+      is inserted, and the result is read back as a paragraph rather than as a diff. A
+      duplicated line is invisible in a diff that added a block ending in the same line.
+    target: internal/runner

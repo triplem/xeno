@@ -6,13 +6,16 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/triplem/xeno/internal/cost"
 	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/evidence"
 	"github.com/triplem/xeno/internal/gates"
@@ -38,6 +41,7 @@ const usage = `usage:
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
+  xeno cost turn                                reads a hook's JSON on stdin
   xeno version
 common: --root DIR (default .), --no-next to leave out the next step`
 
@@ -78,6 +82,7 @@ var commands = map[string]command{
 	"enforcement check":    {run: cmdEnforcementCheck},
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
+	"cost turn":            {run: cmdCostTurn},
 	"intent status":        {run: cmdIntentStatus},
 	"intent close":         {needsKey: true, run: cmdIntentClose},
 	"assumption confirm":   {needsKey: true, run: cmdAssumptionDecide},
@@ -430,6 +435,39 @@ func cmdIntentList(o *opts) int {
 		}
 		fmt.Println(strings.TrimRight(line, " "))
 	}
+	return 0
+}
+
+// cmdCostTurn records what a turn cost, for the hook the plugin ships. Section 11 puts the
+// figure in cost.yaml and says the local session logs are evaluated; a hook is the only place a
+// token count is visible at all, because hook input carries transcript_path and no counts.
+//
+// It exits zero on every failure, without exception. This runs on every turn of every session in
+// this repository, so a bug in it is not a missing figure but an unusable harness, and section 11
+// says a phase without a cost record is complete. Nothing it cannot do is worth a turn.
+//
+// It reads counts and identifiers. A transcript is a whole conversation and none of it is copied.
+func cmdCostTurn(o *opts) int {
+	var hook struct {
+		Transcript string `json:"transcript_path"`
+		Session    string `json:"session_id"`
+	}
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil || json.Unmarshal(b, &hook) != nil || hook.Transcript == "" {
+		return 0
+	}
+	totals, err := cost.TranscriptTotals(hook.Transcript)
+	if err != nil || totals.Zero() {
+		return 0
+	}
+	intent, phase := cost.LivePhase(o.root, ".xeno/local/phase.env")
+	if phase == "" {
+		phase = cost.NoPhase
+	}
+	_ = cost.Append(o.root, cost.Turn{
+		At: time.Now().UTC().Format(time.RFC3339), Session: hook.Session,
+		Intent: intent, Phase: phase, Totals: totals,
+	})
 	return 0
 }
 
