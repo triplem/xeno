@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:31:29Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This intent's own evidence is scanned by the job it adds, so the planted token
+      that proves the job works cannot be written into it. No previous intent's record
+      had to avoid being its own subject, and the constraint is not obvious until a scan
+      of the repository includes the phase describing the scan.
+    proposal: >-
+      Where an intent adds a check over the repository, its evidence records the check's
+      result rather than its input, since the record is inside what the check reads and
+      a fixture written into it fails the next run.
+    target: docs/process-definition.md

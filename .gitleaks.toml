@@ -1,0 +1,40 @@
+# The configuration of the secret scan, section 4's neighbour rather than its implementation.
+#
+# The scan and the filter in internal/secrets are different instruments and this file is where
+# the difference is visible. The filter redacts a summary on its way into a digest: it is read
+# in process, offline, and hashed into secrets_hash, so it carries patterns and nothing else.
+# The scan reads what is already committed, once per change, and can afford what the filter
+# cannot: the whole upstream rule set with its entropy thresholds, its keyword prefilters and
+# its allowlists.
+#
+# So this extends the rules the pinned binary carries rather than pointing at
+# .xeno/plugin/secrets.yaml. Those are the same rules with the parts section 4 has no room for
+# put back, which is the point of running both.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "What this repository contains that is not a secret"
+
+paths = [
+  # A file of patterns is not a file of secrets. Its regexes contain the literal prefixes
+  # they match on, so upstream's own rules fire on it: the bedrock rule matches the base64
+  # literal inside the bedrock pattern.
+  '''\.xeno/plugin/secrets\.yaml$''',
+]
+
+regexTarget = "line"
+regexes = [
+  # Every hash an artifact carries: sixty four hex characters after a field name that ends in
+  # _hash or is sha256. generic-api-key reads "secrets_hash: 8002ba2d..." as a key named
+  # secrets_hash, which is the same false positive that kept it out of the shipped filter.
+  '''(?:_hash|sha256|artifacts_hash):\s*[0-9a-f]{64}''',
+  # The samples the tests plant so that the filter can be asserted to fire on them.
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''ghp_a{36}''',
+  # Go source. `key` is this project's intent key variable, so `key, "04-verification"` reads
+  # to generic-api-key as a key named key. It is the same false positive that kept that rule
+  # out of the shipped filter, arriving from the other direction.
+  '''\bkey,\s*"''',
+]
