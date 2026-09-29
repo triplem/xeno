@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:06:43Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Six of the seven criteria say what must not change, which is what the criteria of
+      a presentation change consist of: the risk is never that the intended edit fails
+      but that something adjacent moves with it. A change of case has exactly one thing
+      to assert and six things to hold still.
+    proposal: >-
+      Where a change is a substitution rather than an addition, the criteria enumerate
+      what stays and the single property that could break, rather than restating the
+      substitution as several criteria.
+    target: docs/process-definition.md
