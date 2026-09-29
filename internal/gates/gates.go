@@ -818,6 +818,40 @@ func completeInReview(c Ctx) model.Check {
 	return result(fs)
 }
 
+// intentDirectoryFindings reports what is in the intent directory and should not be. It is the
+// twin of directoryFindings one level up, and it exists for the same reason: Appendix B rests the
+// normalisation of a hash on every file it covers being one Xeno wrote, and calls that a checked
+// property rather than an assumption. The phase level had the check and the intent level hash,
+// added later, had none (#109).
+//
+// Directories are reported although DirHash does not descend into one, so a stray directory cannot
+// change the value. A directory nobody wrote is where files appear next, and reporting it is the
+// cheaper half of the same rule.
+//
+// An unreadable directory reports nothing here, as at the phase level: CompleteOnClose is about to
+// read intent.yaml out of it and will say so.
+func intentDirectoryFindings(root, key string) []model.Finding {
+	dir := model.IntentDir(key)
+	entries, _ := os.ReadDir(filepath.Join(root, dir))
+	var fs []model.Finding
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() {
+			if name != model.PhasesDir {
+				fs = append(fs, finding(dir+"/"+name, "unknown directory in the intent directory",
+					"remove it or move it outside .xeno/"))
+			}
+			continue
+		}
+		if model.KnownIntentFiles[name] {
+			continue
+		}
+		fs = append(fs, finding(dir+"/"+name, "unknown file in the intent directory",
+			"remove it; only files Xeno writes belong here"))
+	}
+	return fs
+}
+
 // CompleteOnClose is G-Complete in its second mode, the one an abandoned intent meets.
 // It has two invocation points because an intent has two ways of ending, and the mode
 // follows from where the gate was invoked rather than from a field.
@@ -828,8 +862,15 @@ func completeInReview(c Ctx) model.Check {
 // Why a reason has to be checked at all, when the command requires one: the command is
 // not the only way a file gets written, and a gate that trusts the writer checks
 // nothing.
+// Its findings are routed through carryForward before they are returned, as Run does for every
+// phase check, because A25's promise is that every finding reaches a verdict through that one
+// function and Invariants exists to check the promise rather than state it. This path was written
+// after the invariant and met neither for as long as it produced at most one finding, whose empty
+// id collided with nothing (#138).
 func CompleteOnClose(root, key string) model.Check {
-	var fs []model.Finding
+	// First, so that a verdict lists what the directory contained before what the intent
+	// asserted: the hash this verdict carries covers that directory.
+	fs := intentDirectoryFindings(root, key)
 	rel := model.IntentDir(key) + "/intent.yaml"
 	var in model.Intent
 	if err := fm.ReadYAML(filepath.Join(root, rel), &in); err != nil {
@@ -846,7 +887,29 @@ func CompleteOnClose(root, key string) model.Check {
 	fs = append(fs, learningFindings(filepath.Join(root, lrel), lrel)...)
 	ch := result(fs)
 	ch.Gate = "G-Complete"
+	// A decision taken on an intent level finding survives a re-close, the way a decision on a
+	// phase finding survives a re-run, and for the same reason: the id is a hash over what the
+	// finding reports, so the same finding is the same id.
+	carryForward(&ch, intentDecisions(root, key))
 	return ch
+}
+
+// intentDecisions reads the decisions the previous intent level verdict held, which is what Run
+// does from the previous phase verdict.
+func intentDecisions(root, key string) map[string]*model.DecisionOnFinding {
+	decided := map[string]*model.DecisionOnFinding{}
+	var prev model.Gate
+	if err := fm.ReadYAML(filepath.Join(root, model.IntentDir(key), "gate.yaml"), &prev); err != nil {
+		return decided
+	}
+	for _, ch := range prev.Checks {
+		for _, f := range ch.Findings {
+			if f.Decision != nil {
+				decided[f.ID] = f.Decision
+			}
+		}
+	}
+	return decided
 }
 
 // ---- G-Freshness, both halves: the context hash against the predecessor, and the files a
