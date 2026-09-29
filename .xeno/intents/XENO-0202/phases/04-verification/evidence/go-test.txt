@@ -1,0 +1,94 @@
+# XENO-0202 verification, ad0a764 with the working tree of the intent
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	(cached)
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# internal/secrets, nine tests
+=== RUN   TestAProjectAddsAndRemovesNothing
+--- PASS: TestAProjectAddsAndRemovesNothing (0.00s)
+=== RUN   TestACommentDoesNotChangeTheHash
+--- PASS: TestACommentDoesNotChangeTheHash (0.00s)
+=== RUN   TestTheOrderAndTheFileDoNotChangeTheHash
+--- PASS: TestTheOrderAndTheFileDoNotChangeTheHash (0.00s)
+=== RUN   TestAddingAPatternChangesTheHash
+--- PASS: TestAddingAPatternChangesTheHash (0.00s)
+=== RUN   TestAddingAPathChangesTheHash
+--- PASS: TestAddingAPathChangesTheHash (0.00s)
+=== RUN   TestNoFilterIsEmptyRatherThanAnError
+--- PASS: TestNoFilterIsEmptyRatherThanAnError (0.00s)
+=== RUN   TestRedactionNamesThePatternAndKeepsTheLine
+--- PASS: TestRedactionNamesThePatternAndKeepsTheLine (0.00s)
+=== RUN   TestABrokenRegexDropsItsPatternAndNotTheFilter
+--- PASS: TestABrokenRegexDropsItsPatternAndNotTheFilter (0.00s)
+=== RUN   TestTheShippedFilterCatchesWhatItNames
+--- PASS: TestTheShippedFilterCatchesWhatItNames (0.00s)
+ok  	github.com/triplem/xeno/internal/secrets	(cached)
+
+# the three through the runner
+--- PASS: TestTheDigestIsFilteredAndSaysWhichFilter (0.00s)
+--- PASS: TestSectionSetWritesTheHashAndDoesNotRedactTheProse (0.00s)
+--- PASS: TestWithoutAFilterNothingIsRedactedAndNoHashIsWritten (0.00s)
+ok  	github.com/triplem/xeno/internal/runner	0.008s
+
+# a summary carrying two fake secrets, through phase finish, end to end
+
+## the summary handed in:
+The run used AKIAIOSFODNN7EXAMPLE and ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa against the bucket.
+Ordinary prose about secrets_hash stays as it is.
+
+## the digest the runner wrote:
+---
+intent: github.com/triplem/xeno#120
+phase: 00-intake
+created: "2026-09-29T06:03:26Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ad0a764.dirty
+plugin_version: 0.1.0-dev
+language: en
+secrets_hash: ebf8354b5fd84dd1b92b18350f4d0e41ca4ab06eb64a67df8813b96955eb281c
+context_hash: 44737a6f84fff64728c9a92fe6c4bc2c42b27e587c1acc5ff7679de02cad8656
+model: claude-opus-5
+tool: claude-code
+---
+The run used [redacted: aws-access-key] and [redacted: github-token] against the bucket.
+Ordinary prose about secrets_hash stays as it is.
+
+# the shipped filter, and what this repository's secrets_hash covers
+  - id: aws-access-key
+  - id: bearer-token
+  - id: github-token
+  - id: private-key-block
+  - id: slack-token
+  - "**/*.pem"
+  - "**/*.p12"
+  - ".env*"
+  - "**/id_rsa"
+  - "**/id_ed25519"
+
+# the honesty rule, measured rather than assumed:
+# removing secrets_hash from WriterlessHash and running gate verify diverges every verdict.
+verified 91 verdicts
+  DIVERGENT   XENO-0035 00-intake: committed status green, recomputed red
+  DIVERGENT   XENO-0044 00-intake: committed status green, recomputed red
+  DIVERGENT   XENO-0047 00-intake: committed status green, recomputed red
+88
+# divergent verdicts above, out of 90
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 91 verdicts

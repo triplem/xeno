@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T06:04:24Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The strongest evidence in this phase is not a test but a probe: a summary with two
+      fake secrets through phase finish, and the digest on disk beside it in the
+      transcript. A reader can see the claim rather than trust an assertion about it,
+      and the same run showed the prose surviving, which is the property a filter is
+      most likely to break.
+    proposal: >-
+      Where a change transforms text on its way into the repository, the verification
+      carries the input and the output verbatim rather than only a test that asserts a
+      substring. A redaction is judged by what it left as much as by what it removed.
+    target: docs/process-definition.md
