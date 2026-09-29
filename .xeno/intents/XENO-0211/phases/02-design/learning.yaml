@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T19:58:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Both readings of the vocabulary question were argued in #97 from the shape of the
+      code, and the code could not settle them. What settled it was one field,
+      allow_bypass, and one fact about the second host: that it answers with three lists
+      of grants where the first answers with a boolean. The deciding evidence was smaller
+      than either argument.
+    proposal: >-
+      Where two designs for a neutral interface are both defensible, look for the single
+      field whose two hosts disagree most about the shape of the answer rather than
+      comparing the designs. The field decides, and it is usually the one a table already
+      marks as having no equivalent.
+    target: internal/enforcement

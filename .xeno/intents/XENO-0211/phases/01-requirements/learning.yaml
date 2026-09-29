@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T19:55:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The acceptance for a decision intent is not a list of behaviours, because nothing
+      behaves differently afterwards. What it can require is that the record carries the
+      rejected reading, the evidence and the cost, and Appendix B is what makes that
+      worth requiring: the phase directory is inside artifacts_hash, so the row cannot be
+      revised in place later and a change of mind is a new intent.
+    proposal: >-
+      Where an intent's deliverable is a decision rather than a change, write the
+      acceptance against the record's content and say which of the three parts —
+      rejected reading, evidence, cost — the row must carry, since a decision recorded
+      without its alternative reads as the only option anybody saw.
+    target: ASSUMPTIONS.md

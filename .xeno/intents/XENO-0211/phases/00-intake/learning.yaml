@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#141
+created: 2026-09-29T19:50:49Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6aa6f9b.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      #97 deferred the vocabulary decision until a second host was in front of us, and the
+      sequence then made it the piece the other three wait on. The condition it set was
+      read as "until GitLab is written", but what it actually asks for is evidence about a
+      second host's answer, and gitlab.com serves the protected branch endpoint to an
+      unauthenticated request. The deferral was satisfiable a release earlier than it
+      looked.
+    proposal: >-
+      Where a decision is deferred until something exists, record what about that thing
+      the decision needs. A deferral written as a milestone is read as a milestone and
+      waits for the whole of it, while the same deferral written as the evidence it wants
+      can often be met by asking.
+    target: ASSUMPTIONS.md
