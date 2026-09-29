@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:15:15Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The column's word had to be chosen against the command surface rather than for
+      clarity alone. "closed" is the natural English for a finished intent and it is the
+      verb of the command that marks abandonment here, so a reader seeing it would reach
+      for intent close and make the row false.
+    proposal: >-
+      Where a computed state is displayed, its word is checked against the commands the
+      tool offers, since a reader takes a state name as an invitation to the command
+      that produces it.
+    target: cmd/xeno
