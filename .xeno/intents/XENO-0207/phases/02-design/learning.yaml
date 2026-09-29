@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T17:57:36Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The alignment criterion is satisfied by sharing one format string between the
+      heading and the rows, which turns a property somebody has to check into one the
+      code cannot violate. The alternative was two format strings kept in step by
+      attention.
+    proposal: >-
+      Where a heading labels columns, it is printed with the same format string as the
+      rows, so that drifting apart is impossible rather than merely noticed.
+    target: cmd/xeno
