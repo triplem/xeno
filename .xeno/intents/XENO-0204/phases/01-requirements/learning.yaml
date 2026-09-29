@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:30:06Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A criterion had to say that the scan passes on the day it lands. A scanner
+      introduced with findings already in it trains everybody to read its red as the
+      normal state, and the repository then carries a job whose failure means nothing,
+      which is worse than no job.
+    proposal: >-
+      A scanner is introduced only with a configuration that makes it clean on the tree
+      it lands against, and the criteria say so, since the alternative is a red job that
+      becomes furniture.
+    target: .github/workflows

@@ -1,0 +1,114 @@
+# The secret scan of this repository. It is a scanner like the other two, so the same
+# three things hold: no gate reads the report, the threshold lives in the tool, and what
+# stops a merge is this job failing.
+#
+# It answers what the filter in internal/secrets does not. That filter redacts a summary
+# on its way into a digest, which is the one file that leaves a session; every file that
+# stays is unread by it, and G-Secret, which section 4 gives that job, is still not
+# implemented. This scan reads what is already committed. The two are not substitutes
+# and neither makes the other unnecessary: one runs in process on every write and is
+# hashed into secrets_hash, this one runs once per change and can afford the whole
+# upstream rule set.
+#
+# .gitleaks.toml extends the rules the pinned binary carries rather than pointing at
+# .xeno/plugin/secrets.yaml, which is the same rule set with the entropy thresholds, the
+# keyword prefilters and the allowlists that section 4's file has no room for. Running
+# the narrower copy here would only repeat what the runner already did.
+#
+# Unlike semgrep, gitleaks needs no flag to fail on a finding: it exits 1 with leaks and
+# 0 without. It also exits 1 when it could not run at all, and the two look identical
+# from the outside, so the report is checked for existence before the failure is raised
+# again. A run that wrote no report failed for a reason nobody has read yet.
+#
+# The report carries the matched text. Nothing here prints it: a secret in a build log
+# is a secret in a build log, and the finding is identifiable by rule, file and line
+# without it.
+#
+# The binary is pinned by version and verified by checksum rather than taken from an
+# action, so nothing here runs code that was not named. SUPPLY-CHAIN.md says which and
+# why.
+name: gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # The rules are inside a pinned binary and do not change without a commit, so this
+    # proves less than the vulnerability scan's schedule. It is here because a scan that
+    # only runs on a change never runs against what is sitting on the default branch.
+    - cron: '23 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A checkout carries what is tracked, so a file the repository ignores is not
+      # scanned here. That is the right subject for this job: it reads what was
+      # committed. A .env on somebody's machine is found by the same command run
+      # locally, which is the scan working rather than a gap in it.
+      - name: install gitleaks
+        run: |
+          set -eu
+          base="https://github.com/gitleaks/gitleaks/releases/download"
+          url="$base/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSL --retry 3 -o /tmp/gitleaks.tar.gz "$url"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, beside the
+      # enforcement report, for the reason A39 gives: it is a job status and never a
+      # commit.
+      - name: scan
+        id: scan
+        continue-on-error: true
+        run: |
+          mkdir -p .xeno/local/scan
+          /tmp/gitleaks dir . \
+            --no-banner \
+            --config .gitleaks.toml \
+            --report-format json \
+            --report-path .xeno/local/scan/gitleaks.json
+
+      # Rule, file and line, and never the match. The count comes from the report rather
+      # than from the exit code, so a run that failed without findings is visible as
+      # one.
+      - name: what it found
+        if: always()
+        run: |
+          if [ ! -f .xeno/local/scan/gitleaks.json ]; then
+            echo "no report was written, so the scan did not run to completion" >&2
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json
+          with open(".xeno/local/scan/gitleaks.json") as f:
+              findings = json.load(f)
+          for x in findings:
+              print(x["RuleID"], x["File"], x["StartLine"], x["Fingerprint"], sep="\t")
+          print(len(findings), "findings")
+          PY
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          # A report that does not exist means the scan failed before it could judge
+          # anything, which is a different failure from a leak and is not allowed to
+          # look like one.
+          test -f .xeno/local/scan/gitleaks.json
+
+      - name: raise the scan's own result
+        if: always() && steps.scan.outcome == 'failure'
+        run: |
+          echo "the scan reported findings, or could not run; see above" >&2
+          exit 1

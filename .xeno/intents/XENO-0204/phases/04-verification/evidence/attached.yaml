@@ -1,0 +1,8 @@
+- kind: test-report
+  job: go-test
+  state: attached
+  result: success
+  sha256: d3a06876d43b73731d4665c5cf1b4094cd212072a2237e285fad071872b98755
+  path: evidence/go-test.txt
+  pipeline: local
+  commit: 38430d40ba1221e470fc3087b98e66235bdf3f6d

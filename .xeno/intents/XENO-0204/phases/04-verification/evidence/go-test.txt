@@ -1,0 +1,34 @@
+# XENO-0204 verification, 38430d4 with the working tree of the intent
+
+# the tool, pinned and verified
+8.30.1
+sha256 of the release tarball, as SUPPLY-CHAIN.md and the workflow both record:
+551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
+# the scan against a tracked tree, which is what a checkout carries
+# (git archive HEAD, so no ignored file such as .env is present)
+[90m11:31AM[0m [32mINF[0m [1mscanned ~1893519 bytes (1.89 MB) in 186ms[0m
+[90m11:31AM[0m [32mINF[0m [1mno leaks found[0m
+exit: 0
+
+# the same tree with one planted token added, which is not reproduced here
+[90m11:31AM[0m [32mINF[0m [1mscanned ~1893576 bytes (1.89 MB) in 171ms[0m
+[90m11:31AM[0m [33mWRN[0m [1mleaks found: 1[0m
+exit: 1
+
+# what it reported, as the workflow prints it: rule, file, line, fingerprint
+github-pat	planted.go	1	1
+1 findings
+
+# before the configuration existed, the same tree reported:
+#   39 generic-api-key, almost all on lines of the form 'secrets_hash: <64 hex>'
+#   1 aws-amazon-bedrock-api-key-short-lived, on .xeno/plugin/secrets.yaml itself
+
+# the other checks of this repository, unchanged
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	26.182s
+ok  	github.com/triplem/xeno/internal/template	(cached)
+(gofmt: no output)
+(vet: clean)
+verified 103 verdicts

@@ -64,6 +64,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `semgrep` | `sha256:32e45996…`, 1.178.0, by digest | docker.io |
 | semgrep's rules | vendored under `.semgrep/`, not fetched | — |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
+| `gitleaks` | 8.30.1, by release tarball and sha256 `551f6fc8…` | github.com |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
