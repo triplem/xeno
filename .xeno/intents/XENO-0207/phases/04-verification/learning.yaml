@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T18:00:53Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The notice says "older" and means "created earlier", which coincide here and will
+      not always: an intent created months ago and worked yesterday sorts by its
+      creation, as #118 chose, so it would be called older than work that is newer than
+      it. The word inherited a limitation from the ordering rather than introducing one.
+    proposal: >-
+      Where a default truncates an ordered listing, the word describing what was left
+      out names the field the order is over, since a reader reads it as a claim about
+      recency and the order may be over something else.
+    target: cmd/xeno
