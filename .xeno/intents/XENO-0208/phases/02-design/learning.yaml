@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:07:14Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Folding the change into the open pull request felt materially different from
+      editing a sealed phase and is the same act. The verdicts on that branch were
+      produced by the same gates, so amending it would leave a verdict over a file that
+      no longer says what was judged; that nobody has merged it changes who would
+      notice.
+    proposal: >-
+      A phase's verdict seals its artifact whether or not the branch has merged, so a
+      decision recorded in a finished phase is reversed in a new intent rather than
+      amended on the branch it still sits on.
+    target: docs/process-definition.md
