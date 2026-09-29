@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:56:36Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The false positive bar was measured over the same corpus the selection used, so it
+      cannot fail on what shipped: every rule that fired was removed before the test
+      existed. The test is a regression guard dressed as a validation, and only writing
+      the gaps section made the difference visible.
+    proposal: >-
+      Where a set is selected by a measurement, the test asserting that measurement says
+      it guards against future additions rather than validating the selection, since a
+      test over the corpus the selection used cannot disagree with it.
+    target: internal/secrets

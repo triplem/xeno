@@ -171,7 +171,13 @@ func TestABrokenRegexDropsItsPatternAndNotTheFilter(t *testing.T) {
 	}
 }
 
-// The shipped file this repository carries, against the shapes it claims to catch.
+// The shipped file this repository carries, against the shapes it has to catch.
+//
+// Asserted by id rather than by "something fired", because a rule set imported from upstream
+// is not a superset of what was here before: private keys, Slack prefixes and Authorization
+// values are caught by patterns of this project's own, since upstream is tuned to find a whole
+// credential in a file and a digest carries prose where one is quoted or truncated. Losing
+// those three silently is what this test exists to prevent.
 func TestTheShippedFilterCatchesWhatItNames(t *testing.T) {
 	f, err := Load("../..")
 	if err != nil {
@@ -181,11 +187,11 @@ func TestTheShippedFilterCatchesWhatItNames(t *testing.T) {
 		t.Fatal("this repository ships no filter")
 	}
 	for _, tc := range []struct{ id, sample string }{
-		{"aws-access-key", "AKIAIOSFODNN7EXAMPLE"},
-		{"github-token", "ghp_" + strings.Repeat("a", 36)},
-		{"private-key-block", "-----BEGIN OPENSSH PRIVATE KEY-----"},
-		{"slack-token", "xoxb-" + strings.Repeat("1", 12)},
-		{"bearer-token", "Authorization: " + strings.Repeat("A", 24)},
+		{"aws-access-token", "AKIAIOSFODNN7EXAMPLE"},
+		{"github-pat", "ghp_" + strings.Repeat("a", 36)},
+		{"house-private-key-header", "-----BEGIN OPENSSH PRIVATE KEY-----"},
+		{"house-slack-token-prefix", "xoxb-" + strings.Repeat("1", 12)},
+		{"house-authorization-value", "Authorization: " + strings.Repeat("A", 24)},
 	} {
 		got := f.Redact("before " + tc.sample + " after")
 		if !strings.Contains(got, "[redacted: "+tc.id+"]") {
@@ -196,5 +202,26 @@ func TestTheShippedFilterCatchesWhatItNames(t *testing.T) {
 	const prose = "The runner filters the summary against the effective filter and writes secrets_hash."
 	if got := f.Redact(prose); got != prose {
 		t.Errorf("the shipped filter redacted prose: %q", got)
+	}
+}
+
+// The import is a selection, so the count is part of what shipped: a set that quietly shrank to
+// a handful would pass every test above.
+func TestTheShippedSetIsTheImportedOne(t *testing.T) {
+	f, err := Load("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Patterns) < 200 {
+		t.Errorf("%d patterns in force, want the imported set of about two hundred", len(f.Patterns))
+	}
+	var house int
+	for _, p := range f.Patterns {
+		if strings.HasPrefix(p.ID, "house-") {
+			house++
+		}
+	}
+	if house != 3 {
+		t.Errorf("%d house patterns, want the three upstream does not cover", house)
 	}
 }

@@ -63,6 +63,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
 | `semgrep` | `sha256:32e45996…`, 1.178.0, by digest | docker.io |
 | semgrep's rules | vendored under `.semgrep/`, not fetched | — |
+| gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
@@ -104,7 +105,10 @@ an intent.
 
 **semgrep's rules go the other way, and the contrast is the point.** They are vendored
 under `.semgrep/` and nothing fetches them at scan time, which was verified by running
-the scan with the network removed. A vulnerability database is facts about the world
+the scan with the network removed. The patterns of the secret filter follow the same rule
+for the same reason: they are translated from gitleaks' rules at a named version into
+`.xeno/plugin/secrets.yaml`, and `secrets_hash` means what it says only because nothing
+fetches them. A vulnerability database is facts about the world
 that other people discover, so it goes stale by time passing. A rule set is patterns
 somebody chose to enforce, and one that changes underneath a project can fail a build
 that nothing in the repository touched. Facts want currency; policy wants a commit.

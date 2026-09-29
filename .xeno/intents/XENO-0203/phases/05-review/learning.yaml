@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:57:18Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Replacing five patterns with two hundred and twenty-two makes the filter look
+      authoritative while leaving three things untouched: nobody has read the regexes,
+      the bar cannot fail on what shipped, and the set goes stale by design. Provenance
+      is what the change actually buys, and it is a smaller claim than the count
+      suggests.
+    proposal: >-
+      Where a hand written rule set is replaced by an imported one, the release note
+      claims the provenance rather than the coverage, since a reader converts a count
+      into confidence and a named source into something they can check.
+    target: docs/process-definition.md

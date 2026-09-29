@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:54:52Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This intent's investigation had to precede its intake, because whether the import
+      was possible at all was the intake's subject: the regexes had to be compiled and
+      run against the repository before there was anything to write down. The phase
+      order assumes the question is known before the work starts, and here the work
+      produced the question.
+    proposal: >-
+      Where an intent's intake depends on a measurement, the measurement is named as the
+      work that produced the phase rather than folded into the design as though it had
+      been reasoned to. A design that presents a measured criterion as a derived one
+      hides how it could be wrong.
+    target: docs/process-definition.md

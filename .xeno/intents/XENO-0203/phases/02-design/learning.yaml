@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:54:17Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The alternative the issue's title suggests, replacing the file with a tool, is
+      refused by four independent constraints: section 4's schema, the
+      reconstructability of secrets_hash, the gate path's ban on the network, and the
+      hook that filters on every write. Any one would decide it, and the design had to
+      say all four, because a reader who knows one will think it was close.
+    proposal: >-
+      Where a rejected alternative is refused by several independent constraints, the
+      design names them all rather than the strongest, since a later reader who finds
+      one constraint removed will otherwise reopen a decision the other three still
+      settle.
+    target: docs/process-definition.md
