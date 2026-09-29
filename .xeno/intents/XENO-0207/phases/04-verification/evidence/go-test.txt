@@ -1,0 +1,63 @@
+# XENO-0207 verification, c05acae with the working tree of the intent
+
+# the three tests, in cmd/xeno's first test file
+--- PASS: TestTheHeadingLinesUpWithTheWidestRow (0.00s)
+--- PASS: TestThePhaseHeadingLinesUpToo (0.00s)
+--- PASS: TestTheDefaultIsTenAndTheNoticeCountsTheRest (0.00s)
+ok  	github.com/triplem/xeno/cmd/xeno	(cached)
+
+# go test ./...
+ok  	github.com/triplem/xeno/cmd/xeno	(cached)
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	35.249s
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the default: a heading, ten rows, the newest last, and what was left out
+created     intent       state             phase
+2026-09-28  XENO-0107    complete          05-review  green
+2026-09-28  XENO-0121    complete          05-review  green
+2026-09-28  XENO-0200    complete          05-review  green
+2026-09-28  XENO-0201    complete          05-review  green
+2026-09-29  XENO-0202    complete          05-review  green
+2026-09-29  XENO-0203    complete          05-review  green
+2026-09-29  XENO-0204    complete          05-review  green
+2026-09-29  XENO-0205    complete          05-review  green
+2026-09-29  XENO-0206    complete          05-review  green
+2026-09-29  XENO-0207    04-verification   03-implementation  green
+
+53 older, --all to see them
+
+# --all, the first rows of sixty-three
+created     intent       state             phase
+2026-09-21  XENO-1       00-intake         00-intake  green
+2026-09-22  XENO-2       00-intake         00-intake  green
+2026-09-22  XENO-3       00-intake         00-intake  green
+...
+64
+# lines above, sixty-three rows and a heading
+
+# the one-intent form, with its heading
+phase              state                  verdict
+00-intake          finished               green
+01-requirements    finished               green
+02-design          finished               green
+03-implementation  finished               green
+04-verification    running                
+05-review          not-started            
+
+# a repository with no intents prints nothing at all
+0
+# lines above
+
+# gofmt / vet / verify
+(gofmt: no output)
+(vet: clean)
+verified 121 verdicts

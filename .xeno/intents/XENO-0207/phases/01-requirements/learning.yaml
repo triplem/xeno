@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T17:57:02Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A criterion had to say that the headings line up with the columns at every width
+      the data takes, because a heading is the one addition that can make output worse
+      than it was: an unlabelled column is read carefully and a mislabelled one is
+      believed.
+    proposal: >-
+      Where headings are added to existing output, a criterion fixes them to the widths
+      the data can take rather than to the widths it happens to have, since the column
+      that overflows is the one nobody tested.
+    target: cmd/xeno

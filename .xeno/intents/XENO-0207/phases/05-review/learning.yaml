@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T18:01:29Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Keeping the tests off standard output bought a clean separation and left the one
+      new sentence in the output unguarded. Both are right and the trade is worth
+      stating: the arithmetic behind a message is testable cheaply and the message
+      itself is not, so a change that adds prose to output adds prose nothing checks.
+    proposal: >-
+      Where a change adds a sentence to a command's output, the phase records that the
+      wording has no test, since the parts around it will be well covered and the
+      sentence is what a reader actually reads.
+    target: cmd/xeno

@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T17:56:32Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Truncating a listing introduces a wrong fact where the long version only had
+      noise: ten rows and silence says the repository holds ten intents. The default is
+      the thing most readers will ever see, so what it omits has to be stated in it
+      rather than in the flag's help text.
+    proposal: >-
+      Where a default truncates, it names what it left out and how to see it, since a
+      reader takes the absence of more rows as evidence there are none.
+    target: cmd/xeno
