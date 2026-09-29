@@ -400,7 +400,7 @@ func cmdIntentStatus(o *opts) int {
 		return 2
 	}
 	if len(states) > 0 {
-		fmt.Println(sprintRow(phaseRow, "phase", "state", "verdict"))
+		fmt.Println(sprintRow(phaseRow, "PHASE", "STATE", "VERDICT"))
 	}
 	for _, s := range states {
 		line := fmt.Sprintf(phaseRow, s.Phase, s.State, s.Status)
@@ -417,6 +417,12 @@ func cmdIntentStatus(o *opts) int {
 // listRow is the format the heading and every row share, which is what keeps a heading from
 // drifting from the column it labels. The state column is seventeen wide because the longest one
 // is 03-implementation.
+//
+// The headings are upper case, as ps prints PID TTY TIME CMD and everything descended from it
+// does. That is the convention for a label on tabular output, and a reader scanning a terminal
+// recognises a row of capitals as the line that is not data. This project's rule that a heading
+// names its section in words is about prose, in files and in issues; XENO-0207 cited it for a
+// column label and set these in lower case, which #136 reversed.
 const listRow = "%-10s  %-12s %-17s %s"
 
 // listDefault is how many intents the listing shows without --all. A listing answers what is
@@ -456,7 +462,7 @@ func cmdIntentList(o *opts) int {
 	// With the first row rather than before the loop, so that a repository holding no intents
 	// prints nothing at all instead of a label for an absence.
 	if len(intents) > 0 {
-		fmt.Println(sprintRow(listRow, "created", "intent", "state", "phase"))
+		fmt.Println(sprintRow(listRow, "CREATED", "INTENT", "STATE", "PHASE"))
 	}
 	for _, s := range intents {
 		verdict := s.Verdict

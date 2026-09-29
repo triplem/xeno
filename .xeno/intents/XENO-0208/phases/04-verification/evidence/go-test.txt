@@ -1,0 +1,61 @@
+# XENO-0208 verification, 4b87535 with the working tree of the intent
+
+# the two alignment tests, unchanged in property and updated in their strings
+--- PASS: TestTheHeadingLinesUpWithTheWidestRow (0.00s)
+--- PASS: TestThePhaseHeadingLinesUpToo (0.00s)
+--- PASS: TestTheDefaultIsTenAndTheNoticeCountsTheRest (0.00s)
+ok  	github.com/triplem/xeno/cmd/xeno	0.004s
+
+# go test ./...
+ok  	github.com/triplem/xeno/cmd/xeno	(cached)
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	37.617s
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the listing
+CREATED     INTENT       STATE             PHASE
+2026-09-28  XENO-0121    complete          05-review  green
+2026-09-28  XENO-0200    complete          05-review  green
+2026-09-28  XENO-0201    complete          05-review  green
+2026-09-29  XENO-0202    complete          05-review  green
+2026-09-29  XENO-0203    complete          05-review  green
+2026-09-29  XENO-0204    complete          05-review  green
+2026-09-29  XENO-0205    complete          05-review  green
+2026-09-29  XENO-0206    complete          05-review  green
+2026-09-29  XENO-0207    complete          05-review  green
+2026-09-29  XENO-0208    04-verification   03-implementation  green
+
+54 older, --all to see them
+
+# the one-intent form
+PHASE              STATE                  VERDICT
+00-intake          finished               green
+01-requirements    finished               green
+02-design          finished               green
+03-implementation  finished               green
+04-verification    running                
+05-review          not-started            
+
+# nothing but the case moved: the widths are XENO-0207's
+# heading and widest row, from the same format string:
+CREATED     INTENT       STATE             PHASE
+2026-09-29  XENO-0207    03-implementation 05-review  green
+
+# nothing outside cmd/ is in the diff
+ internal/runner/runner.go      | 50 ++++++++++++++++++++--
+ internal/runner/runner_test.go | 95 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 142 insertions(+), 3 deletions(-)
+(no lines above means only cmd/ and the records changed)
+
+# gofmt / vet / verify
+(gofmt: no output)
+(vet: clean)
+verified 127 verdicts

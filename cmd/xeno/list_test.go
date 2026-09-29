@@ -11,11 +11,11 @@ import (
 // from the column it labels. This asserts the property rather than the string: the heading's own
 // columns have to start where a row's do, at the widest value each column can take.
 func TestTheHeadingLinesUpWithTheWidestRow(t *testing.T) {
-	head := sprintRow(listRow, "created", "intent", "state", "phase")
+	head := sprintRow(listRow, "CREATED", "INTENT", "STATE", "PHASE")
 	// The widest values this listing can print: a date, a key as long as the longest here, the
 	// longest state, and a phase with its verdict.
 	row := sprintRow(listRow, "2026-09-29", "XENO-0207", "03-implementation", "05-review  green")
-	for _, col := range []string{"intent", "state", "phase"} {
+	for _, col := range []string{"INTENT", "STATE", "PHASE"} {
 		at := strings.Index(head, col)
 		if at < 0 {
 			t.Fatalf("the heading does not name %q: %q", col, head)
@@ -30,9 +30,9 @@ func TestTheHeadingLinesUpWithTheWidestRow(t *testing.T) {
 // The one-intent form puts a position beside a judgement, which is the pair a heading is worth most
 // for.
 func TestThePhaseHeadingLinesUpToo(t *testing.T) {
-	head := sprintRow(phaseRow, "phase", "state", "verdict")
+	head := sprintRow(phaseRow, "PHASE", "STATE", "VERDICT")
 	row := sprintRow(phaseRow, "03-implementation", "changed-after-verdict", "provisional")
-	for _, col := range []string{"state", "verdict"} {
+	for _, col := range []string{"STATE", "VERDICT"} {
 		at := strings.Index(head, col)
 		if at < 0 || at >= len(row) || row[at] == ' ' {
 			t.Errorf("the %q heading does not sit over its column:\n  %s\n  %s", col, head, row)

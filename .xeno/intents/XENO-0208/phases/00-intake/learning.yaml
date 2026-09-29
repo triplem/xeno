@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:06:16Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A decision about the case of a table label cited this project's convention that a
+      heading names its section in words. That convention is about prose, in files and
+      issues, and a column label is tabular output, where every comparable tool uses
+      upper case. The reason was borrowed from the nearest rule rather than from the
+      right one, and it read as settled because it cited something.
+    proposal: >-
+      Where a convention is cited to settle a question, the kind of writing the
+      convention is about is stated alongside it, since a rule about prose and a
+      question about output can share a word and not a subject.
+    target: CLAUDE.md
