@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:08:34Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The durable part of this change is a comment, not the two literals. The rule
+      XENO-0207 cited exists and is about prose, so without a note saying which
+      convention governs a column label the same citation supports restoring the lower
+      case, and the next reader would be reasoning correctly from the wrong premise.
+    proposal: >-
+      Where a decision reverses one that cited a real convention, the code records which
+      convention governs, since the original reasoning stays available and sounds
+      correct.
+    target: cmd/xeno
