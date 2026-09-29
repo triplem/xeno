@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:30:41Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The tempting fix for thirty-nine findings was to disable the rule that produced
+      them, and the thirty-nine were one shape. A count invites a decision about a rule
+      when the evidence is about a pattern, and the same mistake is available in the
+      other direction: excluding the directory the noise came from would have excluded
+      the subject.
+    proposal: >-
+      Where a scanner reports many findings of one rule, the shape they share is named
+      in an allowlist rather than the rule being disabled or its directory excluded,
+      since a count measures how often one shape occurs and says nothing about the rule.
+    target: .github/workflows
