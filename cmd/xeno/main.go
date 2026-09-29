@@ -45,7 +45,10 @@ const usage = `usage:
   xeno version
 common: --root DIR (default .), --no-next to leave out the next step`
 
-func main() { os.Exit(run(os.Args[1:])) }
+// main is the only place the real files appear. Everything below writes through what it is
+// given, so that the exit code staircase this package promises can be asserted in process
+// rather than by running the binary (#110).
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
 // opts is everything a command was given: the flags, the finding id that stands before
 // them, the resolved phase and the runner they act on. One struct rather than twenty
@@ -57,10 +60,12 @@ type opts struct {
 	finding string
 	phase   string
 
-	root, key, phaseArg            string
-	from, src, by, pattern, file   string
-	summary                        string
-	all                            bool
+	root, key, phaseArg          string
+	from, src, by, pattern, file string
+	summary                      string
+	all                          bool
+	// Where this command writes. Supplied rather than global, so a test can read it.
+	out, errw                      io.Writer
 	project, mdl, language         string
 	pluginFrom, host, branch       string
 	base, head, reason             string
@@ -99,13 +104,13 @@ var commands = map[string]command{
 	"evidence attach":      {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
 }
 
-func run(args []string) int {
+func run(args []string, out, errw io.Writer) int {
 	if len(args) >= 1 && args[0] == "version" {
-		fmt.Println("xeno", model.RunnerVersion)
+		fmt.Fprintln(out, "xeno", model.RunnerVersion)
 		return 0
 	}
 	if len(args) < 2 && (len(args) == 0 || args[0] != "init") {
-		fmt.Fprintln(os.Stderr, usage)
+		fmt.Fprintln(errw, usage)
 		return 2
 	}
 	// Commands are two words except init, which is one. The split is where the flags
@@ -116,22 +121,22 @@ func run(args []string) int {
 	}
 	c, ok := commands[name]
 	if !ok {
-		fmt.Fprintln(os.Stderr, usage)
+		fmt.Fprintln(errw, usage)
 		return 2
 	}
 
-	o, code := parse(name, rest)
+	o, code := parse(name, rest, out, errw)
 	if code != 0 {
 		return code
 	}
 	if c.needsKey && o.key == "" {
-		fmt.Fprintln(os.Stderr, "--intent is required")
+		fmt.Fprintln(errw, "--intent is required")
 		return 2
 	}
 	if c.needsPhase {
 		phase, err := model.ResolvePhase(o.phaseArg)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(errw, err)
 			return 2
 		}
 		o.phase = phase
@@ -142,8 +147,8 @@ func run(args []string) int {
 // parse takes the finding id off the front and reads the flags. The id stands before them
 // as the process definition writes these commands, and Go's flag package stops at the
 // first argument that is not a flag, so it cannot be read back out afterwards.
-func parse(name string, args []string) (*opts, int) {
-	o := &opts{cmd: name}
+func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
+	o := &opts{cmd: name, out: out, errw: errw}
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		o.finding, args = args[0], args[1:]
 	}
@@ -195,7 +200,7 @@ func parse(name string, args []string) (*opts, int) {
 
 // next is the suggestion every command that changes state prints, and the reason each of
 // these functions ends with it rather than returning a code directly.
-func (o *opts) next(code int) int { return suggest(o.r, o.key, o.noNext, code) }
+func (o *opts) next(code int) int { return o.suggest(o.r, o.key, o.noNext, code) }
 
 func cmdInit(o *opts) int {
 	o.r.PluginSource = o.pluginFrom
@@ -203,20 +208,20 @@ func cmdInit(o *opts) int {
 		TrackerKey: o.project, Model: o.mdl, Language: o.language, Vendor: o.vendor, Host: o.host,
 	})
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 1
 	}
-	printInit(res)
+	printInit(o.out, res)
 	return 0
 }
 
 func cmdEnforcementCheck(o *opts) int {
 	rep, err := o.r.EnforcementCheck(o.branch, enforcement.Token())
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
-	printEnforcement(rep)
+	printEnforcement(o.out, rep)
 	if rep.Unmet() > 0 {
 		return 1
 	}
@@ -226,11 +231,11 @@ func cmdEnforcementCheck(o *opts) int {
 func cmdCheckMessage(o *opts) int {
 	message, err := readMessage(o.file)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
 	if err := gates.CheckMessage(o.pattern, message); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 1
 	}
 	return 0
@@ -239,31 +244,31 @@ func cmdCheckMessage(o *opts) int {
 func cmdSectionSet(o *opts) int {
 	content, err := readMessage(o.file)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
 	t, err := o.r.SectionSet(o.key, o.phase, o.finding, content)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 1
 	}
-	fmt.Printf("%s rendered from %s (%s)\n", o.phase, t.Ref(), t.Source)
+	fmt.Fprintf(o.out, "%s rendered from %s (%s)\n", o.phase, t.Ref(), t.Source)
 	return o.next(0)
 }
 
-func cmdIntentClose(o *opts) int { return o.next(report(o.r.IntentClose(o.key, o.reason))) }
+func cmdIntentClose(o *opts) int { return o.next(o.report(o.r.IntentClose(o.key, o.reason))) }
 
 func cmdPhaseStart(o *opts) int {
-	if code := report(nil, o.r.Start(o.key, o.phase)); code != 0 {
+	if code := o.report(nil, o.r.Start(o.key, o.phase)); code != 0 {
 		return code
 	}
 	if o.export {
 		env, err := o.r.PhaseEnv(o.key, o.phase)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(o.errw, err)
 			return 1
 		}
-		fmt.Print(env)
+		fmt.Fprint(o.out, env)
 		return 0
 	}
 	return o.next(0)
@@ -277,15 +282,15 @@ func cmdPhaseFinish(o *opts) int {
 	if o.summary != "" {
 		var err error
 		if summary, err = readSummary(o.summary); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(o.errw, err)
 			return 2
 		}
 		if strings.TrimSpace(summary) == "" {
-			fmt.Fprintln(os.Stderr, "--summary is empty: a digest with no summary is worse than none, since G-Schema would pass it")
+			fmt.Fprintln(o.errw, "--summary is empty: a digest with no summary is worse than none, since G-Schema would pass it")
 			return 2
 		}
 	}
-	return o.next(report(o.r.Finish(o.key, o.phase, summary)))
+	return o.next(o.report(o.r.Finish(o.key, o.phase, summary)))
 }
 
 // readSummary reads a path, or stdin for "-". readMessage cannot serve: it reads stdin for an
@@ -301,24 +306,24 @@ func readSummary(path string) (string, error) {
 
 func cmdGateRun(o *opts) int {
 	o.r.Base, o.r.Head = o.base, o.head
-	return o.next(report(o.r.GateRun(o.key, o.phase)))
+	return o.next(o.report(o.r.GateRun(o.key, o.phase)))
 }
 
 func cmdGateApprove(o *opts) int {
-	return o.next(report(o.r.Decide(o.key, o.phase, o.finding, "approved", o.by, o.reason)))
+	return o.next(o.report(o.r.Decide(o.key, o.phase, o.finding, "approved", o.by, o.reason)))
 }
 
 func cmdGateOverride(o *opts) int {
-	return o.next(report(o.r.Decide(o.key, o.phase, o.finding, "overridden", o.by, o.reason)))
+	return o.next(o.report(o.r.Decide(o.key, o.phase, o.finding, "overridden", o.by, o.reason)))
 }
 
 func cmdAssumptionRecord(o *opts) int {
 	a, err := o.r.RecordAssumption(o.key, o.phase, o.text, o.origin, o.confidence, o.resolves)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 1
 	}
-	fmt.Printf("%s recorded, open, from %s with %s confidence\n", a.ID, a.Origin, a.Confidence)
+	fmt.Fprintf(o.out, "%s recorded, open, from %s with %s confidence\n", a.ID, a.Origin, a.Confidence)
 	return o.next(0)
 }
 
@@ -329,33 +334,33 @@ func cmdAssumptionDecide(o *opts) int {
 	}
 	a, err := o.r.DecideAssumption(o.key, o.finding, status, o.by)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 1
 	}
-	fmt.Printf("%s %s by %s\n", a.ID, a.Status, o.by)
+	fmt.Fprintf(o.out, "%s %s by %s\n", a.ID, a.Status, o.by)
 	return o.next(0)
 }
 
 func cmdObligationClose(o *opts) int {
-	return o.next(report(o.r.CloseObligation(o.key, o.phase, o.finding)))
+	return o.next(o.report(o.r.CloseObligation(o.key, o.phase, o.finding)))
 }
 
 func cmdEvidenceAttach(o *opts) int {
 	res, err := evidence.Attach(o.root, o.key, o.phase, o.src)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
-	fmt.Printf("attached %d, pending %d; run xeno gate run to carry the verdict forward\n",
+	fmt.Fprintf(o.out, "attached %d, pending %d; run xeno gate run to carry the verdict forward\n",
 		res.Attached, res.Pending)
 	// Named on stderr and counted as pending: an entry nothing can bind was not attached,
 	// and a run that only printed the counts would report it as evidence still to come
 	// from a job that has already produced it.
 	for _, u := range res.Unbindable {
-		fmt.Fprintln(os.Stderr, "  not attached:", u)
+		fmt.Fprintln(o.errw, "  not attached:", u)
 	}
 	if len(res.Unbindable) > 0 {
-		fmt.Fprintln(os.Stderr, "  republish with a sha256; a uri is bound by its hash alone.")
+		fmt.Fprintln(o.errw, "  republish with a sha256; a uri is bound by its hash alone.")
 		return o.next(1)
 	}
 	return o.next(0)
@@ -364,19 +369,30 @@ func cmdEvidenceAttach(o *opts) int {
 func cmdGateVerify(o *opts) int {
 	res, err := o.r.Verify(o.key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(o.errw, "error:", err)
 		return 2
 	}
-	fmt.Printf("verified %d verdicts\n", res.Checked)
+	fmt.Fprintf(o.out, "verified %d verdicts\n", res.Checked)
 	for _, d := range res.Divergences {
-		fmt.Printf("  DIVERGENT   %s %s: %s\n", d.Key, d.Phase, d.What)
+		fmt.Fprintf(o.out, "  DIVERGENT   %s %s: %s\n", d.Key, d.Phase, d.What)
 	}
 	for _, l := range res.Red {
-		fmt.Printf("  RED         %s\n", l)
+		fmt.Fprintf(o.out, "  RED         %s\n", l)
 	}
 	for _, l := range res.Provisional {
-		fmt.Printf("  PROVISIONAL %s: evidence outstanding, binding only at the merge request\n", l)
+		fmt.Fprintf(o.out, "  PROVISIONAL %s: evidence outstanding, binding only at the merge request\n", l)
 	}
+	return verifyCode(res)
+}
+
+// verifyCode is the staircase for a verification, separated from the printing so that the one
+// branch a CI wrapper depends on can be asserted without building a phase to produce it.
+//
+// A provisional verdict exits 0. Section 6 rests the evidence arrangement on that: the wrapper
+// reports provisional, N declarations open rather than failing, because a P4 that failed
+// verification for waiting on a pipeline is what section 6 names as the outcome that would make
+// people stop taking verification seriously. A divergence or a red phase is 1 (#110).
+func verifyCode(res *runner.VerifyResult) int {
 	if len(res.Divergences) > 0 || len(res.Red) > 0 {
 		return 1
 	}
@@ -396,18 +412,18 @@ func cmdIntentStatus(o *opts) int {
 	}
 	states, err := o.r.Status(o.key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
 	if len(states) > 0 {
-		fmt.Println(sprintRow(phaseRow, "PHASE", "STATE", "VERDICT"))
+		fmt.Fprintln(o.out, sprintRow(phaseRow, "PHASE", "STATE", "VERDICT"))
 	}
 	for _, s := range states {
 		line := fmt.Sprintf(phaseRow, s.Phase, s.State, s.Status)
 		if s.Stale {
 			line += "  (predecessor changed since this phase started)"
 		}
-		fmt.Println(line)
+		fmt.Fprintln(o.out, line)
 	}
 	return o.next(0)
 }
@@ -452,7 +468,7 @@ func sprintRow(format string, cells ...any) string {
 func cmdIntentList(o *opts) int {
 	intents, err := o.r.Intents()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(o.errw, err)
 		return 2
 	}
 	// The tail, taken here rather than in the runner: Intents() returns everything in order and
@@ -462,7 +478,7 @@ func cmdIntentList(o *opts) int {
 	// With the first row rather than before the loop, so that a repository holding no intents
 	// prints nothing at all instead of a label for an absence.
 	if len(intents) > 0 {
-		fmt.Println(sprintRow(listRow, "CREATED", "INTENT", "STATE", "PHASE"))
+		fmt.Fprintln(o.out, sprintRow(listRow, "CREATED", "INTENT", "STATE", "PHASE"))
 	}
 	for _, s := range intents {
 		verdict := s.Verdict
@@ -482,13 +498,13 @@ func cmdIntentList(o *opts) int {
 		if s.Problem != "" {
 			line += "  (" + s.Problem + ")"
 		}
-		fmt.Println(strings.TrimRight(line, " "))
+		fmt.Fprintln(o.out, strings.TrimRight(line, " "))
 	}
 	// After the table, so it is the last thing read and cannot be taken for a row. A truncated
 	// listing that said nothing would read as a repository holding ten intents, which is a wrong
 	// fact rather than a missing one.
 	if hidden > 0 {
-		fmt.Printf("\n%d older, --all to see them\n", hidden)
+		fmt.Fprintf(o.out, "\n%d older, --all to see them\n", hidden)
 	}
 	return 0
 }
@@ -526,42 +542,42 @@ func cmdCostTurn(o *opts) int {
 	return 0
 }
 
-func suggest(r *runner.Runner, key string, off bool, code int) int {
+func (o *opts) suggest(r *runner.Runner, key string, off bool, code int) int {
 	if off || code == 2 {
 		return code
 	}
 	s := r.Next(key)
-	fmt.Printf("\nnext: %s\n", s.Text)
+	fmt.Fprintf(o.out, "\nnext: %s\n", s.Text)
 	if s.Command != "" {
-		fmt.Printf("  %s\n", s.Command)
+		fmt.Fprintf(o.out, "  %s\n", s.Command)
 	}
-	for _, o := range s.Owed {
-		fmt.Printf("  owed, whenever somebody gets to it:\n  %s\n", o)
+	for _, owed := range s.Owed {
+		fmt.Fprintf(o.out, "  owed, whenever somebody gets to it:\n  %s\n", owed)
 	}
 	return code
 }
 
-func report(g *model.Gate, err error) int {
+func (o *opts) report(g *model.Gate, err error) int {
 	var ref *runner.Refusal
 	switch {
 	case errors.As(err, &ref):
-		fmt.Fprintln(os.Stderr, "refused:", ref.Reason)
+		fmt.Fprintln(o.errw, "refused:", ref.Reason)
 		return 1
 	case err != nil:
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(o.errw, "error:", err)
 		return 2
 	case g == nil:
 		return 0
 	}
-	fmt.Printf("%s %s: %s\n", g.Intent, g.Phase, g.Status)
+	fmt.Fprintf(o.out, "%s %s: %s\n", g.Intent, g.Phase, g.Status)
 	for _, c := range g.Checks {
-		fmt.Printf("  %-14s %s\n", c.Gate, c.Result)
+		fmt.Fprintf(o.out, "  %-14s %s\n", c.Gate, c.Result)
 		for _, f := range c.Findings {
 			d := ""
 			if f.Decision != nil {
 				d = " [" + f.Decision.Type + "]"
 			}
-			fmt.Printf("      %s %s: %s%s\n        next: %s\n", f.ID, f.File, f.Cause, d, f.Next)
+			fmt.Fprintf(o.out, "      %s %s: %s%s\n        next: %s\n", f.ID, f.File, f.Cause, d, f.Next)
 		}
 	}
 	if g.Status == "red" {
@@ -573,39 +589,39 @@ func report(g *model.Gate, err error) int {
 // printInit says what was done, what was left alone, and what a person still has to do.
 // The last list is the point: a first contact that leaves the project believing the gate
 // is binding when it is not is worse than no first contact.
-func printInit(res *runner.InitResult) {
+func printInit(out io.Writer, res *runner.InitResult) {
 	for _, p := range res.Created {
-		fmt.Println("  created  ", p)
+		fmt.Fprintln(out, "  created  ", p)
 	}
 	for _, p := range res.Kept {
-		fmt.Println("  kept     ", p)
+		fmt.Fprintln(out, "  kept     ", p)
 	}
 	if len(res.Outstand) > 0 {
-		fmt.Println("\nNot determined:")
+		fmt.Fprintln(out, "\nNot determined:")
 		for _, s := range res.Outstand {
-			fmt.Println("  -", s)
+			fmt.Fprintln(out, "  -", s)
 		}
 	}
-	fmt.Println("\nXeno cannot make these settings. Somebody with repository administration has to:")
+	fmt.Fprintln(out, "\nXeno cannot make these settings. Somebody with repository administration has to:")
 	for _, s := range res.Manual {
-		fmt.Println("  -", s)
+		fmt.Fprintln(out, "  -", s)
 	}
 }
 
 // printEnforcement prints the report. not-available is its own line rather than folded
 // into unmet, because a setting the host does not have is nobody's oversight and
 // reporting it as one sends somebody looking for a checkbox that is not there.
-func printEnforcement(rep *enforcement.Report) {
-	fmt.Printf("%s, branch %s\n", rep.Repository, rep.Branch)
+func printEnforcement(out io.Writer, rep *enforcement.Report) {
+	fmt.Fprintf(out, "%s, branch %s\n", rep.Repository, rep.Branch)
 	for _, q := range rep.Requirements {
-		fmt.Printf("  %-13s %-20s declared %-6s actual %s\n", q.State, q.Name, q.Declared, q.Actual)
+		fmt.Fprintf(out, "  %-13s %-20s declared %-6s actual %s\n", q.State, q.Name, q.Declared, q.Actual)
 		if q.Note != "" {
-			fmt.Printf("                  %s\n", q.Note)
+			fmt.Fprintf(out, "                  %s\n", q.Note)
 		}
 	}
-	fmt.Printf("\nreport written to %s\n", runner.ReportPath)
+	fmt.Fprintf(out, "\nreport written to %s\n", runner.ReportPath)
 	if rep.Unmet() > 0 {
-		fmt.Printf("\n%d requirement(s) are neither met nor waived. Where the host cannot express one,\n"+
+		fmt.Fprintf(out, "\n%d requirement(s) are neither met nor waived. Where the host cannot express one,\n"+
 			"record it as waived in project.yaml with a reason and a date: an unmeetable requirement\n"+
 			"becomes a decision in the repository rather than a complaint on every run.\n", rep.Unmet())
 	}

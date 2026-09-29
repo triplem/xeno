@@ -1,0 +1,278 @@
+// SPDX-License-Identifier: Apache-2.0
+
+package main
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/runner"
+)
+
+// invoke drives the command the way main does, with writers a test can read. The package
+// comment promises one staircase of exit codes and this is what asserts it (#110).
+func invoke(t *testing.T, args ...string) (code int, out, errw string) {
+	t.Helper()
+	var o, e bytes.Buffer
+	code = run(args, &o, &e)
+	return code, o.String(), e.String()
+}
+
+// repo is a repository with one intent, ready for a phase to be started in it.
+func repo(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	dir := filepath.Join(root, model.IntentDir("PROJ-1"))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n"+
+		"created: \"2026-09-20T10:00:00Z\"\n")
+	write("assumptions.yaml", "assumptions: []\n")
+	// The shipped templates, so that section set can render.
+	src := filepath.Join("..", "..", ".xeno", "plugin", "templates")
+	ids, err := os.ReadDir(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range ids {
+		files, err := os.ReadDir(filepath.Join(src, id.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range files {
+			b, err := os.ReadFile(filepath.Join(src, id.Name(), f.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			dst := filepath.Join(root, ".xeno/plugin/templates", id.Name(), f.Name())
+			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(dst, b, 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	return root
+}
+
+// 2 is "could not run at all", and it is what an unknown command, a missing argument and an
+// unresolvable phase all get. The usage goes to standard error, or a shell redirecting output
+// would lose the only thing it says.
+func TestTwoIsForWhatCouldNotRunAtAll(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		says string
+	}{
+		{"nothing at all", nil, "usage:"},
+		{"one word that is not init", []string{"phase"}, "usage:"},
+		{"a command that does not exist", []string{"gate", "frobnicate"}, "usage:"},
+		{"a command needing an intent, without one", []string{"phase", "start", "--phase", "00"}, "--intent is required"},
+		{"a phase that does not resolve", []string{"phase", "start", "--intent", "PROJ-1", "--phase", "99"}, "unknown phase"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			code, out, errw := invoke(t, tc.args...)
+			if code != 2 {
+				t.Errorf("exit %d, want 2", code)
+			}
+			if !strings.Contains(errw, tc.says) {
+				t.Errorf("standard error does not say %q: %q", tc.says, errw)
+			}
+			if out != "" {
+				t.Errorf("something reached standard output: %q", out)
+			}
+		})
+	}
+}
+
+// 1 is a refusal with a reason, and the reason goes to standard error. 0 is the command having
+// done what was asked.
+func TestOneIsARefusalAndZeroIsSuccess(t *testing.T) {
+	root := repo(t)
+
+	code, out, errw := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1", "--phase", "01", "--no-next")
+	if code != 1 {
+		t.Errorf("starting P1 before P0 exits %d, want 1", code)
+	}
+	if !strings.Contains(errw, "refused:") {
+		t.Errorf("a refusal does not say so on standard error: %q", errw)
+	}
+	if out != "" {
+		t.Errorf("a refusal wrote to standard output: %q", out)
+	}
+
+	if code, _, errw = invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next"); code != 0 {
+		t.Fatalf("starting P0 exits %d, want 0: %s", code, errw)
+	}
+}
+
+// 1 again on a red verdict, and the verdict itself on standard output: it is what the command was
+// asked for, not an error.
+func TestARedVerdictExitsOneAndPrintsToStandardOutput(t *testing.T) {
+	root := repo(t)
+	if code, _, e := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next"); code != 0 {
+		t.Fatalf("could not start the phase: %s", e)
+	}
+	// Finished with no output.md at all, so G-Schema reports it.
+	code, out, _ := invoke(t, "phase", "finish", "--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next")
+	if code != 1 {
+		t.Errorf("a red verdict exits %d, want 1", code)
+	}
+	if !strings.Contains(out, "red") {
+		t.Errorf("the verdict did not reach standard output: %q", out)
+	}
+}
+
+// The case section 6 rests the evidence arrangement on, asserted as the branch it is: a
+// provisional verdict exits 0, a divergence or a red phase exits 1. The generated wrapper depends
+// on the first, and a regression would turn every push out of a P4 into a failed verification,
+// which section 6 names as the outcome that would make people stop taking verification seriously.
+func TestAProvisionalVerdictVerifiesAsZero(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		res  runner.VerifyResult
+		want int
+	}{
+		{"nothing at all", runner.VerifyResult{Checked: 0}, 0},
+		{"all green", runner.VerifyResult{Checked: 9}, 0},
+		{"provisional, which the wrapper must not fail on",
+			runner.VerifyResult{Checked: 9, Provisional: []string{"PROJ-1 04-verification"}}, 0},
+		{"provisional and green together",
+			runner.VerifyResult{Checked: 9, Provisional: []string{"a", "b"}}, 0},
+		{"a red phase", runner.VerifyResult{Checked: 9, Red: []string{"PROJ-1 00-intake"}}, 1},
+		{"a divergence", runner.VerifyResult{Checked: 9,
+			Divergences: []runner.Divergence{{Key: "PROJ-1", Phase: "00-intake", What: "changed"}}}, 1},
+		{"provisional beside a red one, which is still a failure",
+			runner.VerifyResult{Checked: 9, Provisional: []string{"a"}, Red: []string{"b"}}, 1},
+	} {
+		if got := verifyCode(&tc.res); got != tc.want {
+			t.Errorf("%s: exit %d, want %d", tc.name, got, tc.want)
+		}
+	}
+}
+
+// And the whole command over this repository, which has verdicts and no divergence: 0, with the
+// count on standard output.
+func TestGateVerifyOverThisRepositoryExitsZero(t *testing.T) {
+	code, out, errw := invoke(t, "gate", "verify", "--root", filepath.Join("..", ".."))
+	if code != 0 {
+		t.Fatalf("exit %d: %s%s", code, out, errw)
+	}
+	if !strings.Contains(out, "verified ") {
+		t.Errorf("the count did not reach standard output: %q", out)
+	}
+	if errw != "" {
+		t.Errorf("a clean verification wrote to standard error: %q", errw)
+	}
+}
+
+// Every command the usage string names resolves, and every entry in the table is named. The names
+// are read out of the usage rather than listed again: a third copy would be a third place to be
+// wrong, which is the defect needsKey being a field rather than a switch was meant to avoid.
+func TestTheDispatchTableAndTheUsageAgree(t *testing.T) {
+	named := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(?m)^  xeno (\w+)(?: (\w[\w-]*))?`).FindAllStringSubmatch(usage, -1) {
+		name := m[1]
+		if m[2] != "" {
+			name += " " + m[2]
+		}
+		named[name] = true
+	}
+	if len(named) < 15 {
+		t.Fatalf("read %d command names out of the usage, which cannot be right: %v", len(named), named)
+	}
+	// version is the one name the usage carries and the table does not. run answers it before
+	// the dispatch, and before the usage check, so that it works in a directory holding nothing:
+	// a version is what somebody asks for when nothing else works.
+	if _, ok := commands["version"]; ok {
+		t.Error("version is in the table, so run answers it twice")
+	}
+	delete(named, "version")
+	for name := range named {
+		if _, ok := commands[name]; !ok {
+			t.Errorf("the usage names %q and the table has no such command", name)
+		}
+	}
+	for name := range commands {
+		if !named[name] {
+			t.Errorf("the table carries %q and the usage does not name it", name)
+		}
+	}
+}
+
+// init is one word and everything else is two, which is a property of the dispatch rather than of
+// any name.
+func TestInitIsOneWordAndTheRestAreTwo(t *testing.T) {
+	for name := range commands {
+		words := len(strings.Fields(name))
+		if name == "init" {
+			continue
+		}
+		if words != 2 {
+			t.Errorf("%q is %d words, and only init is one", name, words)
+		}
+	}
+	if _, ok := commands["init"]; !ok {
+		t.Error("init is not in the table")
+	}
+}
+
+// The positional argument is taken off the front before the flag set sees it, because Go's flag
+// package stops at the first argument that is not a flag. Absent, it must not become a silent empty
+// string that something refuses two layers down without saying why.
+func TestAMissingPositionalArgumentIsNotSilent(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "gate", "approve", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--by", "a.person", "--reason", "assessed")
+	if code == 0 {
+		t.Errorf("approving nothing exited 0:\n%s", out)
+	}
+	if errw == "" {
+		t.Errorf("approving nothing said nothing on standard error")
+	}
+}
+
+// --export prints the phase environment for a shell to eval, so a suggestion meant for a person
+// must not travel with it.
+func TestExportPrintsTheEnvironmentAndNothingElse(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--export")
+	if code != 0 {
+		t.Fatalf("exit %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "XENO_INTENT") || !strings.Contains(out, "XENO_PHASE") {
+		t.Errorf("the environment did not reach standard output: %q", out)
+	}
+	for _, unwanted := range []string{"next:", "xeno section set"} {
+		if strings.Contains(out, unwanted) {
+			t.Errorf("a suggestion travelled with the environment, which a shell would eval: %q", out)
+		}
+	}
+}
+
+// version is one word, exits 0 and writes to standard output.
+func TestVersionIsOneWordAndExitsZero(t *testing.T) {
+	code, out, errw := invoke(t, "version")
+	if code != 0 {
+		t.Errorf("exit %d, want 0", code)
+	}
+	if !strings.HasPrefix(out, "xeno ") {
+		t.Errorf("version wrote %q to standard output", out)
+	}
+	if errw != "" {
+		t.Errorf("version wrote to standard error: %q", errw)
+	}
+}
