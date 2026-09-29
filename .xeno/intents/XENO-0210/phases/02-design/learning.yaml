@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:03:27Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The dispatch test reads the command names out of the usage string rather than
+      listing them, so a command added to the table and not the string fails, and so
+      does the reverse. Listing them in the test would have made a third place to
+      forget, which is the defect the issue describes about needsKey having once been a
+      switch that listed its exceptions.
+    proposal: >-
+      Where two lists in the source must agree, a test derives one from the other rather
+      than carrying a third copy, since a test that repeats a list becomes another place
+      the list is wrong.
+    target: cmd/xeno

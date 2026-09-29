@@ -1,0 +1,49 @@
+# XENO-0210 verification, 454cfbf with the working tree of the intent
+
+# the thirteen tests of cmd/xeno, which had none before #135's three
+--- PASS: TestTheHeadingLinesUpWithTheWidestRow (0.00s)
+--- PASS: TestThePhaseHeadingLinesUpToo (0.00s)
+--- PASS: TestTheDefaultIsTenAndTheNoticeCountsTheRest (0.00s)
+--- PASS: TestTwoIsForWhatCouldNotRunAtAll (0.00s)
+--- PASS: TestOneIsARefusalAndZeroIsSuccess (0.00s)
+--- PASS: TestARedVerdictExitsOneAndPrintsToStandardOutput (0.00s)
+--- PASS: TestAProvisionalVerdictVerifiesAsZero (0.00s)
+--- PASS: TestGateVerifyOverThisRepositoryExitsZero (0.28s)
+--- PASS: TestTheDispatchTableAndTheUsageAgree (0.00s)
+--- PASS: TestInitIsOneWordAndTheRestAreTwo (0.00s)
+--- PASS: TestAMissingPositionalArgumentIsNotSilent (0.00s)
+--- PASS: TestExportPrintsTheEnvironmentAndNothingElse (0.00s)
+--- PASS: TestVersionIsOneWordAndExitsZero (0.00s)
+ok  	github.com/triplem/xeno/cmd/xeno	0.296s
+
+# go test ./...
+ok  	github.com/triplem/xeno/cmd/xeno	0.372s
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	38.831s
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# coverage, before and after
+# before: 72.0% over the module, 28 of 30 cmd/xeno functions at 0%
+# after:  81.5% over the module
+#          19 of 31 cmd/xeno functions at 0%
+
+# only main names the real files
+51:func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
+
+# the staircase, as the package comment states it
+// Command xeno is the runner. Exit codes follow one staircase throughout: 0 where the
+// command did what was asked and the verdict is not red, 1 on a red verdict or a
+// refusal with a reason, 2 where it could not run at all.
+
+# gofmt / vet / verify
+(gofmt: no output)
+(vet: clean)
+verified 139 verdicts

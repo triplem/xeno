@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:02:49Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The criteria had to add one the issue did not ask for: every assertion names the
+      stream its output arrived on. The change that makes the tests possible is
+      fifty-five edits to writers, and its characteristic failure is sending something
+      to the wrong stream, which every test of an exit code would pass through
+      unnoticed.
+    proposal: >-
+      Where a refactor is undertaken so that tests become possible, the criteria assert
+      the property the refactor itself could break, not only the property it was
+      undertaken for.
+    target: cmd/xeno

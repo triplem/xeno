@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:11:21Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The first attempt at the case this intent exists for skipped rather than asserted,
+      because the fixture needed three green phases before a provisional one and did not
+      reach it. A skip reports success, so the test suite would have looked complete
+      while the branch a CI wrapper depends on stayed unasserted.
+    proposal: >-
+      A test that skips when its fixture does not reach the state is worse than no test,
+      since it reports success. Where the fixture is expensive, the branch is extracted
+      and asserted directly and the command is covered separately.
+    target: cmd/xeno
