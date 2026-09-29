@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#134
+created: 2026-09-29T17:59:30Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Two small functions were extracted because the tests could not otherwise reach the
+      behaviour: the truncation arithmetic would have needed captured output, and the
+      alignment would have needed a hand comparing two strings. Both are three lines and
+      neither was in the design.
+    proposal: >-
+      Where behaviour lives inside a printer, the part that is arithmetic is separated
+      from the part that is output before the tests are written, since a test that
+      captures stdout to check a number tests the printing as well and fails for two
+      reasons.
+    target: cmd/xeno

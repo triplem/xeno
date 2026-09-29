@@ -37,7 +37,7 @@ const usage = `usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno evidence attach --intent KEY --phase NN --from DIR
-  xeno intent status  [--intent KEY]            without one, every intent by creation
+  xeno intent status  [--intent KEY] [--all]    without one, the last ten by creation
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
@@ -60,6 +60,7 @@ type opts struct {
 	root, key, phaseArg            string
 	from, src, by, pattern, file   string
 	summary                        string
+	all                            bool
 	project, mdl, language         string
 	pluginFrom, host, branch       string
 	base, head, reason             string
@@ -182,6 +183,7 @@ func parse(name string, args []string) (*opts, int) {
 	// Print what a shell can eval instead of saying what the next step is. Both on one
 	// stream would make the eval swallow a sentence meant for a person.
 	fs.BoolVar(&o.export, "export", false, "print the phase's environment for a shell to eval")
+	fs.BoolVar(&o.all, "all", false, "list every intent, not the last ten")
 	if err := fs.Parse(args); err != nil {
 		return nil, 2
 	}
@@ -397,8 +399,11 @@ func cmdIntentStatus(o *opts) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
+	if len(states) > 0 {
+		fmt.Println(sprintRow(phaseRow, "phase", "state", "verdict"))
+	}
 	for _, s := range states {
-		line := fmt.Sprintf("%-18s %-22s %s", s.Phase, s.State, s.Status)
+		line := fmt.Sprintf(phaseRow, s.Phase, s.State, s.Status)
 		if s.Stale {
 			line += "  (predecessor changed since this phase started)"
 		}
@@ -409,11 +414,49 @@ func cmdIntentStatus(o *opts) int {
 
 // cmdIntentList prints the intents oldest first. A row whose intent.yaml could not be read
 // says so in place of its date rather than going missing.
+// listRow is the format the heading and every row share, which is what keeps a heading from
+// drifting from the column it labels. The state column is seventeen wide because the longest one
+// is 03-implementation.
+const listRow = "%-10s  %-12s %-17s %s"
+
+// listDefault is how many intents the listing shows without --all. A listing answers what is
+// happening; sixty rows, fifty of which stopped at the intake, answer what has ever happened, and
+// --all is there for that. Ten is a screen.
+const listDefault = 10
+
+// phaseRow is the same arrangement for the one-intent form, where state is a position and
+// verdict is a judgement, which is the pair a heading is worth most for.
+const phaseRow = "%-18s %-22s %s"
+
+// tail says how many of n intents a listing shows and how many it leaves out. Separated from the
+// printing so that the arithmetic can be asserted without capturing output.
+func tail(n int, all bool) (shown, hidden int) {
+	if all || n <= listDefault {
+		return n, 0
+	}
+	return listDefault, n - listDefault
+}
+
+// sprintRow renders one row of a table, and exists so that a test can compare a heading against a
+// row built from the same format string.
+func sprintRow(format string, cells ...any) string {
+	return fmt.Sprintf(format, cells...)
+}
+
 func cmdIntentList(o *opts) int {
 	intents, err := o.r.Intents()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
+	}
+	// The tail, taken here rather than in the runner: Intents() returns everything in order and
+	// knows nothing about presentation, so this cannot change what is shown (#134).
+	shown, hidden := tail(len(intents), o.all)
+	intents = intents[len(intents)-shown:]
+	// With the first row rather than before the loop, so that a repository holding no intents
+	// prints nothing at all instead of a label for an absence.
+	if len(intents) > 0 {
+		fmt.Println(sprintRow(listRow, "created", "intent", "state", "phase"))
 	}
 	for _, s := range intents {
 		verdict := s.Verdict
@@ -429,11 +472,17 @@ func cmdIntentList(o *opts) int {
 		if date == "" {
 			date = "?"
 		}
-		line := fmt.Sprintf("%-10s  %-12s %-17s %s", date, s.Key, s.State, verdict)
+		line := fmt.Sprintf(listRow, date, s.Key, s.State, verdict)
 		if s.Problem != "" {
 			line += "  (" + s.Problem + ")"
 		}
 		fmt.Println(strings.TrimRight(line, " "))
+	}
+	// After the table, so it is the last thing read and cannot be taken for a row. A truncated
+	// listing that said nothing would read as a repository holding ten intents, which is a wrong
+	// fact rather than a missing one.
+	if hidden > 0 {
+		fmt.Printf("\n%d older, --all to see them\n", hidden)
 	}
 	return 0
 }
