@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:32:39Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion that ranks above every other one is that the hook never fails a
+      turn. It runs on every turn of every session in this repository, so a bug in it is
+      not a missing figure but an unusable harness, and the feature it serves is
+      optional by section 11's own words.
+    proposal: >-
+      Where a tool installs something the harness runs on every turn, the criteria put
+      its harmlessness first and its purpose second, since the blast radius of the
+      mechanism is larger than the value of what it records.
+    target: cmd/xeno
