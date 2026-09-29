@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:33:24Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The filter and the scan now disagree about what a secret is, by design: one runs a
+      narrowed rule set in process and is hashed into secrets_hash, the other runs the
+      full set once per change. Nothing records that they are meant to disagree, so the
+      first person to notice will read it as a bug in one of them.
+    proposal: >-
+      Where two instruments read the same subject with different rule sets on purpose,
+      each one's configuration names the other and says why they differ, since a
+      discrepancy between two security checks reads as an error in whichever one was
+      found second.
+    target: .github/workflows
