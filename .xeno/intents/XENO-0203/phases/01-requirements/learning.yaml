@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:53:39Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      A criterion about coverage not regressing had to be written, because the change
+      replaces five patterns with two hundred and twenty-two and the arithmetic hides a
+      loss. Three shapes the old set caught are missed by the imported one, and no count
+      would have shown it.
+    proposal: >-
+      Where a set is replaced by a larger one, a criterion names the members of the old
+      set that must still be covered, since the size of the new set is evidence about
+      the new set and says nothing about the old one.
+    target: internal/secrets
