@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:36:48Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Two rejected alternatives would have made Appendix B's property true by
+      construction, by refusing to hash a directory carrying something unknown. Both
+      prevent an abandonment, and section 6 is explicit that an abandonment is written
+      rather than refused: the intent is dropped either way and the record should say
+      what is missing. A guard that blocks is not always stronger than one that reports.
+    proposal: >-
+      Where a check could refuse instead of report, the design asks what the refusal
+      would prevent somebody from recording, since the process's value is the record and
+      a guard that stops one being written costs more than the state it prevents.
+    target: internal/gates
