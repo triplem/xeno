@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:33:20Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Three rejected alternatives were the same measurement behind different mechanisms,
+      and only the arithmetic showed it: a window filter, a counter snapshot at the
+      phase boundaries and a tool-call hook all capture the same 7%, because each
+      measures the interval between phase start and phase finish and the work happened
+      outside it.
+    proposal: >-
+      Where alternatives differ in mechanism, the design states what each one measures
+      before comparing how each one works, since several mechanisms can compute the same
+      wrong number and the difference between them reads as a choice.
+    target: internal/cost

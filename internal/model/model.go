@@ -200,6 +200,19 @@ type Output struct {
 	Evidence      []EvidenceItem `yaml:"evidence,omitempty"`
 }
 
+// Cost is the record of section 11, one per phase, outside artifacts_hash so that a figure
+// arriving after a verdict cannot invalidate it. cost_usd is deliberately absent: section 11
+// makes it optional and puts the authoritative money view in v2, and a price is not a fact this
+// repository holds.
+type Cost struct {
+	Common       `yaml:",inline"`
+	Evidence     string   `yaml:"evidence"`
+	TokensIn     int      `yaml:"tokens_in"`
+	TokensOut    int      `yaml:"tokens_out"`
+	TokensCached int      `yaml:"tokens_cached"`
+	Sessions     []string `yaml:"sessions"`
+}
+
 // Attached is one entry of evidence/attached.yaml, outside artifacts_hash.
 type Attached struct {
 	Kind     string `yaml:"kind"`

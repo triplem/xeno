@@ -16,6 +16,7 @@ import (
 	"go.yaml.in/yaml/v3"
 	"time"
 
+	"github.com/triplem/xeno/internal/cost"
 	"github.com/triplem/xeno/internal/evidence"
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
@@ -450,6 +451,12 @@ func (r *Runner) Finish(key, phase, summary string) (*model.Gate, error) {
 			return nil, err
 		}
 	}
+	// Before the verdict, and it could be anywhere: cost.yaml lies outside artifacts_hash, by
+	// section 11, so that a figure arriving after a verdict cannot invalidate it. A phase with
+	// nothing attributed writes no file, because section 11 says a phase without one is complete.
+	if err := r.writeCost(key, phase); err != nil {
+		return nil, err
+	}
 	g, err := r.evaluate(key, phase)
 	if err != nil {
 		return nil, err
@@ -514,7 +521,32 @@ func (r *Runner) writeDigest(key, phase, summary string) error {
 	return os.WriteFile(path, []byte(out), 0o644)
 }
 
-// GateRun recomputes a verdict. It attaches first, because P5 has no successor whose
+// writeCost writes the cost record of section 11 from what the hook attributed to this phase.
+//
+// The counts come from a ledger a hook appends to, one line per turn, naming the phase the runner
+// said was open. Nothing is inferred: a turn spent with no phase open is in the ledger as such,
+// and this sums only what names the phase. Measured against this repository, attributing by each
+// phase's own window instead captures about seven per cent of a session, because the work is done
+// before `phase start` is called, so the gap is left visible rather than distributed (A63).
+//
+// evidence: self-reported is mandatory and accurate here: a count read from a file the harness
+// wrote, attributed by a marker the runner wrote.
+func (r *Runner) writeCost(key, phase string) error {
+	common, err := r.common(key, phase)
+	if err != nil {
+		return err
+	}
+	totals, sessions, err := cost.ForPhase(r.Root, common.Intent, phase)
+	if err != nil || totals.Zero() {
+		return nil // no ledger, or nothing attributed: a phase without a cost record is complete
+	}
+	return fm.WriteYAML(r.abs(model.PhaseDir(key, phase)+"/cost.yaml"), model.Cost{
+		Common: common, Evidence: "self-reported",
+		TokensIn: totals.In, TokensOut: totals.Out, TokensCached: totals.Cached,
+		Sessions: sessions,
+	})
+}
+
 // GateRun recomputes a verdict. It attaches first, because P5 has no successor whose
 // start could do it.
 func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {

@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:41:05Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      tokens_cached is the cache read and the cache write added together, because
+      section 11 names one field and the transcript carries two that cost differently.
+      The schema was cut before the harness reported both, so conforming to it loses
+      information that exists, and no gate or test can see the loss.
+    proposal: >-
+      Where a schema has one field and the source has two, the writer records which two
+      it added and the phase says what was lost, since a single number that conforms
+      looks like a measurement rather than a reduction.
+    target: docs/process-definition.md

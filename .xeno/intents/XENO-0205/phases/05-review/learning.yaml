@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:42:12Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The cost record is optional by section 11 and required by no gate, so a hook that
+      silently stopped working produces the same artifact as a phase worked outside its
+      window: none. The mechanism has no way to report its own absence, and the command
+      it runs is a relative path resolved against a directory nobody here controls.
+    proposal: >-
+      Where a figure is optional and collected by something outside the runner, the
+      absence of the figure is distinguished from the absence of the collector, or the
+      first silent failure is indistinguishable from ordinary use for as long as nobody
+      looks.
+    target: internal/cost
