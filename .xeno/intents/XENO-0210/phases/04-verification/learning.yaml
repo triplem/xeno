@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:13:35Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The refactor undertaken to make tests possible contained two defects of its own, a
+      shadowed receiver and a struct built without its new fields, and both were found
+      by compiling and running rather than by the tests it enabled. The tests then found
+      a third thing, which turned out not to be a bug. A change made for testability is
+      itself the least tested code in the change.
+    proposal: >-
+      Where a refactor exists to enable tests, it is exercised by building and running
+      before the tests are written, since the tests cover what the refactor was for and
+      not the refactor.
+    target: cmd/xeno
