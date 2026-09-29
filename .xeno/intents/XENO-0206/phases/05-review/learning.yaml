@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:20:12Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      complete will be read as merged, and for every intent in this repository that
+      reading happens to be right, so the error will first appear on an intent whose
+      review went green and whose pull request nobody merged. Section 8 puts the merge
+      outside the trail deliberately, which means the column cannot be made accurate
+      about the thing readers will take it for.
+    proposal: >-
+      Where a computed state is close to a fact the trail deliberately excludes, the
+      phase records what readers will take it for, since a word that is right by
+      coincidence teaches a reading the tool cannot support.
+    target: internal/runner

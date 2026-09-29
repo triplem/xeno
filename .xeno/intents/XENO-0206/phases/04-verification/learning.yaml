@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:19:33Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Computing the column turned fifty rows from in-progress into 00-intake, which is
+      the same fact stated plainly: this project wrote an intake per intent and stopped.
+      The stored field had been hiding that, not deliberately, and the honest column is
+      a less comfortable read of the repository than the misleading one was.
+    proposal: >-
+      A listing that computes its state will say things about a project's practice that
+      a stored flag did not, and that is a reason to compute it rather than an
+      objection, but the phase says what the new reading exposes rather than only that
+      it is correct.
+    target: internal/runner

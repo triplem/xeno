@@ -368,7 +368,7 @@ func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
 			return "", refuse("%s still waits for evidence from the pipeline; start again once it has run", pred)
 		}
 	}
-	if g.Status == "red" {
+	if !Decided(g.Status) {
 		return "", refuse("%s is red; decide every failing finding first: fix it, approve it or override it", pred)
 	}
 	return h, nil
@@ -714,6 +714,17 @@ func (r *Runner) evidenceSource() string {
 	return "ci"
 }
 
+// Decided reports whether a verdict settles its phase. Red is undecided by definition and a
+// provisional one waits for evidence, so neither lets the next phase start and neither means the
+// work is finished. Everything else does: approved and overridden are decisions a person took, and
+// green needed none.
+//
+// It is one predicate because two parts of the tool ask the question. predecessorAllowsStart asks
+// it before it lets a phase begin, and the intent listing asks it of P5 to say whether an intent is
+// complete; a second list of accepted statuses could drift from the first and the two would then
+// disagree about the same intent (#132).
+func Decided(status string) bool { return status != "red" && status != "provisional" }
+
 // IntentsRoot is where intent directories lie, relative to the repository root.
 const IntentsRoot = ".xeno/intents"
 
@@ -722,7 +733,13 @@ const IntentsRoot = ".xeno/intents"
 type IntentSummary struct {
 	Key     string
 	Created string // intent.yaml's created, whole, or empty where it cannot be read
-	Status  string // the intent's own status, in-progress | abandoned
+	// State is computed, not read: abandoned, complete, or the phase the work has reached.
+	//
+	// intent.yaml's own status carries two values, in-progress and abandoned, because section 5
+	// gives it no third and section 8 says why: a merged intent's record is its P5 phase, so
+	// completion is that verdict rather than a flag. Printing the field made every intent that
+	// was not dropped read as unfinished, which is what #132 was about.
+	State   string
 	Phase   string // the furthest phase carrying a verdict, and that verdict
 	Verdict string
 	Problem string // why this row could not be read, where that happened
@@ -775,7 +792,6 @@ func (r *Runner) summarise(key string) IntentSummary {
 		s.Problem = "intent.yaml cannot be read"
 		return s
 	}
-	s.Status = in.Status
 	// Kept whole, because the sort is over it: two intents of one day are ordered by their
 	// time, and truncating to the date here would fall through to the key tie break and
 	// reproduce the order this listing exists to correct. The command prints the date.
@@ -789,8 +805,36 @@ func (r *Runner) summarise(key string) IntentSummary {
 				s.Phase, s.Verdict = st.Phase, st.Status
 			}
 		}
+		s.State = state(in.Status, states)
 	}
 	return s
+}
+
+// state is the three answers in order. Abandoned wins and is read rather than computed, because an
+// intent dropped in P1 has no P5 to derive anything from, which is the case intent close exists
+// for. Otherwise a decided P5 is complete, and otherwise the work is where it has got to.
+//
+// The word is complete rather than closed: intent close writes abandoned in this tool, so a row
+// reading closed would invite the command that falsifies it. It is a rendering of the verdict and
+// not a value of the schema, which is why it is defined here and not in section 5.
+func state(stored string, states []PhaseState) string {
+	if stored == "abandoned" {
+		return "abandoned"
+	}
+	last := model.Phases[len(model.Phases)-1]
+	reached := ""
+	for _, st := range states {
+		if st.Status != "" || st.State == "running" {
+			reached = st.Phase
+		}
+		if st.Phase == last && st.Status != "" && Decided(st.Status) {
+			return "complete"
+		}
+	}
+	if reached == "" {
+		return "no phases"
+	}
+	return reached
 }
 
 // PhaseState is computed, never stored: there is no position that could go stale.

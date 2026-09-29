@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:14:05Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A listing added one intent ago printed a stored field as though it were a
+      lifecycle, and the field can only say whether an intent was abandoned. The
+      neighbouring column in the same row was computed from the verdicts, so one row
+      carried both philosophies, and the stored one is what a reader looked at first.
+    proposal: >-
+      Where a listing shows a state, it computes it from the artifacts even when a field
+      of the same name exists, since a field that predates the question answers a
+      narrower one and its name will be read as the broader.
+    target: internal/runner

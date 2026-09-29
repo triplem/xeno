@@ -429,7 +429,7 @@ func cmdIntentList(o *opts) int {
 		if date == "" {
 			date = "?"
 		}
-		line := fmt.Sprintf("%-10s  %-12s %-12s %s", date, s.Key, s.Status, verdict)
+		line := fmt.Sprintf("%-10s  %-12s %-17s %s", date, s.Key, s.State, verdict)
 		if s.Problem != "" {
 			line += "  (" + s.Problem + ")"
 		}

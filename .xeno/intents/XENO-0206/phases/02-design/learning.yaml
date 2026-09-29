@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#132
+created: 2026-09-29T16:15:50Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Two rejected alternatives would have derived completion from the number of
+      finished phases rather than from the verdict, and both would have called a red or
+      provisional P5 complete. That is the state the sequence refuses to build on, so
+      the listing would have disagreed with phase start about the same intent.
+    proposal: >-
+      Where a state is derived from phases, it is derived from their verdicts and not
+      from their existence, and the predicate is the one the sequence already uses, so
+      that two parts of the tool cannot disagree about whether a phase is settled.
+    target: internal/runner
