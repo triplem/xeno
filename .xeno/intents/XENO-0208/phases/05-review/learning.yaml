@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:10:38Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The fix put the convention in a comment in cmd/xeno while the citation that caused
+      the problem stays in CLAUDE.md, undistinguished between prose and tabular output.
+      So the next table will be reasoned about from the wrong premise again unless
+      somebody happens to read the comment first, and the comment is in the file only
+      one table lives in.
+    proposal: >-
+      Where a convention in CLAUDE.md turns out to govern only one kind of writing, the
+      distinction belongs in CLAUDE.md rather than in a comment beside the first thing
+      it misled, since the next question will be asked somewhere else.
+    target: CLAUDE.md
