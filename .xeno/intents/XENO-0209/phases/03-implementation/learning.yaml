@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#109
+created: 2026-09-29T18:39:42Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+3ec2429.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      For the second time a change's own tests could not be run against the tree without
+      it, because they name symbols the change introduces. XENO-0201 recorded the same
+      thing about a changed signature and substituted evidence from the tree; here two
+      binaries, one per side, gave a real before and after at the command level.
+    proposal: >-
+      Where new tests cannot compile against the old tree, the before and after is run
+      as two builds of the command rather than abandoned, since a binary has no compile
+      time dependency on the symbols the change added.
+    target: docs/process-definition.md
