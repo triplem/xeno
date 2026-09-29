@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T06:02:43Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Both decisions the design had not reached were about what happens when an input is
+      wrong: an uncompilable regex in a project file, and a filter file that is absent.
+      Refusing in either case would stop every phase of a repository over configuration,
+      and the pattern that will not compile still belongs in the hash, or the field
+      stops saying what was in force.
+    proposal: >-
+      Where a runner loads configuration a project writes, a malformed entry is dropped
+      and recorded rather than made fatal, and it stays inside whatever hash describes
+      the effective set. A filter that refuses to load is a filter that is off.
+    target: internal/secrets

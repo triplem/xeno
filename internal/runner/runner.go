@@ -21,6 +21,7 @@ import (
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
 )
 
@@ -492,6 +493,18 @@ func (r *Runner) writeDigest(key, phase, summary string) error {
 			front["tool"] = tool
 		}
 	}
+	// Section 16: the agent writes the summary text, the runner filters it against the
+	// effective filter, hashes it and writes the file, so the filtering is deterministic and
+	// outside the model's reach. An empty filter, which is a repository before its plugin is
+	// vendored, redacts nothing and writes no field rather than a hash of nothing.
+	filter, err := secrets.Load(r.Root)
+	if err != nil {
+		return err
+	}
+	summary = filter.Redact(summary)
+	if h := filter.Hash(); h != "" {
+		front["secrets_hash"] = h
+	}
 	body := strings.TrimRight(summary, "\n") + "\n"
 	out := "---\n" + frontmatter(front) + "---\n" + body
 	path := r.abs(model.PhaseDir(key, phase) + "/digest.md")
@@ -588,6 +601,14 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 	front["language"] = t.Bundle.Language
 	front["template"] = t.Ref()
 	front["strings_hash"] = t.StringsHash
+	// The filter output.md was written under. The prose itself is not redacted: section 16
+	// puts the filtering on the digest, which is the file that leaves a session, and a filter
+	// over the agent's own prose would redact a discussion of a pattern by that pattern.
+	if filter, ferr := secrets.Load(r.Root); ferr == nil {
+		if h := filter.Hash(); h != "" {
+			front["secrets_hash"] = h
+		}
+	}
 	// Section 12 records both in project.yaml, so they are not among the fields that come
 	// from the harness; absent where the project does not say, never defaulted (A35, #120).
 	if tool, mdl := r.agent(); tool != "" || mdl != "" {

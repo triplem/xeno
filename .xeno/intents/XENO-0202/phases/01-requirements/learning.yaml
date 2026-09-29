@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T05:58:06Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Appendix B fixes every other hash to the byte and delegates two of them to
+      whichever package writes them first. Writing the criteria showed what that
+      delegation costs: the properties the value needs, independence from comments and
+      from order, are exactly what the appendix specifies for the others, and they had
+      to be derived again here from what the field is for.
+    proposal: >-
+      Where a specification delegates a computation, the criteria state the properties
+      the value must have before the computation is chosen, since a delegation transfers
+      the decision and not the requirements, and the requirements are the part that gets
+      lost.
+    target: ASSUMPTIONS.md

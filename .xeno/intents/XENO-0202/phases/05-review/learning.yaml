@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T06:05:05Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The release note had to be written twice, because the first version said digests
+      are filtered and the true statement is that digests pass through a filter of five
+      patterns and record which one. The difference is what a reader will rely on: the
+      first invites trust in the output, the second invites checking the filter.
+    proposal: >-
+      A release note for a filter, a check or a scan names the size of what it catches
+      rather than the category, since a reader converts a category into a guarantee and
+      a count into a question.
+    target: docs/process-definition.md
