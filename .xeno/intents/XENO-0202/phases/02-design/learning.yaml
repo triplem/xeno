@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T05:59:42Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Three of the six rejected alternatives make a field present by writing something
+      nobody stood behind: by-hand where no filter exists, a hash over the bytes of
+      whichever files happened to be there, and a tightened honesty rule that would have
+      been satisfied by rewriting sealed history. Each is the cheapest way to a green
+      gate and each makes the field say less than its absence did.
+    proposal: >-
+      Where a hash field covers a set that may be empty, absence is the value for an
+      empty set and by-hand is reserved for a person, since a field that is always
+      present stops distinguishing a filter that ran from one that does not exist.
+    target: internal/secrets
