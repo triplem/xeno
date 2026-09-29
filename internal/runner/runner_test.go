@@ -103,7 +103,7 @@ func (f *fixture) must(err error) {
 
 func (f *fixture) finish(phase string) *model.Gate {
 	f.t.Helper()
-	g, err := f.r.Finish(key, phase)
+	g, err := f.r.Finish(key, phase, "")
 	f.must(err)
 	return g
 }
@@ -1275,7 +1275,7 @@ func TestHashFieldShape(t *testing.T) {
 			"\nrules_hash: by-hand\n---\n\n# Result\n")
 		f.write(d+"/digest.md", "---\n"+common+session+"---\nsummary\n")
 		f.write(d+"/learning.yaml", common+"no_finding: true\n")
-		g, err := f.r.Finish(key, "00-intake")
+		g, err := f.r.Finish(key, "00-intake", "")
 		f.must(err)
 		if g.Status != tc.want {
 			t.Errorf("%s: got %s, wanted %s", tc.name, g.Status, tc.want)
@@ -1723,5 +1723,187 @@ func TestTheRowNamesTheFurthestPhaseWithAVerdict(t *testing.T) {
 	}
 	if own.Phase != "00-intake" || own.Verdict != "green" {
 		t.Fatalf("the row says %q %q, want 00-intake green", own.Phase, own.Verdict)
+	}
+}
+
+// ---- the runner writes the digest (#120)
+
+// project writes the agent block section 12 defines, which is where model and tool live.
+func (f *fixture) project(body string) {
+	f.t.Helper()
+	f.write(".xeno/config/project.yaml", body)
+}
+
+const agentBlock = "language:\n  artifacts: en\nagent:\n  tool: claude-code\n  model:\n    default: a-model\n"
+
+func digestFront(t *testing.T, root, phase string) (map[string]any, string) {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join(root, model.PhaseDir(key, phase), "digest.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	front, body, err := fm.Split(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(front, &m); err != nil {
+		t.Fatal(err)
+	}
+	return m, string(body)
+}
+
+// Section 5: the agent supplies the summary text, the runner writes the file. What it carries is
+// where it came from, and three groups rather than two: no template and no strings bundle.
+func TestFinishWritesTheDigestFromTheSummary(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	f.must2(f.r.Finish(key, "00-intake", "the summary of the exchange"))
+
+	front, body := digestFront(t, f.root, "00-intake")
+	if !strings.Contains(body, "the summary of the exchange") {
+		t.Errorf("the digest does not carry the summary: %q", body)
+	}
+	for _, want := range []string{"intent", "phase", "created", "schema_version",
+		"runner_version", "plugin_version", "language", "context_hash", "model", "tool"} {
+		if front[want] == nil || front[want] == "" {
+			t.Errorf("the digest carries no %s", want)
+		}
+	}
+	// A digest is neither rendered nor covered by a rule set.
+	for _, unwanted := range []string{"template", "strings_hash", "rules_hash"} {
+		if _, ok := front[unwanted]; ok {
+			t.Errorf("the digest carries %s, which belongs to a rendered file", unwanted)
+		}
+	}
+	if front["model"] != "a-model" || front["tool"] != "claude-code" {
+		t.Errorf("model and tool are %v and %v, want the project's", front["model"], front["tool"])
+	}
+}
+
+// The honest half of the writer. Section 5 gives the runner filtering as well as writing, and
+// there is no filter in this tree, so the field is absent rather than a hash over nothing. The
+// consequence is that the phase is red on it, which is the true state and not a regression.
+func TestTheWrittenDigestCarriesNoSecretsHashAndTheGateSaysSo(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	g, err := f.r.Finish(key, "00-intake", "a summary")
+	f.must(err)
+
+	front, _ := digestFront(t, f.root, "00-intake")
+	if _, ok := front["secrets_hash"]; ok {
+		t.Error("the digest asserts a filter that does not exist")
+	}
+	var named bool
+	for _, c := range g.Checks {
+		for _, fd := range c.Findings {
+			if strings.Contains(fd.File, "digest.md") && strings.Contains(fd.Cause, "secrets_hash") {
+				named = true
+			}
+		}
+	}
+	if !named {
+		t.Error("G-Schema does not report the missing secrets_hash of the digest it was given")
+	}
+}
+
+// Section 5 says the supported path is not an enforced one, so a phase finished without a summary
+// is judged exactly as before and no digest appears.
+func TestFinishWithoutASummaryWritesNoDigest(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	f.must2(f.r.Finish(key, "00-intake", ""))
+
+	if _, err := os.Stat(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "digest.md")); err == nil {
+		t.Fatal("a finish with no summary wrote a digest")
+	}
+}
+
+// One source, two writers: the fields appear in output.md as the digest carries them.
+func TestSectionSetWritesTheModelAndToolTheProjectRecords(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	if got := f.frontField("00-intake", "model"); got != "a-model" {
+		t.Errorf("model is %q, want the project's", got)
+	}
+	if got := f.frontField("00-intake", "tool"); got != "claude-code" {
+		t.Errorf("tool is %q, want the project's", got)
+	}
+}
+
+// A35's argument, kept: a plausible value in a field nobody produced is worse than an absent one,
+// and the only tool this repository has used would be exactly such a value.
+func TestNoAgentBlockLeavesBothFieldsAbsent(t *testing.T) {
+	for _, tc := range []struct{ name, body string }{
+		{"no project file", ""},
+		{"no agent block", "language:\n  artifacts: en\n"},
+		{"an empty agent block", "language:\n  artifacts: en\nagent: {}\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture(t)
+			if tc.body != "" {
+				f.project(tc.body)
+			}
+			f.templated()
+			f.must(f.r.Start(key, "00-intake"))
+			_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+			f.must(err)
+			f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+			if got := f.frontField("00-intake", "model"); got != "" {
+				t.Errorf("output.md guessed a model: %q", got)
+			}
+			front, _ := digestFront(t, f.root, "00-intake")
+			for _, k := range []string{"model", "tool"} {
+				if _, ok := front[k]; ok {
+					t.Errorf("the digest guessed %s: %v", k, front[k])
+				}
+			}
+		})
+	}
+}
+
+// The order section 5 lists, one order for both artifacts, so a reader comparing them does not
+// have to know which writer produced which.
+func TestTheDigestCarriesTheFieldOrderOfSectionFive(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	b, err := os.ReadFile(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "digest.md"))
+	f.must(err)
+	front, _, err := fm.Split(b)
+	f.must(err)
+	at := func(field string) int { return strings.Index(string(front), field+":") }
+	for _, pair := range [][2]string{{"intent", "phase"}, {"phase", "created"},
+		{"created", "schema_version"}, {"language", "context_hash"}, {"context_hash", "model"},
+		{"model", "tool"}} {
+		if at(pair[0]) > at(pair[1]) {
+			t.Errorf("%s comes after %s:\n%s", pair[0], pair[1], front)
+		}
 	}
 }

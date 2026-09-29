@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-28T20:36:05Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The digest now carries a writer's authority and none of the filtering that writer
+      is specified to do. A hand written digest was visibly typed; one written by phase
+      finish looks processed, and a secret in a summary reaches the tree the same way in
+      both cases. The appearance of provenance moved ahead of the substance of it.
+    proposal: >-
+      Where a runner takes over writing an artifact whose specification gives it two
+      jobs, the unimplemented job is named in the artifact's own comment and in the
+      release note, since a reader infers from the writer that everything the writer is
+      specified to do was done.
+    target: internal/runner

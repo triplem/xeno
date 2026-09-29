@@ -1,0 +1,95 @@
+# XENO-0201 verification, 6e72fed with the working tree of the intent
+
+# go test ./...
+?   	github.com/triplem/xeno/cmd/xeno	[no test files]
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# the seven tests of this intent, named
+=== RUN   TestFinishWritesTheDigestFromTheSummary
+--- PASS: TestFinishWritesTheDigestFromTheSummary (0.00s)
+=== RUN   TestTheWrittenDigestCarriesNoSecretsHashAndTheGateSaysSo
+--- PASS: TestTheWrittenDigestCarriesNoSecretsHashAndTheGateSaysSo (0.00s)
+=== RUN   TestFinishWithoutASummaryWritesNoDigest
+--- PASS: TestFinishWithoutASummaryWritesNoDigest (0.00s)
+=== RUN   TestSectionSetWritesTheModelAndToolTheProjectRecords
+--- PASS: TestSectionSetWritesTheModelAndToolTheProjectRecords (0.00s)
+=== RUN   TestNoAgentBlockLeavesBothFieldsAbsent
+=== RUN   TestNoAgentBlockLeavesBothFieldsAbsent/no_project_file
+=== RUN   TestNoAgentBlockLeavesBothFieldsAbsent/no_agent_block
+=== RUN   TestNoAgentBlockLeavesBothFieldsAbsent/an_empty_agent_block
+--- PASS: TestNoAgentBlockLeavesBothFieldsAbsent (0.00s)
+    --- PASS: TestNoAgentBlockLeavesBothFieldsAbsent/no_project_file (0.00s)
+    --- PASS: TestNoAgentBlockLeavesBothFieldsAbsent/no_agent_block (0.00s)
+    --- PASS: TestNoAgentBlockLeavesBothFieldsAbsent/an_empty_agent_block (0.00s)
+=== RUN   TestTheDigestCarriesTheFieldOrderOfSectionFive
+--- PASS: TestTheDigestCarriesTheFieldOrderOfSectionFive (0.00s)
+PASS
+ok  	github.com/triplem/xeno/internal/runner	0.016s
+
+# against the tree without internal/runner/runner.go and internal/model/model.go:
+# not measurable. Finish gained a parameter, so the tests do not compile there:
+# github.com/triplem/xeno/internal/runner [github.com/triplem/xeno/internal/runner.test]
+internal/runner/runner_test.go:106:35: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1278:42: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1766:39: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1800:41: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1830:39: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1871:41: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+internal/runner/runner_test.go:1895:39: too many arguments in call to f.r.Finish
+	have (string, string, string)
+	want (string, string)
+FAIL	github.com/triplem/xeno/internal/runner [build failed]
+FAIL
+
+# what the tree itself shows instead: no digest in this repository was written by a runner
+# before this change. Every intent's digest carries fields no writer produced, and the
+# sixty digests that exist were typed. The first runner written digest is this intent's
+# 03-implementation, whose frontmatter the runner produced and whose two remaining fields
+# a hand added afterwards:
+---
+intent: github.com/triplem/xeno#120
+phase: 03-implementation
+created: "2026-09-28T20:32:55Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+language: en
+secrets_hash: by-hand
+context_hash: b1dca3a04bb791ea387f0c60f532127194d4d60ee61407dbc841d163d7d547c4
+model: claude-opus-5
+tool: claude-code
+tool_version: 2.1.276
+---
+
+# model and tool now come from project.yaml, into output.md as well
+model: claude-opus-5
+tool: claude-code
+
+# gofmt -l . | grep -v ^vendor/
+(no output)
+
+# go vet ./...
+(no output above means clean)
+
+# ./xeno gate verify
+verified 85 verdicts

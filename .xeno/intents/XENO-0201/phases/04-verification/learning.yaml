@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-28T20:35:17Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Four intents in a row proved their tests by running them against the tree without
+      the change. This one cannot: Finish gained a parameter, so the tests do not
+      compile against the old runner and the transcript carries a compiler error where a
+      row of failures used to be. The method works for a fix and not for a signature.
+    proposal: >-
+      Where a change alters a function's shape, the verification says that the before
+      and after cannot be run rather than quietly dropping the comparison, and
+      substitutes evidence from the tree. Here it is that no digest in the repository
+      was written by a runner, because no writer existed.
+    target: docs/process-definition.md

@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-28T20:32:15Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+6e72fed.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The first digest the runner ever wrote turned its phase red. It omits secrets_hash
+      and tool_version because neither has a source, and G-Schema requires both of a
+      file produced in a session, so the honest writer produces a file the gates reject.
+      Hand written digests were green only because a hand fills fields the tool refuses
+      to fabricate.
+    proposal: >-
+      Where a writer is added for an artifact whose schema requires fields that writer
+      cannot produce, the phase expects a red verdict from it and the remaining fields
+      are filled afterwards. A green verdict was measuring the willingness of a hand to
+      invent, and losing it is the change working rather than failing.
+    target: internal/runner

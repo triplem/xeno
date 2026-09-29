@@ -23,7 +23,7 @@ import (
 const usage = `usage:
   xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
-  xeno phase finish   --intent KEY --phase NN
+  xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md
   xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
   xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno gate override  FINDING --intent KEY --phase NN --by WHO --reason TEXT
@@ -55,6 +55,7 @@ type opts struct {
 
 	root, key, phaseArg            string
 	from, src, by, pattern, file   string
+	summary                        string
 	project, mdl, language         string
 	pluginFrom, host, branch       string
 	base, head, reason             string
@@ -150,6 +151,7 @@ func parse(name string, args []string) (*opts, int) {
 	fs.StringVar(&o.by, "by", "", "the person deciding")
 	fs.StringVar(&o.pattern, "pattern", "conventional-commits", "a shipped pattern name")
 	fs.StringVar(&o.file, "file", "", "the message to read, or stdin when absent")
+	fs.StringVar(&o.summary, "summary", "", "the phase summary the digest is written from, - for stdin")
 	fs.BoolVar(&o.vendor, "vendor", false, "copy the plugin in and pin it")
 	fs.StringVar(&o.project, "project", "", "the tracker project the intents belong to")
 	fs.StringVar(&o.mdl, "model", "", "the default model a phase uses")
@@ -260,7 +262,35 @@ func cmdPhaseStart(o *opts) int {
 	return o.next(0)
 }
 
-func cmdPhaseFinish(o *opts) int { return o.next(report(o.r.Finish(o.key, o.phase))) }
+// cmdPhaseFinish passes the summary the digest is written from. A path, or "-" for stdin:
+// absence cannot mean stdin here as it does for section set, because a summary is optional and
+// a phase finished without one is judged exactly as before (section 5, #120).
+func cmdPhaseFinish(o *opts) int {
+	summary := ""
+	if o.summary != "" {
+		var err error
+		if summary, err = readSummary(o.summary); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		if strings.TrimSpace(summary) == "" {
+			fmt.Fprintln(os.Stderr, "--summary is empty: a digest with no summary is worse than none, since G-Schema would pass it")
+			return 2
+		}
+	}
+	return o.next(report(o.r.Finish(o.key, o.phase, summary)))
+}
+
+// readSummary reads a path, or stdin for "-". readMessage cannot serve: it reads stdin for an
+// empty path, which is what "no summary" has to mean here.
+func readSummary(path string) (string, error) {
+	if path == "-" {
+		b, err := io.ReadAll(os.Stdin)
+		return string(b), err
+	}
+	b, err := os.ReadFile(path)
+	return string(b), err
+}
 
 func cmdGateRun(o *opts) int {
 	o.r.Base, o.r.Head = o.base, o.head
