@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#110
+created: 2026-09-29T19:01:51Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+454cfbf.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The only two covered functions in cmd/xeno are the two XENO-0207 extracted so that
+      a table's arithmetic could be asserted without capturing output. Everything else
+      writes to package level globals and is therefore untestable in process, so the
+      package's coverage is a map of what happened to be separable rather than of what
+      was thought worth testing.
+    proposal: >-
+      Where a package's coverage is near zero, the question is what makes it untestable
+      rather than what to test first, since the answer is usually one structural fact
+      and testing around it produces tests of whatever escaped it.
+    target: cmd/xeno
