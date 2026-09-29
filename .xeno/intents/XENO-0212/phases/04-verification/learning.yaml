@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T21:00:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The strongest check in this intent was not a test. Running the command against the real
+      host with both binaries and diffing the reports proved the words, the states and the
+      order at once, which no unit assertion does, and it cost a git worktree and two builds.
+      A65 had named the existing assertions as the proof of a faithful move, and they were the
+      weaker evidence.
+    proposal: >-
+      Where a refactor moves the words a command prints, compare the command's real output
+      against the previous revision's binary rather than relying on assertions about the
+      pieces. A worktree at the base commit makes it a two minute check, and it covers the
+      parts no test was written for.
+    target: docs/implementation-plan.md

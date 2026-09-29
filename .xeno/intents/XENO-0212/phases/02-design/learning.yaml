@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T20:48:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      One acceptance criterion could not be built as written. "Dropped and reported" has
+      nowhere to report to, because Report carries requirements and nothing else, and a
+      field for names the specification does not have would be the invented field the
+      second standing rule forbids — in the file that exists to be trustworthy. The
+      criterion was written in P1 against a Report nobody had re-read.
+    proposal: >-
+      Where an acceptance criterion says a condition is reported, name the artifact and
+      the field it is reported in while writing the criterion. A criterion that assumes a
+      channel exists is discovered in design, which is early, or in implementation, which
+      is where it becomes a silent narrowing.
+    target: .xeno/plugin/templates/requirements

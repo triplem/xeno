@@ -3,8 +3,6 @@
 package enforcement
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -25,20 +23,46 @@ func stateOf(r Report, name string) (State, string) {
 	return "", ""
 }
 
+// answered stands in for an adapter. Since A65 the states are the host's and this package
+// judges none of them, so a test of Compare says what the host answered rather than what it
+// was configured to do: the second of those is internal/host/github's subject.
+func answered(s State, actual, note string, names ...string) []Requirement {
+	if len(names) == 0 {
+		names = []string{NameRequiredPipeline, NameAllowBypass,
+			NameApprovalsRequired, NameApprovalsNotByAuthor}
+	}
+	out := make([]Requirement, 0, len(names))
+	for _, n := range names {
+		out = append(out, Requirement{Name: n, Actual: actual, State: s, Note: note})
+	}
+	return out
+}
+
 // The distinction the whole report rests on. A setting nobody made is somebody's
 // oversight; a setting the host does not have is nobody's, and reporting it as one
 // sends them looking for a checkbox that is not there.
 func TestNotAvailableIsNotTheSameAsUnmet(t *testing.T) {
 	absent := Compare("o/r", "main", declared(),
-		Protection{Available: false, Reason: "not on this plan"}, time.Now())
+		answered(NotAvailable, "not available", "not on this plan"), time.Now())
 	if s, _ := stateOf(absent, "required_pipeline"); s != NotAvailable {
 		t.Fatalf("an unavailable setting is %q, want %q", s, NotAvailable)
 	}
 
 	unset := Compare("o/r", "main", declared(),
-		Protection{Available: true, Protected: true, ReviewsExpressible: true}, time.Now())
+		answered(Unmet, "no status check is required", ""), time.Now())
 	if s, _ := stateOf(unset, "required_pipeline"); s != Unmet {
 		t.Fatalf("a setting nobody made is %q, want %q", s, Unmet)
+	}
+}
+
+// A declared requirement the adapter said nothing about is not available rather than met.
+// An absence is the one answer a host cannot be asked to give explicitly, so the domain has
+// to read it, and reading it as met would turn a host that went silent into a pass.
+func TestARequirementTheHostDidNotAnswerForIsNotAvailable(t *testing.T) {
+	r := Compare("o/r", "main", declared(),
+		answered(Met, "required", "", NameRequiredPipeline), time.Now())
+	if s, _ := stateOf(r, "allow_bypass"); s != NotAvailable {
+		t.Fatalf("an unanswered requirement is %q, want %q", s, NotAvailable)
 	}
 }
 
@@ -46,7 +70,7 @@ func TestNotAvailableIsNotTheSameAsUnmet(t *testing.T) {
 // passing quietly.
 func TestAnUnprotectedBranchDoesNotPassQuietly(t *testing.T) {
 	r := Compare("o/r", "main", declared(),
-		Protection{Available: true, Protected: false, Reason: "the branch is not protected"}, time.Now())
+		answered(Unmet, "the branch is not protected", ""), time.Now())
 	if s, _ := stateOf(r, "required_pipeline"); s != Unmet {
 		t.Fatalf("state is %q, want %q", s, Unmet)
 	}
@@ -62,13 +86,15 @@ func TestWaivedTurnsAStandingComplaintIntoADecision(t *testing.T) {
 	d := declared()
 	// Four requirements, because the declaration carries four: the pipeline, the bypass,
 	// the count of approvals and whether one may be the author's.
-	before := Compare("o/r", "main", d, Protection{Available: false, Reason: "not on this plan"}, time.Now())
+	before := Compare("o/r", "main", d,
+		answered(NotAvailable, "not available", "not on this plan"), time.Now())
 	if before.Unmet() != 4 {
 		t.Fatalf("%d unmet before waiving, want 4", before.Unmet())
 	}
 
 	d.Waived = "not expressible on this plan, recorded 2026-09-25"
-	after := Compare("o/r", "main", d, Protection{Available: false, Reason: "not on this plan"}, time.Now())
+	after := Compare("o/r", "main", d,
+		answered(NotAvailable, "not available", "not on this plan"), time.Now())
 	if after.Unmet() != 0 {
 		t.Fatalf("%d still unmet after waiving", after.Unmet())
 	}
@@ -82,10 +108,7 @@ func TestWaivedTurnsAStandingComplaintIntoADecision(t *testing.T) {
 }
 
 func TestAMetRequirementIsMet(t *testing.T) {
-	r := Compare("o/r", "main", declared(), Protection{
-		Available: true, Protected: true, RequiredStatusChecks: true,
-		EnforceAdmins: true, ReviewsExpressible: true, RequiredApprovals: 2,
-	}, time.Now())
+	r := Compare("o/r", "main", declared(), answered(Met, "required", ""), time.Now())
 	if r.Unmet() != 0 {
 		t.Fatalf("%d unmet against a host that requires everything", r.Unmet())
 	}
@@ -96,83 +119,43 @@ func TestAMetRequirementIsMet(t *testing.T) {
 	}
 }
 
-// A 403 is the answer a private repository on the free plan gets, and it is not an
-// error. Treating it as one would make the command fail where it has something to say.
-func TestForbiddenMeansNotAvailableRatherThanAnError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-	}))
-	defer srv.Close()
-	p, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t")
-	if err != nil {
-		t.Fatalf("a 403 was treated as an error: %v", err)
-	}
-	if p.Available {
-		t.Fatal("a 403 was read as the host offering protection")
-	}
-	if p.Reason == "" {
-		t.Fatal("nothing says why it is unavailable")
+// The adapter's words reach the report unchanged. They are the only account of what the
+// host actually said, so a domain that rephrased them would be inventing the evidence.
+func TestTheHostsOwnWordsAreCarried(t *testing.T) {
+	r := Compare("o/r", "main", declared(),
+		answered(Met, "administrators are included", "and cannot be excluded"), time.Now())
+	for _, q := range r.Requirements {
+		if q.Actual != "administrators are included" {
+			t.Errorf("%s reports actual %q, want the adapter's words", q.Name, q.Actual)
+		}
+		if q.Note != "and cannot be excluded" {
+			t.Errorf("%s reports note %q, want the adapter's words", q.Name, q.Note)
+		}
 	}
 }
 
-func TestNotFoundMeansTheBranchIsNotProtected(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer srv.Close()
-	p, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !p.Available || p.Protected {
-		t.Fatalf("a 404 read as available=%v protected=%v", p.Available, p.Protected)
-	}
-}
-
-func TestARejectedTokenIsAnError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-	}))
-	defer srv.Close()
-	if _, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t"); err == nil {
-		t.Fatal("a rejected token was read as an answer")
-	}
-}
-
-// Section 13 says the approvals block covers whether the author may give one, so the
-// second half is compared rather than read and ignored. What satisfies it is the host's
-// own rule and not a setting: GitHub refuses an approval from the pull request's author.
-func TestNotByAuthorIsCompared(t *testing.T) {
+// Not declared is not compared: a project that says nothing about it gets no line, which
+// is what stateOf reports as the empty state. The filter is the domain's, which is why it
+// is tested here and not against a host.
+func TestAnUndeclaredRequirementGetsNoLine(t *testing.T) {
 	d := declared()
-	protected := func(count int, lastPush bool) Protection {
-		return Protection{Available: true, Protected: true, RequiredStatusChecks: true,
-			EnforceAdmins: true, ReviewsExpressible: true, RequiredApprovals: count,
-			LastPushApproval: lastPush}
-	}
-
-	r := Compare("o/r", "main", d, protected(1, false), time.Now())
-	if s, note := stateOf(r, "approvals.not_by_author"); s != Met || note == "" {
-		t.Fatalf("with one approval required the state is %q with note %q, want met and the stronger form named", s, note)
-	}
-
-	r = Compare("o/r", "main", d, protected(1, true), time.Now())
-	if s, note := stateOf(r, "approvals.not_by_author"); s != Met || note != "" {
-		t.Fatalf("with the last push covered the state is %q with note %q, want met and nothing left to add", s, note)
-	}
-
-	// An approval that does not exist is nobody's, so the absence does not satisfy a
-	// requirement about who gives one.
-	r = Compare("o/r", "main", d, protected(0, false), time.Now())
-	if s, _ := stateOf(r, "approvals.not_by_author"); s != Unmet {
-		t.Fatalf("with no approval required the state is %q, want %q", s, Unmet)
-	}
-
-	// Not declared is not compared: a project that says nothing about it gets no line,
-	// which is what stateOf reports as the empty state.
 	d.Approvals.NotByAuthor = false
-	r = Compare("o/r", "main", d, protected(1, false), time.Now())
+	r := Compare("o/r", "main", d, answered(Met, "required", ""), time.Now())
 	if s, _ := stateOf(r, "approvals.not_by_author"); s != "" {
 		t.Fatalf("an undeclared requirement produced a line with state %q", s)
+	}
+}
+
+// A name no section of the specification has is dropped rather than reported. There is
+// nowhere in Report to say so that would not itself be a field the specification does not
+// have, so the budget is held here and by a test over each adapter's names.
+func TestANameTheDomainDoesNotKnowIsDropped(t *testing.T) {
+	invented := []Requirement{{Name: "branch_naming", Actual: "enforced", State: Met}}
+	r := Compare("o/r", "main", declared(), invented, time.Now())
+	for _, q := range r.Requirements {
+		if q.Name == "branch_naming" {
+			t.Fatal("an adapter's invented requirement reached the report")
+		}
 	}
 }
 
@@ -181,7 +164,7 @@ func TestNotByAuthorIsCompared(t *testing.T) {
 func TestMergeMethodIsReportedAsUnchecked(t *testing.T) {
 	d := declared()
 	d.MergeMethod = "no-squash"
-	r := Compare("o/r", "main", d, Protection{Available: true, Protected: true}, time.Now())
+	r := Compare("o/r", "main", d, answered(Met, "required", ""), time.Now())
 	s, note := stateOf(r, "merge_method")
 	if s != Unknown {
 		t.Fatalf("state is %q, want %q", s, Unknown)
@@ -190,77 +173,25 @@ func TestMergeMethodIsReportedAsUnchecked(t *testing.T) {
 		t.Fatal("nothing says why it is not compared")
 	}
 	// Unknown is neither met nor unmet, so it does not fail a run on its own.
-	if before := Compare("o/r", "main", declared(), Protection{Available: true, Protected: true}, time.Now()); r.Unmet() != before.Unmet() {
+	if before := Compare("o/r", "main", declared(), answered(Met, "required", ""), time.Now()); r.Unmet() != before.Unmet() {
 		t.Fatalf("declaring merge_method changed the unmet count from %d to %d", before.Unmet(), r.Unmet())
 	}
 }
 
-// The split of Fetch into transport and decode is what makes these two possible: the status
-// mapping without a body, and the body without a server.
-func TestFetchMapsTheAnswersAHostCanGive(t *testing.T) {
-	for _, tc := range []struct {
-		status    int
-		available bool
-		protected bool
-		wantErr   bool
-	}{
-		{status: 200, available: true, protected: true},
-		{status: 403},                  // not on this plan, and not an error
-		{status: 404, available: true}, // the branch is not protected
-		{status: 401, wantErr: true},   // the token was rejected
-		{status: 500, wantErr: true},
-	} {
-		body := `{"enforce_admins":{"enabled":true}}`
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if got := r.Header.Get("Authorization"); got != "Bearer t" {
-				t.Errorf("the token was not sent: %q", got)
-			}
-			w.WriteHeader(tc.status)
-			if tc.status == 200 {
-				_, _ = w.Write([]byte(body))
-			}
-		}))
-		p, err := Fetch(srv.Client(), srv.URL, "o/r", "main", "t")
-		srv.Close()
-		if (err != nil) != tc.wantErr {
-			t.Fatalf("%d gave err=%v, wanted error=%v", tc.status, err, tc.wantErr)
-		}
-		if err != nil {
-			continue
-		}
-		if p.Available != tc.available || p.Protected != tc.protected {
-			t.Errorf("%d gave available=%v protected=%v, wanted %v and %v",
-				tc.status, p.Available, p.Protected, tc.available, tc.protected)
-		}
-		if !tc.available && p.Reason == "" {
-			t.Errorf("%d says nothing about why", tc.status)
+// Names is what an adapter builds its answers from, so it has to hold every name the
+// report can carry. A name in the table and not in Names would be unreachable for an
+// adapter and would read as a requirement no host can express.
+func TestNamesHoldsEveryRequirementTheDomainKnows(t *testing.T) {
+	in := make(map[string]bool, len(Names()))
+	for _, n := range Names() {
+		in[n] = true
+	}
+	for _, q := range requirements {
+		if !in[q.name] {
+			t.Errorf("%q is in the table and not in Names", q.name)
 		}
 	}
-}
-
-func TestDecodeProtectionReadsTheHostsFieldNames(t *testing.T) {
-	raw := []byte(`{
-	  "required_status_checks": {"contexts": ["verify"]},
-	  "enforce_admins": {"enabled": true},
-	  "required_pull_request_reviews": {"required_approving_review_count": 2,
-	                                    "require_last_push_approval": true}
-	}`)
-	p, err := decodeProtection(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !p.RequiredStatusChecks || !p.EnforceAdmins || p.RequiredApprovals != 2 ||
-		!p.ReviewsExpressible || !p.LastPushApproval {
-		t.Fatalf("decoded %+v", p)
-	}
-
-	// A branch with no review requirement at all: expressible is false, which is not the
-	// same as zero approvals configured.
-	p, err = decodeProtection([]byte(`{"enforce_admins":{"enabled":false}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if p.ReviewsExpressible || p.RequiredApprovals != 0 || p.EnforceAdmins {
-		t.Fatalf("decoded %+v", p)
+	if !in[NameMergeMethod] {
+		t.Error("merge_method is reported and not in Names")
 	}
 }

@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T20:55:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The regression this intent nearly shipped was invisible to every assertion about
+      states. Returning no requirements where the host offers none produced the right state,
+      not-available, and silently dropped the reason that state exists to carry. What caught
+      it was re-reading the line the old code used to carry the reason through, noteOf(w,
+      p.Reason), while deciding what the adapter should return.
+    proposal: >-
+      When moving a branch of a switch into another package, follow each value the old branch
+      wrote, not only the one the tests assert on. A note or a reason that no assertion
+      covers is exactly what survives a refactor by being dropped, and its absence reads as
+      a terse report rather than as a bug.
+    target: internal/host

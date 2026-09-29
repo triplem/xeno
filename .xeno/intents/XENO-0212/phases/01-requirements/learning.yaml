@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T20:45:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Criterion 5 had to be written as a constraint on method and not only as a check. The
+      existing assertions are the only evidence that moving evaluate into an adapter was a
+      move rather than a rewrite, and the ordinary way of working — edit the expected
+      string until the test passes — would consume that evidence without anybody deciding
+      to.
+    proposal: >-
+      Where a refactor's proof is that existing assertions still hold, say in the
+      acceptance that an assertion which will not hold is a finding rather than a test to
+      update. Otherwise the criterion is satisfied by the act that destroys what it was
+      checking.
+    target: .xeno/plugin/templates/requirements
