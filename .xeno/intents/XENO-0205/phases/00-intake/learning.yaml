@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#65
+created: 2026-09-29T11:31:26Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+edd2b2e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Section 11 assumes one session per phase and the agent working inside it. Measured
+      against this session, the assumption fails twice over: one session carried nine
+      intents, and the tokens were spent before each phase was started. Window
+      attribution captures 7.1% of the output, and no rule over the same transcript does
+      better, because the work was outside.
+    proposal: >-
+      Where a figure is attributed by a marker the runner writes, the writer records
+      what it could not attribute rather than distributing it, since a rule that
+      produces a number for every unit hides the workflow that made attribution
+      impossible.
+    target: internal/runner
