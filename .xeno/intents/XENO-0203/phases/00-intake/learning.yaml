@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#127
+created: 2026-09-29T06:52:41Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+57acf68.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The first selection rule was principled and wrong: excluding every upstream rule
+      that relies on an entropy threshold or an allowlist discards aws-access-token and
+      github-pat, which are the two rules anybody would name first. A criterion derived
+      from the shape of the data beat one derived from the shape of the schema.
+    proposal: >-
+      Where a rule set is imported into a narrower schema, the selection is measured
+      against the importing project's own text rather than derived from which upstream
+      features do not translate, since the features that do not translate cluster on the
+      most valuable rules.
+    target: internal/secrets
