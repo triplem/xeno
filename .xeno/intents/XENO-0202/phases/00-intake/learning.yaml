@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#120
+created: 2026-09-29T05:57:30Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+ba0ee05.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The specification already contained the argument the issue was making. Section 16
+      says the filtering is in the runner so that a model cannot route around it, which
+      is exactly what #120 asks for, and the scoping of that issue had read sections 5
+      and 14 and concluded the opposite about every other part. One document said both
+      things about different halves.
+    proposal: >-
+      Where a request is refused on the specification's authority, the specification is
+      searched for the places it grants the same request, since a document that refuses
+      a route in one section may mandate it in another about a narrower thing.
+    target: docs/process-definition.md
