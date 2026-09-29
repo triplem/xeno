@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#136
+created: 2026-09-29T18:10:03Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+1dc1483.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The two alignment tests pass with either case, because they assert that a heading
+      word sits over its column rather than what the word is. So the only thing this
+      intent changed has no test, and a test for it would compare a literal to a
+      literal, which tests the test. The same was true of the notice's wording one
+      intent ago.
+    proposal: >-
+      Where a change is to a literal a reader sees, the phase says the literal has no
+      test rather than writing one that restates it, and the transcript carries the
+      output so that reading it is the verification.
+    target: cmd/xeno
