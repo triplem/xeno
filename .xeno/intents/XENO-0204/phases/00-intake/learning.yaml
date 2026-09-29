@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#128
+created: 2026-09-29T09:29:37Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+38430d4.dirty
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The same upstream rule, generic-api-key, was excluded from the shipped filter for
+      matching secrets_hash and then reported thirty-nine findings against the same
+      field from the scanner. The artifact schema carries sixty-four hex characters
+      after names ending in _hash, and every secret scanner in the world reads that as a
+      key.
+    proposal: >-
+      Where a schema puts a hash after a field name, the project expects every pattern
+      based scanner to read it as a credential, and says so once in a place both the
+      filter and the scan can be pointed at rather than discovering it twice.
+    target: docs/process-definition.md
