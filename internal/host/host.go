@@ -22,6 +22,7 @@ import (
 
 	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/host/github"
+	"github.com/triplem/xeno/internal/host/gitlab"
 )
 
 // BranchRules is what xeno enforcement check asks of a host: what the branch is configured
@@ -50,6 +51,9 @@ type BranchRules interface {
 var branchRules = map[string]func(*http.Client, string) BranchRules{
 	"github": func(c *http.Client, baseURL string) BranchRules {
 		return github.New(c, baseURL)
+	},
+	"gitlab": func(c *http.Client, baseURL string) BranchRules {
+		return gitlab.New(c, baseURL)
 	},
 }
 

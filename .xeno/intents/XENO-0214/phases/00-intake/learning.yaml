@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:02:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This intent has a deliverable and a subject, and they are different things. The
+      deliverable is the adapter; the subject is whether #143's port holds. #143's own P5
+      wrote down in advance what it would mean if the port had to change, which is what lets
+      this intent treat that as a finding to record rather than a problem to work around.
+    proposal: >-
+      Where a piece of work will be the first test of an earlier decision, say so in the
+      earlier piece's review and say what a failure would mean. The later intent then has a
+      recorded criterion instead of an incentive to make the decision look right.
+    target: docs/implementation-plan.md

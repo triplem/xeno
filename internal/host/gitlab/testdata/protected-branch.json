@@ -1,0 +1,68 @@
+{
+ "id": 109607,
+ "name": "master",
+ "push_access_levels": [
+  {
+   "id": 7058263,
+   "access_level": 40,
+   "access_level_description": "\ud83e\udd16 GitLab Bot \ud83e\udd16",
+   "deploy_key_id": null,
+   "user_id": 1786152,
+   "group_id": null,
+   "member_role_id": null,
+   "member_role_name": null
+  },
+  {
+   "id": 7058264,
+   "access_level": 40,
+   "access_level_description": "GitLab Release Tools Bot",
+   "deploy_key_id": null,
+   "user_id": 2324599,
+   "group_id": null,
+   "member_role_id": null,
+   "member_role_name": null
+  }
+ ],
+ "merge_access_levels": [
+  {
+   "id": 33863457,
+   "access_level": 40,
+   "access_level_description": "managers",
+   "user_id": null,
+   "group_id": 2584649,
+   "member_role_id": null,
+   "member_role_name": null
+  },
+  {
+   "id": 33863889,
+   "access_level": 40,
+   "access_level_description": "GitLab Release Tools Bot",
+   "user_id": 2324599,
+   "group_id": null,
+   "member_role_id": null,
+   "member_role_name": null
+  },
+  {
+   "id": 34075134,
+   "access_level": 40,
+   "access_level_description": "\ud83e\udd16 GitLab Bot \ud83e\udd16",
+   "user_id": 1786152,
+   "group_id": null,
+   "member_role_id": null,
+   "member_role_name": null
+  },
+  {
+   "id": 127829,
+   "access_level": 40,
+   "access_level_description": "Maintainers",
+   "user_id": null,
+   "group_id": null,
+   "member_role_id": null,
+   "member_role_name": null
+  }
+ ],
+ "allow_force_push": false,
+ "unprotect_access_levels": [],
+ "code_owner_approval_required": true,
+ "inherited": false
+}

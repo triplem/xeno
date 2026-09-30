@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:55:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Four pieces of one work package ran in the order a decision piece, a port, a wrapper and
+      a second adapter, and the order is what made the last one's result meaningful. Had the
+      adapter come first, BranchRules would have been drawn from GitLab's shape and the claim
+      that the port holds would have been untestable rather than confirmed.
+    proposal: >-
+      Where a work package will produce a port, order its pieces so the second adapter is last
+      and say in the port's review what its arrival would prove or disprove. The port then
+      gets a verdict instead of a defence.
+    target: docs/implementation-plan.md

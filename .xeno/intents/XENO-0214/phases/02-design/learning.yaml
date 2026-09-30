@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:10:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The two adapters differ structurally and not only in their payloads. GitHub answers every
+      requirement from one request, so one status code decides the report; GitLab needs three,
+      so a tier limit on one must not stop the other two being answered. That difference is
+      what makes sharing code between them wrong, and it is invisible from the interface, which
+      both satisfy identically.
+    proposal: >-
+      When a second adapter arrives, compare the number of requests each needs before comparing
+      their payloads. An adapter whose failures are partial cannot share a transport with one
+      whose failures are total, however similar the two requests look.
+    target: internal/host
