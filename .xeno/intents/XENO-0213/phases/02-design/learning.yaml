@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:08:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The default host name was in three places for one reason, and the flag's default was the
+      only visible one. init.go filled an empty host in as well, and WrapperHosts returned a
+      literal list beside the table that already held the names. Each was correct on its own
+      and the set was a duplicate nobody had counted.
+    proposal: >-
+      When removing a default, grep for the value rather than for the flag that carries it.
+      A default that has been correct for a long time spreads into the places that could have
+      read it from the one source, because nothing ever disagreed.
+    target: cmd/xeno

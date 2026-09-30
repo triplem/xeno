@@ -22,7 +22,7 @@ type InitOptions struct {
 	Model      string // the default model a phase uses
 	Language   string // the language artifacts are written in
 	Vendor     bool   // copy the plugin in and pin it
-	Host       string // which wrapper to generate, github by default
+	Host       string // which wrapper to generate; required, since a default is an assumed host
 }
 
 // InitResult is what init did and what it could not do, so that the caller prints both
@@ -62,7 +62,15 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 		}
 	}
 
-	cfg, err := r.projectYAML(o)
+	// The host is resolved once, before either generated file is written: the wrapper and
+	// the tracker block are the same choice, and resolving it twice is how they came to be
+	// able to disagree.
+	h, wrapper, err := Wrapper(r.Root, o.Host, model.RunnerVersion)
+	if err != nil {
+		return nil, refuse("%v", err)
+	}
+
+	cfg, err := r.projectYAML(o, h)
 	if err != nil {
 		return nil, err
 	}
@@ -77,14 +85,6 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 			return nil, err
 		}
 	}
-	host := o.Host
-	if host == "" {
-		host = "github"
-	}
-	h, wrapper, err := Wrapper(r.Root, host, model.RunnerVersion)
-	if err != nil {
-		return nil, refuse("%v", err)
-	}
 	if err := r.create(res, h.Path, wrapper); err != nil {
 		return nil, err
 	}
@@ -96,6 +96,7 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 		"require a review from somebody other than the author",
 		"issue a token that can read the protected branch settings, for xeno enforcement check",
 		"schedule xeno enforcement check daily, so that a setting changed back is noticed",
+		h.Squash,
 	}
 	res.Outstand = []string{
 		"what the host actually offers: the enforcement block is written from defaults, " +
@@ -199,7 +200,10 @@ func (r *Runner) vendorPlugin(res *InitResult) error {
 // or an organisation can replace it without forking the runner. The three answers xeno
 // init asks for are named fields rather than positional arguments: a fourth in the wrong
 // order used to produce a file that looked right.
-func (r *Runner) projectYAML(o InitOptions) (string, error) {
+//
+// The host comes in as the row the wrapper was generated from, so the tracker block names
+// the host whose pipeline the repository got.
+func (r *Runner) projectYAML(o InitOptions, h WrapperHost) (string, error) {
 	key := o.TrackerKey
 	if key == "" {
 		key = "<owner/repository>"
@@ -210,6 +214,7 @@ func (r *Runner) projectYAML(o InitOptions) (string, error) {
 	}
 	body, _, err := scaffold.RenderProject(r.Root, scaffold.Project{
 		RunnerVersion: model.RunnerVersion, Language: o.Language, Model: mdl, TrackerProject: key,
+		Adapter: h.Adapter, APIBase: h.APIBase,
 	})
 	return body, err
 }

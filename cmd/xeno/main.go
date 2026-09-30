@@ -168,7 +168,7 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.mdl, "model", "", "the default model a phase uses")
 	fs.StringVar(&o.language, "language", "en", "the language artifacts are written in")
 	fs.StringVar(&o.pluginFrom, "plugin-from", ".xeno/plugin", "where to vendor the plugin from")
-	fs.StringVar(&o.host, "host", "github", "which CI wrapper to generate")
+	fs.StringVar(&o.host, "host", "", "which host to generate for: the CI wrapper and the tracker block")
 	fs.StringVar(&o.branch, "branch", "", "the branch whose protection to read, main by default")
 	// Both ends of the commit range. They are an input of the run and are deliberately
 	// not recorded: after a squash a recorded range would point at commits that no

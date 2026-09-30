@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:25:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Four of the six new tests iterate WrapperHosts() instead of naming a host, so a third
+      host is tested by being added to the table: one added without a scaffold file, without
+      range expressions, without an address or without a squash sentence fails one of them.
+      The table became the thing under test rather than GitLab.
+    proposal: >-
+      Where a variant is a table row, write the tests over the table rather than over the
+      row that was just added. It costs nothing at the time and it is the only way the next
+      row arrives with its own coverage instead of with a copied test.
+    target: internal/runner
