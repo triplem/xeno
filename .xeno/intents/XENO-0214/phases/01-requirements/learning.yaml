@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:06:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The non-goals had to name not sharing code with the GitHub adapter, which is not an
+      obvious thing to forbid. Two adapters answering the same five questions invite a shared
+      helper, and a helper that reads both hosts' payloads is the neutral struct A65 rejected
+      arriving one function at a time rather than as a type.
+    proposal: >-
+      Where a decision rejected a shared abstraction, name the incremental route back to it in
+      the next piece's non-goals. A rejected type is easy to keep out; the same idea as a
+      utility function shared between two adapters looks like ordinary tidiness.
+    target: internal/host

@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:30:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      A bool decoded from an absent JSON field is false, and false is a state the report
+      distinguishes from unreadable on purpose. Every unit test passed with the bug in place,
+      because every fixture sent the field. The live run against gitlab.com found it in one
+      request, since that host omits the merge settings from an unauthenticated read.
+    proposal: >-
+      Where a host's field answers a requirement whose states include "could not be read",
+      decode it into a pointer and treat absent as unreadable. A fixture written by the same
+      person who wrote the struct always carries the field, so the defect is invisible to
+      tests and visible in one real answer.
+    target: internal/host

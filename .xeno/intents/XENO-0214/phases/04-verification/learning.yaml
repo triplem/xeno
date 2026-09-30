@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#147
+created: 2026-09-30T09:50:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+0a51653
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      One status code turned out to mean two different things. gitlab.com answers 403 on the
+      approval settings both where a tier has no approval rules and where the token is not a
+      member with enough access, and the reason text this adapter shipped in draft asserted
+      the tier. #104's table implied a code-to-meaning mapping and the observation invalidated
+      it: what could be verified was that the mapping cannot exist.
+    proposal: >-
+      Where an issue proposes mapping a host's status codes to meanings, check whether one code
+      has two causes before writing the table. A report that names a cause it inferred sends
+      somebody to the wrong remedy, and "this is not a setting nobody made" is both true and
+      enough.
+    target: internal/host
