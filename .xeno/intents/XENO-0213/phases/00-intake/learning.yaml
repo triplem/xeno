@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:02:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Asking the host changed the shape of the answer for the second time on this work
+      package. A65 turned on gitlab.com serving protected_branches unauthenticated, and this
+      intent's wrapper has to be scoped to merge request pipelines because the base SHA
+      variable exists nowhere else. Both were recorded in #104 as details to confirm, and
+      both turned out to constrain the design rather than fill in a blank.
+    proposal: >-
+      Where an issue marks a host fact "to confirm", confirm it before writing the
+      acceptance rather than during implementation. Twice now the fact has changed what the
+      acceptance should say, which means it is design input and not a detail.
+    target: .xeno/intents

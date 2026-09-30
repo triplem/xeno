@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:05:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This piece can ship before the GitLab BranchRules adapter only because #143 made a
+      configured host with no adapter a refusal that names the field. Without that, xeno init
+      --host gitlab would have written a repository whose enforcement check asked GitHub about
+      a GitLab project. The ordering of #104's pieces made a later piece safe rather than
+      merely possible.
+    proposal: >-
+      Where pieces of a work package ship separately, say in the acceptance what the
+      half-built state does when exercised. A piece that leaves a command refusing with a
+      clear reason is shippable; one that leaves it answering wrongly is not, and the
+      difference is not visible from the piece's own diff.
+    target: docs/implementation-plan.md

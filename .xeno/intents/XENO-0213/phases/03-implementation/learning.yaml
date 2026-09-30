@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:20:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The first draft put the per host squash sentence in a function branching on the host's
+      id. It passed every acceptance criterion and was the wrong shape, because #98's design
+      is that a host is a table row and a branch means the next host edits code rather than
+      data. What found it was grepping for host names in non-test Go, which criterion 3 had
+      made a habit of for a different reason.
+    proposal: >-
+      Where a design says a variant is data, grep for the variant's name in code before
+      finishing rather than checking that the criteria pass. A branch on a host, a format or
+      a mode reads as ordinary code and is invisible to criteria written about behaviour.
+    target: internal/runner

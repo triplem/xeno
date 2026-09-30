@@ -58,7 +58,12 @@ type Project struct {
 	Language       string
 	Model          string
 	TrackerProject string
-	Source         Source
+	// Adapter and APIBase name the host, and come from the same table row the wrapper was
+	// generated from. Written rather than defaulted, so that a repository initialised for
+	// one host does not carry another one's tracker configuration.
+	Adapter string
+	APIBase string
+	Source  Source
 }
 
 // RenderWrapper renders the CI wrapper of one host.

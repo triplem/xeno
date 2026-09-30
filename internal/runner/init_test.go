@@ -3,6 +3,7 @@
 package runner
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +26,7 @@ func initFixture(t *testing.T) *Runner {
 // changed in between.
 func TestRunningInitTwiceChangesNothingTheSecondTime(t *testing.T) {
 	r := initFixture(t)
-	first, err := r.Init(InitOptions{Vendor: true, TrackerKey: "owner/repo"})
+	first, err := r.Init(InitOptions{Host: "github", Vendor: true, TrackerKey: "owner/repo"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func TestRunningInitTwiceChangesNothingTheSecondTime(t *testing.T) {
 	}
 	before := snapshot(t, r.Root)
 
-	second, err := r.Init(InitOptions{Vendor: true, TrackerKey: "somebody/else"})
+	second, err := r.Init(InitOptions{Host: "github", Vendor: true, TrackerKey: "somebody/else"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +56,7 @@ func TestInitAppendsToGitignoreAndOverwritesNothing(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(r.Root, ".gitignore"), []byte(existing), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.Init(InitOptions{}); err != nil {
+	if _, err := r.Init(InitOptions{Host: "github"}); err != nil {
 		t.Fatal(err)
 	}
 	b, err := os.ReadFile(filepath.Join(r.Root, ".gitignore"))
@@ -70,7 +71,7 @@ func TestInitAppendsToGitignoreAndOverwritesNothing(t *testing.T) {
 		t.Fatalf("the entry was not added:\n%s", got)
 	}
 	// And again: the line is there, so nothing is appended a second time.
-	if _, err := r.Init(InitOptions{}); err != nil {
+	if _, err := r.Init(InitOptions{Host: "github"}); err != nil {
 		t.Fatal(err)
 	}
 	b2, _ := os.ReadFile(filepath.Join(r.Root, ".gitignore"))
@@ -83,7 +84,7 @@ func TestInitAppendsToGitignoreAndOverwritesNothing(t *testing.T) {
 // runner produces a different hash or a different verdict than CI.
 func TestAVersionMismatchStopsInit(t *testing.T) {
 	r := initFixture(t)
-	if _, err := r.Init(InitOptions{}); err != nil {
+	if _, err := r.Init(InitOptions{Host: "github"}); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(r.Root, ".xeno/config/project.yaml")
@@ -95,7 +96,7 @@ func TestAVersionMismatchStopsInit(t *testing.T) {
 	if err := os.WriteFile(path, []byte(edited), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := r.Init(InitOptions{})
+	_, err := r.Init(InitOptions{Host: "github"})
 	if err == nil {
 		t.Fatal("init proceeded against a repository pinned to another runner")
 	}
@@ -109,7 +110,7 @@ func TestAVersionMismatchStopsInit(t *testing.T) {
 // first contact.
 func TestInitNamesWhatItCannotDo(t *testing.T) {
 	r := initFixture(t)
-	res, err := r.Init(InitOptions{})
+	res, err := r.Init(InitOptions{Host: "github"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +127,7 @@ func TestInitNamesWhatItCannotDo(t *testing.T) {
 
 func TestInitWritesAConfigurationTheRunnerCanReadBack(t *testing.T) {
 	r := initFixture(t)
-	if _, err := r.Init(InitOptions{TrackerKey: "owner/repo", Model: "a-model", Language: "de"}); err != nil {
+	if _, err := r.Init(InitOptions{Host: "github", TrackerKey: "owner/repo", Model: "a-model", Language: "de"}); err != nil {
 		t.Fatal(err)
 	}
 	var p model.Project
@@ -150,7 +151,7 @@ func TestInitWritesAConfigurationTheRunnerCanReadBack(t *testing.T) {
 
 func TestVendorPutsTheShippedSetInTheRepository(t *testing.T) {
 	r := initFixture(t)
-	if _, err := r.Init(InitOptions{Vendor: true}); err != nil {
+	if _, err := r.Init(InitOptions{Host: "github", Vendor: true}); err != nil {
 		t.Fatal(err)
 	}
 	for _, id := range []string{"intake", "design", "review"} {
@@ -163,7 +164,7 @@ func TestVendorPutsTheShippedSetInTheRepository(t *testing.T) {
 	}
 	// Without --vendor nothing is copied, since a repository may carry its own.
 	r2 := initFixture(t)
-	if _, err := r2.Init(InitOptions{}); err != nil {
+	if _, err := r2.Init(InitOptions{Host: "github"}); err != nil {
 		t.Fatal(err)
 	}
 	if fm.Exists(filepath.Join(r2.Root, ".xeno/plugin/templates/intake/template.yaml")) {
@@ -221,7 +222,7 @@ func TestTheWrapperPassesBothEndsOfTheRange(t *testing.T) {
 
 func TestInitGeneratesTheWrapper(t *testing.T) {
 	r := initFixture(t)
-	res, err := r.Init(InitOptions{})
+	res, err := r.Init(InitOptions{Host: "github"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +287,7 @@ func TestAProjectOverridesAScaffold(t *testing.T) {
 // a file that looked right.
 func TestTheProjectConfigurationComesFromTheScaffold(t *testing.T) {
 	r := initFixture(t)
-	res, err := r.Init(InitOptions{TrackerKey: "o/r", Model: "m", Language: "de"})
+	res, err := r.Init(InitOptions{Host: "github", TrackerKey: "o/r", Model: "m", Language: "de"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,6 +300,133 @@ func TestTheProjectConfigurationComesFromTheScaffold(t *testing.T) {
 	for _, want := range []string{"project: o/r", "default: m", "artifacts: de", string(scaffold.FromRunner)} {
 		if !strings.Contains(got, want) {
 			t.Errorf("the configuration does not carry %q:\n%s", want, got)
+		}
+	}
+}
+
+// #104's first done-when, the half #143 did not reach: no default host name appears in
+// code. The flag's default was the visible one and Init filled an empty host in as well,
+// so the absence is asserted rather than left to a reading of two files.
+func TestInitRefusesWithoutAHost(t *testing.T) {
+	r := initFixture(t)
+	_, err := r.Init(InitOptions{})
+	if err == nil {
+		t.Fatal("init picked a host instead of refusing")
+	}
+	if !strings.Contains(err.Error(), "github") || !strings.Contains(err.Error(), "gitlab") {
+		t.Errorf("the refusal does not say what there is: %v", err)
+	}
+	var refusal *Refusal
+	if !errors.As(err, &refusal) {
+		t.Errorf("a missing host is %T, so the exit code is 2 rather than 1 by A11", err)
+	}
+}
+
+// A wrapper whose range is wrong produces verdicts about the wrong commits, and nothing
+// downstream says so: gate.yaml would be internally consistent and about another change.
+// So the two expressions are asserted in the generated text of every host.
+func TestEveryWrapperPassesBothEndsOfTheRange(t *testing.T) {
+	for _, id := range WrapperHosts() {
+		r := initFixture(t)
+		if _, err := r.Init(InitOptions{Host: id}); err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		h := wrapperHosts[id]
+		body, err := os.ReadFile(filepath.Join(r.Root, h.Path))
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		for _, want := range []string{h.BaseRef, h.HeadRef, "xeno gate run", "xeno gate verify"} {
+			if !strings.Contains(string(body), want) {
+				t.Errorf("%s: the wrapper does not carry %q", id, want)
+			}
+		}
+	}
+}
+
+// CI_MERGE_REQUEST_DIFF_BASE_SHA is populated only in a merge request pipeline, so a
+// GitLab wrapper that ran on a branch pipeline would pass an empty base. The scoping is
+// what makes the range reachable, which is why it is asserted and not left to the reader.
+func TestTheGitLabWrapperRunsOnlyOnMergeRequests(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{Host: "gitlab"}); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(filepath.Join(r.Root, wrapperHosts["gitlab"].Path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), `$CI_PIPELINE_SOURCE == "merge_request_event"`) {
+		t.Error("the job is not scoped to merge request pipelines, so the base SHA is empty")
+	}
+}
+
+// The wrapper and the tracker block are the same choice, and they used to be made twice:
+// once from the flag and once from a literal in the project scaffold. A repository whose
+// pipeline is one host's and whose tracker configuration is another's works as neither.
+func TestTheTrackerBlockNamesTheHostTheWrapperWasGeneratedFor(t *testing.T) {
+	for _, id := range WrapperHosts() {
+		r := initFixture(t)
+		if _, err := r.Init(InitOptions{Host: id, TrackerKey: "o/r"}); err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		var p struct {
+			Tracker struct {
+				Adapter string `yaml:"adapter"`
+				BaseURL string `yaml:"base_url"`
+			} `yaml:"tracker"`
+		}
+		if err := fm.ReadYAML(filepath.Join(r.Root, ".xeno/config/project.yaml"), &p); err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		h := wrapperHosts[id]
+		if p.Tracker.Adapter != h.Adapter {
+			t.Errorf("%s: tracker.adapter is %q, want %q", id, p.Tracker.Adapter, h.Adapter)
+		}
+		if p.Tracker.BaseURL != h.APIBase {
+			t.Errorf("%s: tracker.base_url is %q, want %q", id, p.Tracker.BaseURL, h.APIBase)
+		}
+	}
+}
+
+// WrapperHosts returned a literal list beside the table that already held the names, which
+// was correct for as long as there was one host. A third is one row, and this is what says
+// so.
+func TestWrapperHostsIsDerivedFromTheTableAndSorted(t *testing.T) {
+	got := WrapperHosts()
+	if len(got) != len(wrapperHosts) {
+		t.Fatalf("WrapperHosts has %d entries and the table has %d", len(got), len(wrapperHosts))
+	}
+	for _, id := range got {
+		if _, ok := wrapperHosts[id]; !ok {
+			t.Errorf("%q is listed and not in the table", id)
+		}
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i-1] > got[i] {
+			t.Fatalf("not sorted, so an error message depends on map order: %v", got)
+		}
+	}
+}
+
+// The commit convention rests on a host setting, and the symptom of skipping it is a
+// footer that vanished from history. Every host names its own, because the settings differ
+// and the consequence does not.
+func TestTheSquashSettingIsNamedForEveryHost(t *testing.T) {
+	for _, id := range WrapperHosts() {
+		r := initFixture(t)
+		res, err := r.Init(InitOptions{Host: id})
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		found := false
+		for _, m := range res.Manual {
+			if strings.Contains(m, "squash") {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s: nothing in the manual list names the squash setting: %v", id, res.Manual)
 		}
 	}
 }

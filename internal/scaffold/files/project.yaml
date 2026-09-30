@@ -13,9 +13,9 @@ agent:                         # section 12
     default: {{.Model}}
 
 tracker:                       # section 12
-  adapter: github
+  adapter: {{.Adapter}}
   project: {{.TrackerProject}}
-  base_url: https://api.github.com   # a default, overridden for Enterprise Server
+  base_url: {{.APIBase}}   # a setting, not a constant: a self managed deployment has its own
   auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }
 
 enforcement:                   # section 7, compared against the host by CI

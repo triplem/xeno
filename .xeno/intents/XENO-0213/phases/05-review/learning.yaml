@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#145
+created: 2026-09-30T08:30:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+4e41c6b
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The worst failure mode in this intent is silent rather than loud: an empty base SHA makes
+      gate run judge the wrong range and produce a verdict, not an error. Every check written
+      here is about the wrapper's text, and text cannot distinguish a variable that is
+      populated from one that is merely spelled correctly.
+    proposal: >-
+      Where a generated file passes a value the runner will compute from, make the runner
+      refuse an empty one rather than relying on the generator to get it right. A range with
+      an empty end is not a range, and the component that can tell is the one that receives
+      it, not the one that wrote the template.
+    target: internal/runner
