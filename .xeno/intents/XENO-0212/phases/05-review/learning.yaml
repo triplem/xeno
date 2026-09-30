@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T21:05:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two doc comments explained the new code by naming the default it replaced, and both had
+      to be reworded. CLAUDE.md already says that belongs in the commit message, and the pull
+      was strong anyway: the interesting thing about BranchRulesFor is exactly that it used to
+      be an assumption. Writing the comment against the old code is how a refactor's prose
+      dates fastest.
+    proposal: >-
+      In a refactor, write each comment for a reader who never saw the previous version, and
+      check the new comments for the name of the thing being removed before finishing. A
+      mention of what was replaced is the signal, and the commit message is where it goes.
+    target: CLAUDE.md

@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package enforcement compares what a project declares it requires of its host against
-// what the host is configured to do.
+// what a host adapter reports. It holds no host: the requirement names are section 13's
+// and the words and states belong to whichever adapter under internal/host answered.
 //
-// It is the only package here that uses the network, and it is deliberately not
-// reachable from the gate path: a verdict has to be reproducible from the repository
-// alone, and a gate that called out would make it depend on whether a service answered.
-// Nothing under internal/gates imports this.
+// It is deliberately not reachable from the gate path: a verdict has to be reproducible
+// from the repository alone, and a gate that called out would make it depend on whether a
+// service answered. Nothing under internal/gates imports this or an adapter.
 package enforcement
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -65,105 +62,25 @@ func (r Report) Unmet() int {
 	return n
 }
 
-// Protection is the part of the host's answer this compares against.
-type Protection struct {
-	Available            bool
-	Protected            bool
-	RequiredStatusChecks bool
-	EnforceAdmins        bool
-	RequiredApprovals    int
-	// ReviewsExpressible says whether the host reports a review requirement at all.
-	// Not the same as none being configured.
-	ReviewsExpressible bool
-	// LastPushApproval is the host's stronger form of "not by the author": the most
-	// recent push has to be approved by somebody who did not make it. GitHub already
-	// refuses an approval from the pull request's own author, so this is the part of the
-	// requirement a setting can add rather than the whole of it.
-	LastPushApproval bool
-	Reason           string
-}
+// The requirement names are section 13's and the second standing rule makes the list a
+// budget rather than a starting point. They are constants so that an adapter builds its
+// answers from them: a host may choose its own words for what it found, never its own name
+// for what was asked, and a name spelled wrong in an adapter does not compile.
+const (
+	NameRequiredPipeline     = "required_pipeline"
+	NameAllowBypass          = "allow_bypass"
+	NameApprovalsRequired    = "approvals.required"
+	NameApprovalsNotByAuthor = "approvals.not_by_author"
+	NameMergeMethod          = "merge_method"
+)
 
-// Fetch asks the host what the branch is configured to require.
-//
-// A 403 is the answer this repository gets, and it is not an error: branch protection,
-// rulesets and required reviewers exist on GitHub and none of them is available for a
-// private repository on the free plan. Reporting that as a missing setting would send
-// somebody looking for a checkbox that is not there.
-func Fetch(client *http.Client, baseURL, repo, branch, token string) (Protection, error) {
-	body, p, err := fetchProtection(client, baseURL, repo, branch, token)
-	if err != nil || body == nil {
-		return p, err
-	}
-	return decodeProtection(body)
-}
-
-// fetchProtection is the transport half: one request, and the status codes turned into the
-// three answers a host can give. A nil body with no error means the host answered without
-// one, which is every case except 200.
-//
-// The URL, the header and the meaning of each status are this host's. When a second host
-// arrives they move into its adapter and this function goes with them, which is #97; the
-// split is worth having either way, because it is what lets the decode be tested from a
-// fixture and the status mapping from a server that returns nothing else.
-func fetchProtection(client *http.Client, baseURL, repo, branch, token string) ([]byte, Protection, error) {
-	var p Protection
-	url := fmt.Sprintf("%s/repos/%s/branches/%s/protection", strings.TrimRight(baseURL, "/"), repo, branch)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, p, err
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, p, fmt.Errorf("asking %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-	case http.StatusForbidden:
-		p.Reason = "the host does not offer branch protection for this repository on its current plan"
-		return nil, p, nil
-	case http.StatusNotFound:
-		p.Available, p.Reason = true, "the branch is not protected"
-		return nil, p, nil
-	case http.StatusUnauthorized:
-		return nil, p, fmt.Errorf("the token was rejected by %s", url)
-	default:
-		return nil, p, fmt.Errorf("%s answered %s", url, resp.Status)
-	}
-	raw, err := io.ReadAll(resp.Body)
-	return raw, p, err
-}
-
-// decodeProtection is the domain half: what this host's answer says about the requirements
-// a project declares. The field names are the host's and the states are not.
-func decodeProtection(raw []byte) (Protection, error) {
-	var p Protection
-	var body struct {
-		RequiredStatusChecks *struct {
-			Contexts []string `json:"contexts"`
-		} `json:"required_status_checks"`
-		EnforceAdmins *struct {
-			Enabled bool `json:"enabled"`
-		} `json:"enforce_admins"`
-		Reviews *struct {
-			Count            int  `json:"required_approving_review_count"`
-			LastPushApproval bool `json:"require_last_push_approval"`
-		} `json:"required_pull_request_reviews"`
-	}
-	if err := json.Unmarshal(raw, &body); err != nil {
-		return p, err
-	}
-	p.Available, p.Protected = true, true
-	p.RequiredStatusChecks = body.RequiredStatusChecks != nil
-	p.EnforceAdmins = body.EnforceAdmins != nil && body.EnforceAdmins.Enabled
-	if body.Reviews != nil {
-		p.ReviewsExpressible, p.RequiredApprovals = true, body.Reviews.Count
-		p.LastPushApproval = body.Reviews.LastPushApproval
-	}
-	return p, nil
+// Names returns the requirement names in report order. An adapter's test asserts its own
+// names are among these, which is where the budget is held: Compare drops a name it does
+// not know, and there is nowhere in Report to say so that would not itself be a field the
+// specification does not have.
+func Names() []string {
+	return []string{NameRequiredPipeline, NameAllowBypass, NameApprovalsRequired,
+		NameApprovalsNotByAuthor, NameMergeMethod}
 }
 
 // Declared is the enforcement block of project.yaml.
@@ -180,84 +97,56 @@ type Declared struct {
 	Waived string `yaml:"waived,omitempty"`
 }
 
-// requirement is one line of the report before it is evaluated: whether the declaration
-// asks for it, and what the host's answer says about it. A table rather than four switches,
-// because every one of them had the same three way shape, and the states differ only in
-// their words.
+// requirement is what the domain still knows about one line of the report: its name,
+// whether the declaration asks for it, and the reason it may carry of its own. What was
+// once here as well, how to read a host's answer, belongs to the adapter that has the
+// answer: see A65, and #97 for the question it closes.
 type requirement struct {
 	name     string
 	declared func(Declared) (string, bool)
-	// evaluate answers for a host that has protection to report. Unavailable is handled
-	// once, above, since the reason is the same for every requirement.
-	evaluate func(Declared, Protection) (actual string, met bool, note string)
 	// waived is the reason this requirement may carry of its own, beyond the block's.
 	waived func(Declared) string
-	// expressible says whether the host reports on this requirement at all. Absent means
-	// availability alone decides.
-	expressible func(Protection) bool
 }
 
 var requirements = []requirement{
 	{
-		name:     "required_pipeline",
+		name:     NameRequiredPipeline,
 		declared: func(d Declared) (string, bool) { return "true", d.RequiredPipeline },
-		evaluate: func(_ Declared, p Protection) (string, bool, string) {
-			if !p.Protected {
-				return "the branch is not protected", false, "a red gate then produces a report that a merge walks past"
-			}
-			if p.RequiredStatusChecks {
-				return "required", true, ""
-			}
-			return "no status check is required", false, "a red gate then produces a report that a merge walks past"
-		},
 	},
 	{
-		name:     "allow_bypass",
+		name:     NameAllowBypass,
 		declared: func(d Declared) (string, bool) { return "false", !d.AllowBypass },
-		evaluate: func(_ Declared, p Protection) (string, bool, string) {
-			if p.EnforceAdmins {
-				return "administrators are included", true, ""
-			}
-			return "administrators may bypass", false, ""
-		},
 	},
 	{
-		name: "approvals.required",
+		name: NameApprovalsRequired,
 		declared: func(d Declared) (string, bool) {
 			return fmt.Sprintf("%d", d.Approvals.Required), d.Approvals.Required > 0
 		},
-		evaluate: func(d Declared, p Protection) (string, bool, string) {
-			return fmt.Sprintf("%d", p.RequiredApprovals), p.RequiredApprovals >= d.Approvals.Required, ""
-		},
-		waived:      func(d Declared) string { return d.Approvals.Waived },
-		expressible: func(p Protection) bool { return p.ReviewsExpressible },
+		waived: func(d Declared) string { return d.Approvals.Waived },
 	},
 	{
-		// Section 13 says the approvals block covers whether the author may give one. What
-		// satisfies it is not a setting: GitHub refuses an approval from a pull request's
-		// own author, so an approval that exists is somebody else's. With none required
-		// there is nothing to be somebody else's, which is unmet rather than met.
-		name:     "approvals.not_by_author",
+		name:     NameApprovalsNotByAuthor,
 		declared: func(d Declared) (string, bool) { return "true", d.Approvals.NotByAuthor },
-		evaluate: func(_ Declared, p Protection) (string, bool, string) {
-			switch {
-			case p.RequiredApprovals < 1:
-				return "no approval is required", false, "an approval that does not exist is nobody's"
-			case p.LastPushApproval:
-				return "the author cannot approve, and the last push needs another approval", true, ""
-			default:
-				return "the host refuses an approval from the author", true,
-					"require_last_push_approval would extend it to whoever pushed last"
-			}
-		},
-		waived:      func(d Declared) string { return d.Approvals.Waived },
-		expressible: func(p Protection) bool { return p.ReviewsExpressible },
+		waived:   func(d Declared) string { return d.Approvals.Waived },
 	},
 }
 
-// Compare turns a declaration and an answer into the report.
-func Compare(repo, branch string, d Declared, p Protection, now time.Time) Report {
+// Compare turns a declaration and an adapter's answer into the report.
+//
+// The adapter has already decided met from unmet and what the host cannot express at all,
+// because only the host knows how to read its own answer. What is left here is what the
+// project decided rather than what the host reports: which requirements were asked for, and
+// which unmet or unavailable ones a waiver excuses.
+//
+// A declared requirement the adapter did not answer for is not available. That is the
+// honest reading of an absence: the host was asked and had nothing to say about it, which
+// is the same state as a host that has no such setting.
+func Compare(repo, branch string, d Declared, answered []Requirement, now time.Time) Report {
 	rep := Report{Repository: repo, Branch: branch, CheckedAt: now.UTC().Format(time.RFC3339)}
+	byName := make(map[string]Requirement, len(answered))
+	for _, q := range answered {
+		byName[q.Name] = q
+	}
 	for _, q := range requirements {
 		declared, asked := q.declared(d)
 		if !asked {
@@ -267,20 +156,16 @@ func Compare(repo, branch string, d Declared, p Protection, now time.Time) Repor
 		if q.waived != nil && q.waived(d) != "" {
 			w = q.waived(d)
 		}
-		expressible := p.Available
-		if expressible && q.expressible != nil {
-			expressible = q.expressible(p)
-		}
-		if !expressible {
-			rep.add(q.name, declared, "not available", waiveOr(w, NotAvailable), noteOf(w, p.Reason))
+		got, ok := byName[q.name]
+		if !ok {
+			rep.add(q.name, declared, "not available", waiveOr(w, NotAvailable), noteOf(w, ""))
 			continue
 		}
-		actual, met, note := q.evaluate(d, p)
-		if met {
-			rep.add(q.name, declared, actual, Met, note)
+		if got.State == Met {
+			rep.add(q.name, declared, got.Actual, Met, got.Note)
 			continue
 		}
-		rep.add(q.name, declared, actual, waiveOr(w, Unmet), noteOf(w, note))
+		rep.add(q.name, declared, got.Actual, waiveOr(w, got.State), noteOf(w, got.Note))
 	}
 
 	// merge_method is declared and deliberately not compared. Section 13 says "not
@@ -291,7 +176,7 @@ func Compare(repo, branch string, d Declared, p Protection, now time.Time) Repor
 	// first. The field is reported as unchecked rather than left silent, so that a project
 	// declaring it learns that nothing reads it.
 	if d.MergeMethod != "" {
-		rep.add("merge_method", d.MergeMethod, "not compared", Unknown,
+		rep.add(NameMergeMethod, d.MergeMethod, "not compared", Unknown,
 			"section 13 leaves it unchecked; it is meaningful once a commit predicate is active")
 	}
 	return rep

@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#143
+created: 2026-09-29T20:42:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+530ce03
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Splitting #104 into four issues made this intake short, because A65 had already
+      settled the signature and #97 had already enumerated the four things that move. The
+      intake had to establish almost nothing: its work was telling apart what moves, what
+      stays and what is retired in one file.
+    proposal: >-
+      Where an issue describes several independent pieces, file each as its own issue and
+      let the decision pieces run first. The implementation intake then reads as a
+      refactor with a settled target rather than as a design, and what it has to establish
+      is a partition of one file instead of a shape.
+    target: .xeno/intents

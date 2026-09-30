@@ -8,6 +8,7 @@ import (
 
 	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/host"
 )
 
 // ReportPath is where the enforcement report is written. Under .xeno/local/, which is
@@ -29,6 +30,7 @@ const ReportPath = ".xeno/local/enforcement.yaml"
 func (r *Runner) EnforcementCheck(branch, token string) (*enforcement.Report, error) {
 	var p struct {
 		Tracker struct {
+			Adapter string `yaml:"adapter"`
 			Project string `yaml:"project"`
 			BaseURL string `yaml:"base_url"`
 		} `yaml:"tracker"`
@@ -45,19 +47,21 @@ func (r *Runner) EnforcementCheck(branch, token string) (*enforcement.Report, er
 		return nil, refuse("no enforcement token; set XENO_ENFORCEMENT_TOKEN.\n" +
 			"It is a token that can read the protected branch settings, and it is never in the repository.")
 	}
-	base := p.Tracker.BaseURL
-	if base == "" {
-		base = "https://api.github.com"
-	}
 	if branch == "" {
 		branch = "main"
 	}
 
-	prot, err := enforcement.Fetch(&http.Client{Timeout: 20 * time.Second},
-		base, p.Tracker.Project, branch, token)
+	// The host is selected and never assumed: a tool that fills in an address where the
+	// configuration is silent is a tool with one host, whatever its ports look like.
+	rules, err := host.BranchRulesFor(p.Tracker.Adapter, p.Tracker.BaseURL,
+		&http.Client{Timeout: 20 * time.Second})
+	if err != nil {
+		return nil, refuse("%v", err)
+	}
+	answered, err := rules.Requirements(p.Tracker.Project, branch, token, p.Enforcement)
 	if err != nil {
 		return nil, err
 	}
-	rep := enforcement.Compare(p.Tracker.Project, branch, p.Enforcement, prot, r.Now())
+	rep := enforcement.Compare(p.Tracker.Project, branch, p.Enforcement, answered, r.Now())
 	return &rep, fm.WriteYAML(r.abs(ReportPath), rep)
 }
