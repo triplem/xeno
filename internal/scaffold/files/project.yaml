@@ -36,3 +36,24 @@ retention:                     # section 12
 
 templates:                     # section 4
   overrides_dir: .xeno/config/templates
+
+# Section 14. An external gate is a command of this project's own whose verdict counts beside the
+# shipped gates. Nothing is declared here, and nothing runs: a project that declares none keeps the
+# closed chain of trust — vendored plugin, hash, signed release, nothing executed.
+#
+# A declaration names the command, the hash it must have, and the phases it applies to. The hash is
+# checked before every run and the gate runs only when it matches, so a modified command refuses to
+# run rather than running unnoticed. The command is started directly rather than through a shell, it
+# is given a JSON object on standard input and answers one on standard output, its exit status
+# decides the check, and it has sixty seconds. Every finding it produces is marked
+# `provenance: external` in gate.yaml, and a decision taken on one does not survive the next run,
+# because its wording is not this project's to keep stable.
+#
+# There is no sandbox. The command runs with whatever the pipeline gives it, which is why the mark
+# in the trail is the point.
+#
+# external_gates:
+#   - id: house-linter
+#     path: tools/house-linter
+#     sha256: <sixty four lowercase hex characters>
+#     phases: [03-implementation]

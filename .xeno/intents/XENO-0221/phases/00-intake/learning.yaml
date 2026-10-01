@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T16:48:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The intake found that this piece adds no rule: ExternalProvenance, carryForward's refusal to
+      attach a decision to an external finding, and Invariants were all built in #66, and the
+      comment at the verdict says they were put there for "a second path into it, an external gate
+      above all". The work is a producer for rules that have been waiting a work package for
+      something to produce them.
+    proposal: >-
+      When a piece looks large, read the tree for rules already written against it before scoping
+      the work. A rule written in advance of its second case is both a head start and a
+      specification: it says what the new producer has to satisfy, and it is cheaper to read than
+      to rediscover.
+    target: .xeno/intents

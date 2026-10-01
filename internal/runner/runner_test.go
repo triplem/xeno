@@ -3,6 +3,8 @@
 package runner
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"os"
 	"path/filepath"
@@ -2160,5 +2162,79 @@ func TestSectionSetWritesTheHashOfTheEffectiveRuleSet(t *testing.T) {
 	f.must(err)
 	if got := f.frontField("00-intake", "rules_hash"); got == empty {
 		t.Error("a rule entering the tree left rules_hash alone")
+	}
+}
+
+// Section 14 end to end, through the one place a verdict is assembled: a declared command's
+// check reaches gate.yaml with its provenance, its finding carries an id derived like every
+// other, and a decision taken on it does not survive the next run — which is the rule #66 wrote
+// and nothing could exercise until there was an external gate (A25, section 4).
+func TestAnExternalGateReachesTheVerdictAndKeepsNoDecision(t *testing.T) {
+	f := newFixture(t)
+	script := "#!/bin/sh\ncat > /dev/null\n" +
+		`printf '{"findings":[{"file":"tools/house-linter","cause":"the house style is not followed","next":"follow it"}]}'` +
+		"\nexit 1\n"
+	f.write("tools/house-linter", script)
+	if err := os.Chmod(filepath.Join(f.root, "tools/house-linter"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256([]byte(script))
+	f.project(agentBlock + "external_gates:\n  - id: house-linter\n    path: tools/house-linter\n" +
+		"    sha256: " + hex.EncodeToString(sum[:]) + "\n    phases: [00-intake]\n")
+	f.templated()
+	g := f.run("00-intake", "")
+	var ext *model.Check
+	for i := range g.Checks {
+		if g.Checks[i].Gate == "house-linter" {
+			ext = &g.Checks[i]
+		}
+	}
+	if ext == nil {
+		t.Fatal("the declared gate produced no check")
+	}
+	if ext.Provenance != "external" {
+		t.Errorf("provenance %q, want external: the mark is the point of section 14", ext.Provenance)
+	}
+	if ext.Result != "fail" || len(ext.Findings) != 1 {
+		t.Fatalf("check %+v, want one failing finding", ext)
+	}
+	id := ext.Findings[0].ID
+	if id == "" {
+		t.Fatal("the external finding carries no id")
+	}
+	if g.Status != "red" {
+		t.Errorf("the phase is %s, want red: an external fail is a fail", g.Status)
+	}
+
+	// A release is taken on it like any other.
+	f.must2(f.r.Decide(key, "00-intake", id, "approved", "somebody", "accepted for this release"))
+	after, err := f.r.GateRun(key, "00-intake")
+	f.must(err)
+	for _, ch := range after.Checks {
+		if ch.Gate != "house-linter" {
+			continue
+		}
+		if len(ch.Findings) != 1 {
+			t.Fatalf("check %+v, want the same finding", ch)
+		}
+		if ch.Findings[0].ID != id {
+			t.Errorf("the finding's id moved from %s to %s", id, ch.Findings[0].ID)
+		}
+		if ch.Findings[0].Decision != nil {
+			t.Error("the decision survived the next run; section 4 says a release on foreign wording is taken again")
+		}
+	}
+}
+
+// A project that declares none keeps the closed chain, which is the default and every project
+// today: no check, and the verdict carries what it carried before.
+func TestNoDeclarationLeavesTheVerdictAsItWas(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	for _, ch := range f.run("00-intake", "").Checks {
+		if ch.Provenance == "external" {
+			t.Fatalf("an external check appeared without a declaration: %+v", ch)
+		}
 	}
 }

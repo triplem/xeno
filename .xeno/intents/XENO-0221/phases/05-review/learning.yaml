@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T17:30:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Reviewing this piece produced the sharpest open question of the work package, and it is
+      about the trail rather than about rules: a phase is judged only against the rule set its
+      artifact recorded, and an external gate is not in that hash at all, because the declaration
+      lives in project.yaml and no artifact hashes that file. So adding or re-pointing an external
+      gate changes what a phase is judged by with nothing recording that it changed.
+    proposal: >-
+      When a piece adds a second thing a gate reads, ask which hash records it before the review
+      asks what it does. The rule set got one in A66 because a field existed for it; the external
+      declaration has none, and the gap was invisible until both existed at once.
+    target: .xeno/intents
