@@ -994,32 +994,22 @@ determinism of a verdict. So it is allowed to be missing, stale or wrong without
 trail suffering, and it is therefore optional. Where no index is available the phase
 runs without one and `context.lock.yaml` records that it did.
 
-**Tree-sitter as the engine, with no grammar shipped.** Xeno builds the index and
-loads the grammars a project provides, at a location the project configures. It vendors
-none of them, and that is a licence decision as much as a scope one: every grammar comes
-with its own terms, and which terms a project can accept is that project's business and
-not something a tool should decide by bundling.
+**The project produces the index and Xeno reads it.** Xeno ships no indexer and names
+none. A project uses tree-sitter, ctags, its build system or its language server,
+whichever it already trusts, and writes the format section 5 fixes. That keeps the C
+toolchain and a second dependency out of Xeno's release, so the runner stays pure Go
+and cross compiles per platform as before, and it puts the choice of tool where the
+knowledge of the languages is.
 
-The documentation points at the four that matter here and goes no further:
+The honest cost: out of the box there is no index, and producing one is a step a project
+takes before it sees any saving. That is a step more than a bundled tool would need,
+and it is the step that keeps other tools' licence decisions, and their idea of what a
+symbol is, out of this repository.
 
-- Tree-sitter itself: <https://tree-sitter.github.io/tree-sitter/>, with the API
-  overview under <https://tree-sitter.github.io/tree-sitter/using-parsers/>
-- Java: <https://github.com/tree-sitter/tree-sitter-java>
-- C#: <https://github.com/tree-sitter/tree-sitter-c-sharp>
-- TypeScript: <https://github.com/tree-sitter/tree-sitter-typescript>
-- Kotlin: <https://github.com/tree-sitter-grammars/tree-sitter-kotlin>
-
-**Loaded at runtime, not linked in.** Grammars arrive as shared libraries and are loaded
-when the index is built, which keeps the C toolchain out of Xeno's own release: the
-runner stays pure Go and cross compiles per platform as before. Where a project supplies
-no grammar, the index is empty for that language, and where it supplies none at all, the
-phase runs without an index, which is the degradation this package is designed around
-anyway.
-
-The honest cost: out of the box there is no index. A project that wants one obtains the
-grammars, checks their terms, and points the configuration at them. That is a step more
-than a bundled tool would need, and it is the step that keeps other people's licence
-decisions out of this repository.
+**Staleness is read, not managed.** Xeno does not rebuild the index and has no opinion
+about when a project should. It reads the provenance the index carries, treats one older
+than `index.max_age_hours` as absent, and records what it used. A stale index is worse
+than none, so its age is part of every answer.
 
 **What it holds.** Symbol name, kind, file, line, and the enclosing container. Not call
 relationships and not type resolution, which is the semantic graph the scope section
@@ -1039,15 +1029,15 @@ is a tool change rather than a schema break.
 repository. That is the sixth tool, and WP11 requires an argument for a sixth. This is
 the argument, and it is also what the budget was for.
 
-**Freshness.** Rebuilt incrementally at phase start over what changed since the last
-build, with a full build as the fallback. A stale index is worse than none, so its age
-is part of every answer.
+Done when a query returns correct locations for a known set of symbols in an index this
+repository produces for its own language, when a missing, unreadable or stale index
+degrades to no index rather than to an error, and when a phase that used one records the
+tool, its version and the index's age in `context.lock.yaml`.
 
-Done when the index returns correct locations for a known set of symbols in every
-language a grammar was supplied for, when a missing or unreadable grammar degrades to no
-index rather than to an error, and when the bytes read per phase drop against a run
-without it. Bytes read are counted by the runner itself, which makes this acceptance
-independent of any session log format.
+The saving is not in the acceptance, because the runner cannot observe it: the agent
+reads through its harness, and `context.lock.yaml` is the context that was declared
+rather than what was read. The figure belongs to WP20, which owns measurement and whose
+baseline is the only thing that can carry it.
 
 ### WP16 Documentation
 
@@ -1387,7 +1377,7 @@ not every boundary somebody can imagine:
 |---|---|
 | Tracker | GitHub in v1, GitLab and Jira in 1.1 |
 | Host settings | read by `xeno enforcement check`, one per host |
-| Symbol index | tree-sitter in v1; the `tools` block in `context.lock.yaml` already treats the engine as replaceable |
+| Symbol index | whatever the project produces, read through one format; the `tools` block in `context.lock.yaml` already treats the engine as replaceable |
 | Session logs | one per harness, and the plan already calls their formats non contractual |
 
 Git is deliberately not on that list. The gate path reads commit history, and tests for
@@ -1685,8 +1675,8 @@ somewhere else.
 
 | Size | Packages |
 |---|---|
-| Large | WP3 templates, WP4 rule engine, WP7 runner, WP11 agent layer, WP15 symbol index, WP16 documentation, WP17 test strategy |
-| Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context profile, WP10 CI wrapper and enforcement check, WP19 conformance, WP20 token economy |
+| Large | WP3 templates, WP4 rule engine, WP7 runner, WP11 agent layer, WP16 documentation, WP17 test strategy |
+| Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context profile, WP10 CI wrapper and enforcement check, WP15 symbol index, WP19 conformance, WP20 token economy |
 | Small | WP5 assumptions, WP9 init, WP12 GitHub adapter, WP13 token recording, WP14 learning |
 | Not sized | WP18 dashboard, specified and deferred to 1.1 |
 
@@ -1803,8 +1793,9 @@ is the runner, the image and the plugin, and the plugin is templates, rules, ski
 the secret filter.
 
 *Third party attribution has to be current.* The SBOM records what the release carries
-and a `NOTICE` has to reflect it before anything is published. Tree-sitter grammars are
-not among them, since none are shipped, which is one of the reasons not to ship them.
+and a `NOTICE` has to reflect it before anything is published. An indexer and its
+grammars are not among them, since none are shipped, which is one of the reasons not to
+ship them.
 This one is repairable, but it is cheaper to keep current than to reconstruct.
 
 **Raised by the adoption mapping written for the first deployment**, and recorded here
