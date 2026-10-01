@@ -116,6 +116,13 @@ templates with both strings bundles.
 WP9 and WP10: `xeno init` with vendoring and the version check, the generated CI
 wrapper, and `xeno enforcement check` against the host.
 
+Built since that list was written, which reads as complete and on its own is not:
+`xeno section set` and the three `assumption` commands; the digest written from the
+agent's summary and the secret filter it passes through (A62); the cost record and
+`xeno cost turn` (A63, A64); the branch rules port with its GitHub and GitLab adapters
+(A65); and the symbol index reader, which treats a missing, unreadable or stale index as
+absent rather than as an error.
+
 WP0 in part: `.gitattributes`, SPDX identifiers, `NOTICE`, `CONTRIBUTING.md` with the DCO
 procedure, `SECURITY.md`, the module path (A1), the format and vet jobs the package asks
 for on day one, and the release pipeline: version and notes derived from Conventional
@@ -129,8 +136,15 @@ the binaries go to the release and the registry is for the image.
 
 ## Not built
 
-Everything that needs a harness: the MCP server, hooks and the plugin. The GitHub
-adapter, WP12. Rules, the secret filter, the digest writer and the documentation site.
-Two of the plan's verification points stand before those parts, the marketplace URL and
-whether each harness forwards the headers the gateway reads (#58); the gateway's own two
-are answered (#56).
+Everything that needs a harness: the MCP server, the hooks and the plugin. G-Supply
+waits on the last of those, because what it verifies is a plugin against the digest the
+runner carries, and so does G-Secret, which the plan puts on the hook that runs on every
+write. Rules, so G-Rules and G-Policy stand as `not-implemented` and a learning has no
+rule set to be merged into. The documentation site. Of WP12 the tracker half: the branch
+rules port and both its adapters are built, and what is open is carrying issue content
+into P0 and reporting a verdict back onto a merge request.
+
+Of the plan's verification points the marketplace URL is the one still open. Whether
+each harness forwards the headers the gateway reads is answered per harness and
+`phase start --export` sends them (#58), and the gateway's own two are answered against
+LiteLLM 1.102.1 (#56).

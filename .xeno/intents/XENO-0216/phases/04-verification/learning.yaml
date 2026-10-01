@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:54:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Checking the corrected README against the dispatch table took one diff of two sorted
+      lists and found exactly one expected difference, `version`, which is answered before
+      dispatch. The check that would have prevented this whole intent is three lines of
+      shell and was written here as a one-off.
+    proposal: >-
+      Where a hand-kept file restates a list the tree already holds, the check is usually a
+      diff of two sorted lists and belongs in CI rather than in a phase's results section.
+      The reason to not write it is that WP16 owns the generated reference, which is an
+      argument about where it lives and not about whether it is cheap.
+    target: .xeno/intents

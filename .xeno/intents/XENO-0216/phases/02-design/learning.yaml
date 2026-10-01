@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:44:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The false sentence in the README survived because an earlier change edited into the
+      paragraph instead of replacing it: the clause about WP8 was left standing beside a
+      correction that should have carried it away. The convention this project already has
+      for a second change to a paragraph is exactly the guard that was missing.
+    proposal: >-
+      Where a paragraph names a work package or an assumption as a reason, treat a change to
+      that reason as a change to the paragraph. The citation is what dates the prose, so a
+      closed assumption is a signal to rewrite every paragraph that cites it rather than
+      only the register row.
+    target: .xeno/intents
