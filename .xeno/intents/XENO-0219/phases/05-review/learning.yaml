@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T16:36:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the second piece in a row whose review ends by saying its findings have been read
+      only by their author, and the second to name the shipped set as where that stops. Two
+      pieces have now deferred the same unverifiable claim to the same future piece, which turns
+      a risk into a backlog item nobody wrote down.
+    proposal: >-
+      When two pieces defer the same risk to the same later piece, make it an acceptance
+      criterion of that piece in its issue rather than a sentence in two reviews. The shipped
+      set's issue should say that the wording of every finding a rule produces is read there.
+    target: .xeno/intents

@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T15:52:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The intake found a sentence in internal/gates that this piece has to break: gates "read,
+      they never run anything". Reading a commit range means running git log, which section 9
+      requires of four of the five types, so the comment is wrong rather than the plan. It was
+      written when the only things a gate could have run were a build and a scanner.
+    proposal: >-
+      When a package comment states a prohibition, write what it protects and not only what it
+      forbids. "Runs no build, no test and no model" survives the first legitimate subprocess;
+      "never runs anything" has to be corrected by whoever needs one, and in a review that
+      reads as a rule being bent rather than as a sentence being imprecise.
+    target: internal/gates

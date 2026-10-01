@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T15:56:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Four of the five types have two unrelated failure modes: what the commits say, and whether
+      a range was given at all. Writing the second as its own criterion for each type made the
+      list longer and caught that a missing range must not be read as an empty one, which is
+      the case that would make every commit rule silently green.
+    proposal: >-
+      Where a predicate reads an input the run supplies rather than the tree, write the absent
+      input as a criterion of its own, per predicate. An input that is merely assumed present
+      produces a gate that passes loudest exactly when it was given nothing.
+    target: .xeno/intents

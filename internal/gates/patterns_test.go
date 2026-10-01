@@ -2,7 +2,10 @@
 
 package gates
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestConventionalCommitsPattern(t *testing.T) {
 	ok := []string{
@@ -60,4 +63,43 @@ func contains(s, sub string) bool {
 		}
 	}
 	return false
+}
+
+// The second shipped pattern: the same form carrying an issue reference in the subject, which
+// is what survives a squash merge. Both hosts' spellings are accepted (A71).
+func TestTheWithIssuePattern(t *testing.T) {
+	for _, tc := range []struct {
+		subject string
+		want    bool
+	}{
+		{"feat: the thing (#162)", true},
+		{"fix(rules): the other thing (!41)", true},
+		{"feat!: a breaking change (#1)", true},
+		{"chore(deps)!: bump something (#99999)", true},
+		{"feat: the thing", false},
+		{"feat: the thing (#)", false},
+		{"feat: the thing (#abc)", false},
+		{"feat: (#162)", false},
+		{"feat: the thing (#162) and more", false},
+		{"the thing (#162)", false},
+	} {
+		err := CheckMessage("conventional-commits-with-issue", tc.subject)
+		if (err == nil) != tc.want {
+			t.Errorf("%q: matched %v, want %v (%v)", tc.subject, err == nil, tc.want, err)
+		}
+	}
+}
+
+// One map answers at the gate and in xeno check commit-message, which is the property section 9
+// asks for by name: a hook cannot start rejecting what a gate accepts.
+func TestBothPatternsAreNamedInTheListing(t *testing.T) {
+	names := strings.Join(PatternNames(), ",")
+	for _, want := range []string{"conventional-commits", "conventional-commits-with-issue"} {
+		if !strings.Contains(names, want) {
+			t.Errorf("PatternNames is %q, want %s in it", names, want)
+		}
+	}
+	if len(PatternNames()) != 2 {
+		t.Errorf("%d shipped patterns, want the two section 9 names", len(PatternNames()))
+	}
 }

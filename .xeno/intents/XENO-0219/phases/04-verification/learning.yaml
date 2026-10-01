@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T16:30:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Running the three commit rules against this repository's own history produced the most
+      informative result of the phase: the subject rule green, the trailer rule red, the
+      signature rule red, and all three correct. The two reds are this project's own choices —
+      the reference goes in the footer, and signing waits for publication — so the predicates
+      were confirmed by disagreeing with the tree in exactly the places the tree disagrees with
+      the examples.
+    proposal: >-
+      When a predicate judges a convention, run it against this repository before writing the
+      results, and expect a red where the project chose differently. A rule that goes green
+      everywhere proves less than one that goes red where a documented decision says it should.
+    target: .xeno/intents

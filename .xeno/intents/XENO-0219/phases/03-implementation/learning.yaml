@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T16:20:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two of this phase's four hours went to failures that were not about the predicates at all:
+      a NUL byte in a process argument, rejected by exec with a message naming nothing, and a
+      test helper that wrote one file for two commits and so could not produce the merge the
+      test needed. Both were in fixtures and plumbing rather than in the thing under test.
+    proposal: >-
+      When a new test fails on its first run, read the failure for whether it is about the
+      subject or about the scaffolding before changing the subject. Both of these looked like
+      the predicate misbehaving and neither was, and the second one was only obvious once the
+      git output was printed rather than the assertion.
+    target: .xeno/intents
