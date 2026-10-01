@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:10:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Deciding kind and container as free strings rather than an enumeration followed from
+      #149 directly: once the project chooses the indexer, Xeno cannot enumerate what its
+      tool thinks a symbol is. The safety comes from nothing comparing the value — no gate
+      reads it and the lookup matches on name — so an open set costs nothing it would cost
+      in a field a verdict touched.
+    proposal: >-
+      When a field's values come from a tool the project chose, check what in Xeno compares
+      them before deciding whether the set is closed. Where the answer is nothing, an
+      enumeration buys validation of a value no decision depends on and costs being wrong at
+      the first language nobody considered.
+    target: internal/index

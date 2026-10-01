@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:40:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Running the real producer over this repository and querying the result was the only test
+      that asserted anything the author did not already believe. The other eight read a fixture
+      written in the same intent as the reader, so they check that the reader accepts what its
+      author intended, which is a weaker claim than it looks.
+    proposal: >-
+      When defining a format, make one test run a real producer over a real tree and query the
+      output. A fixture and a reader written together agree by construction, and the first
+      disagreement arrives from a tool nobody wrote, which is also the first thing that could
+      have been caught earlier.
+    target: internal/index

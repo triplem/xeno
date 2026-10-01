@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:30:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The format's documentation had nowhere to go. docs/ holds the documents, which an agent
+      may not edit, and the published description belongs to WP16, which is not built. What
+      worked was an annotated example in testdata read by a test, so the shape is both legible
+      to somebody who does not read Go and unable to drift from the reader.
+    proposal: >-
+      Where a format is for somebody outside the repository to write against, make the worked
+      example a test fixture. A description in prose and a reader in code drift within a
+      release, and the example is the one artifact that can be both the documentation and the
+      thing under test.
+    target: internal/index

@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:02:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The information base for this intent is entirely inside the repository, which is the
+      first time in this work package. The three preceding intents all turned on a fact only
+      the host could supply, and twice the fact changed the design. Here the format is Xeno's
+      to fix, so there is nothing to ask and the risk moves from unverified assumptions to
+      unexamined ones.
+    proposal: >-
+      Where an intent's information base is entirely internal, say so in the intake and name
+      what that changes about the risk. An intent that cannot be contradicted by an external
+      fact is an intent whose mistakes are all in its own reasoning, and that is a different
+      kind of review.
+    target: .xeno/intents

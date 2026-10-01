@@ -21,6 +21,7 @@ import (
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
+	"github.com/triplem/xeno/internal/index"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
@@ -704,6 +705,27 @@ func frontmatter(front map[string]any) string {
 		emit(k)
 	}
 	return b.String()
+}
+
+// symbolIndex reads the index the project produced, or says why there is none.
+//
+// The reason is returned rather than dropped, because it is what the tools entry of
+// context.lock.yaml records and because somebody asking why a phase ran without an index
+// deserves the sentence rather than silence. Nothing here fails: an absent index is ordinary.
+func (r *Runner) symbolIndex(now time.Time) (*index.Index, string) {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err != nil {
+		return nil, "project.yaml cannot be read, so no index is configured"
+	}
+	path := p.Index.Path
+	if path != "" && !filepath.IsAbs(path) {
+		path = r.abs(path)
+	}
+	maxAge := index.DefaultMaxAge
+	if p.Index.MaxAgeHours > 0 {
+		maxAge = time.Duration(p.Index.MaxAgeHours) * time.Hour
+	}
+	return index.Load(path, maxAge, now)
 }
 
 func (r *Runner) evidenceSource() string {

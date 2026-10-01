@@ -430,4 +430,10 @@ type Project struct {
 			Default string `yaml:"default"`
 		} `yaml:"model"`
 	} `yaml:"agent"`
+	// Section 5's index block, context economy. Both fields are optional and an absent block
+	// means no index, which is what every repository that has not produced one is in.
+	Index struct {
+		Path        string `yaml:"path"`
+		MaxAgeHours int    `yaml:"max_age_hours"`
+	} `yaml:"index"`
 }
