@@ -44,7 +44,7 @@ type Runner struct {
 	PluginSource string
 	// Base and Head are the commit range under review. An input of the run and
 	// deliberately not recorded: after a squash a recorded range would point at commits
-	// that no longer exist. No gate reads them until WP4.
+	// that no longer exist. Section 9's commit predicates read them through gates.Ctx.
 	Base, Head string
 }
 
@@ -155,7 +155,8 @@ func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 		return nil, err
 	}
 	prev, _ := r.readGate(key, phase)
-	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h, QualifiedID: common.Intent}, prev)
+	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h,
+		QualifiedID: common.Intent, Base: r.Base, Head: r.Head}, prev)
 	// Checked where the verdict is produced rather than where the findings are, so that a
 	// second path into it, an external gate above all, meets the same rule as the first.
 	if err := gates.Invariants(checks); err != nil {

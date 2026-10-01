@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#162"
+created: 2026-10-01T16:02:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two of this design's decisions were taken to keep a verdict from depending on the machine
+      that ran it: accepting an untrusted-but-good signature, because trust lives in the
+      verifier's keyring, and refusing to infer a range. They are the same argument, and the
+      second one was already written down while the first was not.
+    proposal: >-
+      When a predicate reads something outside the repository's own files, ask what part of the
+      answer belongs to the machine rather than to the commit, and exclude it explicitly. A
+      verdict that differs between two clones of one tree is the failure the whole gate path is
+      built to avoid.
+    target: .xeno/intents

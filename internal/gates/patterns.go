@@ -21,6 +21,13 @@ var patterns = map[string]*regexp.Regexp{
 	// marker, colon, space, description. The types are the Angular set.
 	"conventional-commits": regexp.MustCompile(
 		`^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^()]+\))?!?: .+$`),
+	// The same form carrying an issue reference in the subject, which is what a project
+	// needs when the reference has to survive a squash merge: the squashed message is built
+	// from the merge request title, and a footer written on a branch commit does not reach
+	// it. Both hosts' spellings are accepted, GitHub's (#123) and GitLab's (!123), because a
+	// shipped pattern that held for one host would be a pattern per host (A71).
+	"conventional-commits-with-issue": regexp.MustCompile(
+		`^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^()]+\))?!?: .+ \([#!][0-9]+\)$`),
 }
 
 // PatternNames lists what is shipped, for an error that helps rather than refuses.

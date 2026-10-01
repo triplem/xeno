@@ -140,16 +140,31 @@ func TestAnEntryForARuleOutsideTheSetIsRed(t *testing.T) {
 }
 
 // A rule in force that nothing evaluates is the silently green verdict section 16 catalogues,
-// so the type nothing implements is reported instead.
+// so a type nothing implements is reported instead. Since #162 the five of section 9 are
+// implemented, which leaves this as the case that keeps the registry a budget: a project naming
+// a type of its own gets the finding, because project-defined predicates are outside v1.
 func TestACheckedRuleWithNoImplementationIsRed(t *testing.T) {
 	c := policy(reviewPhase(t, "", map[string]string{
-		rules.ConfigDir + "/given/org/interfaces.yaml": checkedRule("interfaces", "section-implies-section"),
+		rules.ConfigDir + "/given/org/house.yaml": checkedRule("house-style", "house-linter-says-so"),
 	}))
 	if c.Result != "fail" {
 		t.Fatalf("G-Policy is %s, want fail", c.Result)
 	}
-	if !strings.Contains(causes(c), `no implementation exists for predicate type "section-implies-section"`) {
+	if !strings.Contains(causes(c), `no implementation exists for predicate type "house-linter-says-so"`) {
 		t.Fatalf("findings %q, want the unimplemented type", causes(c))
+	}
+}
+
+// The five names of section 9, each one evaluated rather than reported.
+func TestTheFiveTypesOfSectionNineAreRegistered(t *testing.T) {
+	for _, name := range []string{"section-implies-section", "commit-message", "commit-trailer",
+		"commit-signature", "approver-not-author"} {
+		if _, ok := predicates[name]; !ok {
+			t.Errorf("predicate type %s is not registered", name)
+		}
+	}
+	if len(predicates) != 5 {
+		t.Errorf("the registry holds %d types, want the five section 9 names", len(predicates))
 	}
 }
 
