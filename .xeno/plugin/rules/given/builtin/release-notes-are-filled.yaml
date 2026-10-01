@@ -1,0 +1,17 @@
+# Shipped, pinned, and not edited here. A project that disagrees overrides this rule at its own
+# level; precedence replaces a rule, it never deletes one.
+#
+# The one checked rule of the shipped set. What it proves is only that the section carries text:
+# whether the text is any use is what the review checklist is for.
+id: release-notes-are-filled
+version: 1
+scope: builtin
+binding: false
+kind: checked
+applies_to: [05-review]
+statement: >
+  The release notes section of the review artifact says what changed, for a reader who did not
+  follow the work.
+check:
+  type: section-non-empty
+  section: release-notes

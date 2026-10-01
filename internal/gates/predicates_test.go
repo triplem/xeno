@@ -57,15 +57,16 @@ func designPhase(t *testing.T, sections map[string]string, tree map[string]strin
 		t.Fatal(err)
 	}
 	shippedTemplate(t, root)
-	body := "---\nintent: " + fixtureIntent + "\nphase: 02-design\n---\n"
+	for rel, b := range tree {
+		writeRule(t, root, rel, b)
+	}
+	body := "---\nintent: " + fixtureIntent + "\nphase: 02-design\n" +
+		"rules_hash: " + rulesHashOf(t, root) + "\n---\n"
 	for id, text := range sections {
 		body += "\n<!-- xeno:section:" + id + " -->\n## " + id + "\n\n" + text + "\n"
 	}
 	if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
-	}
-	for rel, b := range tree {
-		writeRule(t, root, rel, b)
 	}
 	return Ctx{Root: root, Key: "PROJ-1", Phase: "02-design", QualifiedID: fixtureIntent}
 }
@@ -185,16 +186,17 @@ func commitPhase(t *testing.T, tree map[string]string, messages ...string) (Ctx,
 	for _, m := range messages {
 		gitCommit(t, root, m)
 	}
+	for rel, b := range tree {
+		writeRule(t, root, rel, b)
+	}
 	dir := filepath.Join(root, model.PhaseDir("PROJ-1", "05-review"))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	out := "---\nintent: " + fixtureIntent + "\nphase: 05-review\n---\n\nbody\n"
+	out := "---\nintent: " + fixtureIntent + "\nphase: 05-review\n" +
+		"rules_hash: " + rulesHashOf(t, root) + "\n---\n\nbody\n"
 	if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(out), 0o644); err != nil {
 		t.Fatal(err)
-	}
-	for rel, b := range tree {
-		writeRule(t, root, rel, b)
 	}
 	return Ctx{Root: root, Key: "PROJ-1", Phase: "05-review", QualifiedID: fixtureIntent,
 		Base: base, Head: "HEAD"}, base
@@ -275,16 +277,17 @@ func TestMergeCommitsAreExemptWhereTheRuleSaysSo(t *testing.T) {
 			"Merge branch 'side'", "side").CombinedOutput(); err != nil {
 			t.Fatalf("merge: %v\n%s", err, out)
 		}
+		writeRule(t, root, messageRuleFile, commitRule("subjects", "commit-message",
+			"  pattern: conventional-commits\n"+params))
 		dir := filepath.Join(root, model.PhaseDir("PROJ-1", "05-review"))
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.WriteFile(filepath.Join(dir, "output.md"),
-			[]byte("---\nintent: "+fixtureIntent+"\nphase: 05-review\n---\n\nbody\n"), 0o644); err != nil {
+			[]byte("---\nintent: "+fixtureIntent+"\nphase: 05-review\nrules_hash: "+
+				rulesHashOf(t, root)+"\n---\n\nbody\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		writeRule(t, root, messageRuleFile, commitRule("subjects", "commit-message",
-			"  pattern: conventional-commits\n"+params))
 		return policy(Ctx{Root: root, Key: "PROJ-1", Phase: "05-review", QualifiedID: fixtureIntent,
 			Base: base, Head: "HEAD"})
 	}
@@ -379,16 +382,17 @@ func TestARuleThatNeedsARangeAndDidNotGetOneIsRed(t *testing.T) {
 	for _, typ := range []string{"commit-message", "commit-trailer", "commit-signature", "approver-not-author"} {
 		t.Run(typ, func(t *testing.T) {
 			root := t.TempDir()
+			writeRule(t, root, ".xeno/config/rules/given/org/r.yaml",
+				commitRule("r", typ, "  pattern: conventional-commits\n  trailer: Xeno-Intent\n"))
 			dir := filepath.Join(root, model.PhaseDir("PROJ-1", "05-review"))
 			if err := os.MkdirAll(dir, 0o755); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.WriteFile(filepath.Join(dir, "output.md"),
-				[]byte("---\nintent: "+fixtureIntent+"\nphase: 05-review\n---\n\nbody\n"), 0o644); err != nil {
+				[]byte("---\nintent: "+fixtureIntent+"\nphase: 05-review\nrules_hash: "+
+					rulesHashOf(t, root)+"\n---\n\nbody\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			writeRule(t, root, ".xeno/config/rules/given/org/r.yaml",
-				commitRule("r", typ, "  pattern: conventional-commits\n  trailer: Xeno-Intent\n"))
 			c := policy(Ctx{Root: root, Key: "PROJ-1", Phase: "05-review", QualifiedID: fixtureIntent})
 			if c.Result != "fail" {
 				t.Fatalf("%s with no range is %s, want fail", typ, c.Result)
@@ -414,5 +418,129 @@ func TestTheRangeIsReadOncePerGateRun(t *testing.T) {
 	got := policy(c)
 	if n := len(got.Findings); n != 5 {
 		t.Fatalf("%d findings over five rules and one bad subject, want 5: %s", n, causes(got))
+	}
+}
+
+// ---- section-non-empty, the second section predicate (A73)
+
+func nonEmptyRule(section string) string {
+	return "id: a-section-is-filled\nversion: 1\nscope: org\nkind: checked\napplies_to: [02-design]\n" +
+		"statement: >\n  The section says something.\ncheck:\n  type: section-non-empty\n" +
+		"  section: " + section + "\n"
+}
+
+func TestSectionNonEmpty(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		sections map[string]string
+		want     string
+	}{
+		{"filled", map[string]string{"impact": "the trail gains a rule"}, ""},
+		{"empty", map[string]string{"decisions": "something"}, "impact is empty"},
+		{"whitespace only", map[string]string{"impact": "  \n\t "}, "impact is empty"},
+		{"absent from the artifact", map[string]string{"decisions": "something"}, "impact is empty"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := policy(designPhase(t, tc.sections, map[string]string{
+				".xeno/config/rules/given/org/filled.yaml": nonEmptyRule("impact"),
+			}))
+			got := causes(c)
+			if tc.want == "" {
+				if c.Result != "pass" {
+					t.Fatalf("G-Policy is %s, want pass: %s", c.Result, got)
+				}
+				return
+			}
+			if !strings.Contains(got, tc.want) {
+				t.Fatalf("findings %q, want one containing %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSectionNonEmptyRefusesAnUnknownSectionAndNoSection(t *testing.T) {
+	c := policy(designPhase(t, map[string]string{"impact": "x"}, map[string]string{
+		".xeno/config/rules/given/org/filled.yaml": nonEmptyRule("a-section-nobody-has"),
+	}))
+	if !strings.Contains(causes(c), `names section "a-section-nobody-has"`) {
+		t.Fatalf("findings %q, want the unknown section", causes(c))
+	}
+
+	bare := "id: bare\nversion: 1\nscope: org\nkind: checked\napplies_to: [02-design]\n" +
+		"statement: >\n  Something.\ncheck:\n  type: section-non-empty\n"
+	c = policy(designPhase(t, map[string]string{"impact": "x"}, map[string]string{
+		".xeno/config/rules/given/org/bare.yaml": bare,
+	}))
+	if !strings.Contains(causes(c), "names no section") {
+		t.Fatalf("findings %q, want the missing section parameter", causes(c))
+	}
+}
+
+// The shipped rule itself, read where it lives and evaluated against a P5 artifact, which is the
+// one checked rule of the set and the only one that proves the registry against a real file.
+func TestTheShippedReleaseNotesRuleIsEvaluated(t *testing.T) {
+	build := func(t *testing.T, notes string) model.Check {
+		t.Helper()
+		root := t.TempDir()
+		// The shipped rule, copied from where it ships, before the artifact that records it.
+		shippedRule(t, root, "release-notes-are-filled.yaml")
+		dir := filepath.Join(root, model.PhaseDir("PROJ-1", "05-review"))
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		body := "---\nintent: " + fixtureIntent + "\nphase: 05-review\nrules_hash: " +
+			rulesHashOf(t, root) + "\n---\n" +
+			"\n<!-- xeno:section:review-checklist -->\n## Review checklist\n\nanswered\n" +
+			"\n<!-- xeno:section:release-notes -->\n## Release notes\n\n" + notes + "\n" +
+			"\n<!-- xeno:section:residual-risk -->\n## Residual risk\n\nnone\n"
+		if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		// The review template, so the rule's section name can be checked against it.
+		tdir := filepath.Join(root, ".xeno/plugin/templates/review")
+		if err := os.MkdirAll(tdir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		files := map[string]string{
+			"template.yaml": "id: review\nversion: 1.0.0\nphase: 05-review\nsections:\n" +
+				"  - { id: review-checklist, required: true }\n  - { id: release-notes, required: true }\n" +
+				"  - { id: residual-risk, required: true }\n",
+			"strings.en.yaml": "language: en\ntitle: Review\nheadings:\n  review-checklist: Review checklist\n" +
+				"  release-notes: Release notes\n  residual-risk: Residual risk\n",
+		}
+		for name, b := range files {
+			if err := os.WriteFile(filepath.Join(tdir, name), []byte(b), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return policy(Ctx{Root: root, Key: "PROJ-1", Phase: "05-review", QualifiedID: fixtureIntent})
+	}
+
+	if got := build(t, "the rule tree is read, resolved and judged"); got.Result != "pass" {
+		t.Fatalf("filled release notes are %s: %s", got.Result, causes(got))
+	}
+	got := build(t, "")
+	if got.Result != "fail" {
+		t.Fatalf("empty release notes are %s, want fail", got.Result)
+	}
+	if !strings.Contains(causes(got), "release-notes is empty") {
+		t.Fatalf("findings %q, want the empty section named", causes(got))
+	}
+}
+
+// shippedRule copies one rule from where it ships into a fixture, so that a test judges the file
+// a project receives rather than a copy of it written here.
+func shippedRule(t *testing.T, root, name string) {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("../..", ".xeno/plugin/rules/given/builtin", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(root, ".xeno/plugin/rules/given/builtin", name)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, b, 0o644); err != nil {
+		t.Fatal(err)
 	}
 }

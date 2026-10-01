@@ -1,0 +1,17 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T17:00:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: prompt
+    observation: >-
+      Reading the four statements back as a stranger would changed two of them: one would have
+      fired on every internal rename, the other asked for a verdict where it meant to ask for
+      reasoning. Both read well when written, because the author knows which case they meant.
+    proposal: >-
+      Read a rule's statement by asking what a reader would answer in the case the rule is not
+      about. A statement that is right for its own case and wrong for the common one is the
+      failure mode, and it is invisible to the person who had the case in mind.
+    target: .xeno/intents

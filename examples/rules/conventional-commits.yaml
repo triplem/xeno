@@ -1,0 +1,20 @@
+# An example, not a shipped rule. Nothing reads examples/; adopt this by copying it into
+# .xeno/config/rules/given/org/ or given/project/, and correct the scope to the level you put it
+# at — the path decides the level and the gate compares the two.
+#
+# What it costs: every commit of the change under review has to match the pattern, including the
+# ones somebody wrote at the end of a long afternoon. Merge commits are exempt here because a
+# host writes those subjects and a project does not control them.
+id: conventional-commits
+version: 1
+scope: org
+binding: false
+kind: checked
+applies_to: [05-review]
+statement: >
+  Every commit of the change under review follows Conventional Commits.
+check:
+  type: commit-message
+  range: change-under-review
+  pattern: conventional-commits          # or conventional-commits-with-issue
+  exempt: [merge-commits]

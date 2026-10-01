@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T16:34:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The hardest constraint on writing these four rules was not correctness but reach: a rule in
+      given/builtin/ applies to every project everywhere and cannot be deleted, only overridden.
+      That turned the question from "is this a good rule" into "is this a rule no project could
+      reasonably refuse", which rejected two statements that were sharper and narrower.
+    proposal: >-
+      When writing anything into a layer a project cannot remove, write the reach into the
+      intake's constraints before writing the content. The bar is refusability rather than
+      quality, and it is not the bar a careful author applies by default.
+    target: .xeno/intents

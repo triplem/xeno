@@ -1,0 +1,22 @@
+# An example, not a shipped rule. Adopt it by copying it into
+# .xeno/config/rules/given/org/ or given/project/, with the scope corrected to the level.
+#
+# Signatures are a project decision. A code host that authenticates pushes and merges already
+# answers most of what a signature would prove, and this rule answers the rest: that the commit
+# itself carries one.
+#
+# What counts as valid is a signature git verifies, trusted key or not. Trust lives in the
+# keyring of whoever runs the gate, so requiring it would make the verdict depend on the machine.
+# A project that needs a key policy wants an external gate.
+id: signed-commits
+version: 1
+scope: org
+binding: false
+kind: checked
+applies_to: [05-review]
+statement: >
+  Every commit of the change under review carries a signature that verifies.
+check:
+  type: commit-signature
+  range: change-under-review
+  exempt: [merge-commits]

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T16:28:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The criterion that mattered most here is not mechanical: every finding these rules can
+      produce is read as a stranger would read it. Two earlier reviews deferred that claim to
+      this piece, and writing it as a criterion rather than a risk is what makes it part of the
+      acceptance instead of a sentence in a third review.
+    proposal: >-
+      When a review defers an unverifiable claim to a later piece, name that piece and put the
+      claim in its issue as a criterion when the issue is opened. A risk carried forward twice
+      is a risk nobody owns; a criterion in the issue is owned by whoever closes it.
+    target: .xeno/intents

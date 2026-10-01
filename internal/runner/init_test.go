@@ -11,6 +11,7 @@ import (
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/scaffold"
 )
 
@@ -428,5 +429,45 @@ func TestTheSquashSettingIsNamedForEveryHost(t *testing.T) {
 		if !found {
 			t.Errorf("%s: nothing in the manual list names the squash setting: %v", id, res.Manual)
 		}
+	}
+}
+
+// The rule tree is the second thing the plugin carries, and it was not vendored until #165: a
+// shipped set that does not arrive is not shipped.
+func TestVendorPutsTheShippedRuleSetInTheRepository(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{Host: "github", Vendor: true}); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(r.Root, ".xeno/plugin/rules/given/builtin")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("the rule tree was not vendored: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("the rule tree was vendored empty")
+	}
+
+	// And what arrived resolves, with no finding from the gate that reads it, in a repository
+	// that has nothing else of its own.
+	read, problems := rules.Load(r.Root)
+	if len(problems) != 0 {
+		t.Fatalf("the vendored set does not resolve: %v", problems)
+	}
+	effective, collisions := rules.Effective(read)
+	if len(collisions) != 0 {
+		t.Fatalf("the vendored set collides with itself: %v", collisions)
+	}
+	if len(effective) != len(entries) {
+		t.Errorf("%d files vendored and %d rules in force", len(entries), len(effective))
+	}
+
+	// Without --vendor the rules are not copied either.
+	r2 := initFixture(t)
+	if _, err := r2.Init(InitOptions{Host: "github"}); err != nil {
+		t.Fatal(err)
+	}
+	if fm.Exists(filepath.Join(r2.Root, ".xeno/plugin/rules/given/builtin")) {
+		t.Error("the rule set was vendored without being asked for")
 	}
 }

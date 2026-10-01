@@ -1,0 +1,20 @@
+# An example, not a shipped rule, and the answer to the call WP4 of the implementation plan
+# leaves open: documentation consistency ships as an example rather than in the shipped set.
+#
+# Why not in the set: the mechanical half of it — a checked rule over derivable structure, with
+# G-Freshness providing the hash binding — has nothing to point at until the documentation site
+# generates the pages it would check. And a review rule in given/builtin/ would reach every
+# project everywhere, including every project whose documentation lives in a wiki, which would
+# answer not-applicable with a note at every review for ever.
+#
+# Adopt it by copying it into .xeno/config/rules/given/org/ or given/project/, with the scope
+# corrected to the level.
+id: documentation-follows-the-change
+version: 1
+scope: org
+binding: false
+kind: review
+applies_to: [03-implementation, 05-review]
+statement: >
+  Where this change alters what the documentation describes, the documentation changed with it,
+  or the artifact says why it did not.

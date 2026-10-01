@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that disagrees overrides this rule at its own
+# level; precedence replaces a rule, it never deletes one.
+id: new-dependency-needs-a-rationale
+version: 1
+scope: builtin
+binding: false
+kind: review
+applies_to: [02-design, 03-implementation]
+statement: >
+  Where this change adds a dependency, the artifact says what it is for and what was weighed
+  against adding it. What the rule asks for is the reasoning, not a verdict on whether the
+  dependency was a good idea.

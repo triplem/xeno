@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T16:24:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Reading the six shipped templates section by section is what decided the kind of three of
+      the four rules: there is no interfaces section and no migration-notes section, so a rule
+      about an interface change has nothing to read and cannot be checked. The plan names the
+      four subjects and says nothing about their kinds, and the kinds are not a choice — they
+      follow from what the templates carry.
+    proposal: >-
+      Before writing a rule, read the template of every phase it applies to and decide its kind
+      from what those sections are, not from how mechanical the statement sounds. A checked rule
+      whose sections do not exist is a configuration error that only shows when somebody adopts
+      it.
+    target: .xeno/intents

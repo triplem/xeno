@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T17:12:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Answering the three shipped review rules against this intent's own phase is what proved
+      they were answerable, and it is also what showed the limit: the easy generic statements are
+      now taken, so a fifth rule for given/builtin/ would be either specific, which the layer
+      forbids, or weaker than the four that are there.
+    proposal: >-
+      Treat the shipped set as closed at four rules for v1 and route everything else to
+      examples/rules/. A set that grows by adding weaker statements makes every project's
+      checklist longer without making any verdict better, and section 9 already says where a
+      rule many projects want but none should inherit belongs.
+    target: .xeno/intents

@@ -1,0 +1,23 @@
+# An example, not a shipped rule. Adopt it by copying it into
+# .xeno/config/rules/given/org/ or given/project/, with the scope corrected to the level.
+#
+# This is the direction G-Trace does not prove. G-Trace shows that no artifact is orphaned; this
+# shows that no commit is. It is an example rather than a gate because a mandatory version would
+# impose a commit convention on every project using Xeno.
+#
+# What it does not check: the value. A trailer reading Xeno-Intent: anything satisfies the rule,
+# because checking the value needs a format, and a format in a rule file is an expression without
+# provenance. What the rule proves is the habit.
+id: xeno-intent-trailer
+version: 1
+scope: org
+binding: false
+kind: checked
+applies_to: [05-review]
+statement: >
+  Every commit of the change under review names the intent it belongs to in a trailer.
+check:
+  type: commit-trailer
+  range: change-under-review
+  trailer: Xeno-Intent
+  exempt: [merge-commits]

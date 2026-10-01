@@ -1,0 +1,39 @@
+#!/bin/sh
+# An example hook, not installed by anything. xeno init does not touch a developer's git
+# configuration, so this is yours to adopt:
+#
+#     mkdir -p .githooks && cp examples/hooks/prepare-commit-msg .githooks/
+#     chmod +x .githooks/prepare-commit-msg
+#     git config core.hooksPath .githooks
+#
+# A versioned directory and one setting, no dependency and no extra tool. A project already
+# running husky or lefthook knows what to do with a script.
+#
+# WHAT THIS IS: comfort. It seeds a message from the branch name so that the reference and the
+# shape are there before you start typing. It is bypassable with --no-verify, it is not a check,
+# and nothing downstream depends on it having run. The gate is what decides whether a subject
+# conforms, and `xeno check commit-message` is what a checking hook would call.
+#
+# WHAT IT DOES NOT DO: it does not validate. A message this hook seeded can still be wrong, and
+# the rule that judges it lives in the rule tree, not here.
+
+msg_file="$1"
+msg_source="$2"
+
+# Only seed a message nobody has written yet. A merge, a squash, an amend, a -m and a template
+# all arrive with a source and are left alone.
+[ -n "$msg_source" ] && exit 0
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+
+# The convention this seeds: a branch named <issue>-<slug> carries its issue, and the subject is
+# left for you to write. Adjust the parsing to your own branch names; it is three lines.
+issue=$(printf '%s' "$branch" | sed -n 's/^\([0-9][0-9]*\)-.*$/\1/p')
+[ -z "$issue" ] && exit 0
+
+existing=$(cat "$msg_file")
+{
+	printf '\n'
+	printf 'Refs #%s\n' "$issue"
+	printf '%s' "$existing"
+} > "$msg_file.xeno" && mv "$msg_file.xeno" "$msg_file"

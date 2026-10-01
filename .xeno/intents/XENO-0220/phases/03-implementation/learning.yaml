@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#165"
+created: 2026-10-01T16:52:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Writing four rule files turned every sealed P5 in the repository red, because a rule set
+      applies to whatever a gate is run over and `gate verify` recomputes sealed verdicts. The
+      design had considered what the rules say and not what adopting them does to the trail
+      behind them, and the question only appeared when the suite ran.
+    proposal: >-
+      When a piece adds the first instance of something a gate reads, run `gate verify` over the
+      whole trail before writing the content, and ask what the new input does to artifacts that
+      predate it. A gate that was vacuous is a gate whose verdicts nobody has tested, and the
+      trail is where that shows.
+    target: .xeno/intents

@@ -1,0 +1,12 @@
+# Shipped, pinned, and not edited here. A project that disagrees overrides this rule at its own
+# level; precedence replaces a rule, it never deletes one.
+id: deviations-are-traceable
+version: 1
+scope: builtin
+binding: false
+kind: review
+applies_to: [03-implementation]
+statement: >
+  Every deviation this phase records names what it departs from: a decision of this intent, an
+  assumption, or an acceptance criterion. A deviation that names nothing is a note, and a note
+  cannot be reviewed.
