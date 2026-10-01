@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:06:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The degradation requirement turned out to be a constraint on the reader's signature and
+      not only on its behaviour. A function that returns an error invites its caller to treat
+      an absent index as a problem, and an absent index is the state every repository is in,
+      so the type has to say that absence is ordinary.
+    proposal: >-
+      Where a component is specified as allowed to be missing, let its signature say so rather
+      than its documentation. An error return is a claim that something went wrong, and the
+      caller believes it.
+    target: internal/index

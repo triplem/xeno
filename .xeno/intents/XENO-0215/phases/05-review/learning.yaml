@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#151
+created: 2026-10-01T09:50:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev+c54db93
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Staleness is the one judgement Xeno makes about the index and it rests on a number the
+      producer wrote, which nothing can check. The documents reasoned about a stale index being
+      worse than none without noticing that an index claiming to be fresh is the case the check
+      cannot catch, and that is the case that gives confidently wrong answers.
+    proposal: >-
+      Where a check depends on a value the checked thing supplies about itself, say in the
+      design which direction of error it cannot catch. A freshness check over a self reported
+      timestamp catches the honest producer and not the broken one, which is the opposite of
+      what a reader assumes a check is for.
+    target: internal/index

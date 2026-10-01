@@ -2093,3 +2093,38 @@ func TestDecidedIsTheSequencesOwnTest(t *testing.T) {
 		}
 	}
 }
+
+// Section 5's index block, read by the runner. An absent block means no index, which is the
+// state of every repository that has not produced one, including this one.
+func TestNoIndexBlockMeansNoIndex(t *testing.T) {
+	f := newFixture(t)
+	f.write(".xeno/config/project.yaml", "runner_version: "+model.RunnerVersion+"\n")
+	i, why := f.r.symbolIndex(time.Now())
+	if i != nil {
+		t.Error("an index was returned for a project that configured none")
+	}
+	if !strings.Contains(why, "index.path") {
+		t.Errorf("the reason is %q, want it to name the field", why)
+	}
+}
+
+// The path is resolved against the repository root, so a project writes the relative path it
+// would write anywhere else in this file.
+func TestTheIndexPathIsRelativeToTheRepository(t *testing.T) {
+	f := newFixture(t)
+	f.write(".xeno/config/project.yaml", "runner_version: "+model.RunnerVersion+"\n"+
+		"index:\n  path: .xeno/local/index/symbols.yaml\n  max_age_hours: 48\n")
+	f.write(".xeno/local/index/symbols.yaml", "tool: go-symbols\ntool_version: 0.1.0\n"+
+		"produced_at: \""+time.Now().UTC().Add(-30*time.Hour).Format(time.RFC3339)+"\"\n"+
+		"symbols:\n  - name: Compare\n    kind: func\n    file: a.go\n    line: 1\n")
+
+	i, why := f.r.symbolIndex(time.Now())
+	if i == nil {
+		t.Fatalf("the index was not found at a relative path: %s", why)
+	}
+	// Thirty hours old, inside the configured forty-eight, so max_age_hours was read rather
+	// than defaulted to twenty-four.
+	if got := i.Lookup("Compare"); len(got) != 1 {
+		t.Errorf("Compare resolved to %v", got)
+	}
+}

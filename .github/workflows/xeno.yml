@@ -65,6 +65,15 @@ jobs:
             go list -deps ./internal/gates | grep -xE 'net|net/http'
             exit 1
           fi
+      # The same property, for the same reason, over the thing a gate would most like to
+      # consult. The index is produced by the project and may be missing, stale or wrong, so
+      # a verdict that read it would depend on something nobody promised was true.
+      - name: the gate path reaches no symbol index
+        run: |
+          if go list -deps ./internal/gates | grep -qx 'github.com/triplem/xeno/internal/index'; then
+            echo "internal/gates now depends on the symbol index, which is allowed to be wrong"
+            exit 1
+          fi
       - name: test
         run: go test ./...
       - name: build
