@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:36:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The drift was found by a question about which work packages are open, not by anything
+      that watches the two files. Every claim in them is a claim about this tree, and the
+      tree moved under them twenty intents in a row without a single check noticing. The
+      README asserted that no phase beyond intake had ever been judged while twenty judged
+      intents sat two directories away.
+    proposal: >-
+      Where a file carries a claim about the tree that no gate reads, say in the file which
+      part of the tree it is a claim about. A sentence naming its own evidence can be
+      checked by the next reader in one command; a sentence that names none is checked by
+      nobody and ages silently.
+    target: .xeno/intents

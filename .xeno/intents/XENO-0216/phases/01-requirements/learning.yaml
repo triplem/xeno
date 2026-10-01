@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:40:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Writing the acceptance criteria for a correction turned every claim into something
+      countable: the command block against the dispatch table, the coverage table against
+      the test names, the trail paragraph against the phase directories. The criteria that
+      were hard to write were the ones where the record said something no file could
+      confirm or deny.
+    proposal: >-
+      Where a record makes a claim about the tree, write the criterion as the command that
+      checks it. A criterion that cannot be stated that way is a sign the claim is about
+      intent rather than state, and belongs in a document that is reviewed rather than in
+      one that is read for orientation.
+    target: .xeno/intents

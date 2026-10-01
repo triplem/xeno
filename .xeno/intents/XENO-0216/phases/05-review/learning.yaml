@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:58:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This intent corrected the two files it was asked about and read none of the others that
+      make claims about the tree. CONTRIBUTING.md, SECURITY.md, SUPPLY-CHAIN.md, M0.md and
+      the comments in project.yaml were never opened, so what is known is that the drift
+      reached the front door and nothing about where it stops.
+    proposal: >-
+      When one hand-kept record is found stale, list the others of its kind in the residual
+      risk rather than treating the found one as the extent. The cost is one paragraph and it
+      keeps the next reader from mistaking a corrected file for a corrected repository.
+    target: .xeno/intents

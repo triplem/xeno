@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#156"
+created: 2026-10-01T14:48:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The first draft of the corrected trail paragraph kept the stale claim it was meant to
+      remove, because it was written from the paragraph being replaced rather than from the
+      phase directories. It was caught only when a command run for an unrelated reason
+      printed ten complete intents.
+    proposal: >-
+      When correcting a record, read the thing the record describes before reading the
+      record. The stale sentence is the most available source and the least reliable one,
+      and a correction drafted from it inherits its claim while looking like a rewrite.
+    target: .xeno/intents
