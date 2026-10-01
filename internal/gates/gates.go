@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package gates evaluates the gates of one phase. Everything here is deterministic and
-// free of network access: gates read, they never run anything and never ask a model.
+// Package gates evaluates the gates of one phase. Everything here is deterministic and free of
+// network access, and what that forbids is worth naming rather than generalising: no gate runs
+// a build, a test suite or a scanner, and none asks a model. G-Build and G-Test read declared
+// results for exactly that reason.
+//
+// One subprocess is started, by internal/git, and only where a rule asks for it: `git log` over
+// the commit range the run was given, which reads the clone that is already there. Section 9's
+// commit predicates read a subject, a trailer, a signature status and an author, and a history
+// is not something a repository carries in a file a gate could parse instead.
 package gates
 
 import (
@@ -13,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/git"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/rules"
@@ -24,6 +32,10 @@ type Ctx struct {
 	Root, Key, Phase string
 	ArtifactsHash    string
 	QualifiedID      string // from intent.yaml
+	// Base and Head are the commit range under review, as the run was given it. Section 12
+	// forbids working it out here: a guessed range means different verdicts locally and in CI
+	// from the same repository state, so an absent range is a finding and never a default.
+	Base, Head string
 }
 
 func (c Ctx) phaseRel(p string) string { return model.PhaseDir(c.Key, p) }
@@ -1119,13 +1131,272 @@ func rulesGate(c Ctx) model.Check {
 
 // ---- G-Policy
 
-// predicateFn is what a check of a given type is evaluated by. The map below is the registry,
-// and it is empty: evaluating a predicate means reading an artifact or a commit range, which is
-// the piece after this one. The seam is here so that filling the map is the only change needed,
-// and so that a type with no implementation is reported rather than passed over.
-type predicateFn func(Ctx, rules.Rule) []model.Finding
+// predicateFn is what a check of a given type is evaluated by. The registry is the five names
+// section 9 fixes and it is a budget rather than an extension point: a project naming a type of
+// its own gets the finding below, because project-defined predicates are outside v1 and an
+// external gate covers the same ground.
+type predicateFn func(*eval, rules.Rule) []model.Finding
 
-var predicates = map[string]predicateFn{}
+var predicates = map[string]predicateFn{
+	"section-implies-section": sectionImpliesSection,
+	"commit-message":          commitMessage,
+	"commit-trailer":          commitTrailer,
+	"commit-signature":        commitSignature,
+	"approver-not-author":     approverNotAuthor,
+}
+
+// eval is one gate run's evaluation of the checked rules. It holds the range so that five rules
+// naming a commit type read one `git log` rather than five, and it holds the error with it, so a
+// range that does not resolve is reported once per rule that needed it and read once.
+type eval struct {
+	Ctx
+	commits []git.Commit
+	err     error
+	loaded  bool
+}
+
+// commitsOf loads the range on the first predicate that asks.
+func (e *eval) commitsOf() ([]git.Commit, error) {
+	if !e.loaded {
+		e.commits, e.err = git.Commits(e.Root, e.Base, e.Head)
+		e.loaded = true
+	}
+	return e.commits, e.err
+}
+
+// inRange is the commits a rule judges: the range, less the merge commits where the rule
+// exempts them. A rule that does not exempt them judges a merge subject like any other, which
+// is what section 9's example makes explicit by carrying the field.
+func (e *eval) inRange(r rules.Rule) ([]git.Commit, []model.Finding) {
+	cs, err := e.commitsOf()
+	if err != nil {
+		return nil, []model.Finding{finding(r.Path,
+			"rule "+r.ID+" reads the commit range and it could not be read: "+err.Error(),
+			"pass --base and --head as refs this repository resolves; the range is an input of the run and is never inferred")}
+	}
+	if !exempts(r, "merge-commits") {
+		return cs, nil
+	}
+	var out []git.Commit
+	for _, c := range cs {
+		if !c.IsMerge() {
+			out = append(out, c)
+		}
+	}
+	return out, nil
+}
+
+// exempts reads a check's exempt list, which section 9 writes as a sequence of names.
+func exempts(r rules.Rule, what string) bool {
+	if r.Check == nil {
+		return false
+	}
+	list, ok := r.Check.Params["exempt"].([]any)
+	if !ok {
+		return false
+	}
+	for _, e := range list {
+		if s, ok := e.(string); ok && s == what {
+			return true
+		}
+	}
+	return false
+}
+
+// param reads one string parameter of a check.
+func param(r rules.Rule, key string) string {
+	if r.Check == nil {
+		return ""
+	}
+	s, _ := r.Check.Params[key].(string)
+	return s
+}
+
+// shortHash is how a finding names a commit: the first eight characters, as git itself prints
+// them, plus the subject so that a reader recognises the commit without looking it up.
+func shortHash(c git.Commit) string {
+	h := c.Hash
+	if len(h) > 8 {
+		h = h[:8]
+	}
+	return h + " " + quoted(c.Subject)
+}
+
+// ---- the five predicate types of section 9
+
+// sectionImpliesSection is the one type that reads an artifact: where the when section is
+// non-empty, the then section has to be.
+//
+// An empty or absent antecedent leaves the rule green whatever the consequent says, because an
+// implication with a false antecedent is true. The alternative reading would turn every such
+// rule into a requirement that every section of every template be filled, which is not what
+// "a change to a published interface must come with a migration note" says.
+func sectionImpliesSection(e *eval, r rules.Rule) []model.Finding {
+	when, then := sectionParam(r, "when"), sectionParam(r, "then")
+	rel := e.phaseRel(e.Phase) + "/output.md"
+	if when.section == "" || then.section == "" {
+		return []model.Finding{finding(r.Path,
+			"rule "+r.ID+" names no section in when or then",
+			"write when and then as a section and non_empty, as section 9 does")}
+	}
+	t, terr := template.Load(e.Root, model.TemplateID(e.Phase), "en")
+	if terr == nil {
+		for _, s := range []string{when.section, then.section} {
+			if !t.Has(s) {
+				return []model.Finding{finding(r.Path,
+					"rule "+r.ID+" names section "+quoted(s)+", which "+t.Ref()+" does not have",
+					"name a section of the template the phase renders from: "+strings.Join(t.Known(), ", "))}
+			}
+		}
+	}
+	body, err := os.ReadFile(e.abs(rel))
+	if err != nil {
+		return nil // the artifact's absence is G-Schema's finding
+	}
+	_, content, ferr := fm.Split(body)
+	if ferr != nil {
+		return nil // an unreadable artifact is G-Schema's finding too
+	}
+	sections := template.Parse(string(content))
+	filled := func(id string) bool { return strings.TrimSpace(sections[id]) != "" }
+	if filled(when.section) && !filled(then.section) {
+		return []model.Finding{finding(rel,
+			"rule "+r.ID+": "+when.section+" is filled and "+then.section+" is empty",
+			"write "+then.section+", or record a deviation against the rule")}
+	}
+	return nil
+}
+
+// sectionParam reads one half of a section-implies-section check, which section 9 writes as a
+// mapping of a section and a non_empty flag. non_empty is read and not acted on: it is the only
+// form the specification gives, and a predicate that behaved differently without it would be
+// inventing a second form.
+type sectionRef struct {
+	section  string
+	nonEmpty bool
+}
+
+func sectionParam(r rules.Rule, key string) sectionRef {
+	if r.Check == nil {
+		return sectionRef{}
+	}
+	m, ok := r.Check.Params[key].(map[string]any)
+	if !ok {
+		return sectionRef{}
+	}
+	s, _ := m["section"].(string)
+	ne, _ := m["non_empty"].(bool)
+	return sectionRef{section: s, nonEmpty: ne}
+}
+
+// commitMessage judges every subject in the range against a named shipped pattern. The pattern
+// is named and never carried as an expression, and the same map answers here and in
+// `xeno check commit-message`, so a hook cannot start rejecting what this accepts.
+func commitMessage(e *eval, r rules.Rule) []model.Finding {
+	name := param(r, "pattern")
+	if name == "" {
+		return []model.Finding{finding(r.Path, "rule "+r.ID+" names no pattern",
+			"name a shipped pattern: "+strings.Join(PatternNames(), ", "))}
+	}
+	if _, ok := patterns[name]; !ok {
+		return []model.Finding{finding(r.Path,
+			"rule "+r.ID+" names pattern "+quoted(name)+", which is not shipped",
+			"name a shipped pattern: "+strings.Join(PatternNames(), ", "))}
+	}
+	cs, fs := e.inRange(r)
+	if fs != nil {
+		return fs
+	}
+	for _, c := range cs {
+		if err := CheckMessage(name, c.Subject); err != nil {
+			fs = append(fs, finding(r.Path,
+				"rule "+r.ID+": commit "+shortHash(c)+" does not match pattern "+quoted(name),
+				"write the subject as "+name+" describes, or exempt the commit if the rule allows it"))
+		}
+	}
+	return fs
+}
+
+// commitTrailer requires a trailer on every commit in the range, Xeno-Intent: being the shipped
+// case. The key is compared and the value is not read.
+func commitTrailer(e *eval, r rules.Rule) []model.Finding {
+	key := param(r, "trailer")
+	if key == "" {
+		return []model.Finding{finding(r.Path, "rule "+r.ID+" names no trailer",
+			"name the trailer the rule requires, for instance Xeno-Intent")}
+	}
+	cs, fs := e.inRange(r)
+	if fs != nil {
+		return fs
+	}
+	for _, c := range cs {
+		if !c.HasTrailer(key) {
+			fs = append(fs, finding(r.Path,
+				"rule "+r.ID+": commit "+shortHash(c)+" carries no "+key+" trailer",
+				"add the trailer to the commit message; a trailer is a key and a value on their own line at the end"))
+		}
+	}
+	return fs
+}
+
+// commitSignature requires a signature that verifies on every commit in the range. What counts
+// as verifying is Commit.Signed, and A70 records why an untrusted key is accepted.
+func commitSignature(e *eval, r rules.Rule) []model.Finding {
+	cs, fs := e.inRange(r)
+	if fs != nil {
+		return fs
+	}
+	for _, c := range cs {
+		if !c.Signed() {
+			fs = append(fs, finding(r.Path,
+				"rule "+r.ID+": commit "+shortHash(c)+" carries no signature that verifies",
+				"sign the commit, or take the rule out of the tree; what is checked is git's own verification"))
+		}
+	}
+	return fs
+}
+
+// approverNotAuthor compares the by of every decision in this phase's gate.yaml against the
+// authors of the range. Section 9 says both things worth knowing about it: it is evaluated on
+// the run after the decision was written, which that decision's own commit triggers, and it
+// compares two self-asserted strings, so it enforces the discipline of a team that means it.
+//
+// No decision is green. A rule about who may release a finding is not a rule requiring that one
+// be released.
+func approverNotAuthor(e *eval, r rules.Rule) []model.Finding {
+	cs, fs := e.inRange(r)
+	if fs != nil {
+		return fs
+	}
+	authors := map[string]git.Commit{}
+	for _, c := range cs {
+		if c.Email != "" {
+			authors[strings.ToLower(c.Email)] = c
+		}
+		if c.Author != "" {
+			authors[strings.ToLower(c.Author)] = c
+		}
+	}
+	rel := e.phaseRel(e.Phase) + "/gate.yaml"
+	var g model.Gate
+	if err := fm.ReadYAML(e.abs(rel), &g); err != nil {
+		return nil // no verdict yet, so no decision to judge
+	}
+	for _, ch := range g.Checks {
+		for _, f := range ch.Findings {
+			if f.Decision == nil || f.Decision.By == "" {
+				continue
+			}
+			if c, ok := authors[strings.ToLower(f.Decision.By)]; ok {
+				fs = append(fs, finding(rel,
+					"rule "+r.ID+": "+f.ID+" was "+f.Decision.Type+" by "+quoted(f.Decision.By)+
+						", who authored commit "+shortHash(c),
+					"let somebody who did not write the change decide it; that is what the rule is for"))
+			}
+		}
+	}
+	return fs
+}
 
 // policy is section 7's row: conformance against the effective rule set, every review checklist
 // entry answered, from P0.
@@ -1146,7 +1417,7 @@ func policy(c Ctx) model.Check {
 	// A tree that does not resolve is G-Rules's finding, and repeating it here would report one
 	// broken file twice in one verdict.
 	var fs []model.Finding
-	fs = append(fs, checkedRules(c, effective)...)
+	fs = append(fs, checkedRules(&eval{Ctx: c}, effective)...)
 	if c.Phase == model.Phases[len(model.Phases)-1] {
 		fs = append(fs, reviewChecklist(c, effective)...)
 	}
@@ -1158,10 +1429,10 @@ func policy(c Ctx) model.Check {
 // nothing implements. The alternative was to pass it, which is the silently green verdict
 // section 16 catalogues: a rule in force that nothing evaluated. Where the type is implemented
 // the predicate runs, which is what the next piece turns on.
-func checkedRules(c Ctx, effective []rules.Rule) []model.Finding {
+func checkedRules(e *eval, effective []rules.Rule) []model.Finding {
 	var fs []model.Finding
 	for _, r := range effective {
-		if r.Kind != rules.Checked || !appliesTo(r, c.Phase) {
+		if r.Kind != rules.Checked || !appliesTo(r, e.Phase) {
 			continue
 		}
 		t := ""
@@ -1175,7 +1446,7 @@ func checkedRules(c Ctx, effective []rules.Rule) []model.Finding {
 				"write the rule as kind review until the type ships, or take it out of the tree"))
 			continue
 		}
-		fs = append(fs, fn(c, r)...)
+		fs = append(fs, fn(e, r)...)
 	}
 	return fs
 }
