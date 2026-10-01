@@ -170,9 +170,25 @@ func (r *Runner) appendGitignore(res *InitResult) error {
 }
 
 // vendorPlugin copies the shipped set in so that the repository carries what it renders
-// from. Pinned means it is in the repository and moves only when somebody commits it.
+// from and what it is judged by. Pinned means it is in the repository and moves only when
+// somebody commits it.
+//
+// Two trees, not one. The templates were vendored from the start; the rules were not, because
+// until WP4 there were none, and a shipped set that does not arrive is not shipped. They are
+// copied the same way and through the same create, so a second run still changes nothing.
 func (r *Runner) vendorPlugin(res *InitResult) error {
-	src := filepath.Join(r.PluginSource, "templates")
+	if err := r.vendorTree(res, "templates"); err != nil {
+		return err
+	}
+	// The rule tree is one level deeper and absent in a plugin that carries no rules, which is
+	// why it is not an error here: section 9's layout is given/builtin, so the walk is over
+	// whatever directories the plugin has under rules.
+	return r.vendorRules(res)
+}
+
+// vendorTree copies one directory of the plugin, one level of subdirectories deep.
+func (r *Runner) vendorTree(res *InitResult, tree string) error {
+	src := filepath.Join(r.PluginSource, tree)
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return refuse("no plugin to vendor at %s: %v", src, err)
@@ -187,10 +203,37 @@ func (r *Runner) vendorPlugin(res *InitResult) error {
 			if err != nil {
 				return err
 			}
-			rel := filepath.ToSlash(filepath.Join(".xeno/plugin/templates", id.Name(), f.Name()))
+			rel := filepath.ToSlash(filepath.Join(".xeno/plugin", tree, id.Name(), f.Name()))
 			if err := r.create(res, rel, string(b)); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+// vendorRules copies the shipped rule set, which lives at rules/given/builtin so that it is
+// covered by the plugin hash and is not a level a project maintains.
+func (r *Runner) vendorRules(res *InitResult) error {
+	const rel = "rules/given/builtin"
+	src := filepath.Join(r.PluginSource, filepath.FromSlash(rel))
+	files, err := os.ReadDir(src)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // a plugin with no shipped rules, which is every release before WP4
+		}
+		return err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(src, f.Name()))
+		if err != nil {
+			return err
+		}
+		if err := r.create(res, ".xeno/plugin/"+rel+"/"+f.Name(), string(b)); err != nil {
+			return err
 		}
 	}
 	return nil

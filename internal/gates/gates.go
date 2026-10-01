@@ -1139,6 +1139,7 @@ type predicateFn func(*eval, rules.Rule) []model.Finding
 
 var predicates = map[string]predicateFn{
 	"section-implies-section": sectionImpliesSection,
+	"section-non-empty":       sectionNonEmpty,
 	"commit-message":          commitMessage,
 	"commit-trailer":          commitTrailer,
 	"commit-signature":        commitSignature,
@@ -1239,25 +1240,13 @@ func sectionImpliesSection(e *eval, r rules.Rule) []model.Finding {
 			"rule "+r.ID+" names no section in when or then",
 			"write when and then as a section and non_empty, as section 9 does")}
 	}
-	t, terr := template.Load(e.Root, model.TemplateID(e.Phase), "en")
-	if terr == nil {
-		for _, s := range []string{when.section, then.section} {
-			if !t.Has(s) {
-				return []model.Finding{finding(r.Path,
-					"rule "+r.ID+" names section "+quoted(s)+", which "+t.Ref()+" does not have",
-					"name a section of the template the phase renders from: "+strings.Join(t.Known(), ", "))}
-			}
-		}
+	if fs := unknownSection(e, r, when.section, then.section); fs != nil {
+		return fs
 	}
-	body, err := os.ReadFile(e.abs(rel))
-	if err != nil {
-		return nil // the artifact's absence is G-Schema's finding
+	sections, ok := renderedSections(e, rel)
+	if !ok {
+		return nil // an absent or unreadable artifact is G-Schema's finding
 	}
-	_, content, ferr := fm.Split(body)
-	if ferr != nil {
-		return nil // an unreadable artifact is G-Schema's finding too
-	}
-	sections := template.Parse(string(content))
 	filled := func(id string) bool { return strings.TrimSpace(sections[id]) != "" }
 	if filled(when.section) && !filled(then.section) {
 		return []model.Finding{finding(rel,
@@ -1265,6 +1254,67 @@ func sectionImpliesSection(e *eval, r rules.Rule) []model.Finding {
 			"write "+then.section+", or record a deviation against the rule")}
 	}
 	return nil
+}
+
+// sectionNonEmpty is the same reader with no antecedent: the section a rule names has to carry
+// text. It is the second type in this registry that section 9's table does not list, admitted by
+// the same sentence as the first — this work package delivers "the section predicates the shipped
+// set needs" — and the shipped set needs it for the filled release notes section at P5. Nothing
+// else covers that: a required section carrying nothing is read only by the next-step suggestion
+// and by no gate (A73).
+func sectionNonEmpty(e *eval, r rules.Rule) []model.Finding {
+	name := param(r, "section")
+	if name == "" {
+		return []model.Finding{finding(r.Path, "rule "+r.ID+" names no section",
+			"write section as the id of the section the rule requires")}
+	}
+	if fs := unknownSection(e, r, name); fs != nil {
+		return fs
+	}
+	rel := e.phaseRel(e.Phase) + "/output.md"
+	sections, ok := renderedSections(e, rel)
+	if !ok {
+		return nil // an absent or unreadable artifact is G-Schema's finding
+	}
+	if strings.TrimSpace(sections[name]) == "" {
+		return []model.Finding{finding(rel,
+			"rule "+r.ID+": "+name+" is empty",
+			"write "+name+", or record a deviation against the rule")}
+	}
+	return nil
+}
+
+// unknownSection reports a rule naming a section the phase's template does not have, which is a
+// configuration error in the rule rather than an empty section: an empty one would leave the rule
+// vacuously green for ever. Where the template cannot be loaded at all nothing is reported, which
+// is a repository with no vendored plugin and no way to answer the question.
+func unknownSection(e *eval, r rules.Rule, names ...string) []model.Finding {
+	t, err := template.Load(e.Root, model.TemplateID(e.Phase), "en")
+	if err != nil {
+		return nil
+	}
+	for _, name := range names {
+		if !t.Has(name) {
+			return []model.Finding{finding(r.Path,
+				"rule "+r.ID+" names section "+quoted(name)+", which "+t.Ref()+" does not have",
+				"name a section of the template the phase renders from: "+strings.Join(t.Known(), ", "))}
+		}
+	}
+	return nil
+}
+
+// renderedSections parses the phase's artifact back into sections, which is the form a reader
+// sees and the form a section predicate asks about.
+func renderedSections(e *eval, rel string) (map[string]string, bool) {
+	body, err := os.ReadFile(e.abs(rel))
+	if err != nil {
+		return nil, false
+	}
+	_, content, ferr := fm.Split(body)
+	if ferr != nil {
+		return nil, false
+	}
+	return template.Parse(string(content)), true
 }
 
 // sectionParam reads one half of a section-implies-section check, which section 9 writes as a
@@ -1416,6 +1466,15 @@ func policy(c Ctx) model.Check {
 	effective, _ := rules.Effective(read)
 	// A tree that does not resolve is G-Rules's finding, and repeating it here would report one
 	// broken file twice in one verdict.
+	//
+	// A phase written under a different rule set is not judged against this one. The artifact
+	// records which set was in force, which is what rules_hash is for, and a rule adopted today
+	// cannot make a judgement taken last month wrong: section 10 routes a rule change through a
+	// merge so that it takes effect after review, which is forward. Where the recorded hash is
+	// absent or differs, this gate has nothing to say about the phase (A74).
+	if !judgedUnder(c, rules.Hash(effective)) {
+		return result(nil)
+	}
 	var fs []model.Finding
 	fs = append(fs, checkedRules(&eval{Ctx: c}, effective)...)
 	if c.Phase == model.Phases[len(model.Phases)-1] {
@@ -1423,6 +1482,20 @@ func policy(c Ctx) model.Check {
 	}
 	sort.Slice(fs, func(i, j int) bool { return fs[i].Cause < fs[j].Cause })
 	return result(fs)
+}
+
+// judgedUnder reports whether the phase's artifact says it was written under this rule set.
+//
+// An artifact that records no rules_hash predates the writer and cannot say; one that records the
+// placeholder was written when no writer existed; one that records another hash was written under
+// another set. In all three cases the set in hand is not the set that applied, and judging the
+// phase against it would rewrite a verdict rather than recompute one.
+func judgedUnder(c Ctx, want string) bool {
+	var o model.Output
+	if _, err := fm.ReadFront(c.abs(c.phaseRel(c.Phase)+"/output.md"), &o); err != nil {
+		return false
+	}
+	return o.RulesHash != "" && o.RulesHash == want
 }
 
 // checkedRules reports a checked rule that applies to this phase and whose predicate type

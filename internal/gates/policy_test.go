@@ -19,18 +19,29 @@ const p5 = "05-review"
 func reviewPhase(t *testing.T, checklist string, tree map[string]string) Ctx {
 	t.Helper()
 	root := t.TempDir()
+	for rel, body := range tree {
+		writeRule(t, root, rel, body)
+	}
 	dir := filepath.Join(root, model.PhaseDir("PROJ-1", p5))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	out := "---\nintent: " + fixtureIntent + "\nphase: " + p5 + "\n" + checklist + "---\n\nbody\n"
+	out := "---\nintent: " + fixtureIntent + "\nphase: " + p5 + "\n" +
+		"rules_hash: " + rulesHashOf(t, root) + "\n" + checklist + "---\n\nbody\n"
 	if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(out), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	for rel, body := range tree {
-		writeRule(t, root, rel, body)
-	}
 	return Ctx{Root: root, Key: "PROJ-1", Phase: p5, QualifiedID: fixtureIntent}
+}
+
+// rulesHashOf is what a phase written under this tree would record. G-Policy judges a phase only
+// against the set the artifact says was in force (A74), so a fixture that does not record it is a
+// fixture the gate has nothing to say about.
+func rulesHashOf(t *testing.T, root string) string {
+	t.Helper()
+	read, _ := rules.Load(root)
+	effective, _ := rules.Effective(read)
+	return rules.Hash(effective)
 }
 
 func aReviewRule(id string) string {
@@ -155,16 +166,24 @@ func TestACheckedRuleWithNoImplementationIsRed(t *testing.T) {
 	}
 }
 
-// The five names of section 9, each one evaluated rather than reported.
-func TestTheFiveTypesOfSectionNineAreRegistered(t *testing.T) {
-	for _, name := range []string{"section-implies-section", "commit-message", "commit-trailer",
-		"commit-signature", "approver-not-author"} {
+// The types section 9 names, plus the section predicates the shipped set needs, which that
+// section scopes to the set rather than listing. The count is asserted so that a sixth name
+// cannot arrive without a test saying why it is there.
+func TestTheRegisteredTypesAreTheOnesTheDocumentsAllow(t *testing.T) {
+	want := []string{
+		// section 9's table
+		"commit-message", "commit-trailer", "commit-signature", "approver-not-author",
+		// the section predicates the shipped set needs: the implication of section 9's rule
+		// example, and the one release-notes-are-filled asks for (A73)
+		"section-implies-section", "section-non-empty",
+	}
+	for _, name := range want {
 		if _, ok := predicates[name]; !ok {
 			t.Errorf("predicate type %s is not registered", name)
 		}
 	}
-	if len(predicates) != 5 {
-		t.Errorf("the registry holds %d types, want the five section 9 names", len(predicates))
+	if len(predicates) != len(want) {
+		t.Errorf("the registry holds %d types, want the %d the documents allow", len(predicates), len(want))
 	}
 }
 
@@ -203,5 +222,57 @@ func TestAnUnresolvableTreeIsNotReportedTwice(t *testing.T) {
 	}))
 	if c.Result != "pass" {
 		t.Fatalf("G-Policy is %s over a tree G-Rules rejects, want pass: %s", c.Result, causes(c))
+	}
+}
+
+// A rule adopted today cannot make a judgement taken last month wrong. The artifact records which
+// set was in force, and where that is not the set in hand this gate has nothing to say (A74).
+func TestAPhaseWrittenUnderAnotherRuleSetIsNotJudged(t *testing.T) {
+	// A P5 artifact recording the hash of an empty set, in a repository that now has a rule.
+	root := t.TempDir()
+	dir := filepath.Join(root, model.PhaseDir("PROJ-1", p5))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	empty := rulesHashOf(t, root) // the hash of no rules at all
+	writeRule(t, root, rules.ConfigDir+"/given/org/migration-note.yaml", aReviewRule("migration-note"))
+	out := "---\nintent: " + fixtureIntent + "\nphase: " + p5 + "\nrules_hash: " + empty + "\n---\n\nbody\n"
+	if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(out), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := Ctx{Root: root, Key: "PROJ-1", Phase: p5, QualifiedID: fixtureIntent}
+	if got := policy(c); got.Result != "pass" || len(got.Findings) != 0 {
+		t.Fatalf("a phase written under another set is %s with %d findings, want pass and none: %s",
+			got.Result, len(got.Findings), causes(got))
+	}
+
+	// The same artifact, recording this set, is judged.
+	out = "---\nintent: " + fixtureIntent + "\nphase: " + p5 + "\nrules_hash: " + rulesHashOf(t, root) + "\n---\n\nbody\n"
+	if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(out), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := policy(c); got.Result != "fail" {
+		t.Fatalf("a phase written under this set is %s, want fail for the unanswered rule", got.Result)
+	}
+}
+
+// The placeholder and an absent field are the two other ways an artifact cannot say which set
+// applied, and both predate the writer rather than claiming an empty set.
+func TestAnArtifactThatCannotSayWhichSetAppliedIsNotJudged(t *testing.T) {
+	for _, field := range []string{"rules_hash: by-hand\n", ""} {
+		root := t.TempDir()
+		writeRule(t, root, rules.ConfigDir+"/given/org/migration-note.yaml", aReviewRule("migration-note"))
+		dir := filepath.Join(root, model.PhaseDir("PROJ-1", p5))
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		out := "---\nintent: " + fixtureIntent + "\nphase: " + p5 + "\n" + field + "---\n\nbody\n"
+		if err := os.WriteFile(filepath.Join(dir, "output.md"), []byte(out), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		got := policy(Ctx{Root: root, Key: "PROJ-1", Phase: p5, QualifiedID: fixtureIntent})
+		if got.Result != "pass" {
+			t.Errorf("an artifact carrying %q is %s, want pass: %s", field, got.Result, causes(got))
+		}
 	}
 }

@@ -1,0 +1,49 @@
+#!/bin/sh
+# An example server side hook, not installed by anything. It belongs on the host, under the
+# repository's hooks directory, and it rejects a push.
+#
+# WHAT THIS IS: enforcement. On a host that offers push rules, use those instead — they are
+# configuration rather than a script, and `xeno enforcement check` reads them. On a host that
+# offers none, this is the only kind of enforcement there is.
+#
+# WHAT IT NEEDS: the xeno binary on the server, on the path. That is the point: the pattern
+# lives in one place and this hook asks for it rather than carrying a copy. Three copies of a
+# pattern produce a push that rejects what the gate accepts, which costs more trust than the
+# check is worth.
+#
+# WHERE THERE IS NO BINARY: a copy is unavoidable, and then it has to be kept in step with the
+# shipped pattern by hand, at every release. Write down that you did it.
+#
+# WHAT IT DOES NOT DO: it judges subjects, not artifacts. A push whose commits all conform can
+# still be a change with no intent, no phases and no verdict — that is what the gate in the
+# pipeline is for, and nothing here replaces it.
+
+pattern=conventional-commits
+zero=$(git hash-object --stdin </dev/null | tr '[:xdigit:]' '0')
+
+status=0
+while read -r old new ref; do
+	case "$ref" in
+	refs/heads/*) ;;
+	*) continue ;;   # tags and notes are not the subject of a commit message rule
+	esac
+	[ "$new" = "$zero" ] && continue   # a branch being deleted carries no commits
+
+	if [ "$old" = "$zero" ]; then
+		# A new branch. Judge what it adds and not the whole history behind it.
+		range="$new --not --all"
+	else
+		range="$old..$new"
+	fi
+
+	# Merge commits are left out: a host writes those subjects and a project does not control
+	# them. Take --no-merges off if yours does.
+	for commit in $(git rev-list --no-merges $range); do
+		if ! git log -1 --format=%B "$commit" | xeno check commit-message --pattern "$pattern"; then
+			printf 'rejected %s: its subject does not match %s\n' "$(git rev-parse --short "$commit")" "$pattern" >&2
+			status=1
+		fi
+	done
+done
+
+exit $status

@@ -1,0 +1,17 @@
+# Shipped, pinned, and not edited here. A project that disagrees overrides this rule at its own
+# level; precedence replaces a rule, it never deletes one.
+#
+# Section 9 of the process definition writes this rule as a checked one, over an interfaces
+# section implying a migration-notes section. The shipped template set has neither section, so
+# here it is answered by a person. A project whose templates carry those sections can override
+# this rule with a checked one of its own.
+id: interface-change-needs-a-migration-note
+version: 1
+scope: builtin
+binding: false
+kind: review
+applies_to: [02-design, 03-implementation]
+statement: >
+  Where this change alters an interface something outside this intent depends on, the artifact
+  says how a dependant moves to the new one. An interface nothing outside the intent uses is an
+  internal detail and needs no note.
