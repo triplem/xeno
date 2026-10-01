@@ -1032,7 +1032,8 @@ the argument, and it is also what the budget was for.
 Done when a query returns correct locations for a known set of symbols in an index this
 repository produces for its own language, when a missing, unreadable or stale index
 degrades to no index rather than to an error, and when a phase that used one records the
-tool, its version and the index's age in `context.lock.yaml`.
+tool, its version and the hash of the index in `context.lock.yaml`, which is the `tools`
+entry section 5 defines and not a fourth field beside it.
 
 The saving is not in the acceptance, because the runner cannot observe it: the agent
 reads through its harness, and `context.lock.yaml` is the context that was declared
