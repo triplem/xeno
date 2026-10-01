@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T15:32:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The design of this gate turns on two sentences of section 9 that only hold together one
+      way: "every entry carries a result, and nothing more" alongside "passing over one is now
+      a recorded deviation rather than an omission nobody sees". Read separately, the first
+      says count the entries present; read together, they say count the rules.
+    proposal: >-
+      Where a specification both limits a check and states what the check makes visible, read
+      the limit against the purpose before implementing either. A limit implemented without
+      its purpose produces a gate that passes an empty artifact, which is the failure mode
+      the sentence was written to prevent.
+    target: .xeno/intents

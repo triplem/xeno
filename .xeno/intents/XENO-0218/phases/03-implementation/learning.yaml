@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T15:52:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The first version of the empty-tree test passed while asserting almost nothing: it built a
+      fixture it discarded and assigned one call's result onto another call's value. It was
+      caught by reading it back rather than by running it, because a test that asserts the
+      wrong thing is green.
+    proposal: >-
+      Read a new test back against its criterion before trusting a green run, and be most
+      suspicious of a test that reuses one variable across two calls. The suite's value is
+      that a regression turns it red; a test that was never red for the right reason cannot
+      do that.
+    target: .xeno/intents

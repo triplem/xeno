@@ -212,6 +212,22 @@ type Output struct {
 	OpenQuestions []Question     `yaml:"open_questions,omitempty"`
 	Decisions     []Decision     `yaml:"decisions,omitempty"`
 	Evidence      []EvidenceItem `yaml:"evidence,omitempty"`
+	// The P5 checklist of section 9, one entry per review rule of the effective set. It is a
+	// frontmatter list beside the three above, which is A3's shape and A68's spelling: the
+	// section id is hyphenated and the key is not, as open-questions and open_questions
+	// already are.
+	ReviewChecklist []ChecklistEntry `yaml:"review_checklist,omitempty"`
+}
+
+// ChecklistEntry is one answer in the P5 checklist. Rule is the anchor section 9 gives each
+// entry, and its absence is what keeps a lens entry out of the counted set: section 12 says a
+// lens entry carries source: lens and no rule id, and the gate keys on the missing rule rather
+// than on the source, so a lens that omitted its own label still cannot answer a rule.
+type ChecklistEntry struct {
+	Rule   string `yaml:"rule,omitempty"`
+	Result string `yaml:"result"`
+	Note   string `yaml:"note,omitempty"`
+	Source string `yaml:"source,omitempty"` // lens, where a lens wrote it
 }
 
 // Cost is the record of section 11, one per phase, outside artifacts_hash so that a figure
@@ -283,8 +299,12 @@ var (
 	WriterlessHash  = []string{"secrets_hash", "rules_hash"}
 	HashPlaceholder = "by-hand"
 	// Section 4: what an evidence declaration's kind may be, and what its result may say.
-	EvidenceKinds   = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
-	EvidenceResults = []string{"pass", "fail"}
+	// Section 9: what an answer to a review rule may say, and which of them owe a note. A met
+	// needs none; the note exists to record why a rule was passed over.
+	ChecklistResults   = []string{"met", "deviation", "not-applicable"}
+	ChecklistNeedsNote = []string{"deviation", "not-applicable"}
+	EvidenceKinds      = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
+	EvidenceResults    = []string{"pass", "fail"}
 	// The two kinds that must carry a result, because G-Test and G-Build read it.
 	// Elsewhere the field follows the producer: a run with a threshold reports against it
 	// and one without reports nothing, so an absent result there is a producer that had

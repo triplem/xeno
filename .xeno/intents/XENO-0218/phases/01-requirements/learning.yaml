@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T15:36:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Two criteria here exist only because a lens could otherwise satisfy the gate: a lens
+      entry neither completes nor breaks the count, and still owes a result. Both come from
+      one clause of section 12 about a feature nothing has built yet, and writing them now is
+      cheaper than discovering them when the lenses arrive with WP11.
+    proposal: >-
+      When a gate counts a set, write the criterion for every writer the documents allow into
+      that set, including writers that do not exist yet. The cost is a fixture; the
+      alternative is a gate whose count is correct until the first unbuilt feature ships.
+    target: .xeno/intents

@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T15:42:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The decision this piece is most likely to be argued with — that every review rule is
+      answered at P5 whatever its applies_to — is a reading of a section that supports two,
+      and it only became visible because the alternative was written out. The design's
+      alternatives section is where it got decided, not the decisions section.
+    proposal: >-
+      Where a specification sentence supports two readings, write both into the alternatives
+      with what each one makes impossible, and put the chosen one in the register. A decision
+      recorded as a decision reads as settled; recorded against its alternative it reads as
+      what it is, which is what a reviewer needs to overturn it cheaply.
+    target: .xeno/intents

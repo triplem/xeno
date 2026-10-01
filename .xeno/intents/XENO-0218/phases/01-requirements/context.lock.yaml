@@ -1,0 +1,9 @@
+intent: github.com/triplem/xeno#160
+phase: 01-requirements
+created: "2026-10-01T15:31:52Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+75f3667.dirty
+plugin_version: 0.1.0-dev
+predecessor_artifacts_hash: 184c7dc9da2dae3da3b4e5d53e5543833776cd4588a9b99d4efcd3a63a72b632
+evidence_source: ci
+template_source: plugin
