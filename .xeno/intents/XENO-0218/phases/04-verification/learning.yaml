@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T15:58:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Running the gate against sealed phases on a copy produced a finding the unit tests could
+      not: a phase judged against a rule set while carrying rules_hash by-hand, because that
+      artifact predates the writer. The fixtures all carry a computed hash, so the mismatch
+      only exists in the real trail.
+    proposal: >-
+      Exercise a new gate against the repository's own sealed artifacts on a copy, not only
+      against fixtures. Fixtures are written by whoever wrote the gate and carry the current
+      shape of everything; the trail carries every earlier shape, which is where a gate meets
+      the past it has to be honest about.
+    target: .xeno/intents

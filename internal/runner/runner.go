@@ -685,7 +685,7 @@ var frontmatterOrder = []string{
 	"intent", "phase", "created", "schema_version", "runner_version", "plugin_version",
 	"language", "secrets_hash", "context_hash", "model", "tool", "tool_version",
 	"template", "strings_hash", "rules_hash",
-	"open_questions", "decisions", "evidence",
+	"open_questions", "decisions", "evidence", "review_checklist",
 }
 
 func frontmatter(front map[string]any) string {

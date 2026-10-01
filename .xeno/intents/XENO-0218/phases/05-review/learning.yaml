@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#160"
+created: 2026-10-01T16:04:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Three of this piece's residual risks are specification changes rather than code: a
+      checklist outside P5 going unreported, section 16 not saying what this gate's green
+      leaves out, and an entry not recording who wrote it. All three were found by
+      implementing, and none of them can be acted on by the agent that found them.
+    proposal: >-
+      Where a piece's residual risks are mostly spec changes, say so in one sentence and list
+      them together, so that a person reading the review can see the whole proposal at once
+      rather than three findings scattered through a risk section. The first standing rule
+      makes them a person's work; the review is where they are handed over.
+    target: .xeno/intents

@@ -52,7 +52,7 @@ var table = []spec{
 	{"G-Build", 3, build},
 	{"G-Test", 4, notImplemented},
 	{"G-Rules", 0, rulesGate},
-	{"G-Policy", 0, notImplemented},
+	{"G-Policy", 0, policy},
 	{"G-Complete", 5, completeInReview},
 }
 
@@ -1116,3 +1116,142 @@ func rulesGate(c Ctx) model.Check {
 	}
 	return result(fs)
 }
+
+// ---- G-Policy
+
+// predicateFn is what a check of a given type is evaluated by. The map below is the registry,
+// and it is empty: evaluating a predicate means reading an artifact or a commit range, which is
+// the piece after this one. The seam is here so that filling the map is the only change needed,
+// and so that a type with no implementation is reported rather than passed over.
+type predicateFn func(Ctx, rules.Rule) []model.Finding
+
+var predicates = map[string]predicateFn{}
+
+// policy is section 7's row: conformance against the effective rule set, every review checklist
+// entry answered, from P0.
+//
+// The count runs from the rules to the entries and never the other way round. Section 12 says a
+// lens entry carries no rule id and cannot add to or subtract from the set G-Policy counts,
+// which only holds if the set is the rules; and section 9 pairs "every entry carries a result,
+// and nothing more" with "passing over one is now a recorded deviation rather than an omission
+// nobody sees", which only holds if a missing entry is a finding. A gate that walked the entries
+// would pass an empty checklist.
+//
+// The tree is resolved through internal/rules and not again here, because section 7 says this
+// gate and G-Rules resolve the same tree and should do it once: two resolutions that could
+// disagree would leave rules_hash recording a set that nothing judged.
+func policy(c Ctx) model.Check {
+	read, _ := rules.Load(c.Root)
+	effective, _ := rules.Effective(read)
+	// A tree that does not resolve is G-Rules's finding, and repeating it here would report one
+	// broken file twice in one verdict.
+	var fs []model.Finding
+	fs = append(fs, checkedRules(c, effective)...)
+	if c.Phase == model.Phases[len(model.Phases)-1] {
+		fs = append(fs, reviewChecklist(c, effective)...)
+	}
+	sort.Slice(fs, func(i, j int) bool { return fs[i].Cause < fs[j].Cause })
+	return result(fs)
+}
+
+// checkedRules reports a checked rule that applies to this phase and whose predicate type
+// nothing implements. The alternative was to pass it, which is the silently green verdict
+// section 16 catalogues: a rule in force that nothing evaluated. Where the type is implemented
+// the predicate runs, which is what the next piece turns on.
+func checkedRules(c Ctx, effective []rules.Rule) []model.Finding {
+	var fs []model.Finding
+	for _, r := range effective {
+		if r.Kind != rules.Checked || !appliesTo(r, c.Phase) {
+			continue
+		}
+		t := ""
+		if r.Check != nil {
+			t = r.Check.Type
+		}
+		fn, ok := predicates[t]
+		if !ok {
+			fs = append(fs, finding(r.Path,
+				"rule "+r.ID+" is checked and no implementation exists for predicate type "+quoted(t),
+				"write the rule as kind review until the type ships, or take it out of the tree"))
+			continue
+		}
+		fs = append(fs, fn(c, r)...)
+	}
+	return fs
+}
+
+// reviewChecklist counts the review rules of the effective set against the answers in the P5
+// artifact. Whether an answer is a good one is not a question a deterministic gate may ask, and
+// section 9 says so; what it asks is whether the rule was answered at all.
+//
+// Every review rule is answered here whatever its applies_to, because the checklist exists once
+// and section 9 renders it from the effective rule set rather than from a phase's slice of it. A
+// review rule about design is answered when the change is reviewed (A69).
+func reviewChecklist(c Ctx, effective []rules.Rule) []model.Finding {
+	rel := c.phaseRel(c.Phase) + "/output.md"
+	var o model.Output
+	if _, err := fm.ReadFront(c.abs(rel), &o); err != nil {
+		return nil // the artifact's absence is G-Schema's finding, not this gate's
+	}
+
+	answered := map[string]bool{}
+	known := map[string]bool{}
+	for _, r := range effective {
+		if r.Kind == rules.Review {
+			known[r.ID] = true
+		}
+	}
+	var fs []model.Finding
+	for _, e := range o.ReviewChecklist {
+		switch {
+		case e.Result == "":
+			fs = append(fs, finding(rel, "checklist entry "+entryName(e)+" carries no result",
+				"answer it with met, deviation or not-applicable"))
+		case !model.OneOf(e.Result, model.ChecklistResults):
+			fs = append(fs, finding(rel, "checklist entry "+entryName(e)+" has result "+quoted(e.Result),
+				"section 9 fixes the three: met, deviation, not-applicable"))
+		case model.OneOf(e.Result, model.ChecklistNeedsNote) && e.Note == "":
+			fs = append(fs, finding(rel, "checklist entry "+entryName(e)+" is "+e.Result+" and carries no note",
+				"write why the rule was passed over; met is the only result that needs none"))
+		}
+		if e.Rule == "" {
+			continue // a lens entry answers no rule, by section 12, whatever its source says
+		}
+		if !known[e.Rule] {
+			fs = append(fs, finding(rel, "checklist entry answers "+quoted(e.Rule)+", which is no review rule of the effective set",
+				"correct the id, or take the entry out; a rule that does not apply is not answered here"))
+			continue
+		}
+		answered[e.Rule] = true
+	}
+	for _, r := range effective {
+		if r.Kind == rules.Review && !answered[r.ID] {
+			fs = append(fs, finding(rel, "review rule "+r.ID+" has no checklist entry",
+				"answer it in review_checklist with met, deviation or not-applicable"))
+		}
+	}
+	return fs
+}
+
+// appliesTo reads a rule's applies_to against a phase id.
+func appliesTo(r rules.Rule, phase string) bool {
+	for _, p := range r.AppliesTo {
+		if p == phase {
+			return true
+		}
+	}
+	return false
+}
+
+// entryName is how a finding names an entry that may have no rule id, which is every lens entry.
+func entryName(e model.ChecklistEntry) string {
+	if e.Rule == "" {
+		if e.Source != "" {
+			return "from " + e.Source
+		}
+		return "with no rule"
+	}
+	return quoted(e.Rule)
+}
+
+func quoted(s string) string { return "\"" + s + "\"" }
