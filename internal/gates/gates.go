@@ -15,6 +15,7 @@ import (
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/template"
 )
 
@@ -50,7 +51,7 @@ var table = []spec{
 	{"G-Evidence", 3, evidence},
 	{"G-Build", 3, build},
 	{"G-Test", 4, notImplemented},
-	{"G-Rules", 0, notImplemented},
+	{"G-Rules", 0, rulesGate},
 	{"G-Policy", 0, notImplemented},
 	{"G-Complete", 5, completeInReview},
 }
@@ -1092,4 +1093,26 @@ func build(c Ctx) model.Check {
 		ch.Result = "pending"
 	}
 	return ch
+}
+
+// ---- G-Rules
+
+// rulesGate is section 7's row: rule collisions resolved, binding respected, scope matches the
+// path. It reads the tree, resolves it, and reports what neither step could use.
+//
+// The gate words what internal/rules returns and judges nothing of its own, so that G-Policy
+// resolving the same tree cannot disagree with it about what the set is. Section 7 puts the
+// two together at the end of the table for that reason.
+//
+// A repository with no rule tree passes. That is every repository before a plugin is vendored
+// and every project that maintains no rules, and a project without rules does not have a
+// broken rule set.
+func rulesGate(c Ctx) model.Check {
+	read, problems := rules.Load(c.Root)
+	_, collisions := rules.Effective(read)
+	var fs []model.Finding
+	for _, p := range append(problems, collisions...) {
+		fs = append(fs, finding(p.Path, p.Cause, p.Next))
+	}
+	return result(fs)
 }

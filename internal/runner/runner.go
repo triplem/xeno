@@ -23,6 +23,7 @@ import (
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/index"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
 )
@@ -642,6 +643,17 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 			front["secrets_hash"] = h
 		}
 	}
+	// The rule set this phase is judged against. Written here rather than by the harness,
+	// which is what wrote by-hand into every artifact before internal/rules existed; the
+	// placeholder stays readable in those, because the field sits inside artifacts_hash and
+	// rewriting one would change every verdict in its intent (A66).
+	//
+	// A tree with a problem in it still produces a hash, over the rules that were usable.
+	// G-Rules reports the problem and the phase is red, and the field says which set
+	// actually resolved rather than going absent and saying nothing.
+	read, _ := rules.Load(r.Root)
+	effective, _ := rules.Effective(read)
+	front["rules_hash"] = rules.Hash(effective)
 	// Section 12 records both in project.yaml, so they are not among the fields that come
 	// from the harness; absent where the project does not say, never defaulted (A35, #120).
 	if tool, mdl := r.agent(); tool != "" || mdl != "" {
