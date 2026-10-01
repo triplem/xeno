@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:00:00Z
+phase: 00-intake
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The intake for the first piece of a large work package spent most of its reading on
+      deciding what the piece is not. Section 9 fixes four separable things — the file, the
+      reach, the resolution and the predicates — and only the first three can be judged
+      without the others existing, which is what made the split obvious once the section was
+      read whole rather than by subsection.
+    proposal: >-
+      Where a work package is large, read its specification section entire before splitting
+      it, and let the split fall where one part can be judged without another. A split taken
+      from the plan's own paragraph order follows the order it was written in, which is not
+      the order in which the pieces become testable.
+    target: .xeno/intents

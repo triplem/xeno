@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:40:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The strongest verification result was the cheapest: a rule tree on a throwaway copy, one
+      gate run, and the recorded hash reproduced by piping the rendering through sha256sum.
+      That checked the definition, the writer and the gate in one pass, where the unit tests
+      each check one of them against the code's own idea of the rendering.
+    proposal: >-
+      For a hash this project defines itself, reproduce one real recorded value by hand on a
+      copy of the tree, in the verification phase, and write the value and the pipeline into
+      the results. A test that compares the implementation against its own rendering proves
+      consistency; the pipeline is what proves the definition.
+    target: .xeno/intents

@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:46:00Z
+phase: 05-review
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This piece ships a gate before any content exists for it to judge, so every finding's
+      wording was written and read by the same person. The review could check that the
+      resolver matches section 9 clause by clause, and could not check that a stranger
+      reading the finding would know what to do.
+    proposal: >-
+      Where a gate ships before the content it judges, say so in the residual risk and name
+      the piece where its findings get their first outside reader. It turns an untestable
+      claim about wording into a scheduled one, and it tells the next piece that wording is
+      part of its acceptance.
+    target: .xeno/intents

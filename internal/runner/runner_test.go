@@ -16,6 +16,7 @@ import (
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
 )
@@ -2126,5 +2127,38 @@ func TestTheIndexPathIsRelativeToTheRepository(t *testing.T) {
 	// than defaulted to twenty-four.
 	if got := i.Lookup("Compare"); len(got) != 1 {
 		t.Errorf("Compare resolved to %v", got)
+	}
+}
+
+// A phase written after internal/rules existed carries a hash over the rule set it was judged
+// against, where every artifact before it carries the placeholder the harness wrote. The two
+// meanings of the field are divided by that commit and recorded in A66.
+func TestSectionSetWritesTheHashOfTheEffectiveRuleSet(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	_, err := f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+
+	empty := f.frontField("00-intake", "rules_hash")
+	if empty == model.HashPlaceholder {
+		t.Fatal("rules_hash is the placeholder where a writer exists")
+	}
+	read, _ := rules.Load(f.root)
+	eff, _ := rules.Effective(read)
+	if empty != rules.Hash(eff) {
+		t.Fatalf("rules_hash is %s, want the hash of the effective set %s", empty, rules.Hash(eff))
+	}
+
+	// A rule entering the tree changes the field, which is what makes it say which set was
+	// in force rather than that one was.
+	f.write(rules.ConfigDir+"/given/org/migration-note.yaml",
+		"id: migration-note\nversion: 1\nscope: org\nkind: review\napplies_to: [00-intake]\n"+
+			"statement: >\n  A change to a published interface comes with a migration note.\n")
+	_, err = f.r.SectionSet(key, "00-intake", "problem", "what is wrong")
+	f.must(err)
+	if got := f.frontField("00-intake", "rules_hash"); got == empty {
+		t.Error("a rule entering the tree left rules_hash alone")
 	}
 }

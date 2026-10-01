@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:04:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Every acceptance criterion here is a sentence of section 9 turned into a fixture, and
+      the one that needed the most care is the one where the specification refuses an
+      obvious behaviour: a binding collision must stay red rather than resolve to the more
+      specific rule. A criterion that forbids the natural implementation is the one worth
+      writing first.
+    proposal: >-
+      When a specification section both describes a resolution and forbids one case of it,
+      write the forbidden case as its own criterion with the sentence quoted. The resolution
+      will be implemented from the pattern; the refusal only gets implemented if something
+      asks for it by name.
+    target: .xeno/intents

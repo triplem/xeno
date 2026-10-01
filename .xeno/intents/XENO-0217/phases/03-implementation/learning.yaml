@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:30:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      The design argued from first principles for a decision A62 had already settled with a
+      measurement: removing a writerless hash from the honesty list diverges every sealed
+      verdict. The row was read during the intake, for the hash definition, and its state
+      column was not — that is where the measurement sits.
+    proposal: >-
+      When a new assumption will sit beside an existing one, read the existing row's state
+      column and not only its assumption. The assumption says what was decided; the state
+      says what was tried, and a measurement in there is worth more than a fresh argument
+      for the same conclusion.
+    target: .xeno/intents

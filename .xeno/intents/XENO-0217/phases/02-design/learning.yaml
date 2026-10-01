@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#158"
+created: 2026-10-01T15:10:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: context-rule
+    observation: >-
+      Two of the design's decisions came from precedents in the tree rather than from the
+      specification: A61 for a package that returns what it declined and lets each caller
+      word it, and the digest's refusal to hash nothing for how an empty set should be
+      treated. Both were found by reading the nearest existing package rather than the
+      documents.
+    proposal: >-
+      Before designing a new package, read the one in the tree with the same shape and name
+      what it decided. The specification fixes what must hold; the tree records how this
+      project has answered the questions the specification leaves to the writer, and those
+      answers are the ones a reviewer compares against.
+    target: .xeno/intents
