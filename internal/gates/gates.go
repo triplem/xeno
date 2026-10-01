@@ -36,6 +36,12 @@ type Ctx struct {
 	// forbids working it out here: a guessed range means different verdicts locally and in CI
 	// from the same repository state, so an absent range is a finding and never a default.
 	Base, Head string
+	// External produces the checks of section 14's external gates, which are commands a project
+	// declares. It is supplied rather than called from here, because this package reads and
+	// that runs: the one subprocess this package's comment admits is a git log over a local
+	// clone, and foreign code with repository access is a different kind of exception. Absent
+	// where a project declares none, which is the default and every project today.
+	External func(phase string) []model.Check
 }
 
 func (c Ctx) phaseRel(p string) string { return model.PhaseDir(c.Key, p) }
@@ -173,6 +179,16 @@ func Run(c Ctx, previous *model.Gate) []model.Check {
 		ch.Gate = s.id
 		carryForward(&ch, decided)
 		out = append(out, ch)
+	}
+	// After the shipped gates, in the order the project declared them. They go through the same
+	// carryForward as every other check, which is where a finding gets its id and where an
+	// external one is refused a decision: a second path into the verdict that skipped it would
+	// make the invariant a comment.
+	if c.External != nil {
+		for _, ch := range c.External(c.Phase) {
+			carryForward(&ch, decided)
+			out = append(out, ch)
+		}
 	}
 	return out
 }

@@ -298,6 +298,9 @@ var (
 	HashFields      = []string{"context_hash", "secrets_hash", "strings_hash", "rules_hash"}
 	WriterlessHash  = []string{"secrets_hash", "rules_hash"}
 	HashPlaceholder = "by-hand"
+	// ProjectFile is where a project's configuration lives, which is the file a finding about a
+	// declaration has to name.
+	ProjectFile = ".xeno/config/project.yaml"
 	// Section 4: what an evidence declaration's kind may be, and what its result may say.
 	// Section 9: what an answer to a review rule may say, and which of them owe a note. A met
 	// needs none; the note exists to record why a rule was passed over.
@@ -456,4 +459,18 @@ type Project struct {
 		Path        string `yaml:"path"`
 		MaxAgeHours int    `yaml:"max_age_hours"`
 	} `yaml:"index"`
+	// Section 14's external gates. Every other field in this file changes what the runner
+	// reads; this one changes what it runs, and the default is that none is declared and
+	// none runs, which is what keeps the chain of trust closed for a project that wants it.
+	ExternalGates []ExternalGate `yaml:"external_gates"`
+}
+
+// ExternalGate is one declaration of section 14: a command, the hash it has to have, and the
+// phases it applies to. The hash is checked before every run, which Appendix A says in those
+// words, so a gate that was modified refuses to run rather than running unnoticed.
+type ExternalGate struct {
+	ID     string   `yaml:"id"`
+	Path   string   `yaml:"path"`
+	SHA256 string   `yaml:"sha256"`
+	Phases []string `yaml:"phases"`
 }

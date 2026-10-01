@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T16:58:00Z
+phase: 02-design
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Injecting the external producer into gates.Ctx rather than calling it from the gates package
+      kept the import edge pointing the right way and made the verdict path testable without a
+      subprocess. The constraint was about which package may start a process; the benefit that
+      decided it was that a test can supply the producer directly.
+    proposal: >-
+      When a constraint forces an indirection, check whether the indirection also removes a
+      subprocess or a file from the tests. The architectural reason is what justifies it and the
+      testing reason is what makes it pleasant, and naming both stops the next reader from
+      inlining it.
+    target: .xeno/intents

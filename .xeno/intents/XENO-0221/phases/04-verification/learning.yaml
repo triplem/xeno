@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T17:22:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the first WP4 piece with no demonstration against the real tree, because exercising
+      it would have meant writing a tool for this project to run on itself. The four earlier
+      pieces each found something on a throwaway copy that no fixture had shown, and this one
+      found its equivalent — the unbounded wait — in a test's duration instead.
+    proposal: >-
+      Where a piece cannot be demonstrated against this repository, say so in the verification and
+      name what replaced the demonstration. The copy has found something in four pieces out of
+      five, so its absence is worth a sentence rather than a silence.
+    target: .xeno/intents

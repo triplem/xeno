@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T17:14:00Z
+phase: 03-implementation
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      The timeout looked implemented and bounded nothing: killing the process leaves a grandchild
+      holding the pipe, and reading the output waits for it. The test is what showed it, by taking
+      thirty seconds while asserting a two hundred millisecond limit, and the duration was the
+      only signal — the assertion passed.
+    proposal: >-
+      When a test asserts a limit, assert the time it took as well, or read the duration the
+      runner prints. A limit that is enforced late still passes a test about its message, and a
+      timeout that does not bound the wait is worse than none, because it reads as protection.
+    target: .xeno/intents

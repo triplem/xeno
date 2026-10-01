@@ -18,6 +18,7 @@ import (
 
 	"github.com/triplem/xeno/internal/cost"
 	"github.com/triplem/xeno/internal/evidence"
+	"github.com/triplem/xeno/internal/external"
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
@@ -144,6 +145,22 @@ func (r *Runner) hash(key, phase string) (string, error) {
 	return hashing.DirHash(r.Root, model.PhaseDir(key, phase), hashing.PhaseExcluded)
 }
 
+// externalGates is the producer gates.Run calls for section 14's declared commands, or nil
+// where a project declares none — which is the default, and what keeps the chain of trust closed
+// for a project that wants it closed. The declaration is read per run rather than cached,
+// because the hash it carries is checked before every run and a stale declaration would check a
+// stale hash.
+func (r *Runner) externalGates(key, artifactsHash, qualified string) func(string) []model.Check {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(model.ProjectFile), &p); err != nil || len(p.ExternalGates) == 0 {
+		return nil
+	}
+	return func(phase string) []model.Check {
+		return external.Run(r.Root, phase, artifactsHash, qualified,
+			model.PhaseDir(key, phase), p.ExternalGates)
+	}
+}
+
 // compute runs the gates of a phase without writing anything.
 func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 	h, err := r.hash(key, phase)
@@ -156,7 +173,8 @@ func (r *Runner) compute(key, phase string) (*model.Gate, error) {
 	}
 	prev, _ := r.readGate(key, phase)
 	checks := gates.Run(gates.Ctx{Root: r.Root, Key: key, Phase: phase, ArtifactsHash: h,
-		QualifiedID: common.Intent, Base: r.Base, Head: r.Head}, prev)
+		QualifiedID: common.Intent, Base: r.Base, Head: r.Head,
+		External: r.externalGates(key, h, common.Intent)}, prev)
 	// Checked where the verdict is produced rather than where the findings are, so that a
 	// second path into it, an external gate above all, meets the same rule as the first.
 	if err := gates.Invariants(checks); err != nil {

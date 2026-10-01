@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#167"
+created: 2026-10-01T16:52:00Z
+phase: 01-requirements
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Four of the eleven criteria here are about a foreign command behaving badly rather than
+      about it working: a broken answer, no answer, a non-zero exit with nothing to say, and not
+      finishing. For every other gate the equivalent cases are impossible by construction, because
+      the gate is this project's own code.
+    proposal: >-
+      Where a gate's body is foreign, write a criterion per way the answer can be wrong before
+      writing one for the answer being right. The happy path is one line of parsing; the verdict's
+      honesty lives entirely in the other four.
+    target: .xeno/intents
