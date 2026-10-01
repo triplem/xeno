@@ -620,9 +620,14 @@ hashes, so a repeated phase knows which files changed and reads only those.
 
 **A symbol index, not a graph.** An index of symbols with file, line and enclosing
 container answers "where is X" without semantic analysis, at a fraction of the cost of
-a call graph, and it is the largest single saving. It is built with tree-sitter, from
-grammars the project supplies: Xeno ships none, because each grammar carries its own
-licence terms and which of them a project can accept is that project's decision.
+a call graph, and it is the largest single saving. It is produced by the project and
+read by Xeno, which ships no indexer: every tool carries its own licence terms and its
+own idea of a symbol, and which of them a project can accept is that project's decision.
+A project's own toolchain already knows its languages better than a tool built around a
+process can, so what Xeno fixes is the format of the answer and not the means of getting
+it. What Xeno requires of the index is that it names the tool and version that produced
+it and the time it was produced, because a stale index is worse than none and an index
+that cannot say how old it is cannot be judged.
 
 It is used while a phase runs and never by a gate, which is why it may be missing,
 stale or wrong without the trail suffering: a verdict never depends on it. It lives
@@ -2129,7 +2134,8 @@ templates:                     # section 4
   overrides_dir: .xeno/config/templates
 
 index:                         # section 5, context economy
-  grammars_dir: <path to the tree-sitter grammars the project supplies>
+  path: <path to the symbol index the project produces>
+  max_age_hours: 24            # older than this is treated as absent
 ```
 
 Credentials never appear in this file. `secret_env` names the variable, the
@@ -2158,11 +2164,12 @@ What each field means, whether it has to be there, and what applies when it is n
 | `external_gates` | commands whose verdict counts alongside the shipped gates, pinned by hash | none run |
 | `retention.local_days` | how long session logs are kept, counted from phase completion | 30 |
 | `templates.overrides_dir` | where project template overrides live | the shipped templates apply unchanged |
-| `index.grammars_dir` | where the tree-sitter grammars the project supplies are found | no index is built and the phase runs without one |
+| `index.path` | where the symbol index the project produces is found | no index is read and the phase runs without one |
+| `index.max_age_hours` | beyond this age the index is treated as absent, because a stale index is worse than none | 24 |
 
 Three of these are worth reading twice. `tracker` is optional because nothing in the
 trail depends on it. `enforcement` is not, because a missing statement about the host is
-indistinguishable from a host nobody checked. And an absent `index.grammars_dir` degrades
+indistinguishable from a host nobody checked. And an absent `index.path` degrades
 rather than fails, which is the pattern for everything that makes a phase cheaper rather
 than more correct.
 
