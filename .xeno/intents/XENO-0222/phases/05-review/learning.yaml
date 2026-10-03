@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:58:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      This piece shipped instructions written by the agent that follows them, which is the third
+      time in five pieces that the review has had to say its content was read only by its author.
+      The difference here is that a measurement is available: the next intents run with the
+      plugin installed and produce artifacts comparable with the twenty that came before.
+    proposal: >-
+      Where a piece ships context for an agent, name in the review which later intents are its
+      measurement and what would count as the comparison. A risk with a scheduled measurement is
+      a different object from one without, and three reviews in a row have now carried the
+      version without.
+    target: .xeno/intents

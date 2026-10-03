@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:02:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      The verification point the plan held open for this package was answered in four commands
+      against the installed client, and answering it immediately produced a disagreement with
+      section 13's tree: the client loads both manifests from .claude-plugin/ where the document
+      draws one of them beside it. The plan was right to say verify rather than assume, and the
+      thing verification found was not the question asked but the layout around it.
+    proposal: >-
+      When a verification point is about a third party's format, check the format as well as the
+      question. The question was whether a URL is accepted; the finding was where the manifests
+      have to sit, and nothing in the open list would have surfaced it.
+    target: .xeno/intents

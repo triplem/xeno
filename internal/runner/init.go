@@ -180,10 +180,37 @@ func (r *Runner) vendorPlugin(res *InitResult) error {
 	if err := r.vendorTree(res, "templates"); err != nil {
 		return err
 	}
+	// Section 13's list for --vendor is plugin.json, skills/, mcp.json, templates/,
+	// rules/given/builtin/ and secrets.yaml. The skills are a tree of the same shape as the
+	// templates; the manifest and the hook wiring are single files; mcp.json is not here yet and
+	// is not invented, because a client reading a declaration of a server that does not exist
+	// fails at startup rather than ignoring it.
+	if err := r.vendorTree(res, "skills"); err != nil {
+		return err
+	}
+	for _, rel := range []string{".claude-plugin/plugin.json", "hooks/hooks.json"} {
+		if err := r.vendorFile(res, rel); err != nil {
+			return err
+		}
+	}
 	// The rule tree is one level deeper and absent in a plugin that carries no rules, which is
 	// why it is not an error here: section 9's layout is given/builtin, so the walk is over
 	// whatever directories the plugin has under rules.
 	return r.vendorRules(res)
+}
+
+// vendorFile copies one file of the plugin, where the tree is a path rather than a directory of
+// directories. An absent file is a plugin released before that file existed, which is every
+// release before the one that adds it.
+func (r *Runner) vendorFile(res *InitResult, rel string) error {
+	b, err := os.ReadFile(filepath.Join(r.PluginSource, filepath.FromSlash(rel)))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return r.create(res, ".xeno/plugin/"+rel, string(b))
 }
 
 // vendorTree copies one directory of the plugin, one level of subdirectories deep.

@@ -1,0 +1,14 @@
+{
+  "name": "xeno",
+  "description": "The Xeno process: one skill per phase of the six phase sequence, with the runner's commands behind every step.",
+  "owner": {
+    "name": "Xeno"
+  },
+  "plugins": [
+    {
+      "name": "xeno",
+      "source": "./.xeno/plugin",
+      "description": "Six phase skills and the learning skill. Needs the xeno runner on the path; it is the binary that writes the artifacts and judges them."
+    }
+  ]
+}

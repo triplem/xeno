@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:50:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      Installing the plugin into the client produced a figure nothing in this project could have
+      computed: six hundred tokens always-on and seven hundred-odd per skill invocation. WP11
+      argues about the surface being a standing cost and had no number; the client prints one for
+      free.
+    proposal: >-
+      When shipping something a harness loads, ask the harness what it costs and record the
+      figure in the verification. The budget arguments in the plan are about numbers nobody had,
+      and the tool that loads the thing is usually willing to say.
+    target: .xeno/intents
