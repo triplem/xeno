@@ -6,6 +6,16 @@
 # unexamined thing in this repository. It is installed here exactly as the release
 # installs it, and audited.
 #
+# "Exactly as the release installs it" was a claim and is now a check: the version is
+# written in two workflows and the step below reads it out of the release's and refuses
+# where they differ. Two copies of one number is how an audit comes to examine a tree
+# nothing ships, and nothing would have said so.
+#
+# Node is pinned here and in the release, because semantic-release 25 declares an engine
+# and neither workflow used to say which node it ran under. The major rather than the
+# patch, which is D-5's reasoning for the Go directive: a patch reaches the release
+# without anybody editing a file, and the exact form freezes CI on one.
+#
 # The check is on drift and not on presence. The audit reported nineteen findings on
 # the day it was written, almost all of them under node_modules/npm/node_modules/
 # because semantic-release depends on npm as a library, and none of them is this
@@ -21,11 +31,11 @@ name: audit
 on:
   push:
     branches: [main]
+  # Every pull request, with no path filter. A job that ran only on a push to main could
+  # only report after the merge, and a check that cannot run before a merge cannot gate
+  # one: six commits reached main past a red run of this job, each with a green pull
+  # request, and none of them was wrong about that (#186).
   pull_request:
-    paths:
-      - '.github/workflows/audit.yml'
-      - '.github/npm-audit-baseline.json'
-      - '.releaserc.json'
   schedule:
     # Advisories arrive without anything here changing, which is the same reason the
     # vulnerability scan runs daily. An hour apart from it, so two failures on one
@@ -41,6 +51,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      # The version is the release's, read out of the release's own workflow rather than
+      # written again here. A second copy would be correct on the day it was written.
+      - name: the version the release installs
+        id: pin
+        run: |
+          set -eu
+          v=$(sed -n 's/^ *semantic_version: *\([0-9][0-9.]*\) *$/\1/p' \
+                .github/workflows/release.yml)
+          test -n "$v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "auditing semantic-release@$v"
+
       # What the release workflow installs, and no package.json in this repository: the
       # tree exists for the length of this job. One package since #121, which dropped the
       # two plugins that wrote a changelog back to main.
@@ -50,7 +76,8 @@ jobs:
           mkdir -p /tmp/release-toolchain
           cd /tmp/release-toolchain
           npm init -y > /dev/null
-          npm install --no-audit --no-fund semantic-release@24.2.9
+          npm install --no-audit --no-fund \
+            "semantic-release@${{ steps.pin.outputs.version }}"
 
       - name: audit
         id: audit

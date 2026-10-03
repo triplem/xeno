@@ -96,3 +96,30 @@ under the documentation package.
 
     go test ./...
     go build -o xeno ./cmd/xeno && ./xeno gate verify
+
+    gofmt -l . | grep -v '^vendor/'      # must print nothing
+    go vet ./...
+
+## A red check is fixed before the next merge
+
+Every check the pipeline runs gates the merge. Not one of them: all of them. `verify` is
+the one that judges the trail, and `audit`, `gitleaks`, `semgrep` and `trivy` each
+answer a question the trail cannot, so a merge past any of them red is a merge past
+something nobody looked at.
+
+Two of them run on a schedule as well as on a change, because an advisory arrives
+without anything in the repository moving. A scheduled run going red is therefore the
+normal way to learn that something needs doing, and it is the case this section exists
+for: **the work it names comes before the next merge, not after the next feature.**
+
+This was written because it failed. Six commits reached `main` in one morning while the
+`audit` job was red, each from a pull request that was honestly green: the job did not
+run on a pull request at all, so it could only report after the merge, and a check that
+cannot run before a merge cannot gate one. Six green reports, one red gate, and nothing
+wrong with anybody's diligence (#186).
+
+**What a red check is not.** It is not a thing to raise the threshold past. The npm
+audit baseline fails on drift rather than on presence, so a count that rises is a change
+somebody has to read; raising the number is sometimes the right answer and is never the
+quick one. The commit that raises it says what was read and why nothing else was
+available (#187).

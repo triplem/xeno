@@ -1,10 +1,12 @@
 {
   "comment": "What npm audit reports for the pinned release toolchain today. The job fails when a count rises, not when a count is non-zero: none of these is this project's to fix, and a check that fires with no action available is one people learn to route around. Raising a number here is a deliberate act and belongs in the commit message that raises it.",
-  "measured": "2026-09-25",
+  "measured": "2026-10-03",
+  "toolchain": "semantic-release@25.0.9, read from .github/workflows/release.yml",
+  "advisories": "20 distinct advisories on 24.2.9, 12 on 25.0.9. The upgrade is what moved them, not a waiver: sigstore's dropped certificateOIDs constraints, pacote's addGitSha DoS, picomatch, postcss-selector-parser and three of the five brace-expansion advisories are gone with it, and undici's three are new. What remains is brace-expansion, braces, http-cache-semantics, ip-address and undici, reached through npm-as-a-library and the release plugin's fetch stack, and none of them has a fix this repository can apply: npm's own suggestion for 30 of the 31 is to downgrade semantic-release to 15, which is not one.",
   "vulnerabilities": {
     "critical": 0,
-    "high": 15,
-    "moderate": 3,
-    "low": 1
+    "high": 30,
+    "moderate": 1,
+    "low": 0
   }
 }

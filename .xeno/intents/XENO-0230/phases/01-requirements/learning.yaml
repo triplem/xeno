@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:15:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: context-rule
+    observation: >-
+      One fact fixed the order of the whole intent: a required context that never reports blocks
+      every merge, including the merge that would make it report. It turned "require all the checks"
+      from a step in this change into a step after it, and it was found by asking what applying the
+      setting early would do rather than by applying it.
+    proposal: >-
+      Where a change renames or adds something a host setting refers to, work out what the setting
+      does during the gap before scheduling either. The ordering is usually forced, and the way to
+      find it is to ask what the half-applied state looks like.
+    target: .xeno/intents

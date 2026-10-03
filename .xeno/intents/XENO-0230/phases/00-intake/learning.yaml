@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:10:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      The intake found three defects where the issue described one. The trigger was the known half;
+      that only one context was required, and that three of the five could not have been required
+      because they share a name, both came out of reading the protection settings and the job ids
+      rather than the workflow that failed.
+    proposal: >-
+      When a gate did not bind, read the host's settings and the names the checks report under
+      before describing the cause. A workflow explains why a job did not run; only the protection
+      settings explain why its result changed nothing, and the two are different defects with
+      different fixes.
+    target: .xeno/intents
