@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -3010,5 +3011,177 @@ func TestTheHarnessIsRecordedOverTheProjectsDeclaration(t *testing.T) {
 	f.set(key, "00-intake", "scope", "what is in")
 	if got := f.frontField("00-intake", "tool"); got != "claude-code" {
 		t.Errorf("tool is %q, want the project's claude-code when nothing is exported", got)
+	}
+}
+
+// ---- the merge check: an intent the change touches has finished or been closed (#206)
+
+// gitTree makes the fixture's root a repository and commits everything in it, returning the
+// commit as the base of a range. A real repository, because what is under test is which paths
+// git reports differ and a fake would be a second implementation of that.
+func (f *fixture) gitTree() string {
+	f.t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		f.t.Skip("git is not on the path")
+	}
+	for _, args := range [][]string{
+		{"init", "--initial-branch=main"},
+		{"config", "user.name", "A Committer"},
+		{"config", "user.email", "committer@example.test"},
+		{"config", "commit.gpgsign", "false"},
+	} {
+		f.gitRun(args...)
+	}
+	return f.gitCommit("the base")
+}
+
+func (f *fixture) gitRun(args ...string) string {
+	f.t.Helper()
+	out, err := exec.Command("git", append([]string{"-C", f.root}, args...)...).CombinedOutput()
+	if err != nil {
+		f.t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// gitCommit commits whatever is in the tree, allowing an empty commit so that a test can make
+// a range that changes nothing under .xeno/intents/.
+func (f *fixture) gitCommit(message string) string {
+	f.t.Helper()
+	f.gitRun("add", "-A")
+	f.gitRun("commit", "--allow-empty", "-m", message)
+	return f.gitRun("rev-parse", "HEAD")
+}
+
+func (f *fixture) completeness(base string) *CompletenessResult {
+	f.t.Helper()
+	res, err := f.r.Completeness(base, "HEAD")
+	f.must(err)
+	return res
+}
+
+func TestAnIntentThatReachedADecidedP5Passes(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	base := f.gitTree()
+	for _, p := range model.Phases {
+		f.run(p, "")
+	}
+	f.gitCommit("the whole intent")
+
+	res := f.completeness(base)
+	if strings.Join(res.Touched, ",") != key {
+		t.Fatalf("touched %v, want just the intent the change wrote", res.Touched)
+	}
+	if len(res.Unfinished) != 0 {
+		t.Fatalf("a complete intent was reported unfinished: %+v", res.Unfinished)
+	}
+}
+
+// The case #206 was filed for. XENO-0230 reached main with its verification and review phases
+// missing and every gate green on the phases it did write, and nothing said so.
+func TestAnIntentThatStopsShortIsReportedWithTheStateItReached(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	base := f.gitTree()
+	for _, p := range model.Phases[:4] {
+		f.run(p, "")
+	}
+	f.gitCommit("four phases and no more")
+
+	res := f.completeness(base)
+	if len(res.Unfinished) != 1 || res.Unfinished[0].Key != key {
+		t.Fatalf("want the one intent that stopped, got %+v", res.Unfinished)
+	}
+	if got := res.Unfinished[0].State; got != "03-implementation" {
+		t.Errorf("reported as %q, want the phase it reached", got)
+	}
+}
+
+// An abandoned intent is an ending, not a gap. It is the case `xeno intent close` exists for,
+// and the whole point of the check is that it distinguishes the two.
+func TestAnAbandonedIntentPasses(t *testing.T) {
+	f := newFixture(t)
+	base := f.gitTree()
+	f.abandonedIntent("PROJ-9", "the requirement went away")
+	f.gitCommit("closed as abandoned")
+
+	res := f.completeness(base)
+	if strings.Join(res.Touched, ",") != "PROJ-9" {
+		t.Fatalf("touched %v, want the intent that was closed", res.Touched)
+	}
+	if len(res.Unfinished) != 0 {
+		t.Fatalf("an abandoned intent was reported unfinished: %+v", res.Unfinished)
+	}
+}
+
+// A P5 that is provisional is not an ending either. Section 6 reports a provisional verdict
+// rather than failing it and says it becomes "a hard condition at the merge request"; this is
+// the merge request, which is why `gate verify` still exits 0 on the same state.
+func TestAProvisionalFinalPhaseIsNotFinished(t *testing.T) {
+	f := newFixture(t)
+	base := f.gitTree()
+	for _, p := range model.Phases[:5] {
+		f.run(p, "")
+	}
+	f.must(f.r.Start(key, "05-review"))
+	f.output("05-review", pendingTest)
+	if g := f.finish("05-review"); g.Status != "provisional" {
+		t.Fatalf("the fixture P5 is %s, want provisional", g.Status)
+	}
+	f.gitCommit("a P5 waiting on a pipeline")
+
+	res := f.completeness(base)
+	if len(res.Unfinished) != 1 || res.Unfinished[0].State != "05-review" {
+		t.Fatalf("a provisional P5 counted as finished: %+v", res.Unfinished)
+	}
+}
+
+// The rule that every change belongs to an intent is real and unenforced, and #120 owns it.
+// Enforcing it from inside a check about something else would bury it, so a range that touches
+// no intent is not this command's finding.
+func TestARangeThatTouchesNoIntentHasNothingToCheck(t *testing.T) {
+	f := newFixture(t)
+	base := f.gitTree()
+	f.write("internal/thing.go", "package thing\n")
+	f.gitCommit("code and no trail")
+
+	res := f.completeness(base)
+	if len(res.Touched) != 0 || len(res.Unfinished) != 0 {
+		t.Fatalf("want nothing to check, got %+v", res)
+	}
+}
+
+// The listing reports an unreadable intent rather than leaving it out, because a record missing
+// from a listing is worse than one that looks wrong in it. Here the answer is a verdict, so the
+// same fact has to refuse.
+func TestAnIntentWhoseRecordCannotBeReadIsUnfinished(t *testing.T) {
+	f := newFixture(t)
+	base := f.gitTree()
+	f.write(model.IntentDir("PROJ-9")+"/intent.yaml", "key: [this is not an intent\n")
+	f.gitCommit("a record nothing can read")
+
+	res := f.completeness(base)
+	if len(res.Unfinished) != 1 || res.Unfinished[0].Key != "PROJ-9" {
+		t.Fatalf("want the unreadable intent, got %+v", res.Unfinished)
+	}
+	if res.Unfinished[0].Problem == "" {
+		t.Error("reported with no reason, which is the one thing a refusal owes")
+	}
+}
+
+// Section 9: the range is passed in and never inferred. There is no base to fall back to, so a
+// missing one is an error rather than a comparison against something the tool chose.
+func TestTheMergeCheckRefusesWithoutBothEndsOfTheRange(t *testing.T) {
+	f := newFixture(t)
+	f.gitTree()
+	if _, err := f.r.Completeness("", "HEAD"); err == nil {
+		t.Error("an absent base was taken for a range")
+	}
+	if _, err := f.r.Completeness("HEAD", ""); err == nil {
+		t.Error("an absent head was taken for a range")
+	}
+	if _, err := f.r.Completeness("no-such-ref", "HEAD"); err == nil {
+		t.Error("a ref that does not resolve passed as a clean comparison")
 	}
 }

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#206
+phase: 03-implementation
+created: "2026-10-03T20:52:41Z"
+schema_version: "1.0"
+runner_version: dev+8574810.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A check added to the verify job cannot be exercised locally against the intent that adds it: the comparison is between two committed trees, and the trail is in neither until the phase is committed. The command was therefore tested over repositories built in the tests, and its first real run is the pull request it arrives in.'
+      proposal: Where a change adds a step to the verify job, the phase record says which exercise is a test and which is the pull request itself, so that a green local run is not read as the step having been tried.
+      target: docs/implementation-plan.md WP10

@@ -1099,6 +1099,64 @@ func state(stored string, states []PhaseState) string {
 	return reached
 }
 
+// CompletenessResult is what the merge check reads: which intents a change touches, and which
+// of them have neither finished nor been closed.
+type CompletenessResult struct {
+	Touched    []string        // the keys the range touches, by key
+	Unfinished []IntentSummary // those among them that are neither complete nor abandoned
+}
+
+// Completeness answers, for one commit range, whether every intent the change touches has
+// reached one of the two endings section 8 gives an intent: a decided P5, or `xeno intent
+// close`. An intent that simply stopped is neither, and before this nothing said so —
+// G-Complete runs at P5 and at intent close, and an intent that reaches neither has no phase
+// for the gate to run in (#206).
+//
+// The touched intents and not the whole trail. A branch answers for what it changes; a check
+// over every intent in the repository would turn one unclosed intent from last month into a
+// red pull request for everybody, and the way to pass it would be to close intents nobody had
+// finished.
+//
+// The state is read from summarise, which is the one definition of it in this tree. It is the
+// same three answers `xeno intent status` prints, which is the point: the answer existed and
+// nothing read it as a condition.
+//
+// An intent whose record cannot be read counts as unfinished. The listing reports such a row
+// rather than leaving it out, because a record missing from a listing is worse than one that
+// looks wrong in it; here the answer is a verdict, so the same fact has to refuse.
+func (r *Runner) Completeness(base, head string) (*CompletenessResult, error) {
+	paths, err := git.Paths(r.Root, base, head, IntentsRoot)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	res := &CompletenessResult{}
+	for _, p := range paths {
+		rest, ok := strings.CutPrefix(filepath.ToSlash(p), IntentsRoot+"/")
+		if !ok {
+			continue
+		}
+		key, _, _ := strings.Cut(rest, "/")
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		res.Touched = append(res.Touched, key)
+	}
+	sort.Strings(res.Touched)
+	for _, key := range res.Touched {
+		s := r.summarise(key)
+		if s.State == "complete" || s.State == "abandoned" {
+			continue
+		}
+		if s.State == "" && s.Problem == "" {
+			s.Problem = "its phases cannot be read"
+		}
+		res.Unfinished = append(res.Unfinished, s)
+	}
+	return res, nil
+}
+
 // PhaseState is computed, never stored: there is no position that could go stale.
 type PhaseState struct {
 	Phase  string

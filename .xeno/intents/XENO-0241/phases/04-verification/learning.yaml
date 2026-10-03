@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#206
+phase: 04-verification
+created: "2026-10-03T20:54:44Z"
+schema_version: "1.0"
+runner_version: dev+8574810.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The twelve tests passed and the exercise over a real clone still found a defect: the count printed ''checked 1 intents''. The tests asserted the exit code and the key, which is what the criteria asked for, and nobody reads an exit code.'
+      proposal: Where a command's output is read by a person, one exercise of it by hand belongs in the verification phase beside the tests, and the phase records what that exercise found rather than only that it was done.
+      target: docs/process-definition.md section 4, the verification phase

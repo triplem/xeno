@@ -221,3 +221,102 @@ func TestAnEmptyRangeIsNoCommitsAndNoError(t *testing.T) {
 		t.Fatalf("read %d commits from HEAD..HEAD, want none", len(cs))
 	}
 }
+
+// writeAt writes one file at a path inside the repository, creating the directories it needs,
+// and commits it. Paths is about which paths changed, so the test needs paths rather than the
+// flat files commit above produces.
+func writeAt(t *testing.T, root, path, content string) {
+	t.Helper()
+	full := filepath.Join(root, path)
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run(t, root, "add", ".")
+	run(t, root, "commit", "-m", "writes "+path)
+}
+
+func TestThePathsOfARangeAreListedUnderTheDirectoryAsked(t *testing.T) {
+	root := repo(t)
+	writeAt(t, root, "README.md", "first")
+	base := run(t, root, "rev-parse", "HEAD")
+	writeAt(t, root, ".xeno/intents/PROJ-1/intent.yaml", "key: PROJ-1\n")
+	writeAt(t, root, "internal/thing.go", "package thing\n")
+
+	under, err := Paths(root, base, "HEAD", ".xeno/intents")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(under) != 1 || under[0] != ".xeno/intents/PROJ-1/intent.yaml" {
+		t.Fatalf("under the directory asked: %v", under)
+	}
+	all, err := Paths(root, base, "HEAD", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 2 {
+		t.Fatalf("over the whole tree, want both: %v", all)
+	}
+}
+
+// A directory created and dropped again inside one branch never existed at either end, which
+// is why this is a tree comparison and not a log over the range.
+func TestAPathAddedAndRemovedInsideTheRangeIsNotReported(t *testing.T) {
+	root := repo(t)
+	writeAt(t, root, "README.md", "first")
+	base := run(t, root, "rev-parse", "HEAD")
+	writeAt(t, root, ".xeno/intents/PROJ-9/intent.yaml", "key: PROJ-9\n")
+	run(t, root, "rm", "-r", ".xeno/intents/PROJ-9")
+	run(t, root, "commit", "-m", "and dropped again")
+
+	paths, err := Paths(root, base, "HEAD", ".xeno/intents")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 0 {
+		t.Fatalf("nothing existed at either end, got %v", paths)
+	}
+}
+
+// Rename detection is off, so a move reports both ends. A caller asking which intents a change
+// touches is answerable for the one it moved away from as much as for the one it moved to.
+func TestAMoveReportsBothPaths(t *testing.T) {
+	root := repo(t)
+	writeAt(t, root, ".xeno/intents/PROJ-1/intent.yaml", "key: PROJ-1\n")
+	base := run(t, root, "rev-parse", "HEAD")
+	run(t, root, "mv", ".xeno/intents/PROJ-1", ".xeno/intents/PROJ-2")
+	run(t, root, "commit", "-m", "moved")
+
+	paths, err := Paths(root, base, "HEAD", ".xeno/intents")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 2 {
+		t.Fatalf("both ends of the move, got %v", paths)
+	}
+}
+
+func TestPathsRefusesAnAbsentEndOfTheRange(t *testing.T) {
+	root := repo(t)
+	writeAt(t, root, "README.md", "first")
+	if _, err := Paths(root, "HEAD", "", ""); err == nil {
+		t.Fatal("an empty head is a caller error, not an empty range")
+	}
+	if _, err := Paths(root, "", "HEAD", ""); err == nil {
+		t.Fatal("an empty base is a caller error, not an empty range")
+	}
+}
+
+func TestPathsSaysWhichRefDidNotResolve(t *testing.T) {
+	root := repo(t)
+	writeAt(t, root, "README.md", "first")
+	_, err := Paths(root, "no-such-ref", "HEAD", "")
+	if err == nil {
+		t.Fatal("want an error")
+	}
+	if !strings.Contains(err.Error(), "no-such-ref") {
+		t.Fatalf("the error names the ref: %v", err)
+	}
+}

@@ -38,6 +38,7 @@ const usage = `usage:
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
+  xeno intent verify  --base REF --head REF     every intent the range touches is finished or closed (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  [--intent KEY] [--all]    without one, the last ten by creation
@@ -97,6 +98,7 @@ var commands = map[string]command{
 	"enforcement check":    {run: cmdEnforcementCheck},
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
+	"intent verify":        {run: cmdIntentVerify},
 	"cost turn":            {run: cmdCostTurn},
 	"intent start":         {run: cmdIntentStart},
 	"intent status":        {run: cmdIntentStatus},
@@ -486,6 +488,48 @@ func cmdGateVerify(o *opts) int {
 // people stop taking verification seriously. A divergence or a red phase is 1 (#110).
 func verifyCode(res *runner.VerifyResult) int {
 	if len(res.Divergences) > 0 || len(res.Red) > 0 {
+		return 1
+	}
+	return 0
+}
+
+// cmdIntentVerify is the merge check for section 8's two endings. An intent the change
+// touches has either reached a decided P5 or been closed, and anything else is a trail that
+// stops in the middle with every gate green on the phases it did write (#206).
+//
+// The range is required and never inferred, as section 9 says and as Commits already refuses:
+// a base that does not resolve exits 2, "could not run", because a comparison made on no
+// evidence reports the same thing as a clean one.
+//
+// A range that touches no intent says so in those words rather than printing nothing. That
+// every change belongs to an intent is a rule of this project and an unenforced one, and
+// enforcing it from inside a check about something else would bury it (#120).
+func cmdIntentVerify(o *opts) int {
+	res, err := o.r.Completeness(o.base, o.head)
+	if err != nil {
+		fmt.Fprintln(o.errw, "error:", err)
+		return 2
+	}
+	if len(res.Touched) == 0 {
+		fmt.Fprintln(o.out, "no intent is touched by this change")
+		return 0
+	}
+	intents := "intents"
+	if len(res.Touched) == 1 {
+		intents = "intent"
+	}
+	fmt.Fprintf(o.out, "checked %d %s the change touches\n", len(res.Touched), intents)
+	for _, s := range res.Unfinished {
+		what := s.State
+		if what == "" {
+			what = s.Problem
+		}
+		fmt.Fprintf(o.out, "  UNFINISHED  %s: %s\n", s.Key, what)
+	}
+	if len(res.Unfinished) > 0 {
+		fmt.Fprintln(o.out, "An intent ends at a decided P5 or at xeno intent close.")
+		fmt.Fprintln(o.out, "Finish the phases, or close it with a reason: both are recorded,")
+		fmt.Fprintln(o.out, "and a trail that stops in the middle is neither.")
 		return 1
 	}
 	return 0

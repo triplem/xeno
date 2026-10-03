@@ -174,3 +174,21 @@ jobs:
 
       - name: verify
         run: ./xeno gate verify
+
+      # Section 7 puts G-Complete at P5 and at intent close, and an intent that reaches
+      # neither has no phase for the gate to run in. XENO-0230 reached main with its
+      # verification and review phases missing and every gate green on the phases it did
+      # write (#206). The state this reads is the one `xeno intent status` has printed
+      # since #132; what was missing was something that treated it as a condition.
+      #
+      # The intents the branch touches and not all of them: a check over the whole trail
+      # would make one unclosed intent from last month everybody's red pull request, and
+      # the way to pass it would be to close intents nobody had finished.
+      #
+      # Same base as the trail guard above, and HEAD, which for a pull request is the
+      # merge result and so the tree the merge would produce.
+      - name: every intent this change touches has finished or been closed
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: ./xeno intent verify --base "$BASE" --head HEAD
