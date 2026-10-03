@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#202
+phase: 03-implementation
+created: "2026-10-03T19:25:49Z"
+schema_version: "1.0"
+runner_version: dev+d19a1ca.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A rule stated in one document with nothing comparing the repository against it was found eight times, each by accident and each costing about an intent
+      proposal: When a clause is added to the process definition, the commit that adds it names its reader or records that it has none, so the gap is created knowingly rather than discovered later
+      target: rules/learned/org

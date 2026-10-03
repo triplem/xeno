@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#202
+phase: 04-verification
+created: "2026-10-03T19:28:32Z"
+schema_version: "1.0"
+runner_version: dev+d19a1ca.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Declared evidence has no writing command: section 5 puts the declaration in output.md frontmatter, which the runner writes and artifacts_hash covers, so evidence attach cannot be used without a hand edit of a hashed artifact and no verification phase in this trail has attached any'
+      proposal: A command declares an evidence item and recomputes what it invalidates, the way section set does for a section
+      target: rules/learned/org
