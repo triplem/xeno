@@ -1,0 +1,13 @@
+intent: "github.com/triplem/xeno#177"
+phase: 00-intake
+created: 2026-10-03T17:00:00Z
+schema_version: "1.0"
+runner_version: dev+b54626e.dirty
+plugin_version: 0.29.2
+learnings:
+  - category: context-rule
+    observation: >-
+      The intake's measurement changed the scope of the whole intent. Section 7's resolution order looked like work to do until a copy of this repository showed that a valid plugin with a different rule tree leaves gate verify at exit 0 while G-Policy silently stops judging seventy-five phases. The largest part of #183 became its open clause.
+    proposal: >-
+      Where a document specifies a mechanism that would feed a verdict, measure what the mechanism does to the existing trail before scoping the work. Three commands on a copy moved an item from in scope to a decision the agent may not take.
+    target: .xeno/intents

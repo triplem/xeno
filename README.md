@@ -45,6 +45,20 @@ without `--phase` the one an intent owes when it closes. The four keys are the a
 and the header is the runner's; `--no-finding` is the empty record said rather than left
 out, and a second call appends. It was the last artifact of this process that no command
 wrote (A82).
+**Every artifact in this trail was written by a development build.** `runner_version`
+reads `dev+<commit>.dirty` on a build made here and the release sets the number through
+ldflags, so the trail says plainly that a released binary did not write it. It used to
+read `0.1.0-dev`, a literal that stayed put through twenty-nine minor releases — not a
+stale number but a wrong one — and a development build cannot do better, because
+`debug.ReadBuildInfo` reports `(devel)` for the main module and only git knows the
+tag (A85). Artifacts behind that change carry the old shape; the commit is the
+boundary. #177 asks for this where section 16 lists what the record does not mean,
+which is a change to the process definition and not this file's to make.
+
+`plugin_version` names the vendored plugin an artifact was rendered from, read from its
+own manifest and absent where no plugin is vendored (A83). Nothing keeps that manifest
+in step with the next release: it is a literal in a data file, only a release knows the
+number, and a release here cannot write a file.
 
 The harness reports its own version, which is the one field of section 5 the runner
 cannot know: section 7 forbids it branching on the harness, and a value nobody produced

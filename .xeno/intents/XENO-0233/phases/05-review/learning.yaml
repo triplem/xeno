@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#177
+phase: 05-review
+created: "2026-10-03T17:07:16Z"
+schema_version: "1.0"
+runner_version: dev+a18c1f3.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: The maintainer had to ask twice. The first exchange chose the scope from three shapes with measurements; the fields were then sourced correctly and still read 0.1.0, because sourcing a field from a wrong literal reports a wrong number. The second question was the one that produced the useful half of this intent.
+      proposal: When a change fixes where a value comes from, check what the value then is before reporting the change as done. Correct provenance and a wrong number look identical in a diff and different in an artifact, and the artifact is what a reader has.
+      target: .xeno/intents

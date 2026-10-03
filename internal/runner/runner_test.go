@@ -18,6 +18,7 @@ import (
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
@@ -40,6 +41,11 @@ func newFixture(t *testing.T) *fixture {
 	t.Setenv(HarnessVersionEnv, "")
 	f := &fixture{t: t, root: t.TempDir()}
 	f.reopen()
+	// A vendored plugin, because every repository has one after `xeno init --vendor` and
+	// section 5 requires plugin_version in every process file. Without it the field is
+	// absent and G-Schema says so, which is correct and is asserted on its own below
+	// rather than made the condition of every other test (#177).
+	f.write(plugin.Dir+"/.claude-plugin/plugin.json", `{"name":"xeno","version":"9.9.9"}`)
 	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n")
 	f.write(model.IntentDir(key)+"/assumptions.yaml", "assumptions: []\n")
 	return f
@@ -2436,7 +2442,10 @@ func TestStartingAnIntentDerivesEverythingButTheIssue(t *testing.T) {
 	want := model.Intent{
 		Intent: "github.com/triplem/xeno#176", Key: "PROJ-2", Status: "in-progress",
 		Created: "2026-09-20T10:00:00Z", SchemaVersion: model.SchemaVersion,
-		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+		// From the vendored plugin's manifest, not a constant: the field names the plugin
+		// an artifact was rendered from, and a number that cannot disagree with the runner
+		// can never be proved wrong (#177).
+		RunnerVersion: model.RunnerVersion, PluginVersion: "9.9.9",
 	}
 	if on != want {
 		t.Errorf("intent.yaml is\n%+v\nwant\n%+v", on, want)
@@ -2712,9 +2721,9 @@ func TestTheLearningRecordCarriesTheRunnersHeader(t *testing.T) {
 		Category: "context-rule", Observation: "o", Proposal: "p", Target: "t",
 	})
 	f.must(err)
-	if rec.RunnerVersion != model.RunnerVersion || rec.PluginVersion != model.PluginVersion {
-		t.Errorf("header is %s/%s, want the runner's %s/%s",
-			rec.RunnerVersion, rec.PluginVersion, model.RunnerVersion, model.PluginVersion)
+	if rec.RunnerVersion != model.RunnerVersion || rec.PluginVersion != plugin.Version(f.root) {
+		t.Errorf("header is %s/%s, want the runner's %s and the plugin's %s",
+			rec.RunnerVersion, rec.PluginVersion, model.RunnerVersion, plugin.Version(f.root))
 	}
 	var on model.Learning
 	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml"), &on))
@@ -2852,3 +2861,115 @@ func assertRefusal(t *testing.T, err error, says string) {
 
 // mustLearning discards the record and keeps the error, as must2 does for a verdict.
 func (f *fixture) mustLearning(_ *model.Learning, err error) { f.t.Helper(); f.must(err) }
+
+// ---- the plugin says its own version (#177)
+
+// TestThePluginVersionComesFromTheVendoredPlugin is the point: the field names the plugin an
+// artifact was rendered from. It was a constant, and a release set it to the runner's own
+// version through ldflags, so a number that could not disagree with the runner could never be
+// proved wrong — which is the one thing section 5 wants it for.
+func TestThePluginVersionComesFromTheVendoredPlugin(t *testing.T) {
+	f := newFixture(t)
+	f.write(plugin.Dir+"/.claude-plugin/plugin.json", `{"name":"xeno","version":"0.26.0"}`)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	if got := f.frontField("00-intake", "plugin_version"); got != "0.26.0" {
+		t.Errorf("output.md records plugin_version %q, want the manifest's 0.26.0", got)
+	}
+	if got := f.frontField("00-intake", "plugin_version"); got == model.RunnerVersion {
+		t.Error("plugin_version is the runner's version again")
+	}
+}
+
+// Absent where no plugin is vendored, which is A35's rule. Section 5 requires the field in
+// every process file, so the absence is a G-Schema finding — a repository with no plugin
+// rendered from none, and that is the honest thing for its artifacts to say.
+func TestWithoutAVendoredPluginTheVersionIsAbsentAndReported(t *testing.T) {
+	f := newFixture(t)
+	f.must(os.RemoveAll(filepath.Join(f.root, plugin.Dir)))
+	f.project(agentBlock)
+
+	in, err := f.r.IntentStart("NEW-1", "git.example/g/p#4")
+	f.must(err)
+	if in.PluginVersion != "" {
+		t.Errorf("plugin_version is %q, want absent", in.PluginVersion)
+	}
+	g := f.run("00-intake", "")
+	var said bool
+	for _, c := range g.Checks {
+		for _, fd := range c.Findings {
+			if c.Gate == "G-Schema" && strings.Contains(fd.Cause, "plugin_version") {
+				said = true
+			}
+		}
+	}
+	if !said {
+		t.Error("no plugin and no finding about it; section 5 requires the field")
+	}
+}
+
+// The lock carries section 5's plugin block, which is the other half of the sentence that
+// explains the pair: the frontmatter names what was used and the lock proves it with a hash.
+func TestTheLockCarriesThePluginsVersionAndHash(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"),
+		"context.lock.yaml"), &lock))
+	if lock.Plugin == nil {
+		t.Fatal("the lock carries no plugin block")
+	}
+	if lock.Plugin.Version != "9.9.9" {
+		t.Errorf("the lock records plugin version %q, want the manifest's", lock.Plugin.Version)
+	}
+	if len(lock.Plugin.SHA256) != 64 {
+		t.Errorf("the lock records a plugin hash %q, want sixty four hex characters",
+			lock.Plugin.SHA256)
+	}
+	if got := lock.PluginVersion; got != lock.Plugin.Version {
+		t.Errorf("the lock's header says %q and its plugin block says %q", got, lock.Plugin.Version)
+	}
+}
+
+// Without a plugin the block is absent rather than half written: a version with no hash, or a
+// hash with no version, would be half a claim.
+func TestWithoutAPluginTheLockCarriesNoBlock(t *testing.T) {
+	f := newFixture(t)
+	f.must(os.RemoveAll(filepath.Join(f.root, plugin.Dir)))
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"),
+		"context.lock.yaml"), &lock))
+	if lock.Plugin != nil {
+		t.Errorf("the lock carries a plugin block with no plugin: %+v", *lock.Plugin)
+	}
+}
+
+// Section 7 lists XENO_HARNESS and calls it recorded only. It beats the project's declaration,
+// because `agent.tool` is what a project says it uses and the variable is what is running.
+func TestTheHarnessIsRecordedOverTheProjectsDeclaration(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock) // declares claude-code
+	f.templated()
+	t.Setenv(HarnessEnv, "codex")
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	if got := f.frontField("00-intake", "tool"); got != "codex" {
+		t.Errorf("tool is %q, want the harness's codex over the project's claude-code", got)
+	}
+	// And with nothing in the environment the project's declaration stands, which is what
+	// A35's second amendment settled and this does not undo.
+	t.Setenv(HarnessEnv, "")
+	f.set(key, "00-intake", "scope", "what is in")
+	if got := f.frontField("00-intake", "tool"); got != "claude-code" {
+		t.Errorf("tool is %q, want the project's claude-code when nothing is exported", got)
+	}
+}
