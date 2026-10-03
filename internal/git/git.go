@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package git reads the commit range under review. It is the only place in this repository
-// that starts a subprocess, and it starts exactly one: `git log` over the range the run was
-// given.
+// that starts a subprocess, and it starts two: `git log` over the range the run was given,
+// and `git diff` over the two trees at its ends.
 //
 // It exists as a package rather than as a few lines inside a gate because four of section 9's
 // predicate types read a commit, and process handling in the middle of a verdict would make
@@ -141,4 +141,42 @@ func Head(root string) string {
 		return ""
 	}
 	return strings.TrimSpace(string(out))
+}
+
+// Paths lists the files that differ between the trees at base and head, under the directory
+// given or over the whole tree where it is empty. Oldest first is meaningless here, so the
+// order is git's, which is sorted by path.
+//
+// A tree comparison rather than a commit range, for the reason the verify job's trail guard
+// gives: a directory created and dropped again inside one branch never existed on the base
+// and is nobody's business, and the two-dot log form would still report it.
+//
+// Rename detection is off. A caller asking which intents a change touches wants both paths of
+// a move, and this way it cannot be the step that lets a move through unseen.
+//
+// An empty base or head is a caller error rather than a range, as in Commits above: section 12
+// says the range is passed in and never inferred, so there is nothing to fall back to.
+func Paths(root, base, head, under string) ([]string, error) {
+	if base == "" || head == "" {
+		return nil, fmt.Errorf("no commit range: base %q, head %q", base, head)
+	}
+	args := []string{"-C", root, "diff", "--name-only", "--no-renames", base, head}
+	if under != "" {
+		args = append(args, "--", under)
+	}
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		msg := strings.TrimSpace(string(exitText(err)))
+		if msg == "" {
+			msg = err.Error()
+		}
+		return nil, fmt.Errorf("git diff %s %s: %s", base, head, msg)
+	}
+	var paths []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			paths = append(paths, line)
+		}
+	}
+	return paths, nil
 }

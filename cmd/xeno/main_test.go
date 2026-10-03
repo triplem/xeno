@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -445,5 +446,93 @@ func TestLearningRecordTakesThePhaseOptionally(t *testing.T) {
 	}
 	if out != "" {
 		t.Errorf("a refusal wrote to standard output: %q", out)
+	}
+}
+
+// ---- the merge check's staircase (#206)
+
+// gitRepo makes a directory a repository and commits what is in it, returning the base of a
+// range. A real repository, because the command reads what git reports.
+func gitRepo(t *testing.T, root string) string {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not on the path")
+	}
+	git := func(args ...string) string {
+		t.Helper()
+		out, err := exec.Command("git", append([]string{"-C", root}, args...)...).CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	for _, args := range [][]string{
+		{"init", "--initial-branch=main"},
+		{"config", "user.name", "A Committer"},
+		{"config", "user.email", "committer@example.test"},
+		{"config", "commit.gpgsign", "false"},
+	} {
+		git(args...)
+	}
+	git("add", "-A")
+	git("commit", "--allow-empty", "-m", "the base")
+	return git("rev-parse", "HEAD")
+}
+
+// An intent that stopped is 1, the exit code a required check turns into a refused merge, and
+// the reason goes to standard output with the two endings named.
+func TestTheMergeCheckExitsOneForAnIntentThatStopped(t *testing.T) {
+	root := t.TempDir()
+	base := gitRepo(t, root)
+	dir := filepath.Join(root, model.IntentDir("PROJ-1"))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "intent.yaml"),
+		[]byte("intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n"+
+			"created: \"2026-09-20T10:00:00Z\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "-A"}, {"commit", "-m", "an intent and no phases"}} {
+		if out, err := exec.Command("git", append([]string{"-C", root}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git: %v\n%s", err, out)
+		}
+	}
+
+	code, out, errw := invoke(t, "intent", "verify", "--root", root, "--base", base, "--head", "HEAD")
+	if code != 1 {
+		t.Fatalf("exit %d, want 1: %s%s", code, out, errw)
+	}
+	if !strings.Contains(out, "PROJ-1") || !strings.Contains(out, "UNFINISHED") {
+		t.Errorf("the intent was not named on standard output: %q", out)
+	}
+	if !strings.Contains(out, "xeno intent close") {
+		t.Errorf("the refusal does not name the other ending: %q", out)
+	}
+}
+
+// Over this repository, whose working tree is at HEAD: the range is empty, so nothing is
+// touched and nothing is checked. Said in words, because a reader of a log has to tell that
+// from a check that ran and found everything clean.
+func TestTheMergeCheckOverAnEmptyRangeSaysNothingIsTouched(t *testing.T) {
+	root := filepath.Join("..", "..")
+	code, out, errw := invoke(t, "intent", "verify", "--root", root, "--base", "HEAD", "--head", "HEAD")
+	if code != 0 {
+		t.Fatalf("exit %d: %s%s", code, out, errw)
+	}
+	if !strings.Contains(out, "no intent is touched") {
+		t.Errorf("an empty range said %q", out)
+	}
+}
+
+// Section 9: the range is passed in, never inferred. Nothing to compare against is 2, "could
+// not run", and not 0.
+func TestTheMergeCheckWithoutARangeIsTwo(t *testing.T) {
+	code, out, errw := invoke(t, "intent", "verify", "--root", filepath.Join("..", ".."))
+	if code != 2 {
+		t.Fatalf("exit %d, want 2: %s%s", code, out, errw)
+	}
+	if !strings.Contains(errw, "no commit range") {
+		t.Errorf("the reason did not reach standard error: %q", errw)
 	}
 }

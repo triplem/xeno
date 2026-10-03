@@ -34,6 +34,14 @@ jobs:
         run: |
           xeno gate verify
 
+      # Section 7 puts G-Complete at P5 and at intent close. An intent that reaches
+      # neither has no phase for the gate to run in, so a branch whose trail stops in
+      # the middle merges with every gate green on the phases it did write. This is the
+      # condition that says so, over the intents the change touches.
+      - name: the intents this change touches have finished or been closed
+        run: |
+          xeno intent verify --base {{.BaseRef}} --head {{.HeadRef}}
+
       # One call per phase the change touches. --phase is filled in per repository;
       # what is fixed here is that both ends of the range are passed.
       - name: gate
