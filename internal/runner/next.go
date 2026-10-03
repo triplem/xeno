@@ -34,8 +34,12 @@ type Suggestion struct {
 // be one, because a confident wrong suggestion is followed.
 func (r *Runner) Next(key string) *Suggestion {
 	if !fm.Exists(r.abs(model.IntentDir(key))) {
-		return &Suggestion{Text: "there is no intent " + key + " yet. Write its intent.yaml and " +
-			"assumptions.yaml; no command creates them"}
+		// The command is named in the sentence rather than in Command, because the issue is
+		// the one thing nothing here knows, and a command offered with a placeholder in it
+		// would be typed as it stands and create an intent for an issue called ISSUE.
+		return &Suggestion{Text: "there is no intent " + key + " yet. Create it with " +
+			"xeno intent start --intent " + key + ", naming the issue it belongs to with " +
+			"--for. Its assumptions.yaml is written by hand; no command creates it"}
 	}
 	states, err := r.Status(key)
 	if err != nil {

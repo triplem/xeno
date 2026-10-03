@@ -2402,3 +2402,151 @@ func TestChangedSinceIsSilentWithoutAProfile(t *testing.T) {
 		t.Fatalf("a repository with no profile reports %v", got)
 	}
 }
+
+// ---- the intent is created by a command (#179)
+
+// trackerBlock is the configuration the qualified id is completed from. The address is
+// GitHub's, because that is the one host whose API is not served under the id's host and
+// therefore the only row where the derivation does anything.
+const trackerBlock = "tracker:\n  adapter: github\n  project: triplem/xeno\n" +
+	"  base_url: https://api.github.com\n"
+
+// TestStartingAnIntentDerivesEverythingButTheIssue is the point of the command: the issue
+// goes in, and the other six fields come from the runner and the configuration rather than
+// from somebody's memory of them.
+func TestStartingAnIntentDerivesEverythingButTheIssue(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+
+	in, err := f.r.IntentStart("", "176")
+	f.must(err)
+	if in.Key != "PROJ-2" {
+		t.Errorf("key %q, want PROJ-2: the sequence has PROJ-1 in it", in.Key)
+	}
+	var on model.Intent
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir(in.Key), "intent.yaml"), &on))
+	want := model.Intent{
+		Intent: "github.com/triplem/xeno#176", Key: "PROJ-2", Status: "in-progress",
+		Created: "2026-09-20T10:00:00Z", SchemaVersion: model.SchemaVersion,
+		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+	}
+	if on != want {
+		t.Errorf("intent.yaml is\n%+v\nwant\n%+v", on, want)
+	}
+}
+
+// The version fields are the binary's own, which is what #177 is about at the intent
+// level: a hand written intent.yaml records 0.1.0-dev beside artifacts that record the
+// commit as well, and two strings for one build in one directory say nothing.
+func TestANewIntentRecordsTheVersionTheArtifactsRecord(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+
+	f.run("00-intake", "")
+	var in model.Intent
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir("NEW-1"), "intent.yaml"), &in))
+	g, err := f.r.readGate(key, "00-intake")
+	f.must(err)
+	if in.RunnerVersion != g.RunnerVersion || in.PluginVersion != g.PluginVersion {
+		t.Errorf("intent.yaml records %s/%s and gate.yaml %s/%s; one binary, one pair",
+			in.RunnerVersion, in.PluginVersion, g.RunnerVersion, g.PluginVersion)
+	}
+}
+
+// A key given is used as given. That is what the first intent of a repository needs, since
+// there is no sequence to continue, and it is how the older naming scheme stays reachable.
+func TestAGivenKeyIsUsedAsGiven(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+
+	in, err := f.r.IntentStart("XENO-0300", "176")
+	f.must(err)
+	if in.Key != "XENO-0300" {
+		t.Fatalf("key %q, want XENO-0300", in.Key)
+	}
+	if !fm.Exists(filepath.Join(f.root, model.IntentDir("XENO-0300"), "intent.yaml")) {
+		t.Error("intent.yaml was not written where the key says")
+	}
+}
+
+// Running it twice refuses rather than overwriting. intent.yaml sits inside the intent
+// level hash, so a second write would change a verdict that named the first one.
+func TestStartingAnIntentTwiceIsRefused(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+
+	_, err := f.r.IntentStart("NEW-1", "177")
+	var ref *Refusal
+	if !errors.As(err, &ref) {
+		t.Fatalf("second start: %v, want a refusal", err)
+	}
+	var in model.Intent
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir("NEW-1"), "intent.yaml"), &in))
+	if in.Intent != "github.com/triplem/xeno#176" {
+		t.Errorf("the first id was overwritten: %q", in.Intent)
+	}
+}
+
+// The issue is the one input, so its absence is a refusal and not a default. A derived
+// everything is only worth having if the one thing nobody can derive is required.
+func TestStartingAnIntentNeedsTheIssue(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+
+	_, err := f.r.IntentStart("NEW-1", "")
+	var ref *Refusal
+	if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "--for") {
+		t.Fatalf("start without an issue: %v, want a refusal naming --for", err)
+	}
+	if fm.Exists(filepath.Join(f.root, model.IntentDir("NEW-1"))) {
+		t.Error("a refused start left a directory behind")
+	}
+}
+
+// A repository with no tracker block has nothing to complete the id from, and the whole
+// qualified id given by hand is the way through. The block is optional per Appendix A.
+func TestWithoutATrackerBlockTheWholeIdIsGivenByHand(t *testing.T) {
+	f := newFixture(t)
+
+	in, err := f.r.IntentStart("NEW-1", "git.example/group/proj#4")
+	f.must(err)
+	if in.Intent != "git.example/group/proj#4" {
+		t.Errorf("id %q, want it as given", in.Intent)
+	}
+	if _, err := f.r.IntentStart("NEW-2", "4"); err == nil {
+		t.Error("a bare key with no configuration behind it was accepted")
+	}
+}
+
+// The two things the issue asks for after the file exists: the new intent is listed like
+// any other, and phase start reads its intent.yaml as it reads a hand written one.
+func TestANewIntentIsListedAndItsPhaseStarts(t *testing.T) {
+	f := newFixture(t)
+	f.project(trackerBlock)
+	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+
+	got, err := f.r.Intents()
+	f.must(err)
+	var found *IntentSummary
+	for i := range got {
+		if got[i].Key == "NEW-1" {
+			found = &got[i]
+		}
+	}
+	if found == nil {
+		t.Fatalf("NEW-1 is not in the listing: %v", keysOf(t, got))
+	}
+	if found.Problem != "" {
+		t.Errorf("the listing reports %q about a file the runner wrote", found.Problem)
+	}
+	if found.Created == "" || found.State != "no phases" {
+		t.Errorf("listed as created %q, state %q", found.Created, found.State)
+	}
+	f.must(f.r.Start("NEW-1", "00-intake"))
+}
+
+// mustIntent discards the record and keeps the error, as must2 does for a verdict: a test
+// that only needs the intent to exist says so without naming a variable it ignores.
+func (f *fixture) mustIntent(_ *model.Intent, err error) { f.t.Helper(); f.must(err) }

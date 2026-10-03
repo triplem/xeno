@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T13:00:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: project-convention
+    observation: >-
+      The criterion about the version fields was the only one in this intent that could not be
+      asserted against a literal, because the value is whatever the binary stamps. The test that
+      holds it compares `intent.yaml` against the `gate.yaml` written beside it, which is the
+      criterion as the issue states it — one build, one pair of strings — rather than a value.
+    proposal: >-
+      Where a criterion is that two artifacts agree, assert the agreement and not either value. A
+      test pinning the expected string would have to be edited on every release and would pass on a
+      build that stamped neither file, which is the state the criterion exists to exclude.
+    target: .xeno/intents

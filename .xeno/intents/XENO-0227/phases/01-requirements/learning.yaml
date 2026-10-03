@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T12:30:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: context-rule
+    observation: >-
+      Half the non-goals of this phase are statements that nothing is added to the configuration or
+      to the artifact, and writing them was what settled the design: the host had to come from
+      `base_url` and the key prefix from the directory precisely because the second standing rule
+      forbids a field for either.
+    proposal: >-
+      Where an intent derives a value, write the non-goal that no field is added for it before
+      designing the derivation. The rule against invented fields then does the choosing, and the
+      alternatives that would need one are refused at requirements rather than argued at design.
+    target: .xeno/intents

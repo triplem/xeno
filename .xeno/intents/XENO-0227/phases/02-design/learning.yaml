@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T12:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      Three of the seven alternatives were refused by quoting code that already exists:
+      `BranchRulesFor` on why an address is never defaulted, `nextAssumptionID` on why a sequence
+      counts the highest and not the entries, and D-7 on why padding is read rather than fixed. The
+      design work was finding the existing statement of each question rather than answering it.
+    proposal: >-
+      Before designing a derivation, look for the place in this repository that already refuses to
+      guess the same kind of value, and quote it. The refusals are the project's own reasoning and
+      a design that restates them is both shorter and harder to argue with than one that reasons
+      from scratch.
+    target: .xeno/intents

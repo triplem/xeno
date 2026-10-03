@@ -276,3 +276,48 @@ func TestVersionIsOneWordAndExitsZero(t *testing.T) {
 		t.Errorf("version wrote to standard error: %q", errw)
 	}
 }
+
+// intent start is the one command that names an intent and takes --intent optionally, so
+// the dispatch's needsKey switch is off for it and the key is derived instead. This asserts
+// both halves at the surface: the command runs without the flag, and the key it chose is
+// what the output says it wrote (#179).
+func TestIntentStartNeedsNoKeyAndSaysWhichOneItChose(t *testing.T) {
+	root := repo(t)
+	cfg := filepath.Join(root, ".xeno/config/project.yaml")
+	if err := os.MkdirAll(filepath.Dir(cfg), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := "tracker:\n  adapter: github\n  project: triplem/xeno\n" +
+		"  base_url: https://api.github.com\n"
+	if err := os.WriteFile(cfg, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, out, errw := invoke(t, "intent", "start", "--root", root, "--for", "176", "--no-next")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0: %s", code, errw)
+	}
+	if !strings.Contains(out, "PROJ-2") || !strings.Contains(out, "github.com/triplem/xeno#176") {
+		t.Errorf("the output names neither the key nor the id it wrote: %q", out)
+	}
+
+	// Twice is a refusal, which is the staircase's 1 with the reason on standard error.
+	code, out, errw = invoke(t, "intent", "start", "--root", root, "--intent", "PROJ-2",
+		"--for", "176", "--no-next")
+	if code != 1 || !strings.Contains(errw, "refused:") {
+		t.Errorf("a second start exits %d saying %q, want 1 and a refusal", code, errw)
+	}
+	if out != "" {
+		t.Errorf("a refusal wrote to standard output: %q", out)
+	}
+}
+
+// Without --for there is nothing to derive the id from, and the refusal names the flag.
+// This is the command's one required input, so it is asserted where somebody would type it.
+func TestIntentStartWithoutAnIssueIsRefused(t *testing.T) {
+	root := repo(t)
+	code, _, errw := invoke(t, "intent", "start", "--root", root, "--intent", "NEW-1", "--no-next")
+	if code != 1 || !strings.Contains(errw, "--for") {
+		t.Errorf("exit %d saying %q, want 1 and a refusal naming --for", code, errw)
+	}
+}

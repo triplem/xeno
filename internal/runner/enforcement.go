@@ -9,6 +9,7 @@ import (
 	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/host"
+	"github.com/triplem/xeno/internal/model"
 )
 
 // ReportPath is where the enforcement report is written. Under .xeno/local/, which is
@@ -29,11 +30,7 @@ const ReportPath = ".xeno/local/enforcement.yaml"
 // scheduled run whose failure shows in the pipeline overview.
 func (r *Runner) EnforcementCheck(branch, token string) (*enforcement.Report, error) {
 	var p struct {
-		Tracker struct {
-			Adapter string `yaml:"adapter"`
-			Project string `yaml:"project"`
-			BaseURL string `yaml:"base_url"`
-		} `yaml:"tracker"`
+		Tracker     model.Tracker        `yaml:"tracker"`
 		Enforcement enforcement.Declared `yaml:"enforcement"`
 	}
 	const cfg = ".xeno/config/project.yaml"

@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T13:10:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      The one departure from the issue — the key derived rather than given — was raised before any
+      code existed, answered, and then recorded in four phases. It cost two sentences per phase and
+      left nothing for the review to discover, which is the opposite of how a departure noticed at
+      implementation reads.
+    proposal: >-
+      Where an issue fixes an interface and the intake finds the interface wrong, raise it at intake
+      and write the departure into the scope section as a departure. The third standing rule puts a
+      finding about the plan in writing rather than absorbed, and an issue's proposed command line
+      is part of the plan.
+    target: .xeno/intents
