@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 04-verification
+created: "2026-10-03T14:23:34Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: context-rule
+      observation: 'The criterion was checked five times by the trail rather than once by a test: every learning record of this intent was written by the command, and every phase''s verdict carries G-Learning pass with a header matching its gate.yaml. The test asserts it once on a fixture; the trail asserts it on the real thing five times, and neither could be written to pass.'
+      proposal: Where a change alters how an artifact of this process is produced, count the intent's own phases as the sample and say so in the results. Five real phases is a better fixture than one synthetic one, and it is produced as a side effect of doing the work rather than as extra effort.
+      target: .xeno/intents

@@ -458,6 +458,27 @@ type Intent struct {
 	PluginVersion string `yaml:"plugin_version"`
 }
 
+// Learning is learning.yaml, at phase level and at intent level both. Section 10 fixes the
+// shape: the common header, then either entries or the statement that there were none.
+//
+// NoFinding and Learnings are both omitempty and exactly one of them is written. A record
+// carrying neither is what G-Learning calls empty, and one carrying both would claim there
+// was nothing to say beside something said.
+type Learning struct {
+	Common    `yaml:",inline"`
+	NoFinding bool            `yaml:"no_finding,omitempty"`
+	Learnings []LearningEntry `yaml:"learnings,omitempty"`
+}
+
+// LearningEntry is one entry, with the four keys section 10 defines and no fifth. The
+// order is the order LearningKeys lists them in, which is the order the section reads.
+type LearningEntry struct {
+	Category    string `yaml:"category"`
+	Observation string `yaml:"observation"`
+	Proposal    string `yaml:"proposal"`
+	Target      string `yaml:"target"`
+}
+
 // Project is the part of project.yaml the core reads. Appendix A has the whole file;
 // what is here is what the runner acts on today.
 type Language struct {

@@ -32,6 +32,8 @@ const usage = `usage:
   xeno gate approve   FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno gate override  FINDING --intent KEY --phase NN --by WHO --reason TEXT
   xeno obligation close FINDING --intent KEY --phase NN
+  xeno learning record --intent KEY [--phase NN] --category C --observation T --proposal T --target P
+  xeno learning record --intent KEY [--phase NN] --no-finding
   xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO
@@ -73,6 +75,9 @@ type opts struct {
 	pluginFrom, host, branch       string
 	base, head, reason             string
 	issue, toolVersion             string
+	category, observation          string
+	proposal, target               string
+	noFinding                      bool
 	text, origin, confidence       string
 	resolves                       string
 	vendor, noNext, export, isJSON bool
@@ -96,17 +101,21 @@ var commands = map[string]command{
 	"intent start":         {run: cmdIntentStart},
 	"intent status":        {run: cmdIntentStatus},
 	"intent close":         {needsKey: true, run: cmdIntentClose},
-	"assumption confirm":   {needsKey: true, run: cmdAssumptionDecide},
-	"assumption reject":    {needsKey: true, run: cmdAssumptionDecide},
-	"section set":          {needsKey: true, needsPhase: true, run: cmdSectionSet},
-	"phase start":          {needsKey: true, needsPhase: true, run: cmdPhaseStart},
-	"phase finish":         {needsKey: true, needsPhase: true, run: cmdPhaseFinish},
-	"gate run":             {needsKey: true, needsPhase: true, run: cmdGateRun},
-	"gate approve":         {needsKey: true, needsPhase: true, run: cmdGateApprove},
-	"gate override":        {needsKey: true, needsPhase: true, run: cmdGateOverride},
-	"assumption record":    {needsKey: true, needsPhase: true, run: cmdAssumptionRecord},
-	"obligation close":     {needsKey: true, needsPhase: true, run: cmdObligationClose},
-	"evidence attach":      {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
+	// The phase is optional alone among the commands that take one: section 10 owes a
+	// record at the end of every phase and once more when an intent closes, and the
+	// intent level record is the one G-Complete reads from `intent close`.
+	"learning record":    {needsKey: true, run: cmdLearningRecord},
+	"assumption confirm": {needsKey: true, run: cmdAssumptionDecide},
+	"assumption reject":  {needsKey: true, run: cmdAssumptionDecide},
+	"section set":        {needsKey: true, needsPhase: true, run: cmdSectionSet},
+	"phase start":        {needsKey: true, needsPhase: true, run: cmdPhaseStart},
+	"phase finish":       {needsKey: true, needsPhase: true, run: cmdPhaseFinish},
+	"gate run":           {needsKey: true, needsPhase: true, run: cmdGateRun},
+	"gate approve":       {needsKey: true, needsPhase: true, run: cmdGateApprove},
+	"gate override":      {needsKey: true, needsPhase: true, run: cmdGateOverride},
+	"assumption record":  {needsKey: true, needsPhase: true, run: cmdAssumptionRecord},
+	"obligation close":   {needsKey: true, needsPhase: true, run: cmdObligationClose},
+	"evidence attach":    {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
 }
 
 func run(args []string, out, errw io.Writer) int {
@@ -191,6 +200,13 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.origin, "origin", "", "where the assumption came from")
 	fs.StringVar(&o.confidence, "confidence", "", "how much weight it carries")
 	fs.StringVar(&o.resolves, "resolves", "", "the open question this assumption answers")
+	// Section 10's four keys, and the statement that there were none. A record carrying
+	// neither is what G-Learning calls empty, so one of the two has to be said.
+	fs.StringVar(&o.category, "category", "", "which kind of learning, from section 10's four")
+	fs.StringVar(&o.observation, "observation", "", "what was observed")
+	fs.StringVar(&o.proposal, "proposal", "", "what should change because of it")
+	fs.StringVar(&o.target, "target", "", "what the proposal applies to")
+	fs.BoolVar(&o.noFinding, "no-finding", false, "there was nothing to record, said rather than left out")
 	// The suggestion is off by default nowhere and on by default nowhere either: the
 	// commands that change state say it, the ones a pipeline or a hook runs do not, and
 	// this turns it off for the scripts that are neither.
@@ -371,6 +387,35 @@ func cmdAssumptionRecord(o *opts) int {
 		return 1
 	}
 	fmt.Fprintf(o.out, "%s recorded, open, from %s with %s confidence\n", a.ID, a.Origin, a.Confidence)
+	return o.next(0)
+}
+
+func cmdLearningRecord(o *opts) int {
+	phase := ""
+	if o.phaseArg != "" {
+		var err error
+		if phase, err = model.ResolvePhase(o.phaseArg); err != nil {
+			fmt.Fprintln(o.errw, err)
+			return 2
+		}
+	}
+	rec, err := o.r.RecordLearning(o.key, phase, o.noFinding, model.LearningEntry{
+		Category: o.category, Observation: o.observation,
+		Proposal: o.proposal, Target: o.target,
+	})
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	where := o.key
+	if phase != "" {
+		where += " " + phase
+	}
+	if rec.NoFinding {
+		fmt.Fprintf(o.out, "%s records no finding\n", where)
+	} else {
+		fmt.Fprintf(o.out, "%s records %d learning(s), the last of category %s\n",
+			where, len(rec.Learnings), rec.Learnings[len(rec.Learnings)-1].Category)
+	}
 	return o.next(0)
 }
 

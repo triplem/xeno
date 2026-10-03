@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 01-requirements
+created: "2026-10-03T14:20:17Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: context-rule
+      observation: 'The criterion that mattered is the one that cannot be written as a literal: the header has to agree with the gate.yaml the same binary wrote beside it, and pinning an expected version string would pass on a build that stamped neither file. The same shape as XENO-0229''s version criterion, found the same way.'
+      proposal: Where a criterion is that two artifacts agree about their producer, assert the agreement and never the value. This is the second intent to need that and the second to arrive at it by asking what a literal would still pass; it is worth being the first thing tried rather than the second.
+      target: .xeno/intents
