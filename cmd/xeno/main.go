@@ -682,6 +682,9 @@ func (o *opts) report(g *model.Gate, err error) int {
 // The last list is the point: a first contact that leaves the project believing the gate
 // is binding when it is not is worse than no first contact.
 func printInit(out io.Writer, res *runner.InitResult) {
+	if res.PluginFrom != "" {
+		fmt.Fprintln(out, "  plugin from", res.PluginFrom)
+	}
 	for _, p := range res.Created {
 		fmt.Fprintln(out, "  created  ", p)
 	}

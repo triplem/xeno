@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 00-intake
+created: "2026-10-03T18:22:00Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The gate shipped one change before the vendoring that makes it satisfiable, and the intake found it by asking how the plugin arrives in a project rather than how it is compared. The verification phase of the previous intent had already written that question down as its largest gap, so the finding was waiting in the trail rather than in the code.
+      proposal: Read the previous intent's gaps section before the intake of the next one. The largest finding here was recorded a day earlier by the phase whose job is to say what was not done, and starting from it cost nothing where rediscovering it cost a shipped gate that nobody could satisfy.
+      target: .xeno/intents

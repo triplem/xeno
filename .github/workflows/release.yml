@@ -112,16 +112,41 @@ jobs:
           set -eu
           mkdir -p dist
 
-          # The anchor G-Supply compares against. Section 13: "Plugin and runner are
-          # released together under one version, so the runner carries the digest of its
-          # own plugin compiled in... Nothing in the repository states what the expected
-          # value is, which is the point: an expected hash stored beside the thing it
-          # describes proves only that both were written by the same hand."
+          # Three steps in this order, and the order is the whole of it: stamp the
+          # version into the plugin, embed that tree, then take the digest. The digest
+          # has to be over the bytes an adopter receives, or G-Supply fails for every
+          # adopter on every phase (#199).
+          #
+          # 1. Section 13 asks for one shared version number across runner and plugin.
+          # A release cannot commit one back to main — #121 removed the plugin that
+          # would, because a push made with GITHUB_TOKEN reports no required check — so
+          # it stamps the number into the copy it ships. The repository's own manifest
+          # says 0.0.0-dev and never drifts, which is the same answer runner_version
+          # gives for the same reason.
+          python3 - "$VERSION" <<'PY'
+          import json, sys
+          p = ".xeno/plugin/.claude-plugin/plugin.json"
+          d = json.load(open(p))
+          d["version"] = sys.argv[1]
+          open(p, "w").write(json.dumps(d, indent=2) + "\n")
+          print("plugin manifest stamped:", d["version"])
+          PY
+
+          # 2. The tree the binaries carry, so that `xeno init --vendor` works in a
+          # project that has none. Vendoring from anywhere else would produce a tree
+          # whose digest is not the one the runner expects.
+          mkdir -p internal/plugin/embedded/plugin
+          cp -R .xeno/plugin/. internal/plugin/embedded/plugin/
+
+          # 3. The anchor. Section 13: "Plugin and runner are released together under
+          # one version, so the runner carries the digest of its own plugin compiled
+          # in... Nothing in the repository states what the expected value is, which is
+          # the point: an expected hash stored beside the thing it describes proves only
+          # that both were written by the same hand."
           #
           # Computed by the same code that compares it, so the release and the check
-          # cannot disagree about the definition — which is the one way this
-          # arrangement fails silently: a digest the checker computes differently is a
-          # red verdict on every phase of every project that installs the release.
+          # cannot disagree about the definition — which is the one way this arrangement
+          # fails silently.
           DIGEST=$(go run scripts/plugin-digest.go)
           echo "plugin digest: $DIGEST"
 

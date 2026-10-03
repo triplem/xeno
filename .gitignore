@@ -2,3 +2,9 @@
 .xeno/local/
 /xeno
 /dist/
+
+# The plugin tree the release copies in before it builds, so that a released binary can
+# vendor what its digest was taken over. Generated, never committed: the directory above it
+# is tracked because go:embed needs it to exist at compile time, and this is the part a
+# release writes (#199).
+internal/plugin/embedded/plugin/

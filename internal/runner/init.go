@@ -3,12 +3,14 @@
 package runner
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/scaffold"
 )
 
@@ -32,6 +34,10 @@ type InitResult struct {
 	Kept     []string // paths left alone because they already existed
 	Manual   []string // settings a person has to make on the host
 	Outstand []string // what could not be determined
+	// PluginFrom is where the vendored plugin came from, printed because the answer decides
+	// whether G-Supply can pass: a release carries the bytes its digest was taken over, and
+	// a directory is whatever happens to be in it.
+	PluginFrom string
 }
 
 // Init prepares a repository for Xeno. It is every user's first contact with the tool.
@@ -117,6 +123,12 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 // create writes a file that is not there and records either way. It never edits one it
 // did not create, which is the property that makes a second run safe.
 func (r *Runner) create(res *InitResult, rel, content string) error {
+	return r.createMode(res, rel, content, 0o644)
+}
+
+// createMode is create with the file mode named, for the one thing init writes that has to be
+// executable: the plugin's entry point, whose mode cannot travel through an embed.FS.
+func (r *Runner) createMode(res *InitResult, rel, content string, mode fs.FileMode) error {
 	if fm.Exists(r.abs(rel)) {
 		res.Kept = append(res.Kept, rel)
 		return nil
@@ -124,7 +136,7 @@ func (r *Runner) create(res *InitResult, rel, content string) error {
 	if err := os.MkdirAll(filepath.Dir(r.abs(rel)), 0o755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(r.abs(rel), []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(r.abs(rel), []byte(content), mode); err != nil {
 		return err
 	}
 	res.Created = append(res.Created, rel)
@@ -173,97 +185,67 @@ func (r *Runner) appendGitignore(res *InitResult) error {
 // from and what it is judged by. Pinned means it is in the repository and moves only when
 // somebody commits it.
 //
-// Two trees, not one. The templates were vendored from the start; the rules were not, because
-// until WP4 there were none, and a shipped set that does not arrive is not shipped. They are
-// copied the same way and through the same create, so a second run still changes nothing.
+// One walk over whatever the plugin is, rather than a list of the parts of it. It was three
+// functions with a named tree each, a list of single files and a depth assumption apiece, and
+// it had been wrong twice over: `secrets.yaml` was in the comment naming section 13's list and
+// in none of the calls, and `bin/`, added with the entry point, was in neither. An adopter
+// therefore received a tree whose digest could not be the one a released runner expects, so
+// G-Supply would have failed for every adopter on every phase — which is the gate this walk
+// had to exist for before that gate could ship (#199).
+//
+// A walk cannot go stale the next time the plugin gains a directory, which a list does, twice.
 func (r *Runner) vendorPlugin(res *InitResult) error {
-	if err := r.vendorTree(res, "templates"); err != nil {
+	src, from, err := r.pluginSource()
+	if err != nil {
 		return err
 	}
-	// Section 13's list for --vendor is plugin.json, skills/, mcp.json, templates/,
-	// rules/given/builtin/ and secrets.yaml. The skills are a tree of the same shape as the
-	// templates; the manifest and the hook wiring are single files; mcp.json is not here yet and
-	// is not invented, because a client reading a declaration of a server that does not exist
-	// fails at startup rather than ignoring it.
-	if err := r.vendorTree(res, "skills"); err != nil {
-		return err
-	}
-	for _, rel := range []string{".claude-plugin/plugin.json", "hooks/hooks.json"} {
-		if err := r.vendorFile(res, rel); err != nil {
+	res.PluginFrom = from
+	return fs.WalkDir(src, ".", func(rel string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
 			return err
 		}
-	}
-	// The rule tree is one level deeper and absent in a plugin that carries no rules, which is
-	// why it is not an error here: section 9's layout is given/builtin, so the walk is over
-	// whatever directories the plugin has under rules.
-	return r.vendorRules(res)
+		b, rerr := fs.ReadFile(src, rel)
+		if rerr != nil {
+			return rerr
+		}
+		return r.createMode(res, plugin.Dir+"/"+rel, string(b), vendoredMode(rel))
+	})
 }
 
-// vendorFile copies one file of the plugin, where the tree is a path rather than a directory of
-// directories. An absent file is a plugin released before that file existed, which is every
-// release before the one that adds it.
-func (r *Runner) vendorFile(res *InitResult, rel string) error {
-	b, err := os.ReadFile(filepath.Join(r.PluginSource, filepath.FromSlash(rel)))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
+// pluginSource is the plugin this binary will vendor, and where it came from.
+//
+// The embedded copy wins where there is one. A release carries the bytes its digest was taken
+// over, and vendoring from anywhere else would produce a tree G-Supply fails — so a released
+// runner must not be talked into copying a directory that happens to be lying about.
+//
+// A build that carries none falls back to the directory, which is what `--plugin-from` names
+// and what this repository develops against. Where that is not a plugin either, the refusal
+// says which build this is rather than which file was missing.
+func (r *Runner) pluginSource() (fs.FS, string, error) {
+	if shipped, ok := plugin.Shipped(); ok {
+		return shipped, "this release", nil
 	}
-	return r.create(res, ".xeno/plugin/"+rel, string(b))
+	src := os.DirFS(r.PluginSource)
+	if _, err := fs.Stat(src, manifestRel); err != nil {
+		return nil, "", refuse("this build carries no plugin, and %s is not one either: %v.\n"+
+			"A release carries the plugin it was built with; a development build needs "+
+			"--plugin-from pointing at one.", r.PluginSource, err)
+	}
+	return src, r.PluginSource, nil
 }
 
-// vendorTree copies one directory of the plugin, one level of subdirectories deep.
-func (r *Runner) vendorTree(res *InitResult, tree string) error {
-	src := filepath.Join(r.PluginSource, tree)
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return refuse("no plugin to vendor at %s: %v", src, err)
-	}
-	for _, id := range entries {
-		files, err := os.ReadDir(filepath.Join(src, id.Name()))
-		if err != nil {
-			return err
-		}
-		for _, f := range files {
-			b, err := os.ReadFile(filepath.Join(src, id.Name(), f.Name()))
-			if err != nil {
-				return err
-			}
-			rel := filepath.ToSlash(filepath.Join(".xeno/plugin", tree, id.Name(), f.Name()))
-			if err := r.create(res, rel, string(b)); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+// manifestRel is the file that makes a directory a plugin rather than a directory. A client
+// loads a plugin by reading it, which is what A77 established against the installed client.
+const manifestRel = ".claude-plugin/plugin.json"
 
-// vendorRules copies the shipped rule set, which lives at rules/given/builtin so that it is
-// covered by the plugin hash and is not a level a project maintains.
-func (r *Runner) vendorRules(res *InitResult) error {
-	const rel = "rules/given/builtin"
-	src := filepath.Join(r.PluginSource, filepath.FromSlash(rel))
-	files, err := os.ReadDir(src)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil // a plugin with no shipped rules, which is every release before WP4
-		}
-		return err
+// vendoredMode is 0755 under bin/ and 0644 elsewhere. The executable bit cannot travel: an
+// embed.FS reports every file as read-only regardless of what was committed, so a script the
+// plugin's hook invokes has to be made executable on the way out rather than copied as found.
+func vendoredMode(rel string) fs.FileMode {
+	if strings.HasPrefix(rel, "bin/") {
+		return 0o755
 	}
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		b, err := os.ReadFile(filepath.Join(src, f.Name()))
-		if err != nil {
-			return err
-		}
-		if err := r.create(res, ".xeno/plugin/"+rel+"/"+f.Name(), string(b)); err != nil {
-			return err
-		}
-	}
-	return nil
+	return 0o644
 }
 
 // projectYAML renders the initial configuration from the scaffold, so that a repository

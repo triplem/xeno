@@ -6,11 +6,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/scaffold"
 )
@@ -508,5 +510,108 @@ func TestVendorPutsThePluginsOwnArtifactsInTheRepository(t *testing.T) {
 	}
 	if after := snapshot(t, r.Root); after != before {
 		t.Error("a second init changed the vendored plugin")
+	}
+}
+
+// ---- the vendored tree is the plugin, not a list of its parts (#199)
+
+// TestTheVendoredTreeHasTheDigestTheSourceHas is the property G-Supply needs and the one that
+// was impossible before this walk: a released runner carries the digest of the plugin it
+// shipped, and `init --vendor` has to produce exactly those bytes at exactly those paths or
+// the gate fails for every adopter on every phase.
+//
+// It compares digests rather than listing files, because the digest is what the gate compares
+// and a list would pass while a byte differed.
+func TestTheVendoredTreeHasTheDigestTheSourceHas(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{TrackerKey: "o/r", Vendor: true, Host: "github"}); err != nil {
+		t.Fatal(err)
+	}
+	want := plugin.Hash(filepath.Join("..", ".."))
+	if want == "" {
+		t.Fatal("no digest for this repository's own plugin")
+	}
+	if got := plugin.Hash(r.Root); got != want {
+		t.Errorf("the vendored tree hashes %s and the source %s: an adopter's G-Supply "+
+			"would fail on every phase", got, want)
+	}
+}
+
+// Every file, at any depth, with nothing named. The walk replaced three functions that each
+// knew a tree and a depth, and twice something was added to the plugin that none of them
+// copied — `secrets.yaml`, which the code's own comment listed, and `bin/`, added with the
+// entry point. A list of parts goes stale; this asserts the whole.
+func TestVendorCopiesEveryFileOfThePlugin(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{TrackerKey: "o/r", Vendor: true, Host: "github"}); err != nil {
+		t.Fatal(err)
+	}
+	var want, got []string
+	collect := func(root string, into *[]string) {
+		base := filepath.Join(root, plugin.Dir)
+		if err := filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return err
+			}
+			rel, rerr := filepath.Rel(base, p)
+			*into = append(*into, filepath.ToSlash(rel))
+			return rerr
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	collect(filepath.Join("..", ".."), &want)
+	collect(r.Root, &got)
+	sort.Strings(want)
+	sort.Strings(got)
+	if strings.Join(want, "\n") != strings.Join(got, "\n") {
+		t.Errorf("vendored set differs from the plugin:\n  want %v\n  got  %v", want, got)
+	}
+}
+
+// The entry point the plugin's hook invokes has to be executable, and the mode cannot travel:
+// an embed.FS reports every file read-only whatever was committed, so init sets it.
+func TestTheVendoredEntryPointIsExecutable(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{TrackerKey: "o/r", Vendor: true, Host: "github"}); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(filepath.Join(r.Root, plugin.Dir, "bin", "xeno-env.sh"))
+	if err != nil {
+		t.Fatalf("the entry point was not vendored: %v", err)
+	}
+	if info.Mode()&0o111 == 0 {
+		t.Errorf("mode %v, want executable: the hook runs this file", info.Mode())
+	}
+}
+
+// A build that carries no plugin and is pointed at no plugin refuses, naming which build it
+// is rather than which file was missing. That is a development build with a wrong
+// --plugin-from, and the message has to say that the release would have carried one.
+func TestWithoutAPluginToVendorInitRefuses(t *testing.T) {
+	r := initFixture(t)
+	r.PluginSource = filepath.Join(t.TempDir(), "not-a-plugin")
+	_, err := r.Init(InitOptions{TrackerKey: "o/r", Vendor: true, Host: "github"})
+	var ref *Refusal
+	if !errors.As(err, &ref) {
+		t.Fatalf("got %v, want a refusal", err)
+	}
+	for _, want := range []string{"carries no plugin", "--plugin-from"} {
+		if !strings.Contains(ref.Reason, want) {
+			t.Errorf("the refusal does not say %q: %q", want, ref.Reason)
+		}
+	}
+}
+
+// Where it vendored from is reported, because the answer decides whether G-Supply can pass:
+// a release carries the bytes its digest was taken over and a directory is whatever is in it.
+func TestInitSaysWhereThePluginCameFrom(t *testing.T) {
+	r := initFixture(t)
+	res, err := r.Init(InitOptions{TrackerKey: "o/r", Vendor: true, Host: "github"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.PluginFrom == "" {
+		t.Error("init does not say where the plugin came from")
 	}
 }
