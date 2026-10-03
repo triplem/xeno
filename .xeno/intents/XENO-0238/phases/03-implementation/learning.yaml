@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#210
+phase: 03-implementation
+created: "2026-10-03T19:41:43Z"
+schema_version: "1.0"
+runner_version: dev+d19a1ca.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The same width sentence produced near-perfect compliance in Markdown prose, 62 lines over by one or two columns, and none at all in Go, 1772 lines over in 58 of 64 files, because prose is wrapped by whoever writes it and gofmt does not wrap
+      proposal: 'State a convention only where something applies it: a width for prose is held by the writer and works, a width for code needs a formatter that enforces it or it is fiction'
+      target: rules/learned/org
