@@ -13,6 +13,7 @@ enforces is the one question the repository cannot answer about itself.
     go test ./...
 
     xeno init            [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
+    xeno intent start    --for ISSUE [--intent KEY]
     xeno phase start     --intent KEY --phase NN [--evidence-from DIR] [--export]
     xeno phase finish    --intent KEY --phase NN [--summary PATH|-]   writes digest.md
     xeno gate run        --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
@@ -31,6 +32,12 @@ enforces is the one question the repository cannot answer about itself.
     xeno check commit-message [--pattern NAME] [--file PATH]
     xeno cost turn
     xeno version
+
+`xeno intent start` takes the one thing it cannot derive, which is the issue the intent
+belongs to: a key, `176`, or as much of the qualified id as the configuration does not
+already hold, up to the whole `github.com/triplem/xeno#176`. The key continues the
+sequence the intents directory holds, and `--intent` names it instead where there is no
+sequence to continue or the key is not the next one.
 
 `xeno intent status` without an intent lists the last ten by creation, `--all` every one
 of them. `xeno cost turn` reads a hook's JSON on stdin and attributes the turn to the
@@ -69,7 +76,7 @@ Coverage against the implementation plan, by acceptance criterion:
 | WP10 | a wrapper that passes both ends of the range, not available told apart from unmet, and a waived requirement that stops being a daily complaint | `enforcement_test`, `TestTheWrapperPassesBothEnds…` |
 | WP5 | question resolution by decision or confirmed assumption | `TestQuestionResolved…` |
 | WP6 | pending declarations, pulled attachment, provisional verdicts, tampered attachments rejected, a scan report from the pipeline attaching with its database age | `TestPendingEvidence…`, `TestNextStartAttaches…`, `TestTampered…`, `TestAScanReportFromThePipeline…`, `TestTheScanWorkflowsWrite…` |
-| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern, the next step of the working sequence read off the state and deciding nothing, the digest written from the agent's summary and filtered before it is hashed | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test`, `TestTheSuggestion…`, `TestAnOverrideIsOwed…`, `TestFinishWritesTheDigestFromTheSummary`, `TestTheDigestIsFilteredAndSaysWhichFilter`, `secrets/secrets_test` |
+| WP7 | sequence enforcement, run marker, G-Questions from P5, gate run attaching for P5, the three commands that write a decision, a stale verdict refused, an abandoned intent closed and judged, the shipped commit-message pattern, the next step of the working sequence read off the state and deciding nothing, the digest written from the agent's summary and filtered before it is hashed, the intent created by a command rather than by hand | `TestOutOfOrder…`, `TestSecondStart…`, `TestGateRunAttaches…`, `TestApprovalTurnsRed…`, `TestOverrideCarries…`, `TestDecidingOnAStaleVerdict…`, `TestClosingAnAbandonedIntent…`, `gates/patterns_test`, `TestTheSuggestion…`, `TestAnOverrideIsOwed…`, `TestFinishWritesTheDigestFromTheSummary`, `TestTheDigestIsFilteredAndSaysWhichFilter`, `secrets/secrets_test`, `TestStartingAnIntentDerivesEverythingButTheIssue`, `model/identity_test` |
 | WP8 | the information base resolved from the context profile with a hash each, a repository without a profile recording none rather than an empty one, and the context hash of the lock written beside a section | `TestNoProfileRecordsNoInformationBase`, `TestSectionSetWritesTheContextHashOfTheLockBesideIt` |
 | WP11 | the intent and the phase exported into the environment a harness reads for request headers, and nothing else printed on that path | `TestExportPrintsTheEnvironmentAndNothingElse` |
 | WP12 | the branch rules port with no default host, an adapter chosen by configuration, and the GitHub and GitLab adapters behind it, where forbidden and absent are answers rather than errors and no requirement name is invented | `host_test`, `host/github`, `host/gitlab` |

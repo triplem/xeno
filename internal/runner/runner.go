@@ -700,7 +700,7 @@ func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
 // used would be exactly such a plausible value.
 func (r *Runner) agent() (tool, mdl string) {
 	var p model.Project
-	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err != nil {
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
 		return "", ""
 	}
 	return p.Agent.Tool, p.Agent.Model.Default
@@ -710,7 +710,7 @@ func (r *Runner) agent() (tool, mdl string) {
 // otherwise; the process layer is English regardless.
 func (r *Runner) language() string {
 	var p model.Project
-	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err == nil && p.Language.Artifacts != "" {
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err == nil && p.Language.Artifacts != "" {
 		return p.Language.Artifacts
 	}
 	return "en"
@@ -858,7 +858,7 @@ func frontmatter(front map[string]any) string {
 // deserves the sentence rather than silence. Nothing here fails: an absent index is ordinary.
 func (r *Runner) symbolIndex(now time.Time) (*index.Index, string) {
 	var p model.Project
-	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err != nil {
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
 		return nil, "project.yaml cannot be read, so no index is configured"
 	}
 	path := p.Index.Path
@@ -874,7 +874,7 @@ func (r *Runner) symbolIndex(now time.Time) (*index.Index, string) {
 
 func (r *Runner) evidenceSource() string {
 	var p model.Project
-	if err := fm.ReadYAML(r.abs(".xeno/config/project.yaml"), &p); err == nil && p.Evidence.Source != "" {
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err == nil && p.Evidence.Source != "" {
 		return p.Evidence.Source
 	}
 	return "ci"
@@ -893,6 +893,11 @@ func Decided(status string) bool { return status != "red" && status != "provisio
 
 // IntentsRoot is where intent directories lie, relative to the repository root.
 const IntentsRoot = ".xeno/intents"
+
+// projectConfig is the file section 12 configures the project in. Named here because the
+// readers of it in this file each want it twice, once to read and once to say which file
+// an error is about.
+const projectConfig = ".xeno/config/project.yaml"
 
 // IntentSummary is one row of the listing: what an intent asserts about itself, plus how far
 // it got. Nothing here is stored; it is read from intent.yaml and the phase verdicts.
@@ -1148,6 +1153,68 @@ func (r *Runner) rewriteStatus(key, phase string, g *model.Gate) (*model.Gate, e
 	}
 	g.Status = status
 	return g, fm.WriteYAML(r.abs(model.PhaseDir(key, phase)+"/gate.yaml"), g)
+}
+
+// IntentStart creates an intent, which until now was the one artifact of this process
+// that no command wrote. Three of its seven fields were guessed where the runner knows
+// them: a typed timestamp, and two version strings copied from memory, so that every
+// intent.yaml here records a version the artifacts beside it do not (#177, #179).
+//
+// It takes the one thing the runner cannot know, which is the issue. Everything else is
+// derived: the key continues the sequence the intents directory holds, the host and the
+// repository come from the tracker block, `created` is the runner's clock, the version
+// fields are the runner's own, and `status` is the only value a person ever typed that
+// the runner would have defaulted to anyway — `intent close` writes the other one and
+// there is no third (A20).
+//
+// It refuses where the directory exists, as `phase start` refuses a running phase. A
+// hand written intent.yaml is not touched by this and goes on working: seventy-nine of
+// them exist, they sit inside `artifacts_hash`, and rewriting one changes every verdict
+// that sealed it.
+func (r *Runner) IntentStart(key, issue string) (*model.Intent, error) {
+	var p model.Project
+	// Read before the key is derived, so that a repository with no configuration is told
+	// about the field it is missing rather than about the sequence it has.
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil && !os.IsNotExist(err) {
+		return nil, refuse("%s cannot be read: %v", projectConfig, err)
+	}
+	id, err := p.Tracker.Qualified(issue)
+	if err != nil {
+		return nil, refuse("%v", err)
+	}
+	if key == "" {
+		if key, err = r.nextKey(); err != nil {
+			return nil, refuse("%v", err)
+		}
+	}
+	rel := model.IntentDir(key)
+	if fm.Exists(r.abs(rel)) {
+		return nil, refuse("%s exists already; an intent is created once, and what it is "+
+			"for is in %s", rel, rel+"/intent.yaml")
+	}
+	in := &model.Intent{
+		Intent: id, Key: key, Status: "in-progress", Created: r.stamp(),
+		SchemaVersion: model.SchemaVersion,
+		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+	}
+	return in, fm.WriteYAML(r.abs(rel+"/intent.yaml"), in)
+}
+
+// nextKey reads the sequence off the directory. A missing intents directory is the same
+// case as an empty one: there is no sequence, so the first key is named rather than
+// derived, which is what model.NextKey says.
+func (r *Runner) nextKey() (string, error) {
+	entries, err := os.ReadDir(r.abs(IntentsRoot))
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	var names []string
+	for _, e := range entries {
+		if e.IsDir() {
+			names = append(names, e.Name())
+		}
+	}
+	return model.NextKey(names)
 }
 
 // IntentClose ends an intent that was dropped rather than merged.

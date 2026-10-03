@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T12:20:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      The issue fixed the command's signature with the key required, and the intake's first act was
+      to ask where each field would come from, which showed that the key comes from the directory.
+      The scope section had to record a deliberate departure from the issue it implements, which no
+      previous intake in this project has had to do.
+    proposal: >-
+      Read an issue's proposed command line as a statement of the problem rather than of the
+      interface, and ask of every argument whether the runner could derive it. The question is the
+      same one the issue asks about the fields of the file, and asking it about the arguments as
+      well is free at intake and expensive after the surface ships.
+    target: .xeno/intents

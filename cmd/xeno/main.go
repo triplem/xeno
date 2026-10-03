@@ -25,6 +25,7 @@ import (
 
 const usage = `usage:
   xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
+  xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md
   xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
@@ -69,6 +70,7 @@ type opts struct {
 	project, mdl, language         string
 	pluginFrom, host, branch       string
 	base, head, reason             string
+	issue                          string
 	text, origin, confidence       string
 	resolves                       string
 	vendor, noNext, export, isJSON bool
@@ -89,6 +91,7 @@ var commands = map[string]command{
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
 	"cost turn":            {run: cmdCostTurn},
+	"intent start":         {run: cmdIntentStart},
 	"intent status":        {run: cmdIntentStatus},
 	"intent close":         {needsKey: true, run: cmdIntentClose},
 	"assumption confirm":   {needsKey: true, run: cmdAssumptionDecide},
@@ -177,6 +180,7 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.base, "base", "", "the base of the commit range under review")
 	fs.StringVar(&o.head, "head", "", "the head of the commit range under review")
 	fs.StringVar(&o.reason, "reason", "", "why")
+	fs.StringVar(&o.issue, "for", "", "the issue an intent belongs to, as a key or as the whole qualified id")
 	fs.StringVar(&o.text, "text", "", "the statement being assumed")
 	fs.StringVar(&o.origin, "origin", "", "where the assumption came from")
 	fs.StringVar(&o.confidence, "confidence", "", "how much weight it carries")
@@ -253,6 +257,21 @@ func cmdSectionSet(o *opts) int {
 		return 1
 	}
 	fmt.Fprintf(o.out, "%s rendered from %s (%s)\n", o.phase, t.Ref(), t.Source)
+	return o.next(0)
+}
+
+// cmdIntentStart takes --intent optionally, alone among the commands that name an intent.
+// Everywhere else the key says which intent is meant and there is nothing to derive it
+// from; here the intent does not exist yet, and the key of a new one is the next number of
+// the sequence the repository already holds. Given, it is used as given, which is what the
+// first intent of a repository needs and what the older naming scheme is kept readable by.
+func cmdIntentStart(o *opts) int {
+	in, err := o.r.IntentStart(o.key, o.issue)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%s created for %s, %s\n", in.Key, in.Intent, in.Status)
+	o.key = in.Key
 	return o.next(0)
 }
 

@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#179"
+created: 2026-10-03T12:50:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: project-convention
+    observation: >-
+      Two phases of this intent went red on `tool_version` missing from `output.md` and `digest.md`,
+      and the fix was the same hand edit both times, because the runner has no source for the field
+      and the digest is rewritten by every `phase finish`. Every intent in this repository has paid
+      this twice per phase.
+    proposal: >-
+      The harness knows its own version and the runner does not, which is A35's reason for leaving
+      the field absent; but a field that is absent and required is a red verdict on every phase ever
+      run here. Either the agent block gains a place for the harness to report its version, which is
+      a specification change, or the gate's required set admits that the runner cannot write it.
+      Worth an issue rather than a hand edit per phase.
+    target: .xeno/plugin/rules
