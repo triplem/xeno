@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T11:52:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: project-convention
+    observation: >-
+      One existing test had to assert the opposite of what it asserted, because a lost file used to
+      reduce the measured total and now keeps the size the lock recorded. The test was correct about
+      the old behaviour, and the only way to tell that from a broken test was to read what it said
+      it was testing rather than what it compared.
+    proposal: >-
+      When a change inverts a test, rename the test to the new claim rather than editing its
+      assertion. A name that still describes the old behaviour makes the next reader think the
+      expectation was wrong, where the behaviour changed on purpose.
+    target: .xeno/intents

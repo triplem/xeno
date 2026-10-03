@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T11:04:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      This is the first intake written against a specification clause that was committed minutes
+      earlier for this intent's benefit, and the reading took almost no time: the paragraph says
+      what the field is for, so the design has nothing to infer. Every other intent in this project
+      has interpreted prose written months before it.
+    proposal: >-
+      When a piece needs a specification change, write the clause to answer the question the code
+      will ask, and then read it as the specification rather than as a note to self. The first
+      standing rule's ordering — document, then code — is also the cheapest way to start a design.
+    target: .xeno/intents

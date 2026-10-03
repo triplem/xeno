@@ -399,11 +399,10 @@ func missing(raw map[string]any, fields ...[]string) []string {
 // recorded — and it names both numbers, since a finding that says only "over budget" is one
 // nobody can act on.
 //
-// The comparison is between two files: the profile declares the budget and the lock records what
-// the phase was given. Bytes come from the tree when the check runs rather than from the lock,
-// which carries paths and hashes and no sizes; a file the lock names and the tree has lost is
-// skipped, because its absence is G-Freshness's finding and one cause reported by two gates is
-// what #160 avoided.
+// The comparison is between two files and nothing else: the profile declares the budget and the
+// lock records both what the phase was given and how large each of those files was. Nothing is
+// measured, so a file that grows or disappears after a verdict cannot move a sealed phase's
+// standing — which is the property section 5's clause on bytes was written for (#176).
 func budget(c Ctx) []model.Finding {
 	var p model.Profile
 	profile := c.phaseRel(model.Phases[0]) + "/" + model.ContextProfile
@@ -426,13 +425,23 @@ func budget(c Ctx) []model.Finding {
 			"narrow the profile's include, or raise the budget in "+profile+" and say why"))
 	}
 	if p.Budget.Bytes > 0 {
+		// The sizes the lock recorded, and nothing measured. Section 5: the budget is judged
+		// against what the phase was given and not against what the tree holds now, so a file
+		// that grows after a verdict cannot move a sealed phase's standing.
+		//
+		// A lock written before the field existed carries no size at all, and that is silence
+		// rather than a context of zero bytes: every lock behind #176 is in that state, and
+		// reading them as empty would turn a loud finding into a quiet pass. The condition is
+		// whether any entry recorded a size, not whether the sum came out zero.
 		var total int
+		recorded := false
 		for _, f := range lock.Files {
-			if info, err := os.Stat(c.abs(f.Path)); err == nil {
-				total += int(info.Size())
+			if f.Bytes > 0 {
+				recorded = true
+				total += int(f.Bytes)
 			}
 		}
-		if total > p.Budget.Bytes {
+		if recorded && total > p.Budget.Bytes {
 			fs = append(fs, finding(rel,
 				fmt.Sprintf("the recorded context is %d bytes and the budget is %d", total, p.Budget.Bytes),
 				"narrow the profile's include, or raise the budget in "+profile+" and say why"))

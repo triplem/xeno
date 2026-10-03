@@ -504,8 +504,15 @@ func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 		if herr != nil {
 			return herr
 		}
+		// The size comes from the entry the walk already has, rather than from a second stat:
+		// two reads of one file can see two versions of it, and the recorded size exists to
+		// describe the same read as the hash.
+		info, ierr := d.Info()
+		if ierr != nil {
+			return ierr
+		}
 		seen[rel] = true
-		buckets[i] = append(buckets[i], model.ContextFile{Path: rel, SHA256: h})
+		buckets[i] = append(buckets[i], model.ContextFile{Path: rel, SHA256: h, Bytes: info.Size()})
 		return nil
 	})
 	if err != nil {
@@ -528,8 +535,12 @@ func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 		if herr != nil {
 			continue // a link naming a document that is not there is G-Schema's finding
 		}
+		info, ierr := os.Stat(r.abs(l.Docs))
+		if ierr != nil {
+			continue // gone between the hash and the stat, which the same finding covers
+		}
 		seen[l.Docs] = true
-		files = append(files, model.ContextFile{Path: l.Docs, SHA256: h})
+		files = append(files, model.ContextFile{Path: l.Docs, SHA256: h, Bytes: info.Size()})
 	}
 	return files, nil
 }

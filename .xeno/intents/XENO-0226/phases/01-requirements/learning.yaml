@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T11:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: project-convention
+    observation: >-
+      The third criterion — a lock with no sizes produces no byte finding — is the only one that
+      protects the trail, and it is the one a careless implementation would get wrong in the
+      direction nobody notices: a quiet pass rather than a loud failure. Every piece in this
+      project that touched sealed artifacts has had exactly one criterion of that shape.
+    proposal: >-
+      When a change alters how an artifact is judged, write the criterion for the artifacts that
+      predate the change before the criterion for the ones that follow it. The new behaviour is
+      what the author is thinking about; the old artifacts are what the trail is made of.
+    target: .xeno/intents

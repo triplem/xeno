@@ -1,0 +1,17 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T11:46:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      Four of the five alternatives here were rejected by rules this project already has: a verdict
+      that differs on recomputation, a quiet pass over a loud finding, a rewrite of what an artifact
+      recorded, and two reads of one file. None of them needed an argument of its own.
+    proposal: >-
+      When the alternatives are all refused by existing rules, say which rule refuses each and keep
+      the section short. A design that re-argues settled rules reads as if they were open, and the
+      shortest way to show a piece is small is to show that nothing in it was undecided.
+    target: .xeno/intents
