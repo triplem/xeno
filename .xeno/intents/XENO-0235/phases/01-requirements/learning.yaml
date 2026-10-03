@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 01-requirements
+created: "2026-10-03T18:22:38Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: 'The criterion about ordering is the only one in this list whose failure is silent and remote: a digest taken before the stamp produces a value no adopter can match, and the release that made the mistake passes while every project that installs it fails. Every other criterion fails where it is written.'
+      proposal: Where a build step produces a value other people are judged against, write a criterion about the order of the steps and say where the failure would land. A wrong order here is caught by nobody who could fix it, which is a different risk from a wrong value.
+      target: .xeno/intents

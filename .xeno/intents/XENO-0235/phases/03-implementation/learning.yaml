@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 03-implementation
+created: "2026-10-03T18:23:59Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: Replacing three walkers with one removed about sixty lines and produced twenty, and the three existing vendor tests passed untouched - which is the evidence that the walk copies everything the list copied. The tests that would have caught the omission are the two new ones that compare the whole tree rather than named parts.
+      proposal: When replacing a list of parts with a walk, keep the old part-by-part tests and add one that compares the whole. The old ones prove nothing was lost and the new one proves nothing can go missing later, and neither does the other's job.
+      target: .xeno/intents

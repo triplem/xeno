@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 04-verification
+created: "2026-10-03T18:24:51Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: Writing the gaps found that the embed directory is tracked and can be left behind by a failed release, so internal/plugin/embedded/plugin/ could be committed by accident - and nothing ignores it. The placeholder's own comment says the directory is not gitignored, and the subdirectory the release writes into is a different question that the comment answered by implication.
+      proposal: Where a build step writes into a tracked directory, say in the same place whether what it writes is ignored. One sentence settled why the parent is tracked and left the child unstated, which is how a generated tree gets committed.
+      target: .xeno/intents

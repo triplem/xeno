@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 05-review
+created: "2026-10-03T18:25:56Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The gate shipped correct and unsatisfiable, which is worse than shipping it unimplemented: not-implemented says a check did not run, while a failing gate blames the adopter for a tree the release could not deliver. One change in the wrong order turned an honest absence into a false accusation.'
+      proposal: Before implementing a gate, check that the thing it judges can be produced by whoever will be judged. A gate is a comparison and a comparison needs both sides; the side that arrives by distribution is the one no test in this repository exercises.
+      target: .xeno/intents

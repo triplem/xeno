@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#199
+phase: 02-design
+created: "2026-10-03T18:23:23Z"
+schema_version: "1.0"
+runner_version: dev+a897f2a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Two of the eight alternatives were not choices at all: a go:embed directive cannot leave its package directory, and it fails to compile when its target is absent. Both were measured in a scratch module before the design was written, and both decided the shape - the release copying the tree in, and the placeholder being committed.'
+      proposal: Where a language or tool constraint shapes a design, record it among the alternatives as unavailable rather than among the decisions as chosen. A reader who finds the copy-in step recorded as a preference will try to simplify it; one who finds it recorded as a constraint will not.
+      target: .xeno/intents

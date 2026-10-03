@@ -60,9 +60,14 @@ own manifest and absent where no plugin is vendored (A83). **G-Supply reports
 `not-implemented` throughout this trail**, and that is the gate working rather than
 missing: its anchor is a digest the release compiles into the binary, a `go build`
 carries none, and section 5's `not-implemented` is the state for a check a runner did
-not perform. A released binary over the same tree reports `pass` (A86). Nothing keeps
-that manifest in step with the next release: it is a literal in a data file, only a
-release knows the number, and a release here cannot write a file.
+not perform. A released binary over the same tree reports `pass` (A86).
+
+The manifest is stamped by the release into the copy it ships, so section 13's one
+shared version number holds for anybody who receives a release, and this repository's
+own literal is `0.0.0-dev` and never drifts (A87). `xeno init --vendor` copies the
+plugin out of the binary, which is what lets a release deliver the tree its digest was
+taken over — it used to copy from a directory, so a released binary had nothing to copy
+and the gate was anchored to something the release could not produce (A88).
 
 The harness reports its own version, which is the one field of section 5 the runner
 cannot know: section 7 forbids it branching on the harness, and a value nobody produced

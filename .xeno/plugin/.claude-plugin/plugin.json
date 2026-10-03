@@ -1,7 +1,7 @@
 {
   "name": "xeno",
   "description": "The six phase process of the Xeno specification: one skill per phase, plus the learning record that each phase and each closing intent owes. Every step is a command of the xeno runner, which writes the artifacts and judges them.",
-  "version": "0.30.0",
+  "version": "0.0.0-dev",
   "author": {
     "name": "Xeno"
   },
