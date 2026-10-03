@@ -14,8 +14,10 @@ order in `docs/implementation-plan.md`. Both are normative.
 
 ## Conventions
 
-Lines wrap at 88 characters, in code and in prose. Go source carries
-`SPDX-License-Identifier: Apache-2.0` and no per file copyright line. One dependency,
+Markdown prose wraps at 88 characters; tables and code blocks do not. Go source has no
+width rule beyond `gofmt`, carries `SPDX-License-Identifier: Apache-2.0`, and no per
+file copyright line. Commit messages and pull request descriptions wrap at 72, because
+GitHub reflows them to that width, which `CONTRIBUTING.md` explains. One dependency,
 `go.yaml.in/yaml/v3`, vendored; adding a second is a decision, not a step.
 
 Where a paragraph is being changed for the second time, replace it rather than edit
