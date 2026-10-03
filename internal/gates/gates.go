@@ -565,8 +565,8 @@ func phaseResult(c Ctx, dir string) (model.Output, []model.Finding) {
 	}
 	fs = append(fs, schemaVersion(out, raw)...)
 	fs = append(fs, hashes(c, out, raw)...)
-	fs = append(fs, questionShape(out, o)...)
-	fs = append(fs, decisionShape(out, o)...)
+	fs = append(fs, QuestionShape(out, o)...)
+	fs = append(fs, DecisionShape(out, o)...)
 	fs = append(fs, evidenceShape(out, o)...)
 	return o, fs
 }
@@ -678,7 +678,11 @@ func directoryFindings(c Ctx, dir string) []model.Finding {
 
 // A question carries two to four options plus the free entry, or states that none
 // were found. It never carries two invented ones to satisfy this check.
-func questionShape(file string, o model.Output) []model.Finding {
+//
+// Exported because the command that writes a question refuses on these checks before the
+// write rather than leaving them to be reported afterwards, and a second opinion about the
+// shape of a question would be a second definition of one (#188).
+func QuestionShape(file string, o model.Output) []model.Finding {
 	var fs []model.Finding
 	keys := map[string]bool{}
 	for _, q := range o.OpenQuestions {
@@ -709,7 +713,9 @@ func questionShape(file string, o model.Output) []model.Finding {
 	return fs
 }
 
-func decisionShape(file string, o model.Output) []model.Finding {
+// Exported for the same reason as QuestionShape, and read by the command that writes a
+// decision.
+func DecisionShape(file string, o model.Output) []model.Finding {
 	var fs []model.Finding
 	for _, d := range o.Decisions {
 		if d.ID == "" || d.DecidedBy == "" || d.Rationale == "" || (!d.Withdrawn && d.Chosen == "") {

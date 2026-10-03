@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#188
+phase: 04-verification
+created: "2026-10-03T21:46:02Z"
+schema_version: "1.0"
+runner_version: dev+efc44a9.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: |-
+        Four of the five refusals were run against this repository rather than only against a
+        fixture, and the fifth had already fired for real on a typo in a question. Running them
+        live cost four commands and produced the transcript the results section now carries,
+        which is evidence of a kind no fixture is: it shows the message a person actually sees.
+      proposal: |-
+        Where a change adds refusals, run each one against the repository and paste the
+        transcript into P4's results, beside the tests that assert them. The tests prove the
+        behaviour and the transcript proves the wording, and the wording is what somebody
+        has to act on. It also catches a message that names something which does not exist,
+        which is how the one rough edge in this intent was found.
+      target: .xeno/intents

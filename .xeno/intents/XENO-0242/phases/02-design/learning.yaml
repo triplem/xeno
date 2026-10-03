@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#188
+phase: 02-design
+created: "2026-10-03T21:20:53Z"
+schema_version: "1.0"
+runner_version: dev+efc44a9.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: |-
+        The design phase had to distinguish its own `decisions` section from the `decisions`
+        frontmatter field, and the distinction turned out to be the whole of #188's diagnosis:
+        a design choice an agent makes with a reason is prose, and only a choice a person
+        made is an entry with `decided_by` on it. Nothing in the template says which of the
+        two the section is for.
+      proposal: |-
+        Where a template section and a schema field share a word, say in the section which of
+        the two it is. One sentence at the top of P2's decisions section — that nothing here
+        needed a person, so nothing here is an entry — costs a line and is the difference
+        between a reader believing the field is empty because nothing was decided and knowing
+        it is empty because nothing needed deciding.
+      target: .xeno/plugin/templates

@@ -1005,6 +1005,31 @@ type IntentSummary struct {
 	Phase   string // the furthest phase carrying a verdict, and that verdict
 	Verdict string
 	Problem string // why this row could not be read, where that happened
+	// What the intent asked and what it settled, over every phase. Counted rather than
+	// judged: a phase with nothing to ask is the ordinary case and most are, so these are
+	// a figure and nothing reads them as a condition.
+	Questions int
+	Decisions int
+}
+
+// AskedNothing reports an intent that has reached the review phase without one question and
+// without one decision anywhere in it.
+//
+// It is the figure #188 asks for and it is deliberately not a gate. G-Questions verifies
+// that a question which was raised is resolved; it cannot see one that was never asked,
+// because nothing declares how many there should have been, and a gate that demanded one
+// would be answered with invented questions. What is being reported is not a phase without
+// a question but an intent reaching the merge having asked nothing at all.
+//
+// From the review phase, for the reason G-Questions runs from there: an open question in P1
+// is normal and should not hold up the work, and before a merge it is not normal any more.
+// Not for an abandoned intent, for the reason that gate leaves one alone as well: abandoning
+// means giving up, and reproaching it would only produce the invented question.
+func (s IntentSummary) AskedNothing() bool {
+	if s.Questions > 0 || s.Decisions > 0 || s.State == "abandoned" {
+		return false
+	}
+	return s.State == "complete" || s.State == model.Phases[len(model.Phases)-1]
 }
 
 // Intents lists every intent in the order it was created.
@@ -1034,7 +1059,7 @@ func (r *Runner) Intents() ([]IntentSummary, error) {
 		if !e.IsDir() {
 			continue
 		}
-		out = append(out, r.summarise(e.Name()))
+		out = append(out, r.Summarise(e.Name()))
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Created != out[j].Created {
@@ -1045,9 +1070,12 @@ func (r *Runner) Intents() ([]IntentSummary, error) {
 	return out, nil
 }
 
-// summarise reads one intent. It reports rather than fails: the listing's job is to show what
+// Summarise reads one intent. It reports rather than fails: the listing's job is to show what
 // is there, and an unreadable intent is something to show.
-func (r *Runner) summarise(key string) IntentSummary {
+//
+// Exported because the one-intent form of the status command prints the same figure the
+// listing marks, and a second walk computing it would be a second definition of it.
+func (r *Runner) Summarise(key string) IntentSummary {
 	s := IntentSummary{Key: key}
 	var in model.Intent
 	if err := fm.ReadYAML(r.abs(model.IntentDir(key)+"/intent.yaml"), &in); err != nil {
@@ -1069,6 +1097,8 @@ func (r *Runner) summarise(key string) IntentSummary {
 		}
 		s.State = state(in.Status, states)
 	}
+	raised, taken := r.exchange(key)
+	s.Questions, s.Decisions = len(raised), len(taken)
 	return s
 }
 
@@ -1145,7 +1175,7 @@ func (r *Runner) Completeness(base, head string) (*CompletenessResult, error) {
 	}
 	sort.Strings(res.Touched)
 	for _, key := range res.Touched {
-		s := r.summarise(key)
+		s := r.Summarise(key)
 		if s.State == "complete" || s.State == "abandoned" {
 			continue
 		}

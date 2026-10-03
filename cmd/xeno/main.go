@@ -34,6 +34,9 @@ const usage = `usage:
   xeno obligation close FINDING --intent KEY --phase NN
   xeno learning record --intent KEY [--phase NN] --category C --observation T --proposal T --target P
   xeno learning record --intent KEY [--phase NN] --no-finding
+  xeno question record --intent KEY --phase NN [--file PATH]   reads the entry on stdin
+  xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
+  xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
   xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO
@@ -80,7 +83,8 @@ type opts struct {
 	proposal, target               string
 	noFinding                      bool
 	text, origin, confidence       string
-	resolves                       string
+	resolves, chosen, proposedBy   string
+	withdraw                       bool
 	vendor, noNext, export, isJSON bool
 }
 
@@ -116,6 +120,8 @@ var commands = map[string]command{
 	"gate approve":       {needsKey: true, needsPhase: true, run: cmdGateApprove},
 	"gate override":      {needsKey: true, needsPhase: true, run: cmdGateOverride},
 	"assumption record":  {needsKey: true, needsPhase: true, run: cmdAssumptionRecord},
+	"question record":    {needsKey: true, needsPhase: true, run: cmdQuestionRecord},
+	"decision record":    {needsKey: true, needsPhase: true, run: cmdDecisionRecord},
 	"obligation close":   {needsKey: true, needsPhase: true, run: cmdObligationClose},
 	"evidence attach":    {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
 }
@@ -201,7 +207,15 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.text, "text", "", "the statement being assumed")
 	fs.StringVar(&o.origin, "origin", "", "where the assumption came from")
 	fs.StringVar(&o.confidence, "confidence", "", "how much weight it carries")
-	fs.StringVar(&o.resolves, "resolves", "", "the open question this assumption answers")
+	fs.StringVar(&o.resolves, "resolves", "", "the open question this answers")
+	// Section 8's exchange. --chosen is the option taken in the words of whoever took it,
+	// which for the free entry is their own words and not an aside beside them. --reason
+	// carries the rationale, because why is already this flag's word on gate approve and
+	// intent close and section 8 calls a decision's rationale and a withdrawal's reason the
+	// same thing.
+	fs.StringVar(&o.chosen, "chosen", "", "the option taken, in the words of whoever took it")
+	fs.StringVar(&o.proposedBy, "proposed-by", "", "who put the options, where that was not the person deciding")
+	fs.BoolVar(&o.withdraw, "withdraw", false, "section 8's third exit: the question is dropped, with a reason")
 	// Section 10's four keys, and the statement that there were none. A record carrying
 	// neither is what G-Learning calls empty, so one of the two has to be said.
 	fs.StringVar(&o.category, "category", "", "which kind of learning, from section 10's four")
@@ -287,6 +301,46 @@ func cmdSectionSet(o *opts) int {
 		return 1
 	}
 	fmt.Fprintf(o.out, "%s rendered from %s (%s)\n", o.phase, t.Ref(), t.Source)
+	return o.next(0)
+}
+
+// cmdQuestionRecord writes one open_questions entry. The entry is read whole rather than
+// assembled from flags: two to four options with a consequence each, a recommendation and the
+// free entry are a nested structure however they are spelled, and section set already reads
+// stdin for the same reason.
+func cmdQuestionRecord(o *opts) int {
+	entry, err := readMessage(o.file)
+	if err != nil {
+		fmt.Fprintln(o.errw, err)
+		return 2
+	}
+	q, err := o.r.RecordQuestion(o.key, o.phase, []byte(entry))
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%s %s raises %s\n", o.key, o.phase, q.Key)
+	return o.next(0)
+}
+
+// cmdDecisionRecord writes one decisions entry, which is the half of section 8's exchange
+// that needs a person. Nothing here defaults --by.
+func cmdDecisionRecord(o *opts) int {
+	d, err := o.r.RecordDecision(o.key, o.phase, model.Decision{
+		Resolves: o.resolves, Chosen: o.chosen, Rationale: o.reason,
+		DecidedBy: o.by, ProposedBy: o.proposedBy, Withdrawn: o.withdraw,
+	})
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	line := fmt.Sprintf("%s %s records %s, decided by %s", o.key, o.phase, d.ID, d.DecidedBy)
+	if d.Resolves != "" {
+		verb := "resolving"
+		if d.Withdrawn {
+			verb = "withdrawing"
+		}
+		line += ", " + verb + " " + d.Resolves
+	}
+	fmt.Fprintln(o.out, line)
 	return o.next(0)
 }
 
@@ -561,6 +615,12 @@ func cmdIntentStatus(o *opts) int {
 		}
 		fmt.Fprintln(o.out, line)
 	}
+	// After the table, where the truncation note goes in the other form: it is a figure
+	// about the intent and not a row of it. The sentence names both halves, because a trail
+	// with a decision and no question is a different state from a trail with neither.
+	if s := o.r.Summarise(o.key); s.AskedNothing() {
+		fmt.Fprintln(o.out, "\nno question and no decision in any phase, so G-Questions has nothing to verify")
+	}
 	return o.next(0)
 }
 
@@ -633,6 +693,12 @@ func cmdIntentList(o *opts) int {
 		line := fmt.Sprintf("%-10s  %-12s %-17s %s", date, s.Key, s.State, verdict)
 		if s.Problem != "" {
 			line += "  (" + s.Problem + ")"
+		}
+		// The figure, after the columns where the unreadable-record note already goes. A
+		// mark and not a column: two more columns of numbers on every row would carry a
+		// fact about a handful of intents, and #136 settled the widths.
+		if s.AskedNothing() {
+			line += "  (no question and no decision)"
 		}
 		fmt.Fprintln(o.out, strings.TrimRight(line, " "))
 	}

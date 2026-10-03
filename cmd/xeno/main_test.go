@@ -536,3 +536,73 @@ func TestTheMergeCheckWithoutARangeIsTwo(t *testing.T) {
 		t.Errorf("the reason did not reach standard error: %q", errw)
 	}
 }
+
+// The two commands section 8's exchange needs, driven the way a session drives them: the
+// question read from a file, the decision given as flags, and the person never defaulted.
+func TestTheExchangeIsRecordedFromTheCommandLine(t *testing.T) {
+	root := repo(t)
+	if code, _, errw := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--no-next"); code != 0 {
+		t.Fatalf("starting P0 exits %d: %s", code, errw)
+	}
+	if code, _, errw := invoke(t, "section", "set", "problem", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--file", inputFile(t, "problem.md", "the loop has never run"), "--no-next"); code != 0 {
+		t.Fatalf("writing a section exits %d: %s", code, errw)
+	}
+
+	entry := inputFile(t, "question.yaml", "text: which error behaviour?\noptions:\n  - text: fail fast\n"+
+		"    consequence: the caller retries\n    recommended: true\n  - text: retry internally\n"+
+		"    consequence: the caller never sees it\n  - text: something else\n    free: true\n")
+	code, out, errw := invoke(t, "question", "record", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--file", entry, "--no-next")
+	if code != 0 {
+		t.Fatalf("recording a question exits %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "raises Q-1") {
+		t.Errorf("the command does not say which key it assigned: %q", out)
+	}
+
+	// Without --by it is not a decision, and the refusal says so rather than naming a user.
+	if code, out, errw = invoke(t, "decision", "record", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--chosen", "fail fast", "--reason", "the caller retries", "--no-next"); code != 1 {
+		t.Errorf("a decision without a person exits %d, want 1: %s%s", code, out, errw)
+	}
+
+	code, out, errw = invoke(t, "decision", "record", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--resolves", "Q-1", "--chosen", "fail fast",
+		"--reason", "the caller retries", "--by", "m.example", "--proposed-by", "the agent", "--no-next")
+	if code != 0 {
+		t.Fatalf("recording a decision exits %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "records D-1, decided by m.example, resolving Q-1") {
+		t.Errorf("the command does not say what it recorded: %q", out)
+	}
+
+	var o model.Output
+	if _, err := fm.ReadFront(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "output.md"), &o); err != nil {
+		t.Fatal(err)
+	}
+	if len(o.OpenQuestions) != 1 || len(o.Decisions) != 1 || o.Decisions[0].DecidedBy != "m.example" {
+		t.Fatalf("the artifact does not carry the exchange: %+v %+v", o.OpenQuestions, o.Decisions)
+	}
+	// The section written before them is still there, which is the property amendFront owes:
+	// it replaces one field and leaves the body to the template.
+	b, err := os.ReadFile(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "output.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "the loop has never run") {
+		t.Error("recording the exchange lost the body")
+	}
+}
+
+// inputFile puts content in a file named for what it is, which writeTemp cannot do for
+// anything longer than a sentence: it names the file after the content.
+func inputFile(t *testing.T, name, content string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
