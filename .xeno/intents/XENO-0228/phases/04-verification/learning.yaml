@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T14:00:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion about absence could not be checked from this intent at all, because every phase
+      of it passes the flag. It was measured on a throwaway tree before the trail was written, and
+      the test for it had to assert that the digest's frontmatter key is missing rather than empty —
+      a present-and-empty key would pass a value check and fail A35.
+    proposal: >-
+      Where a change adds a way to supply something, verify the unsupplied case somewhere other than
+      the intent's own trail, and assert absence as a missing key rather than an empty value. An
+      intent that always uses its own feature cannot witness what happens without it.
+    target: .xeno/intents

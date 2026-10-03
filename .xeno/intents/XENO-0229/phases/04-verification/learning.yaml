@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:50:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      Two criteria could only be held by something other than a test: the ordering of the
+      specification commit, which is held by the history, and "the runner reads no other variable",
+      which is an absence of readers and is held by a grep. Writing them into the mapping as what
+      they are was more honest than leaving them unmapped.
+    proposal: >-
+      In the test mapping, name the grep or the commit where a criterion is about an absence or an
+      ordering. A criterion with no test beside it reads as forgotten, and one with a grep beside it
+      reads as what it is — checkable, by a command somebody can run again.
+    target: .xeno/intents

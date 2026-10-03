@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T13:55:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the first intent in this repository whose own six phases were written without a hand
+      edit to an artifact, and the proof is the trail rather than a test: P0 went green on its first
+      `phase finish`. The change being used by the intent that makes it caught nothing a test did
+      not, but it is the only evidence that reads as evidence.
+    proposal: >-
+      Where a change alters how a phase is written, write the intent's own phases with it and say so
+      in the verification phase. The trail is the one fixture nobody can write to pass, and for a
+      change to the process itself it is cheaper than any test of equal weight.
+    target: .xeno/intents
