@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 00-intake
+created: "2026-10-03T14:19:19Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: context-rule
+      observation: 'The maintainer asked why the exported harness version was not in the frontmatter, and the answer was that it correctly is not: section 5 scopes tool_version to output.md and digest.md. What was wrong was the field beside it, runner_version, typed by hand in the one artifact no command wrote. The question was right and its subject was one field over.'
+      proposal: When a version field looks wrong, check which artifact kinds section 5 gives it to before looking at the writer. Half of the answer here was that the field was absent by design, and the other half was that a different field in the same file was guessed; conflating them would have produced a change to the wrong one.
+      target: .xeno/intents

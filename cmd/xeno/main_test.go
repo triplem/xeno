@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/runner"
 )
@@ -404,5 +405,45 @@ func TestTheFlagBeatsTheHarnessVersionVariable(t *testing.T) {
 	}
 	if got := frontOf(t, root, "output.md"); got != "2.1.276" {
 		t.Errorf("the flag should beat the variable, got %q", got)
+	}
+}
+
+// The learning record at the surface, where the phase is optional alone among the commands
+// that take one: section 10 owes a record per phase and one more when an intent closes (#195).
+func TestLearningRecordTakesThePhaseOptionally(t *testing.T) {
+	root := repo(t)
+	at := []string{"--root", root, "--intent", "PROJ-1", "--no-next"}
+	entry := []string{"--category", "context-rule", "--observation", "o",
+		"--proposal", "p", "--target", "t"}
+
+	code, out, errw := invoke(t, append(append([]string{"learning", "record"}, at...),
+		append(entry, "--phase", "00")...)...)
+	if code != 0 {
+		t.Fatalf("with a phase: exit %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "00-intake") {
+		t.Errorf("the output does not name the phase: %q", out)
+	}
+	if !fm.Exists(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "learning.yaml")) {
+		t.Error("no record at phase level")
+	}
+
+	if code, _, errw = invoke(t, append(append([]string{"learning", "record"}, at...),
+		"--no-finding")...); code != 0 {
+		t.Fatalf("without a phase: exit %d: %s", code, errw)
+	}
+	if !fm.Exists(filepath.Join(root, model.IntentDir("PROJ-1"), "learning.yaml")) {
+		t.Error("no record at intent level")
+	}
+
+	// And the staircase on a category the set does not have.
+	code, out, errw = invoke(t, append(append([]string{"learning", "record"}, at...),
+		"--phase", "01", "--category", "nonsense", "--observation", "o",
+		"--proposal", "p", "--target", "t")...)
+	if code != 1 || !strings.Contains(errw, "refused:") {
+		t.Errorf("a bad category exits %d saying %q, want 1 and a refusal", code, errw)
+	}
+	if out != "" {
+		t.Errorf("a refusal wrote to standard output: %q", out)
 	}
 }

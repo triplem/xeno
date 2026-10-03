@@ -1326,6 +1326,95 @@ func (r *Runner) IntentClose(key, reason string) (*model.Gate, error) {
 	return g, fm.WriteYAML(r.abs(model.IntentDir(key)+"/gate.yaml"), g)
 }
 
+// ---- The learning record
+
+// learningPath is the record of a phase, or of the intent where no phase is given. Both
+// exist: section 10 says a learning is owed at the end of every phase and once more when
+// an intent closes, and G-Complete reads the intent level one from `intent close`.
+func (r *Runner) learningPath(key, phase string) string {
+	if phase == "" {
+		return model.IntentDir(key) + "/learning.yaml"
+	}
+	return model.PhaseDir(key, phase) + "/learning.yaml"
+}
+
+// RecordLearning writes what a phase learned, which was the last artifact of this process
+// that no command wrote.
+//
+// The split is `section set`'s: the content is the agent's, because an observation about a
+// phase can come from nothing but whoever did it, and the header is the runner's — the same
+// six fields it already writes into the three artifacts beside this one. A record typed by
+// hand carries `0.1.0-dev` where they carry the commit, which is two strings for one build
+// in one directory and is what #179 said about intent.yaml (#195).
+//
+// It does not refuse a sealed phase, which is `SectionSet`'s behaviour and the reason is the
+// same: the file is inside artifacts_hash, so a write after the verdict makes `gate verify`
+// report a divergence and `phase finish` is what judges it again. A command that refused
+// would be refusing the first half of a re-judgement.
+//
+// Entries accumulate. A phase learns more than one thing often enough, and a second call
+// appending is what keeps the first one from having to be remembered and retyped.
+func (r *Runner) RecordLearning(key, phase string, noFinding bool, e model.LearningEntry) (*model.Learning, error) {
+	if err := r.checkLearningArgs(noFinding, e); err != nil {
+		return nil, err
+	}
+	rel := r.learningPath(key, phase)
+	rec := model.Learning{}
+	// A record that is not there is the ordinary case: this is usually what creates it.
+	if err := fm.ReadYAML(r.abs(rel), &rec); err != nil && !os.IsNotExist(err) {
+		return nil, refuse("%s cannot be read: %v", rel, err)
+	}
+	if rec.NoFinding && !noFinding {
+		return nil, refuse("%s states no_finding, so an observation contradicts it; "+
+			"withdraw the claim by hand before recording one", rel)
+	}
+	if noFinding && len(rec.Learnings) > 0 {
+		return nil, refuse("%s already records %d learning(s), so no_finding contradicts it",
+			rel, len(rec.Learnings))
+	}
+	common, err := r.common(key, phase)
+	if err != nil {
+		return nil, err
+	}
+	// The header is rewritten rather than carried over, because it describes the binary that
+	// wrote the file and this write is the one that is happening.
+	rec.Common = common
+	if noFinding {
+		rec.NoFinding = true
+	} else {
+		rec.Learnings = append(rec.Learnings, e)
+	}
+	return &rec, fm.WriteYAML(r.abs(rel), rec)
+}
+
+// checkLearningArgs refuses before anything is read, so a wrong category never reaches the
+// file and G-Learning never has to report what a writer could have.
+func (r *Runner) checkLearningArgs(noFinding bool, e model.LearningEntry) error {
+	empty := e == model.LearningEntry{}
+	switch {
+	case noFinding && !empty:
+		return refuse("--no-finding states there was nothing to record, so it takes none of " +
+			"--category, --observation, --proposal or --target")
+	case noFinding:
+		return nil
+	case empty:
+		return refuse("a learning needs --category, --observation, --proposal and --target, " +
+			"or --no-finding where there is nothing to record")
+	}
+	if !model.OneOf(e.Category, model.LearningCategories) {
+		return refuse("--category is one of %s", strings.Join(model.LearningCategories, ", "))
+	}
+	for _, f := range []struct{ flag, v string }{
+		{"--observation", e.Observation}, {"--proposal", e.Proposal}, {"--target", e.Target},
+	} {
+		if strings.TrimSpace(f.v) == "" {
+			return refuse("%s is required: section 10 defines all four, and a record missing "+
+				"one is not a proposal anybody can act on", f.flag)
+		}
+	}
+	return nil
+}
+
 // ---- The assumption register
 
 // assumptionsPath is at intent level: the register is carried forward across all phases

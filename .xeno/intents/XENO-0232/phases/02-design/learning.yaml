@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 02-design
+created: "2026-10-03T14:21:03Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Four of the seven alternatives were refused because they would have left the header or the content with the wrong author: phase finish stamping, a --file taking YAML, the gate keeping sole ownership of the category check, and writing the record automatically. The question that separated them was always who is the author of this field, not what is the shortest change.'
+      proposal: When an artifact has no writer, design by asking who authors each field rather than by asking what writes the file. The split falls out of the answer, and three of the four refusals here were alternatives that wrote the file without settling the authorship.
+      target: .xeno/intents

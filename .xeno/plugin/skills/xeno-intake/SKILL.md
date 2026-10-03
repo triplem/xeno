@@ -37,8 +37,11 @@ set` renders the whole artifact again on every write, so the anchors are never y
 type. `phase finish` writes the digest from the summary, filters it, and judges the
 phase.
 
-Write a `learning.yaml` in the phase directory before finishing: every phase owes one,
-and `no_finding: true` is the honest empty record.
+Record what the phase learned before finishing: every phase owes one, and
+`--no-finding` is the honest empty record.
+
+    xeno learning record --intent KEY --phase 00 --category C \
+        --observation T --proposal T --target P
 
 The one field the runner cannot know is `tool_version`, because section 7 forbids it
 branching on the harness. G-Schema requires it, so the harness says it: section 7's

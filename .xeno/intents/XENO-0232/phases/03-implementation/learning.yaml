@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 03-implementation
+created: "2026-10-03T14:21:36Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: template
+      observation: The learning skill showed the YAML of the record and then the implementation added a command. Leaving both would have left a reader choosing between a file they can write and a command they have to learn, and the file is the thing that was wrong, so the block had to go rather than be supplemented.
+      proposal: When a command replaces something a skill tells the agent to write by hand, delete the hand-written form from the skill rather than adding the command beside it. A skill that documents both is a skill whose reader will pick the one that needs no new knowledge.
+      target: .xeno/plugin/skills

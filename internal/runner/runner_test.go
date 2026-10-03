@@ -2694,3 +2694,161 @@ func TestALaterSectionWriteDoesNotEraseTheVersion(t *testing.T) {
 		t.Errorf("the second section write lost it: %q", got)
 	}
 }
+
+// ---- the learning record has a writer (#195)
+
+// TestTheLearningRecordCarriesTheRunnersHeader is the point of the command: the four
+// artifacts of one phase agree about which build produced them. A hand-written record
+// carries 0.1.0-dev where the three beside it carry the commit, which is what #179 said
+// about intent.yaml and is why this exists.
+func TestTheLearningRecordCarriesTheRunnersHeader(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	rec, err := f.r.RecordLearning(key, "00-intake", false, model.LearningEntry{
+		Category: "context-rule", Observation: "o", Proposal: "p", Target: "t",
+	})
+	f.must(err)
+	if rec.RunnerVersion != model.RunnerVersion || rec.PluginVersion != model.PluginVersion {
+		t.Errorf("header is %s/%s, want the runner's %s/%s",
+			rec.RunnerVersion, rec.PluginVersion, model.RunnerVersion, model.PluginVersion)
+	}
+	var on model.Learning
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml"), &on))
+	if on.Phase != "00-intake" || on.Intent == "" || on.Created == "" {
+		t.Errorf("the record on disk carries %+v", on.Common)
+	}
+	// The same binary wrote the verdict beside it, so the two have to agree.
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+	g, err := f.r.readGate(key, "00-intake")
+	f.must(err)
+	if on.RunnerVersion != g.RunnerVersion {
+		t.Errorf("learning.yaml says %s and gate.yaml says %s; one build, one string",
+			on.RunnerVersion, g.RunnerVersion)
+	}
+}
+
+// Entries accumulate, because a phase learns more than one thing often enough and the
+// alternative is remembering the first one and retyping it.
+func TestLearningEntriesAccumulate(t *testing.T) {
+	f := newFixture(t)
+	for _, c := range []string{"context-rule", "prompt"} {
+		_, err := f.r.RecordLearning(key, "00-intake", false, model.LearningEntry{
+			Category: c, Observation: "o", Proposal: "p", Target: "t",
+		})
+		f.must(err)
+	}
+	rec, err := f.r.RecordLearning(key, "00-intake", false, model.LearningEntry{
+		Category: "template", Observation: "o", Proposal: "p", Target: "t",
+	})
+	f.must(err)
+	if len(rec.Learnings) != 3 {
+		t.Fatalf("records %d entries, want 3", len(rec.Learnings))
+	}
+	if rec.Learnings[0].Category != "context-rule" || rec.Learnings[2].Category != "template" {
+		t.Errorf("the order moved: %+v", rec.Learnings)
+	}
+}
+
+// The empty case is said rather than left out, which is section 10's honest record, and
+// it is written to the same file with the same header.
+func TestNoFindingIsTheEmptyRecord(t *testing.T) {
+	f := newFixture(t)
+	rec, err := f.r.RecordLearning(key, "00-intake", true, model.LearningEntry{})
+	f.must(err)
+	if !rec.NoFinding || len(rec.Learnings) != 0 {
+		t.Fatalf("no_finding=%v with %d entries", rec.NoFinding, len(rec.Learnings))
+	}
+	if rec.RunnerVersion != model.RunnerVersion {
+		t.Errorf("the empty record carries %s", rec.RunnerVersion)
+	}
+}
+
+// A record cannot both state there was nothing and carry something. Refused in both
+// directions, because either way one of the two statements is already on disk and a
+// writer that resolved it silently would be deciding which one was meant.
+func TestNoFindingAndAnObservationContradict(t *testing.T) {
+	f := newFixture(t)
+	f.mustLearning(f.r.RecordLearning(key, "00-intake", false, model.LearningEntry{
+		Category: "prompt", Observation: "o", Proposal: "p", Target: "t",
+	}))
+	_, err := f.r.RecordLearning(key, "00-intake", true, model.LearningEntry{})
+	assertRefusal(t, err, "contradicts")
+
+	f2 := newFixture(t)
+	f2.mustLearning(f2.r.RecordLearning(key, "01-requirements", true, model.LearningEntry{}))
+	_, err = f2.r.RecordLearning(key, "01-requirements", false, model.LearningEntry{
+		Category: "prompt", Observation: "o", Proposal: "p", Target: "t",
+	})
+	assertRefusal(t, err, "contradicts")
+}
+
+// Section 10 fixes the category set and all four keys, and the writer checks them so that
+// G-Learning never has to report what a command could have refused.
+func TestALearningIsRefusedBeforeItReachesTheFile(t *testing.T) {
+	cases := []struct {
+		name  string
+		entry model.LearningEntry
+		noFin bool
+		says  string
+	}{
+		{"a category outside the four", model.LearningEntry{
+			Category: "nonsense", Observation: "o", Proposal: "p", Target: "t"}, false, "--category is one of"},
+		{"no observation", model.LearningEntry{
+			Category: "prompt", Proposal: "p", Target: "t"}, false, "--observation is required"},
+		{"no proposal", model.LearningEntry{
+			Category: "prompt", Observation: "o", Target: "t"}, false, "--proposal is required"},
+		{"no target", model.LearningEntry{
+			Category: "prompt", Observation: "o", Proposal: "p"}, false, "--target is required"},
+		{"whitespace is not a target", model.LearningEntry{
+			Category: "prompt", Observation: "o", Proposal: "p", Target: "   "}, false, "--target is required"},
+		{"nothing at all", model.LearningEntry{}, false, "a learning needs"},
+		{"no-finding beside an entry", model.LearningEntry{Category: "prompt"}, true, "takes none of"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t)
+			_, err := f.r.RecordLearning(key, "00-intake", c.noFin, c.entry)
+			assertRefusal(t, err, c.says)
+			if fm.Exists(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml")) {
+				t.Error("a refused record reached the file")
+			}
+		})
+	}
+}
+
+// Section 10 owes a record at the end of every phase and once more when an intent closes,
+// so the phase is optional and its absence means the intent level record G-Complete reads.
+func TestWithoutAPhaseTheRecordIsTheIntentsOwn(t *testing.T) {
+	f := newFixture(t)
+	rec, err := f.r.RecordLearning(key, "", true, model.LearningEntry{})
+	f.must(err)
+	if rec.Phase != "" {
+		t.Errorf("an intent level record carries phase %q", rec.Phase)
+	}
+	if !fm.Exists(filepath.Join(f.root, model.IntentDir(key), "learning.yaml")) {
+		t.Error("it was not written at intent level")
+	}
+	if fm.Exists(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml")) {
+		t.Error("it was written into a phase as well")
+	}
+}
+
+// assertRefusal is the shape every refusal test in this file wants: the error is a
+// Refusal and its reason names what the caller has to change.
+func assertRefusal(t *testing.T, err error, says string) {
+	t.Helper()
+	var ref *Refusal
+	if !errors.As(err, &ref) {
+		t.Fatalf("got %v, want a refusal", err)
+	}
+	if !strings.Contains(ref.Reason, says) {
+		t.Errorf("the refusal reads %q, which does not say %q", ref.Reason, says)
+	}
+}
+
+// mustLearning discards the record and keeps the error, as must2 does for a verdict.
+func (f *fixture) mustLearning(_ *model.Learning, err error) { f.t.Helper(); f.must(err) }

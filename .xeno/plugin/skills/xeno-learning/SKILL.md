@@ -9,26 +9,36 @@ Every phase owes a learning record, and so does an intent that closes. It is not
 seventh phase: learning happens at the end of each of the six and once more at the
 close, which is why it is one skill rather than an instruction repeated six times.
 
-## What a record is
+## The command
 
-`learning.yaml` in the phase directory, beside `output.md`. The header is the phase's
-own identity; the body is a list of entries, or the honest empty record.
+One per observation, before `xeno phase finish`:
 
-    intent: "<qualified id>"
-    created: <iso8601>
-    phase: <phase id>
-    schema_version: "1.0"
-    runner_version: <as the artifact records it>
-    plugin_version: <as the artifact records it>
-    learnings:
-      - category: <template|prompt|context-rule|project-convention>
-        observation: what happened, in the phase, with what it cost
-        proposal: what should be done differently, stated so somebody can act on it
-        target: the file or directory the proposal is about
+    xeno learning record --intent KEY --phase NN \
+        --category <template|prompt|context-rule|project-convention> \
+        --observation "what happened, in the phase, with what it cost" \
+        --proposal "what should be done differently, so somebody can act on it" \
+        --target <the file or directory the proposal is about>
 
-`no_finding: true` instead of `learnings` is the empty record, and it is honest where a
-phase genuinely produced nothing. An invented key, a category outside the four, or an
-entry without a proposal is red.
+A second call appends, so a phase that learned two things says so twice rather than
+rewriting the first.
+
+Where the phase genuinely produced nothing, say it rather than leave the file out:
+
+    xeno learning record --intent KEY --phase NN --no-finding
+
+And without `--phase`, the record is the intent's own, which is what `xeno intent close`
+reads:
+
+    xeno learning record --intent KEY --no-finding
+
+**Do not write the file by hand.** The four keys are yours and the header is the
+runner's — it is the same six fields the runner writes into `output.md`, `digest.md` and
+`gate.yaml`, and a typed one records `0.1.0-dev` where those three record the commit the
+binary came from. That was the last artifact of this process nobody wrote (#195).
+
+A category outside the four is refused before anything reaches the file, as is an entry
+missing one of its keys, as is `--no-finding` on a record that already carries an
+observation.
 
 ## What makes an entry worth writing
 

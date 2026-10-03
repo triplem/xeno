@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#195
+phase: 05-review
+created: "2026-10-03T14:24:20Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+b54626e.dirty
+plugin_version: 0.1.0-dev
+learnings:
+    - category: project-convention
+      observation: 'This closes the last of section 5''s writerless artifacts, and the four found this morning were all the same shape: something stated in one place with nothing comparing the repository against it. Each was found by a failure or by the maintainer reading a file, never by an audit, and each took about an hour.'
+      proposal: One pass over the process definition listing every normative never and always against what reads it, recorded as a finding rather than worked. XENO-0231 proposed this and it is proposed again because a second intent reached the same conclusion independently; four at an hour each is cheaper to find deliberately than by accident.
+      target: .xeno/intents
