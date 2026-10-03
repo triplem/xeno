@@ -25,6 +25,7 @@ import (
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/index"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
@@ -75,6 +76,11 @@ func New(root string) *Runner {
 // issue records. The three beside it in that list — the plugin root, the data location and the
 // harness name — are specified and read by nothing.
 const HarnessVersionEnv = "XENO_HARNESS_VERSION"
+
+// HarnessEnv is the variable section 7 lists for which harness is running, recorded only. It
+// reaches the `tool` field of section 5 and nothing else reads it back, which is what
+// "recorded" means and what keeps the tools interchangeable.
+const HarnessEnv = "XENO_HARNESS"
 
 func (r *Runner) abs(rel string) string { return filepath.Join(r.Root, rel) }
 func (r *Runner) stamp() string         { return r.Now().Format(time.RFC3339) }
@@ -153,7 +159,7 @@ func (r *Runner) common(key, phase string) (model.Common, error) {
 	q, err := r.qualified(key)
 	return model.Common{Intent: q, Phase: phase, Created: r.stamp(),
 		SchemaVersion: model.SchemaVersion,
-		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion}, err
+		RunnerVersion: model.RunnerVersion, PluginVersion: plugin.Version(r.Root)}, err
 }
 
 func (r *Runner) readGate(key, phase string) (*model.Gate, error) {
@@ -411,6 +417,13 @@ func (r *Runner) Start(key, phase string) error {
 	// in force, since an empty list says a set was resolved and came out empty (A74).
 	lock.RepoCommit = r.headCommit()
 	lock.RulesApplied = r.rulesApplied()
+	// The plugin block section 5 enumerates, and the other half of the sentence that explains
+	// plugin_version: the frontmatter names what was used and the lock proves it with a hash.
+	// Absent together where there is no vendored plugin, because a block naming a version with
+	// no hash, or a hash with no version, would be half a claim (#177).
+	if v, h := plugin.Version(r.Root), plugin.Hash(r.Root); v != "" || h != "" {
+		lock.Plugin = &model.LockPlugin{Version: v, SHA256: h}
+	}
 	// Which template the phase will be rendered from, recorded because otherwise two
 	// projects on the same template version are indistinguishable although one of them
 	// overrode it. A repository without a vendored plugin records nothing here and
@@ -746,9 +759,21 @@ func (r *Runner) GateRun(key, phase string) (*model.Gate, error) {
 func (r *Runner) agent() (tool, mdl string) {
 	var p model.Project
 	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
-		return "", ""
+		return os.Getenv(HarnessEnv), ""
 	}
-	return p.Agent.Tool, p.Agent.Model.Default
+	tool = p.Agent.Tool
+	// Section 7 lists XENO_HARNESS and calls it recorded only, which is this field. It beats
+	// the project's declaration where both are there: `agent.tool` is what a project says it
+	// uses and the variable is what is actually running, and a session under a harness the
+	// project did not name is the case the pair exists to make visible rather than hide.
+	//
+	// Read and never branched on, which section 7 says in as many words and the `verify`
+	// workflow now checks: the moment the runner behaves differently per harness, the tools
+	// stop being interchangeable. This is A35's second amendment amended (#183).
+	if h := os.Getenv(HarnessEnv); h != "" {
+		tool = h
+	}
+	return tool, p.Agent.Model.Default
 }
 
 // language is the language artifacts are written in. English unless a project says
@@ -1247,7 +1272,7 @@ func (r *Runner) IntentStart(key, issue string) (*model.Intent, error) {
 	in := &model.Intent{
 		Intent: id, Key: key, Status: "in-progress", Created: r.stamp(),
 		SchemaVersion: model.SchemaVersion,
-		RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+		RunnerVersion: model.RunnerVersion, PluginVersion: plugin.Version(r.Root),
 	}
 	return in, fm.WriteYAML(r.abs(rel+"/intent.yaml"), in)
 }
@@ -1318,7 +1343,7 @@ func (r *Runner) IntentClose(key, reason string) (*model.Gate, error) {
 		Common: model.Common{
 			Intent: in.Intent, Created: r.stamp(),
 			SchemaVersion: model.SchemaVersion,
-			RunnerVersion: model.RunnerVersion, PluginVersion: model.PluginVersion,
+			RunnerVersion: model.RunnerVersion, PluginVersion: plugin.Version(r.Root),
 		},
 		Status: status, RunAt: r.stamp(), ArtifactsHash: h,
 		Checks: []model.Check{check},

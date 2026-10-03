@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#177"
+phase: 01-requirements
+created: 2026-10-03T17:05:00Z
+schema_version: "1.0"
+runner_version: dev+b54626e.dirty
+plugin_version: 0.29.2
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion that nearly went unwritten is that the trail is unaffected. 
+      Every sealed artifact keeps the header it was written with, because a header 
+      lives in the file and gate verify recomputes verdicts rather than headers - 
+      but the fixture had to gain a vendored plugin, since plugin_version absent 
+      made G-Schema red in every test that runs a phase.
+    proposal: >-
+      When a field stops being defaulted, write a criterion about the existing 
+      trail and one about the test fixtures separately. The trail was safe for a 
+      reason that had nothing to do with the fixtures, and the fixtures broke for a 
+      reason that says something true about repositories without a plugin.
+    target: .xeno/intents

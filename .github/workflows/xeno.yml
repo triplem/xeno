@@ -118,6 +118,30 @@ jobs:
             echo "internal/gates now depends on the symbol index, which is allowed to be wrong"
             exit 1
           fi
+      # Section 7: "XENO_HARNESS is recorded, never branched on. The moment the runner
+      # behaves differently per harness, the tools stop being interchangeable." The runner
+      # reads it into section 5's `tool` field and nothing else, so the check is that the
+      # name appears where it is read and in no condition. A grep, because what is claimed
+      # is an absence (#183).
+      - name: the runner does not branch on which harness it is
+        run: |
+          set -eu
+          # Every mention outside the one constant and the one read of it.
+          uses=$(grep -rn 'XENO_HARNESS"' --include='*.go' internal cmd | grep -v '_test.go' || true)
+          if [ "$(printf '%s\n' "$uses" | grep -c .)" -gt 1 ]; then
+            echo "XENO_HARNESS is named more than once outside the tests:"
+            printf '%s\n' "$uses"
+            echo "It is recorded and never branched on; one constant is the whole surface."
+            exit 1
+          fi
+          # And no comparison against a harness name anywhere in the runner.
+          if grep -rnE 'HarnessEnv\)? *[=!]= *"|== *"(claude-code|codex)"' \
+               --include='*.go' internal cmd | grep -v '_test.go'; then
+            echo "the runner compares against a harness name, which section 7 forbids"
+            exit 1
+          fi
+          echo "the harness is recorded and not branched on"
+
       - name: test
         run: go test ./...
       - name: build

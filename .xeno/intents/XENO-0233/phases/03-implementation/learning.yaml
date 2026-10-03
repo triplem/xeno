@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#177
+phase: 03-implementation
+created: "2026-10-03T17:05:34Z"
+schema_version: "1.0"
+runner_version: dev+a18c1f3.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: A release cut while this branch was open moved the manifest's target from 0.29.2 to 0.30.0, so this intent's own first two phases record one version and its later phases another. The drift the open clause describes happened inside the intent that documented it, in about an hour.
+      proposal: Where a change pins a literal to something that moves on its own, expect the pin to be stale before the branch merges and treat the intent's own trail as the measurement. Leaving the two values is better evidence than a tidy artifact, and rewriting them would describe a write that did not happen.
+      target: .xeno/intents

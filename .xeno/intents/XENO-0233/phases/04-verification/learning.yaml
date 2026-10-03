@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#177
+phase: 04-verification
+created: "2026-10-03T17:06:24Z"
+schema_version: "1.0"
+runner_version: dev+a18c1f3.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: The tree hash was verified against a shell pipeline that implements the doc comment's definition independently, and the two agreed byte for byte. A Go test asserting a literal hash would have pinned this repository's current plugin tree rather than the definition, and would have to be edited by every change to a skill.
+      proposal: For a hash this project defines rather than inherits, verify it against an independent implementation of the written definition and record that, instead of pinning a literal in a test. The pipeline checks the definition; a literal checks the tree, and only one of those is what the definition is for.
+      target: .xeno/intents

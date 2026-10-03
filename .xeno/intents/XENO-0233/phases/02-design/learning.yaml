@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#177
+phase: 02-design
+created: "2026-10-03T17:04:55Z"
+schema_version: "1.0"
+runner_version: dev+a18c1f3.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: 'Three of the eight alternatives were refused because the simpler version would have produced something that looks like an answer: a hash over one file called the tree, a constant kept with the ldflags fixed, a project declaration that cannot be falsified. The measurement in the intake refused a fourth the same way, since a silent pass looks like a judged one.'
+      proposal: When refusing an alternative, say what it would have looked like rather than what it lacked. Four refusals in this intent share one shape - the cheap version returns something indistinguishable from the right answer - and naming that is what makes the refusal checkable by a reader.
+      target: .xeno/intents

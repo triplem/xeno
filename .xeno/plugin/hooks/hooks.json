@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "xeno cost turn"
+            "command": "${CLAUDE_PLUGIN_ROOT}/bin/xeno-env.sh cost turn"
           }
         ]
       }

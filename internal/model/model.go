@@ -20,14 +20,22 @@ import (
 // made and therefore identifies none of them, which is a poor showing for a field whose
 // only job is to say which binary wrote an artifact.
 //
-// PluginVersion takes no stamp. It describes the vendored plugin and not the binary
-// that wrote the artifact, and there is no plugin yet to have a commit.
-var (
-	RunnerVersion = devVersion
-	PluginVersion = devVersion
-)
+// devVersion claims no number. It read `0.1.0-dev` for twenty-nine minor releases, because
+// a literal in the source cannot learn the newest tag — `debug.ReadBuildInfo` reports
+// `(devel)` for the main module and the tag is known only to git, at build time. So every
+// artifact in this trail said `0.1.0-dev` while the project shipped v0.29.2, which is not a
+// stale number but a wrong one. `dev` says what the build is and leaves the number to the
+// release, which sets it through ldflags and is the only thing that knows it (#177).
+//
+// There is no PluginVersion here any more. It was a constant beside this one, with a comment
+// saying there was no plugin yet to have a version, and a release set it to the runner's own
+// through ldflags — so a 0.28.0 runner working in a project whose vendored plugin was 0.26.0
+// recorded 0.28.0. A number that cannot disagree with the runner can never be proved wrong,
+// which is the one thing section 5 wants it for. It is read from the vendored plugin's own
+// manifest now, by internal/plugin (#177).
+var RunnerVersion = devVersion
 
-const devVersion = "0.1.0-dev"
+const devVersion = "dev"
 
 func init() {
 	if RunnerVersion != devVersion {
@@ -153,7 +161,10 @@ type Common struct {
 	Created       string `yaml:"created"`
 	SchemaVersion string `yaml:"schema_version,omitempty"`
 	RunnerVersion string `yaml:"runner_version"`
-	PluginVersion string `yaml:"plugin_version"`
+	// PluginVersion is omitempty because absent is not a default: a repository with no
+	// vendored plugin rendered from none, and section 5 requiring the field in every process
+	// file is what makes that a G-Schema finding rather than something to paper over (A35).
+	PluginVersion string `yaml:"plugin_version,omitempty"`
 }
 
 // Question is an entry of the open-questions section, carried structurally.
@@ -373,6 +384,20 @@ type ContextLock struct {
 	// no rule is in force, because an empty list says a set was resolved and came out empty,
 	// where absence says there was nothing to resolve (A74's distinction).
 	RulesApplied []AppliedRule `yaml:"rules_applied,omitempty"`
+	// Plugin is what section 5 enumerates beside the frontmatter's plugin_version, and the
+	// sentence that explains the pair: "the frontmatter names what was used,
+	// context.lock.yaml proves it with a hash. Where the two disagree, the hash wins and
+	// G-Supply fails." That gate is not implemented, so this is written and read back by
+	// nothing yet — a field with a writer and no reader, which is the way round that leaves
+	// the trail able to answer the question later.
+	Plugin *LockPlugin `yaml:"plugin,omitempty"`
+}
+
+// LockPlugin is the lock's plugin block: the version the vendored plugin declares and the
+// hash over its tree, which internal/plugin defines.
+type LockPlugin struct {
+	Version string `yaml:"version,omitempty"`
+	SHA256  string `yaml:"sha256,omitempty"`
 }
 
 // AppliedRule is one entry of rules_applied, as section 5 writes it: the path the rule was read
@@ -455,7 +480,7 @@ type Intent struct {
 	Created       string `yaml:"created"`
 	SchemaVersion string `yaml:"schema_version,omitempty"`
 	RunnerVersion string `yaml:"runner_version"`
-	PluginVersion string `yaml:"plugin_version"`
+	PluginVersion string `yaml:"plugin_version,omitempty"`
 }
 
 // Learning is learning.yaml, at phase level and at intent level both. Section 10 fixes the

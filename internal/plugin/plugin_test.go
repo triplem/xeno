@@ -262,10 +262,52 @@ func TestThePluginCarriesTheHookWiring(t *testing.T) {
 	if !ok || len(stop) == 0 || len(stop[0].Hooks) == 0 {
 		t.Fatal("the plugin wires no Stop hook, so an installing project records no cost")
 	}
+	// Section 7: "The hook calls a thin entry point that normalises the environment before
+	// starting the runner." So the hook names the entry point and the entry point names the
+	// runner, which it has to do from the path: a project receives the runner as a binary and
+	// not as this repository's own build.
 	cmd := stop[0].Hooks[0].Command
-	if cmd != "xeno cost turn" {
-		t.Errorf("the hook runs %q, want `xeno cost turn` on the path: a project receives the "+
-			"runner as a binary, not as this repository's own build", cmd)
+	want := "${CLAUDE_PLUGIN_ROOT}/bin/" + entryPoint + " cost turn"
+	if cmd != want {
+		t.Errorf("the hook runs %q, want %q", cmd, want)
+	}
+	// Plugin relative and not repository relative, or an installing project runs a path that
+	// exists only here.
+	if strings.Contains(cmd, ".xeno/plugin") {
+		t.Errorf("the hook names this repository's own tree: %q", cmd)
+	}
+}
+
+// entryPoint is the script section 7 calls a thin entry point. Named once so that the two tests
+// about it cannot disagree on the file they are checking.
+const entryPoint = "xeno-env.sh"
+
+// The entry point is what the hook runs, so it has to be there, executable, and it has to start
+// the runner from the path rather than from a build beside it.
+func TestTheEntryPointStartsTheRunnerFromThePath(t *testing.T) {
+	path := filepath.Join(repoRoot, pluginDir, "bin", entryPoint)
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("the hook names an entry point that is not there: %v", err)
+	}
+	if info.Mode()&0o111 == 0 {
+		t.Errorf("%s is not executable, so the hook cannot run it", entryPoint)
+	}
+	body := read(t, path)
+	if !strings.Contains(body, "exec xeno ") {
+		t.Error("the entry point does not start xeno from the path")
+	}
+	// Section 7 names the variables it may normalise. XENO_PLUGIN_ROOT is not among what this
+	// one sets, and the script says why: internal/gates reads the vendored rules and
+	// templates, so an override would make rules_hash depend on the environment (#183).
+	for _, v := range []string{"XENO_PLUGIN_DATA", "XENO_HARNESS"} {
+		if !strings.Contains(body, v) {
+			t.Errorf("the entry point normalises no %s", v)
+		}
+	}
+	if strings.Contains(body, "export XENO_PLUGIN_ROOT") {
+		t.Error("the entry point sets XENO_PLUGIN_ROOT, which would make a verdict " +
+			"depend on the environment while G-Supply is not implemented (#183)")
 	}
 }
 
