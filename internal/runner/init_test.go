@@ -471,3 +471,42 @@ func TestVendorPutsTheShippedRuleSetInTheRepository(t *testing.T) {
 		t.Error("the rule set was vendored without being asked for")
 	}
 }
+
+// Section 13 says --vendor copies plugin.json and skills/ beside the templates and the rules. The
+// skills are what a project reads to know what a phase owes, so a vendored project without them
+// has the runner and no description of the process (#169).
+func TestVendorPutsThePluginsOwnArtifactsInTheRepository(t *testing.T) {
+	r := initFixture(t)
+	if _, err := r.Init(InitOptions{Host: "github", Vendor: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, rel := range []string{
+		".xeno/plugin/.claude-plugin/plugin.json",
+		".xeno/plugin/hooks/hooks.json",
+		".xeno/plugin/skills/xeno-intake/SKILL.md",
+		".xeno/plugin/skills/xeno-learning/SKILL.md",
+		".xeno/plugin/skills/xeno-review/SKILL.md",
+	} {
+		if !fm.Exists(filepath.Join(r.Root, rel)) {
+			t.Errorf("%s was not vendored", rel)
+		}
+	}
+	// Seven skills, as section 13 names them.
+	entries, err := os.ReadDir(filepath.Join(r.Root, ".xeno/plugin/skills"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 7 {
+		t.Errorf("%d skills vendored, want the seven of section 13", len(entries))
+	}
+
+	// And a second run changes nothing, which is WP9's own criterion and now has a third tree and
+	// two files to not break.
+	before := snapshot(t, r.Root)
+	if _, err := r.Init(InitOptions{Host: "github", Vendor: true}); err != nil {
+		t.Fatal(err)
+	}
+	if after := snapshot(t, r.Root); after != before {
+		t.Error("a second init changed the vendored plugin")
+	}
+}

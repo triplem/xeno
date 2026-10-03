@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:08:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: prompt
+    observation: >-
+      Three of the criteria here are mechanical checks on prose: every command a skill names exists
+      in the dispatch table, every section it asks for is in that phase's template, every gate it
+      mentions is in the table. Writing them turned a skill from something only a person can judge
+      into something with a testable surface.
+    proposal: >-
+      When shipping prose that instructs an agent, list the names it uses and check them against
+      the tree. The judgement about whether the prose is any good stays with a reader, but a skill
+      naming a command that does not exist is a defect, and it is the likeliest one.
+    target: .xeno/intents

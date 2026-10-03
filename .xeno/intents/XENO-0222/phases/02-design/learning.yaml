@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:16:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      The first standing rule says the specification wins until a person changes it, and here the
+      specification is wrong about a third party's file format: following it literally ships a
+      plugin no client loads. The rule protects the documents from an agent's convenience, which
+      is not the same as the documents being right about somebody else's format.
+    proposal: >-
+      Where the specification describes an external format, verify the format and treat a
+      disagreement as a finding against the document rather than as a constraint on the code. Say
+      which was followed and why in the register, and raise the correction for a person: a
+      specification that cannot be implemented is not a specification anybody is following.
+    target: .xeno/intents

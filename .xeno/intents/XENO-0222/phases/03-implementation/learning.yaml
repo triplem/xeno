@@ -1,0 +1,17 @@
+intent: "github.com/triplem/xeno#169"
+created: 2026-10-03T09:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: prompt
+    observation: >-
+      The check that a skill may not promise an unimplemented gate was written with an exemption
+      for the one skill that broke it. The test passed, the skill was wrong, and the exemption
+      read as a considered carve-out rather than as the place where I had stopped thinking.
+    proposal: >-
+      When a new check needs an exemption for existing content, fix the content first and see
+      whether the exemption survives. An exemption written at the same time as the rule is
+      indistinguishable from a rule that was shaped to pass.
+    target: .xeno/intents
