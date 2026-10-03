@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 03-implementation
+created: "2026-10-03T17:32:23Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: 'A gate run against a sealed phase rewrote its verdict twice in this session, once to see what a released binary would report. Reading a gate''s result for a sealed phase has no read-only form: gate run writes, and the only way to look is to copy the tree first.'
+      proposal: To see what a gate would say about a sealed phase, copy the repository and run there. There is no read-only gate run and the sealed verdict is inside artifacts_hash, so looking at it in place changes it - which gate verify catches, but only after the fact.
+      target: .xeno/intents

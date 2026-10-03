@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 00-intake
+created: "2026-10-03T17:30:24Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: Section 13 answers three questions this gate could have got wrong - what the anchor is, why it is not in the repository, and that the downgrade needs no version check - in two paragraphs that the intake read whole. The lock block added by the previous intent is explicitly not the anchor, and reading it would have looked like the obvious implementation.
+      proposal: Where a gate has a prose section of its own rather than one table row, read that section before the row. The table says what G-Supply checks in eleven words and the section says what it must not read, which is the half that decides the implementation.
+      target: .xeno/intents

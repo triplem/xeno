@@ -56,9 +56,13 @@ boundary. #177 asks for this where section 16 lists what the record does not mea
 which is a change to the process definition and not this file's to make.
 
 `plugin_version` names the vendored plugin an artifact was rendered from, read from its
-own manifest and absent where no plugin is vendored (A83). Nothing keeps that manifest
-in step with the next release: it is a literal in a data file, only a release knows the
-number, and a release here cannot write a file.
+own manifest and absent where no plugin is vendored (A83). **G-Supply reports
+`not-implemented` throughout this trail**, and that is the gate working rather than
+missing: its anchor is a digest the release compiles into the binary, a `go build`
+carries none, and section 5's `not-implemented` is the state for a check a runner did
+not perform. A released binary over the same tree reports `pass` (A86). Nothing keeps
+that manifest in step with the next release: it is a literal in a data file, only a
+release knows the number, and a release here cannot write a file.
 
 The harness reports its own version, which is the one field of section 5 the runner
 cannot know: section 7 forbids it branching on the harness, and a value nobody produced

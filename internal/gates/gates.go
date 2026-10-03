@@ -23,6 +23,7 @@ import (
 	"github.com/triplem/xeno/internal/git"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
 	"github.com/triplem/xeno/internal/template"
 )
@@ -58,7 +59,7 @@ type spec struct {
 // The order is the table in section 7: integrity first, then cost. Gates this runner
 // does not implement yet are written as such rather than skipped.
 var table = []spec{
-	{"G-Supply", 0, notImplemented},
+	{"G-Supply", 0, supply},
 	{"G-Schema", 0, schema},
 	{"G-Trace", 0, trace},
 	{"G-Secret", 0, notImplemented},
@@ -247,6 +248,48 @@ func Status(checks []model.Check) (string, error) {
 		return "approved", nil
 	}
 	return "green", nil
+}
+
+// ---- G-Supply, from P0
+//
+// Section 7 runs it ahead of everything "because a plugin that does not match its expected
+// digest makes every later verdict a statement about unknown rules and unknown templates".
+//
+// The anchor is the binary. Section 13: "Plugin and runner are released together under one
+// version, so the runner carries the digest of its own plugin compiled in. G-Supply recomputes
+// the digest over `.xeno/plugin/` and compares. Nothing in the repository states what the
+// expected value is, which is the point: an expected hash stored beside the thing it describes
+// proves only that both were written by the same hand."
+//
+// So the comparison is against `plugin.ExpectedDigest`, which only a release sets, and never
+// against anything in the tree — not the lock's `plugin.sha256`, which records what a phase was
+// given rather than what this runner expects, and not the manifest's version, because section
+// 13 settles the downgrade through the digest alone: "A vendored plugin from an earlier release
+// has a different digest than the one this runner expects, so it fails without any separate
+// version check."
+//
+// A build carrying no digest reports not-implemented. That is the state section 5 defines for a
+// check a runner did not perform — "it is not a failure, and the derived status treats it as
+// neither pass nor fail" — and it is the honest answer for a development build, which is what
+// wrote every artifact in this repository. Passing would make a green verdict mean less than it
+// appears to, which is the sentence that state exists for.
+func supply(c Ctx) model.Check {
+	if plugin.ExpectedDigest == "" {
+		return notImplemented(c)
+	}
+	got := plugin.Hash(c.Root)
+	if got == "" {
+		return result([]model.Finding{finding(plugin.Dir,
+			"no vendored plugin, and this runner carries the digest of one",
+			"run xeno init --vendor to put the plugin this runner was released with in place")})
+	}
+	if got != plugin.ExpectedDigest {
+		return result([]model.Finding{finding(plugin.Dir,
+			"the vendored plugin is "+got+" and this runner expects "+plugin.ExpectedDigest,
+			"plugin and runner are released together, so update the runner and run xeno init "+
+				"--vendor again, and commit both in one change")})
+	}
+	return result(nil)
 }
 
 func notImplemented(Ctx) model.Check {
