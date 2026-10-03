@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:35:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      The one unverified number in this intent was verified by the first run of the mechanism the
+      intent adds: the baseline, measured locally under the wrong node, was confirmed by the pull
+      request's own audit job under the right one. P3 recorded it as best-available and named the run
+      that would check it, and the run checked it before the merge.
+    proposal: >-
+      Where a change makes a job report earlier, name that job as the verification of the change's
+      own unverified figures and seal the phase before it runs. The figure then closes in P4 from
+      evidence rather than being asserted in P3, and a change to a pipeline is verified by the
+      pipeline, which is the only evidence it can offer.
+    target: .xeno/intents
