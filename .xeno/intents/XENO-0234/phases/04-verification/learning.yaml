@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 04-verification
+created: "2026-10-03T17:33:12Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: 'Writing the gaps found the largest one: a released binary cannot vendor the plugin it carries the digest of, because init copies from the repository''s own tree. The gate is anchored to something the release cannot deliver, and nothing in the intake or the design noticed because both were about the comparison rather than about where the compared thing comes from.'
+      proposal: For a gate that checks an artifact against an expectation, ask in the verification phase how the artifact arrives in a project that installs the release. The comparison can be complete and correct while the thing compared has no way to be there, and that question is about distribution rather than about the gate.
+      target: .xeno/intents

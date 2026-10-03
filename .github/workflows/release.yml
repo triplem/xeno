@@ -111,14 +111,29 @@ jobs:
         run: |
           set -eu
           mkdir -p dist
-          # Runner and plugin share one number, taken from one derivation, which removes
-          # the mistake G-Supply exists to catch instead of catching it.
+
+          # The anchor G-Supply compares against. Section 13: "Plugin and runner are
+          # released together under one version, so the runner carries the digest of its
+          # own plugin compiled in... Nothing in the repository states what the expected
+          # value is, which is the point: an expected hash stored beside the thing it
+          # describes proves only that both were written by the same hand."
+          #
+          # Computed by the same code that compares it, so the release and the check
+          # cannot disagree about the definition — which is the one way this
+          # arrangement fails silently: a digest the checker computes differently is a
+          # red verdict on every phase of every project that installs the release.
+          DIGEST=$(go run scripts/plugin-digest.go)
+          echo "plugin digest: $DIGEST"
+
           # The runner's own version and nothing else. It used to set PluginVersion to the
           # same string, so a released runner recorded its own version as the version of a
           # vendored plugin in somebody else's repository — a number that cannot disagree
           # with the runner can never be proved wrong, which is what section 5 wants it
           # for. It is read from the plugin's manifest now (#177).
-          ldflags="-s -w -X github.com/triplem/xeno/internal/model.RunnerVersion=$VERSION"
+          ldflags="-s -w"
+          m=github.com/triplem/xeno/internal/model
+          g=github.com/triplem/xeno/internal/plugin
+          ldflags="$ldflags -X $m.RunnerVersion=$VERSION -X $g.ExpectedDigest=$DIGEST"
           for target in $TARGETS; do
             os=${target%/*}; arch=${target#*/}
             ext=""

@@ -28,6 +28,20 @@ import (
 	"github.com/triplem/xeno/internal/hashing"
 )
 
+// ExpectedDigest is the digest of the plugin this binary was released with, compiled in by
+// the release through -ldflags, and empty in a build that was not made by one.
+//
+// It is the anchor section 13 describes, and the reason it is here rather than in the
+// repository is that section's own: "Nothing in the repository states what the expected
+// value is, which is the point: an expected hash stored beside the thing it describes proves
+// only that both were written by the same hand."
+//
+// Empty means this build carries no anchor, and G-Supply then reports not-implemented — the
+// state section 5 defines for a check a runner did not perform, written so that the gap
+// surfaces instead of a green verdict meaning less than it appears to. A development build of
+// this repository is in that state, which is every artifact in this trail.
+var ExpectedDigest = ""
+
 // Dir is the vendored plugin, relative to the repository root. The same directory section 13
 // lists at the distribution root, which is where templates/, rules/given/builtin/ and
 // secrets.yaml already are.

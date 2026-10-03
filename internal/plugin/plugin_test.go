@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package plugin holds no code. Its tests check the shipped plugin — the manifests, the skills and
-// the hook wiring — against the tree the skills describe.
+// Package plugin's tests check the shipped plugin — the manifests, the skills, the hook wiring and
+// the entry point — against the tree the skills describe.
+//
+// They are an external test package because they read what a skill says a gate will refuse, which
+// means importing internal/gates, and internal/gates imports internal/plugin for the digest
+// G-Supply compares. An internal test would be a cycle.
 //
 // A skill is prose an agent loads, and nothing here can check whether it produces better artifacts
 // than no skill at all. Three things in it can be wrong mechanically, and those are checked: a
 // command it names, a section it asks a phase to write, and a gate it says will refuse something.
 // The rest is read by a person, which is the same limit the shipped rule set has.
-package plugin
+package plugin_test
 
 import (
 	"encoding/json"

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 01-requirements
+created: "2026-10-03T17:31:04Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: The criterion that the anchor is not readable from the repository is the only one that asserts an absence of behaviour, and it is the property section 13 calls the point. It was written as a criterion because an implementation that read a digest from the tree would pass every other criterion in this list.
+      proposal: Where a specification says a property is the point of a mechanism, write it as a criterion that a wrong implementation would fail and the right one would pass. Here every other criterion is satisfied by a gate that reads its expectation from the tree, so the one about where the anchor is not is the only one doing work.
+      target: .xeno/intents

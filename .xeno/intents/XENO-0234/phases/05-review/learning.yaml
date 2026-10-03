@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 05-review
+created: "2026-10-03T17:33:59Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: The maintainer's recommendation was to build this gate before the resolution order so that the containment would be self-checking rather than trusted. It is, for a released binary, and it is inert under a development build - which is most of this repository's work. The sequencing was right and its benefit is conditional on something nobody had stated.
+      proposal: When sequencing one piece before another because the first makes the second safe, state which builds or environments the safety holds in. Here it holds for a release and not for go build, and that belongs in front of the section 7 decision rather than behind it.
+      target: .xeno/intents

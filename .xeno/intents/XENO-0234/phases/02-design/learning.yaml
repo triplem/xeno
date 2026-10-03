@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 02-design
+created: "2026-10-03T17:31:49Z"
+schema_version: "1.0"
+runner_version: dev+9140756.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: Three of the nine alternatives were refused by one sentence of section 13 - that an expected hash stored beside the thing it describes proves only that both were written by the same hand. The lock's block, a version comparison and a release-written file are all that sentence, and the lock's block had just been added by the previous intent, which made it the most plausible wrong answer.
+      proposal: When a previous intent adds a field that a later gate could compare against, check whether the specification put that field there for this gate or for a different question. Section 5 and section 13 name the same hash for two purposes, and only one of them is the anchor.
+      target: .xeno/intents
