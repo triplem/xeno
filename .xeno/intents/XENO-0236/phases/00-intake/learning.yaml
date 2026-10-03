@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 00-intake
+created: "2026-10-03T18:37:22Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: 'The question changed from how to guard the override to whether to keep it when one measurement showed the bottom of the order unreachable: a project with no vendored plugin resolves no template, so the client fallback lets it fail differently rather than work. Three shapes had been designed before anybody checked what the un-vendored case can do.'
+      proposal: Before designing a guard for a documented mechanism, run the case the mechanism exists to serve and see whether it works at all. One command here retired three designs, and the two earlier exchanges with the maintainer would both have been unnecessary.
+      target: .xeno/intents

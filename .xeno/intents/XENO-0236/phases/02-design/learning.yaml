@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 02-design
+created: "2026-10-03T18:39:15Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: 'The design''s alternatives include one of my own recommendations, made twice and retracted here: the split by purpose breaks the case the client fallback existed for, which only became visible once somebody ran an un-vendored project. Recording the retraction among the alternatives is more use than removing it, because the reasoning that failed is the reasoning somebody would repeat.'
+      proposal: When a design retracts an earlier recommendation, keep it in the alternatives with what killed it rather than dropping it. A refused option a reader can see was once preferred carries more weight than one that was never proposed.
+      target: .xeno/intents

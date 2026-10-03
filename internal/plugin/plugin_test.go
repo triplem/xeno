@@ -301,17 +301,20 @@ func TestTheEntryPointStartsTheRunnerFromThePath(t *testing.T) {
 	if !strings.Contains(body, "exec xeno ") {
 		t.Error("the entry point does not start xeno from the path")
 	}
-	// Section 7 names the variables it may normalise. XENO_PLUGIN_ROOT is not among what this
-	// one sets, and the script says why: internal/gates reads the vendored rules and
-	// templates, so an override would make rules_hash depend on the environment (#183).
+	// Section 7 names the variables the normalised environment carries, and the plugin root
+	// is no longer one of them: the section says the plugin is the vendored one and
+	// describes no resolution order (#183).
 	for _, v := range []string{"XENO_PLUGIN_DATA", "XENO_HARNESS"} {
 		if !strings.Contains(body, v) {
 			t.Errorf("the entry point normalises no %s", v)
 		}
 	}
+	// Still asserted after the clause was removed, because the thing worth preventing is a
+	// root arriving from the environment, and that does not stop being worth preventing
+	// when the document stops naming a way to do it.
 	if strings.Contains(body, "export XENO_PLUGIN_ROOT") {
-		t.Error("the entry point sets XENO_PLUGIN_ROOT, which would make a verdict " +
-			"depend on the environment while G-Supply is not implemented (#183)")
+		t.Error("the entry point exports a plugin root, which would make rules_hash and a " +
+			"rendered artifact depend on the environment (#183)")
 	}
 }
 

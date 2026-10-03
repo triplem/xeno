@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 03-implementation
+created: "2026-10-03T18:39:48Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: A file I wrote three changes ago was at 95 columns throughout and nothing noticed, because the 88-column rule in CLAUDE.md has no check behind it. Rewrapping it while it was open for another reason produced a diff where the noise outweighs the two paragraphs that matter.
+      proposal: 'The width rule is stated and unenforced, which is the same shape as the four findings this session turned up: a normative clause with no reader. A gofmt-adjacent check over comment width would cost one step in the verify job and would have caught this when it was one file.'
+      target: .xeno/plugin/rules
