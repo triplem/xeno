@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 01-requirements
+created: "2026-10-03T18:38:05Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: 'The criterion list for a removal reads differently from one for a feature: most entries are about what no longer says something, and the one that does work is that nothing in the repository still claims the mechanism exists. The stale-list failure has been met twice here, both times in ASSUMPTIONS.'
+      proposal: For a change that removes a documented mechanism, write a criterion that greps for every remaining mention and requires each to explain the removal rather than describe the thing. A removal's defect is not a wrong behaviour, it is a document that half agrees with itself.
+      target: .xeno/intents

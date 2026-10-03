@@ -11,16 +11,14 @@
 # It sets what it can establish and nothing it cannot. A variable already set is left
 # alone, because the caller knew something this script does not.
 #
-# XENO_PLUGIN_ROOT is deliberately not set here, and that is the one thing this script
-# does not do. Section 7 ranks a --plugin-root argument and XENO_PLUGIN_ROOT above the
-# vendored tree, and internal/gates reads internal/rules and internal/template, both of
-# which resolve from the vendored directory — so an override would make rules_hash and a
-# rendered artifact depend on the environment. Measured on this repository, a valid rule
-# tree that differs leaves `xeno gate verify` at exit 0 over 273 verdicts while G-Policy
-# silently stops judging every phase that recorded the previous hash, because A74 judges
-# a phase only against the set its own artifact names. Enabling that before G-Supply
-# exists would remove the only thing that would catch it. #183 carries the finding and
-# the decision is section 7's.
+# There is no XENO_PLUGIN_ROOT to set. Section 7 described a resolution order above the
+# vendored plugin and no longer does: the gate path reads the rule set and the templates
+# from the plugin, so a root taken from the environment would make rules_hash and a
+# rendered artifact depend on it, and a phase is judged only against the rule set its
+# own artifact records — so a changed set stops judging the trail rather than
+# disagreeing with it. The plugin is `.xeno/plugin/` found from the git root, and this
+# script does not touch it (#183).
+
 set -eu
 
 # The git root, so the script works from anywhere inside a working tree.

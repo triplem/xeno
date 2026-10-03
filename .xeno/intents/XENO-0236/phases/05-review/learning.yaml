@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 05-review
+created: "2026-10-03T19:09:31Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: project-convention
+      observation: 'This is the first intent whose whole subject was removing a clause, and the first standing rule produced almost no second commit: the document moved to catch up with code that was already correct, and what followed was comments that had argued for not implementing something the document no longer asks for.'
+      proposal: When a finding is that a document describes a mechanism nothing reads, consider removal as the first option rather than the fallback. Three of these were designed as guards before anybody asked whether the clause should exist, and the removal cost one commit of documents and one of comments.
+      target: .xeno/intents

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#183
+phase: 04-verification
+created: "2026-10-03T19:08:44Z"
+schema_version: "1.0"
+runner_version: dev+0462eb7.dirty
+plugin_version: 0.30.0
+learnings:
+    - category: context-rule
+      observation: P3 of this intent justified a rewrap by a convention the maintainer retired two exchanges later, and the phase is sealed with the reason it was written with. The trail now carries a justification pointing at a rule the repository does not have, which is correct and is what judging a phase against what was in force means.
+      proposal: 'Where a phase''s reasoning cites a project convention rather than a specification clause, expect the citation to age differently: a specification change is its own commit and visible, where a convention can be retired in conversation. Naming the convention and not only the conclusion is what lets a later reader date it.'
+      target: .xeno/intents
