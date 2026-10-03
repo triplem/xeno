@@ -390,6 +390,47 @@ func missing(raw map[string]any, fields ...[]string) []string {
 	return m
 }
 
+// links reports a declared link whose document is not in the tree.
+//
+// It is the profile's one unambiguous error. Everything else in the file is a pattern, and a
+// pattern that matches nothing is a state rather than a mistake — the files may not be written
+// yet. A link is a specific path, declared because section 5 forbids inferring one: "an inferred
+// mapping is an assumption, and assumptions in this process are either registered or absent". A
+// declaration whose target does not exist is neither.
+//
+// The finding names the profile rather than the lock, because the profile is the claim and the
+// base is the consequence: a finding on the lock would point a reader at a file that is correct
+// about what it was given. The runner, which writes that lock, skips such a link in silence and is
+// right to — it records what the phase was given, and a file that is not there was not given.
+//
+// Checked wherever the profile is read, which is every phase, as the budget check established. A
+// configuration error should keep being reported until it is corrected, where a check at P0 alone
+// would report it once into a verdict nobody re-reads. #171 asked for this and did not do it; #172
+// is it.
+func links(c Ctx) []model.Finding {
+	var p model.Profile
+	profile := c.phaseRel(model.Phases[0]) + "/" + model.ContextProfile
+	if err := fm.ReadYAML(c.abs(profile), &p); err != nil {
+		return nil // no profile is no link
+	}
+	var fs []model.Finding
+	for _, l := range p.Links {
+		if l.Docs == "" {
+			continue // a link with no document declares nothing to find
+		}
+		if _, err := os.Stat(c.abs(l.Docs)); err != nil {
+			at := l.Component
+			if at == "" {
+				at = "a link"
+			}
+			fs = append(fs, finding(profile,
+				"the link for "+at+" names "+quoted(l.Docs)+", which is not in the tree",
+				"correct the path, or take the link out; a declared link is a claim about a file"))
+		}
+	}
+	return fs
+}
+
 // budget reports a recorded context that exceeded the budget its profile declared.
 //
 // Section 5 puts this check here and says what it is for in the same breath: "deliberately a
@@ -449,6 +490,7 @@ func schema(c Ctx) model.Check {
 	fs = append(fs, directoryFindings(c, dir)...)
 	fs = append(fs, undeclaredEvidence(c, dir, o)...)
 	fs = append(fs, budget(c)...)
+	fs = append(fs, links(c)...)
 	return result(fs)
 }
 

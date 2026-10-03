@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T10:44:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the first design phase to record a decision that would have been a register row, and
+      the switch cost nothing here because the decision is about this intent's own subject. The
+      cases the closure worried about are the other ones: a decision about the project at large,
+      arriving while an intent about something else is running.
+    proposal: >-
+      When a decision arrives that is not about the running intent's subject, open the issue for
+      the piece it belongs to and record it there, rather than holding it for a design phase that
+      cannot honestly carry it. The register took anything; an issue is the nearest thing that
+      still does.
+    target: .xeno/intents

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T11:02:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      The demonstration used the transposition somebody actually makes — process-defintion rather
+      than process-definition — instead of an obviously absent path like nobody.md. The finding
+      printed the path as written, which is what lets a reader see the typo rather than go looking
+      for it, and that property would not have shown with a fixture name.
+    proposal: >-
+      When demonstrating a check on a human mistake, make the human mistake rather than an
+      impossible one. A fixture proves the branch; a plausible typo proves the message is worth
+      reading, and the message is the part a project actually consumes.
+    target: .xeno/intents
