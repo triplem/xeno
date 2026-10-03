@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#1"
+created: 2026-10-03T10:58:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the shortest artifact set of the twenty-seven six-phase intents, written with
+      shortness as an explicit constraint, and it still comes to about forty thousand bytes. The
+      floor is the sequence: six phases, five files each, a digest and a learning record apiece.
+    proposal: >-
+      Treat the fixed cost on #117 as two numbers rather than one: the floor the sequence imposes
+      and the padding an author adds. This intent measures the floor, and any argument about a
+      light path should start from it rather than from the average of intents whose subjects were
+      large.
+    target: .xeno/intents

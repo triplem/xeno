@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#1"
+created: 2026-10-03T10:32:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      Two project decisions arrived from the maintainer while this intent was deciding where
+      decisions go after the register closes — the shipped set being closed at four rules, and the
+      placeholder rule staying as A62 and A66 left it. Neither belongs to this intent's subject,
+      and the register that would have taken them as rows is the thing being closed.
+    proposal: >-
+      After M0, route a decision that arrives outside an intent to the next intent that touches its
+      subject, and say so when it arrives rather than holding it. The register could take anything;
+      a phase artifact can only take what its phase is about, which is the cost of the loop the
+      plan switches to and the first thing a maintainer will notice about it.
+    target: .xeno/intents

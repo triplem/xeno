@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#1"
+created: 2026-10-03T10:22:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: project-convention
+    observation: >-
+      M0 was reached weeks before anything recorded it, and the gap was found by a question about
+      which work packages are open rather than by anything watching the milestone. The same shape
+      as #156: the hand-kept records described a state the tree had left behind, and nothing in the
+      process looks at a milestone's own conditions.
+    proposal: >-
+      When a milestone's conditions are met by a piece of work, say so in that piece's review
+      rather than leaving the milestone for whoever next reads the plan. The review is where the
+      conditions are freshest, and a milestone nobody closes is a milestone nobody can plan
+      against.
+    target: .xeno/intents

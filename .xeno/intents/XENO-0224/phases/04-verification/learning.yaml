@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#1"
+created: 2026-10-03T10:50:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      The closure rests on one fact that lives outside the tree — the host's required check with
+      administrators included — and nothing in the trail records it. A repository that loses that
+      setting keeps a closed M0 and stops deserving it, and only somebody running enforcement check
+      with a token would notice.
+    proposal: >-
+      Where a milestone or a claim rests on a host setting, record the reading in the artifact that
+      claims it and name the scheduled check that keeps it true. The setting is the only part of
+      this closure that can change without anybody touching the repository.
+    target: .xeno/intents

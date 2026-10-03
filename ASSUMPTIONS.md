@@ -1,12 +1,30 @@
 # Assumptions made while building the core
 
-Before M0, Xeno does not govern its own construction and the record is kept by hand
-(implementation plan, section 4). This is that record. Every entry is a place where the
-process definition or the implementation plan says what, and the how had to be chosen.
-A row wants a yes, a no or a replacement from a person, and the state column says
-which of those it has had. `approved` is that yes. `accepted until` names the work
-package that closes the row, so that a scheduled answer is not read as an unanswered
-question. An `open` row waits on somebody, and the sentence in it says on what.
+**This record is closed. M0 is reached, and the implementation plan's section 4 says
+that from M0 the same loop runs through the runner and the hand held record stops.** A77
+is the last row. Closed by XENO-0224 on 2026-10-03, which carries the evidence it was
+closed against.
+
+Nothing is added here. A decision taken from now on belongs to the design phase of the
+intent that took it, and a learning belongs to that phase's `learning.yaml` and from
+there to a merge request against the rule set, as section 10 describes. The cost of the
+switch is that a row in a table was findable and a paragraph in one intent's P2 is not,
+which is the plan's choice rather than this file's.
+
+Every row stays, with its state column. They are where a reader of this tree learns why
+it is the way it is — A6 for the half-implemented gate that is now whole, A62 and A66
+for two hashes the appendix delegates, A74 for why a rule adopted today does not
+re-judge what was sealed yesterday, A77 for a manifest the specification draws in the
+wrong place. A row deleted for having been superseded would be the rewriting this
+process refuses everywhere else.
+
+What follows is that record. Before M0, Xeno did not govern its own construction and
+this was kept by hand (implementation plan, section 4). Every entry is a place where the
+process definition or the implementation plan says what, and the how had to be chosen. A
+row wants a yes, a no or a replacement from a person, and the state column says which of
+those it has had. `approved` is that yes. `accepted until` names the work package that
+closes the row, so that a scheduled answer is not read as an unanswered question. An
+`open` row waits on somebody, and the sentence in it says on what.
 
 | # | Assumption | Why | Where | State |
 |---|---|---|---|---|
