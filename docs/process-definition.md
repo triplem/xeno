@@ -1118,18 +1118,37 @@ environment before starting the runner. The runner only ever sees `XENO_*` and d
 not know which harness it runs under.
 
 ```
-XENO_PLUGIN_ROOT      root of the effective plugin
 XENO_PLUGIN_DATA      local data location, always .xeno/local/
 XENO_HARNESS          claude-code | codex | unknown, recorded only
 XENO_HARNESS_VERSION  that harness's own version, recorded only
 ```
 
-Resolution order, first match wins: the `--plugin-root` argument, an already set
-`XENO_PLUGIN_ROOT`, the vendored `.xeno/plugin/` found from the git root, and only
-then client specific variables such as `CLAUDE_PLUGIN_ROOT`. The vendored plugin
-ranks above whatever the client happens to have installed, because that is the one
-G-Supply hashes and `context.lock.yaml` records. A mismatch between the two is a
-finding, not a reason to fall back: G-Supply fails red.
+**The plugin is the vendored one.** `.xeno/plugin/`, found from the git root, and
+nothing else: it is the one G-Supply hashes and `context.lock.yaml` records, and the
+one `xeno init --vendor` writes out of the runner. There is no override and no
+resolution order.
+
+This paragraph used to describe one, headed by a `--plugin-root` argument and an
+already set `XENO_PLUGIN_ROOT`, with a client's own variable at the bottom. It was
+never implemented and it is removed rather than built, because every position in it
+was either unreachable or unsafe. The gate path reads the rule set and the templates
+from the plugin, so a root taken from the environment makes `rules_hash`,
+`strings_hash` and a rendered artifact depend on it — and a phase is judged against
+the rule set its own artifact records, so a changed set does not disagree with the
+trail, it stops judging it. Measured on this repository: a valid rule tree that
+differs leaves `xeno gate verify` at exit 0 over 273 verdicts while G-Policy silently
+reports nothing about the 75 phases that recorded the previous hash. A released
+runner would catch it, because G-Supply compares the vendored tree against a digest
+the binary carries; a development build carries no digest and would not.
+
+The client's own variable was the bottom of that order and is unreachable for a
+different reason: a project with no vendored plugin resolves no template, so no phase
+of it renders, and `plugin_version` is absent, so G-Schema reports it. Falling back to
+a plugin the client installed lets such a project fail differently rather than work.
+
+An override may be worth having the day somebody needs one, and the day it is added
+the condition is that a runner which cannot verify a plugin does not accept one from
+outside the repository.
 
 `XENO_HARNESS` and `XENO_HARNESS_VERSION` are recorded, never branched on. The
 moment the runner behaves differently per harness, the tools stop being

@@ -478,10 +478,12 @@ when nothing in a pipeline produces a commit.
 
 ### WP7 Runner and entry point
 
-The CLI, the normalising entry point with `XENO_PLUGIN_ROOT`, `XENO_PLUGIN_DATA`,
-`XENO_HARNESS` and `XENO_HARNESS_VERSION`, the resolution order, and gates
-G-Secret, G-Freshness, G-Build, G-Test, G-Complete and G-Supply. Fixed version,
-signed artifact, checkable hash.
+The CLI, the normalising entry point with `XENO_PLUGIN_DATA`, `XENO_HARNESS` and
+`XENO_HARNESS_VERSION`, and gates G-Secret, G-Freshness, G-Build, G-Test, G-Complete
+and G-Supply. Fixed version, signed artifact, checkable hash.
+
+The plugin root was on that list and the resolution order with it. Section 7 now has
+neither: the plugin is the vendored one, for the reasons that section gives.
 
 **Two surfaces with different promises.** `xeno gate ...` never opens a socket, and
 that is a test in the platform matrix rather than an intention. The rest of the CLI,
