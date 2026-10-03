@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T10:20:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: context-rule
+    observation: >-
+      The demonstration exposed an order nobody designed: with a profile in force, editing the base
+      turns the earlier phase red, and a red predecessor stops the next phase from starting, so the
+      report that tells a phase what to reread is unreachable until the findings about those same
+      files have been decided. Four approvals stood between the edit and the saving.
+    proposal: >-
+      When a mechanism saves work, trace the sequence a user walks to reach it, not only the
+      mechanism. Both halves here are specified and correct, and their composition makes the
+      cheaper reading available only after the more expensive decision, which no document says and
+      no test would have caught.
+    target: .xeno/intents

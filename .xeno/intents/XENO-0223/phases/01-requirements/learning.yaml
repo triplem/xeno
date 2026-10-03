@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T09:52:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: project-convention
+    observation: >-
+      Two criteria here are about absence: an absent field where no rules are in force rather than
+      an empty list, and no finding where no budget is declared. Both are the distinction A74 is
+      built on — a resolved empty set is a different claim from nothing having been looked at — and
+      writing them as criteria is what keeps the next reader from tidying one into the other.
+    proposal: >-
+      Where a field can be absent or empty, write both cases as criteria and say what each one
+      asserts. An empty list is a statement and absence is the lack of one, and a reader who
+      conflates them reads a phase as having resolved something it never had.
+    target: .xeno/intents

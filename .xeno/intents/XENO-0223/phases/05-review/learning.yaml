@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T10:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      This intent is released with an acceptance criterion unmet, because P4 found the gap after P3
+      was sealed and what is sealed is never rewritten. The process turned a small omission into a
+      choice between a second intent for one condition and a release with a known hole, and it took
+      the second.
+    proposal: >-
+      Where a criterion is found unmet after the phase that owned it is sealed, write it into the
+      release notes as well as the risk, and open the follow-up before the review is judged. The
+      record is then complete at the moment of release rather than in whatever happens next, which
+      is the part a reader cannot see.
+    target: .xeno/intents

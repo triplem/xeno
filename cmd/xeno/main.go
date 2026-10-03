@@ -271,7 +271,23 @@ func cmdPhaseStart(o *opts) int {
 		fmt.Fprint(o.out, env)
 		return 0
 	}
+	// What a repeated phase has to read again, from the predecessor's lock and the tree. Printed
+	// rather than recorded: section 5's field list has no entry for it, and the lock states what
+	// was declared rather than what was read. Silent where nothing moved, which is also what a
+	// repository with no context profile gets, since it declared no base to move.
+	if changed := o.r.ChangedSince(o.key, o.phase); len(changed) > 0 {
+		fmt.Fprintf(o.out, "\nchanged since %s, and nothing else needs rereading:\n", previousPhase(o.phase))
+		for _, p := range changed {
+			fmt.Fprintln(o.out, "  "+p)
+		}
+	}
 	return o.next(0)
+}
+
+// previousPhase names the phase a changed set is measured against, for the one line that reports
+// it. The caller has already established that the phase is not the first.
+func previousPhase(phase string) string {
+	return model.Phases[model.PhaseIndex(phase)-1]
 }
 
 // cmdPhaseFinish passes the summary the digest is written from. A path, or "-" for stdin:

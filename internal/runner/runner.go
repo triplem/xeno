@@ -21,6 +21,7 @@ import (
 	"github.com/triplem/xeno/internal/external"
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
+	"github.com/triplem/xeno/internal/git"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/index"
 	"github.com/triplem/xeno/internal/model"
@@ -143,6 +144,65 @@ func (r *Runner) readGate(key, phase string) (*model.Gate, error) {
 
 func (r *Runner) hash(key, phase string) (string, error) {
 	return hashing.DirHash(r.Root, model.PhaseDir(key, phase), hashing.PhaseExcluded)
+}
+
+// ChangedSince is the files of the preceding phase's information base whose hashes no longer match
+// the tree: what a repeated phase has to read again, and nothing else.
+//
+// Section 5's sentence is the whole design: "context.lock.yaml already carries paths with hashes,
+// so a repeated phase knows which files changed and reads only those." The inputs are the
+// predecessor's lock and the tree, so this is derived rather than recorded — the same section says
+// the lock states what was declared rather than what was read, and its field list has no entry for
+// a changed set. A derivation that is printed cannot drift from its inputs; one that is recorded
+// can.
+//
+// Nothing here reads a file for the agent. The runner says which files moved; what to do about it
+// is the agent's to decide, which is also why an empty answer and no predecessor are the same
+// answer: nothing to say.
+func (r *Runner) ChangedSince(key, phase string) []string {
+	idx := model.PhaseIndex(phase)
+	if idx <= 0 {
+		return nil
+	}
+	var prev model.ContextLock
+	rel := model.PhaseDir(key, model.Phases[idx-1]) + "/context.lock.yaml"
+	if err := fm.ReadYAML(r.abs(rel), &prev); err != nil {
+		return nil
+	}
+	var changed []string
+	for _, f := range prev.Files {
+		h, err := hashing.FileHash(r.abs(f.Path))
+		switch {
+		case err != nil:
+			changed = append(changed, f.Path+" (gone)")
+		case h != f.SHA256:
+			changed = append(changed, f.Path)
+		}
+	}
+	return changed
+}
+
+// headCommit is the commit the phase is started against, read from the clone that is already
+// there. Everything that can go wrong — no repository, no commit yet, no git — is the same answer:
+// the lock says nothing rather than something made up.
+func (r *Runner) headCommit() string {
+	return git.Head(r.Root)
+}
+
+// rulesApplied is the effective rule set as section 5 records it: a path and a version counter per
+// rule. The same Load and Effective that produce rules_hash produce this, so a lock listing three
+// rules and a frontmatter hash over four is not a state this code can reach.
+func (r *Runner) rulesApplied() []model.AppliedRule {
+	read, _ := rules.Load(r.Root)
+	effective, _ := rules.Effective(read)
+	if len(effective) == 0 {
+		return nil
+	}
+	out := make([]model.AppliedRule, 0, len(effective))
+	for _, rl := range effective {
+		out = append(out, model.AppliedRule{Path: rl.Path, Version: rl.Version})
+	}
+	return out
 }
 
 // externalGates is the producer gates.Run calls for section 14's declared commands, or nil
@@ -322,6 +382,13 @@ func (r *Runner) Start(key, phase string) error {
 		return err
 	}
 	lock.Files = files
+	// Section 5 writes both of these into the lock. repo_commit is absent where the repository
+	// has none or is not one, because a lock naming the commit a phase ran against is a claim and
+	// an invented value would be a false one. rules_applied answers what rules_hash cannot —
+	// which rules, and which revision of each — and is absent rather than empty where no rule is
+	// in force, since an empty list says a set was resolved and came out empty (A74).
+	lock.RepoCommit = r.headCommit()
+	lock.RulesApplied = r.rulesApplied()
 	// Which template the phase will be rendered from, recorded because otherwise two
 	// projects on the same template version are indistinguishable although one of them
 	// overrode it. A repository without a vendored plugin records nothing here and
@@ -410,7 +477,12 @@ func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 	if err := fm.ReadYAML(path, &p); err != nil {
 		return nil, nil // no profile is not an error; it is a project that has not written one
 	}
-	var files []model.ContextFile
+	// One walk, and the files are bucketed by the include pattern that claimed them first. The
+	// order the buckets are emitted in is the profile's own, because section 5 asks for an order
+	// of volatility and the project is what knows which of its directories is stable. A file two
+	// patterns match takes the position of the first: a stable prefix is decided by the first
+	// thing that claims it.
+	buckets := make([][]model.ContextFile, len(p.Include))
 	seen := map[string]bool{}
 	err := filepath.WalkDir(r.Root, func(abs string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -424,7 +496,8 @@ func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 		if strings.HasPrefix(rel, ".git/") || seen[rel] {
 			return nil
 		}
-		if !matchesAny(p.Include, rel) || matchesAny(p.Exclude, rel) {
+		i := firstMatch(p.Include, rel)
+		if i < 0 || matchesAny(p.Exclude, rel) {
 			return nil
 		}
 		h, herr := hashing.FileHash(abs)
@@ -432,14 +505,43 @@ func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 			return herr
 		}
 		seen[rel] = true
-		files = append(files, model.ContextFile{Path: rel, SHA256: h})
+		buckets[i] = append(buckets[i], model.ContextFile{Path: rel, SHA256: h})
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
+	var files []model.ContextFile
+	for _, b := range buckets {
+		sort.Slice(b, func(i, j int) bool { return b[i].Path < b[j].Path })
+		files = append(files, b...)
+	}
+	// A declared link's document is part of what the phase was given, whether or not include
+	// matches it. Section 5 has links declared and never inferred, and a declaration that put
+	// nothing in the base would be ornamental. It goes last: a link is the most specific thing
+	// in a profile and therefore the most likely to move.
+	for _, l := range p.Links {
+		if l.Docs == "" || seen[l.Docs] {
+			continue
+		}
+		h, herr := hashing.FileHash(r.abs(l.Docs))
+		if herr != nil {
+			continue // a link naming a document that is not there is G-Schema's finding
+		}
+		seen[l.Docs] = true
+		files = append(files, model.ContextFile{Path: l.Docs, SHA256: h})
+	}
 	return files, nil
+}
+
+// firstMatch is the index of the first pattern that claims the path, or -1.
+func firstMatch(patterns []string, path string) int {
+	for i, pattern := range patterns {
+		if model.MatchPath(pattern, path) {
+			return i
+		}
+	}
+	return -1
 }
 
 func matchesAny(patterns []string, path string) bool {

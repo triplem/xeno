@@ -354,11 +354,33 @@ type ContextLock struct {
 	// overrode it. Empty where no template could be resolved, which is what a
 	// repository without a vendored plugin looks like until xeno init puts one there.
 	TemplateSource string `yaml:"template_source,omitempty"`
+	// RepoCommit is the commit the phase was started against, as section 5 writes it. Absent
+	// where the repository has none or is not one at all, because a lock saying which commit a
+	// phase ran against is a claim and an invented value would be a false one.
+	RepoCommit string `yaml:"repo_commit,omitempty"`
 	// Files is the information base the phase was given, resolved from the context
 	// profile when the phase started and never refreshed: the lock describes the input
 	// state, and one rewritten at the end would describe nothing. G-Freshness compares
 	// these hashes against the tree for every preceding phase.
+	//
+	// The order is the profile's include order, with paths sorted inside each pattern. Section 5
+	// asks for an order of volatility and says the lock records the assembly order rather than
+	// only the set, so the project writes its patterns from stable to volatile and this follows;
+	// the tie-break is what keeps two runs over one tree byte-identical, which the hash needs.
 	Files []ContextFile `yaml:"files,omitempty"`
+	// RulesApplied is the effective rule set the phase was judged against, one entry per rule.
+	// It answers what rules_hash cannot: which rules, and which revision of each. Absent where
+	// no rule is in force, because an empty list says a set was resolved and came out empty,
+	// where absence says there was nothing to resolve (A74's distinction).
+	RulesApplied []AppliedRule `yaml:"rules_applied,omitempty"`
+}
+
+// AppliedRule is one entry of rules_applied, as section 5 writes it: the path the rule was read
+// from and its own version counter, which claims nothing about compatibility and says how often
+// the file has moved.
+type AppliedRule struct {
+	Path    string `yaml:"path"`
+	Version int    `yaml:"version"`
 }
 
 // ContextFile is one entry of the information base, as section 5 writes it.
