@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#215
+phase: 03-implementation
+created: "2026-10-03T20:23:37Z"
+schema_version: "1.0"
+runner_version: dev+b626f1a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: An issue was filed claiming a feature was missing when it had been built four intents earlier, and a second derivation of the same answer was half written before the first was found
+      proposal: Before filing that something is missing, search the tree for it by what it would compute rather than by its name; the existing one here was called ChangedSince and the search had been for the clause, not the computation
+      target: rules/learned/org
