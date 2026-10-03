@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#1"
+created: 2026-10-03T10:42:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: project-convention
+    observation: >-
+      Writing the sections deliberately short produced the smallest artifact set of the
+      twenty-four intents and still about forty thousand bytes, because six phases of five files
+      with a digest and a learning record apiece is the floor. The length an author controls turned
+      out to be the smaller half of the figure.
+    proposal: >-
+      When the proportionality question is argued again, separate the floor from the padding: the
+      sequence's own shape is most of the cost and no author can write it away. The figures on #117
+      now have one point measured with the padding deliberately removed.
+    target: .xeno/intents
