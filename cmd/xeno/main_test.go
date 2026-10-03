@@ -375,3 +375,34 @@ func frontOf(t *testing.T, root, name string) string {
 	}
 	return ""
 }
+
+// The two channels and their order. Section 7 lists the variable for a value that holds for a
+// whole session; a flag is somebody saying it about one run, so the flag wins. Asserted at the
+// surface because `parse` is where the precedence lives (#183).
+func TestTheFlagBeatsTheHarnessVersionVariable(t *testing.T) {
+	root := repo(t)
+	t.Setenv(runner.HarnessVersionEnv, "9.9.9")
+	args := []string{"--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next"}
+	if code, _, e := invoke(t, append([]string{"phase", "start"}, args...)...); code != 0 {
+		t.Fatalf("could not start the phase: %s", e)
+	}
+
+	// No flag: the variable is what the runner read.
+	set := append([]string{"section", "set", "problem", "--file", writeTemp(t, root, "from the variable")}, args...)
+	if code, _, e := invoke(t, set...); code != 0 {
+		t.Fatalf("section set exits %d: %s", code, e)
+	}
+	if got := frontOf(t, root, "output.md"); got != "9.9.9" {
+		t.Errorf("without a flag the variable should be recorded, got %q", got)
+	}
+
+	// With the flag, over the top of the same variable.
+	set = append([]string{"section", "set", "scope", "--file", writeTemp(t, root, "from the flag")},
+		append(args, "--tool-version", "2.1.276")...)
+	if code, _, e := invoke(t, set...); code != 0 {
+		t.Fatalf("section set exits %d: %s", code, e)
+	}
+	if got := frontOf(t, root, "output.md"); got != "2.1.276" {
+		t.Errorf("the flag should beat the variable, got %q", got)
+	}
+}

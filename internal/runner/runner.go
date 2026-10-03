@@ -49,18 +49,32 @@ type Runner struct {
 	// that no longer exist. Section 9's commit predicates read them through gates.Ctx.
 	Base, Head string
 	// ToolVersion is the harness reporting its own version, for the one field of section 5
-	// the runner cannot know (A35, #181). An input rather than something read, because the
-	// runner holds no agent specific logic and asking a harness its version is the most
-	// agent specific question there is; section 7 forbids branching on the harness at all.
+	// the runner cannot know (A35, #181). Reported rather than worked out, because working
+	// it out means asking which harness this is, which section 7 forbids: the moment the
+	// runner behaves differently per harness, the tools stop being interchangeable.
 	//
 	// Empty means absent, as before. A35's reason is that a plausible value in a field
 	// nobody produced is worse than an absent one, and nothing here produces one.
+	//
+	// Set from --tool-version, or from XENO_HARNESS_VERSION where the flag is not given.
+	// Section 7 lists the variable and calls it recorded only, which is what this is: the
+	// value reaches two frontmatter fields and nothing reads it back.
 	ToolVersion string
 }
 
 func New(root string) *Runner {
-	return &Runner{Root: root, Now: func() time.Time { return time.Now().UTC() }}
+	return &Runner{Root: root, Now: func() time.Time { return time.Now().UTC() },
+		ToolVersion: os.Getenv(HarnessVersionEnv)}
 }
+
+// HarnessVersionEnv is the variable section 7 lists for the harness's own version. The runner
+// reads it here and nowhere else, and reads no client specific variable at all: normalising
+// one into XENO_* is the entry point's work, which is #183 and is not built.
+//
+// It is the only XENO_* variable anything in this binary reads today, which is the finding that
+// issue records. The three beside it in that list — the plugin root, the data location and the
+// harness name — are specified and read by nothing.
+const HarnessVersionEnv = "XENO_HARNESS_VERSION"
 
 func (r *Runner) abs(rel string) string { return filepath.Join(r.Root, rel) }
 func (r *Runner) stamp() string         { return r.Now().Format(time.RFC3339) }

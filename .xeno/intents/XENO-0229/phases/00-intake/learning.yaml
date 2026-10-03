@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:30:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: project-convention
+    observation: >-
+      A80 recorded the better mechanism as out of reach and shipped the one that was. Asking the
+      maintainer put it in reach in a single exchange, and the design A80 had already written was
+      the design that got built — nothing had to be reconsidered, only committed in the right order.
+    proposal: >-
+      Where an assumption row says a mechanism is unavailable because a document would have to
+      change, treat the row as a question to put rather than a constraint to design around. The
+      first standing rule says the specification wins "until a person changes it", and the clause is
+      an invitation to ask, not only a prohibition.
+    target: .xeno/intents

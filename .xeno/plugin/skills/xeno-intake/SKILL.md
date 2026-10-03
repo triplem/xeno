@@ -41,10 +41,13 @@ Write a `learning.yaml` in the phase directory before finishing: every phase owe
 and `no_finding: true` is the honest empty record.
 
 The one field the runner cannot know is `tool_version`, because section 7 forbids it
-branching on the harness. G-Schema requires it, so report it on the first `section set`
-of the phase and the digest takes it from the artifact rather than asking again:
+branching on the harness. G-Schema requires it, so the harness says it: section 7's
+`XENO_HARNESS_VERSION` for a whole session, or `--tool-version` on the phase's first
+`section set` for one run. The digest takes it from the artifact rather than asking
+again, and where neither says it the field is absent and the gate reports it missing.
 
-    --tool-version 2.1.276
+    export XENO_HARNESS_VERSION=2.1.276     # once, for the session
+    --tool-version 2.1.276                  # or per run, over the top of it
 
 ## What the gate refuses
 

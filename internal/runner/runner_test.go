@@ -35,13 +35,21 @@ type fixture struct {
 }
 
 func newFixture(t *testing.T) *fixture {
-	root := t.TempDir()
-	r := New(root)
-	r.Now = func() time.Time { return time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC) }
-	f := &fixture{t, root, r}
+	// Cleared so that every test is hermetic: New reads XENO_HARNESS_VERSION, and a
+	// developer whose shell exports it would otherwise see the absence tests pass a value.
+	t.Setenv(HarnessVersionEnv, "")
+	f := &fixture{t: t, root: t.TempDir()}
+	f.reopen()
 	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n")
 	f.write(model.IntentDir(key)+"/assumptions.yaml", "assumptions: []\n")
 	return f
+}
+
+// reopen builds the runner over the same tree. Separate from newFixture because New reads the
+// environment, so a test that changes what it would read has to build it again.
+func (f *fixture) reopen() {
+	f.r = New(f.root)
+	f.r.Now = func() time.Time { return time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC) }
 }
 
 func (f *fixture) write(rel, content string) {
@@ -2640,6 +2648,31 @@ func TestWithoutAReportTheFieldStaysAbsent(t *testing.T) {
 	front, _ := digestFront(t, f.root, "00-intake")
 	if _, ok := front["tool_version"]; ok {
 		t.Errorf("digest.md invented a tool_version: %v", front["tool_version"])
+	}
+}
+
+// Section 7 lists XENO_HARNESS_VERSION for a value that holds for a whole session, so the
+// runner reads it where no flag said otherwise. This is the same assertion as the first test
+// in this section, reached through the channel the specification names rather than an
+// argument (#183).
+func TestTheHarnessVersionIsReadFromTheEnvironment(t *testing.T) {
+	f := newFixture(t)
+	// Set after the fixture cleared it, and the runner built again, because New is where
+	// the variable is read and that reading is what this asserts.
+	t.Setenv(HarnessVersionEnv, "2.1.276")
+	f.reopen()
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	if got := f.frontField("00-intake", "tool_version"); got != "2.1.276" {
+		t.Errorf("output.md records tool_version %q, want 2.1.276", got)
+	}
+	front, _ := digestFront(t, f.root, "00-intake")
+	if front["tool_version"] != "2.1.276" {
+		t.Errorf("digest.md records tool_version %v, want 2.1.276", front["tool_version"])
 	}
 }
 
