@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:25:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: context-rule
+    observation: >-
+      Both checks were run against real cases in a throwaway worktree before the workflow was
+      written: a committed deletion, an addition, and a directory added then dropped in two commits.
+      The third case is the one that decided the two-dot form, and reasoning about it would have got
+      it right only by accident, because `git diff A B` and `git diff A..B` read almost identically.
+    proposal: >-
+      Where a check is a git invocation, run it in a worktree against the cases it has to separate
+      before putting it in a workflow. The difference between two forms of one command is a sentence
+      in the manual and a wrong verdict in CI, and a worktree costs a minute.
+    target: .xeno/intents

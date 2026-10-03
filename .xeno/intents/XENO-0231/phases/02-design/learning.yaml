@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:20:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      Four of the eight alternatives were refused because they would have created a second statement
+      of one rule: an expression beside the shipped pattern, a workflow beside the required context,
+      a hash beside what git already knows, a default base beside the one the pull request names.
+      The design work was choosing the single source each time rather than inventing a mechanism.
+    proposal: >-
+      When designing a check, ask what already states the rule and call that, even where writing the
+      expression would be shorter. A check that restates a rule is a second rule, and the two
+      diverge at the first change to either.
+    target: .xeno/intents

@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#190
+phase: 00-intake
+created: "2026-10-03T14:01:06Z"
+schema_version: "1.0"
+runner_version: 0.1.0-dev+74553ad.dirty
+plugin_version: 0.1.0-dev
+evidence_source: ci
+template_source: plugin
+repo_commit: 74553adaba7344204fd6c817303bfba8ea387fba
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1

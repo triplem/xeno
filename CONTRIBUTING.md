@@ -9,11 +9,39 @@ intent in a trailer:
 
     Xeno-Intent: XENO-2
 
+**The trail only grows.** What is sealed is never rewritten, which section 7 states as a
+rule holding throughout, so a change adds to `.xeno/intents/` and never removes from it.
+An edit to a sealed artifact is caught by `gate verify`, which recomputes the hash and
+reports the divergence. A deletion was caught by nothing until #193, and the verify
+workflow now refuses a pull request that removes or renames any path under that
+directory: a verdict that is gone is not distinguishable from one that never existed,
+and the remainder verifies clean.
+
+Adding a directory and dropping it again inside one branch is not that, and is not
+refused. The comparison is against the base of the pull request, so what never reached
+main is nobody's business.
+
 ## Commit messages
 
 The subject is plain Conventional Commits and carries no issue reference:
 
     feat(docs): a description
+
+**The pull request title is that subject.** The squashed message is built from the title
+and the description, so the subject written on a branch is discarded at the merge and
+the title is the only place the rule above has any effect. The verify workflow refuses a
+title that is not a Conventional Commit, with the shipped `conventional-commits` pattern
+and the same `xeno check commit-message` anybody can run on one by hand.
+
+The host appends the pull request's number to it, so `feat(docs): a description` reaches
+main as `feat(docs): a description (#3)`. That form is what the second shipped pattern,
+`conventional-commits-with-issue`, exists for, and it is why the title is written
+without a reference rather than with one.
+
+**A prose title releases nothing, silently.** semantic-release reads the subjects on
+main to decide whether there is a version to cut; a subject it cannot parse is not a
+small release, it is no release. Fifteen merges of this repository carried prose titles
+and no release ran for five days, which is what #190 was.
 
 The issue goes in the footer, and so does the closing keyword on the commit that
 finishes the work:
