@@ -9,8 +9,8 @@ about an intent each, and a pass that fixed as it went would stop at the first.
 
 It is a measurement, not a specification. Where it and the documents disagree, the
 documents win. The pass was made on 2026-10-03 against `d19a1ca`, and a reader named by
-symbol is wrong the day the symbol is renamed with nothing to say so, which is the
-most a document can do about its own ageing.
+symbol is wrong the day the symbol is renamed with nothing to say so, which is the most
+a document can do about its own ageing.
 
 ## How it was made
 
@@ -110,26 +110,33 @@ Two of these were unguarded until this session and are listed with their new rea
 because the pair is the clearest illustration of the difference: a modification diverges
 loudly and a deletion was silent until something was written to notice it.
 
-## What this pass found that had no issue
+## What this pass found, and where it went
 
-**`XENO_PLUGIN_DATA` is specified as "always `.xeno/local/`" and read by nothing.** The
-entry point exports it; five packages use the constant instead. A reader cannot tell a
-variable with no reader from one whose reader is a constant. Recorded in A84 and still
-the state of the one remaining entry in section 7's list.
+**#205 — `XENO_PLUGIN_DATA` is specified as "always `.xeno/local/`" and read by
+nothing.** The entry point exports it; five packages use the constant instead. A reader
+cannot tell a variable with no reader from one whose reader is a constant. Recorded in
+A84 and still the state of the one remaining entry in section 7's list.
 
-**G-Complete runs only at P5**, so an intent that never reaches P5 is never checked for
-completeness. XENO-0230 reached `main` with its verification and review phases missing
-and every gate green. Known since that intent and filed nowhere.
+**#206 — G-Complete runs only at P5**, so an intent that never reaches P5 is never
+checked for completeness. XENO-0230 reached `main` with its verification and review
+phases missing and every gate green. Known since that intent, and until #206
+filed nowhere.
+
+**#208 — declared evidence has no writing command.** Section 5 puts the declaration in
+the frontmatter of `output.md`, which the runner writes and `artifacts_hash` covers, so
+`evidence attach` has nothing to attach against and no verification phase in this trail
+has ever carried evidence. G-Evidence passes correctly over an empty set. Found while
+running this intent rather than by the pass.
 
 **Section 13's `--vendor` list names `mcp.json`** and the plugin carries none,
 deliberately, because a client reading a declaration of a server that does not exist
 fails at startup. The walk copies it the day it exists. A clause whose reader is correct
 to find nothing.
 
-**Section 12 requires model, tool and version in every artifact** as the raw material
-for a provider register. `tool_version` had no writer until #181 and `plugin_version`
-was a constant until #177; both now have one, and nothing checks that what they say is
-true. A self-report with a reader that cannot fail.
+**#207 — section 12 requires model, tool and version in every artifact** as the raw
+material for a provider register. `tool_version` had no writer until #181 and
+`plugin_version` was a constant until #177; both now have one, and nothing checks that
+what they say is true. A self-report with a reader that cannot fail.
 
 ## What this pass is not
 
