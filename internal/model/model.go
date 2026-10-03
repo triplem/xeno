@@ -384,9 +384,16 @@ type AppliedRule struct {
 }
 
 // ContextFile is one entry of the information base, as section 5 writes it.
+//
+// Bytes is the size of the file as the walk saw it, taken with the hash so the two describe one
+// read of one file. Section 5: "the size is recorded because the budget is judged against what the
+// phase was given and not against what the tree holds now". Absent in every lock written before the
+// field existed, which is why the budget asks whether any entry carries a size rather than whether
+// the sum is zero.
 type ContextFile struct {
 	Path   string `yaml:"path"`
 	SHA256 string `yaml:"sha256"`
+	Bytes  int64  `yaml:"bytes,omitempty"`
 }
 
 // Profile is the context profile section 12 defines: a budget, produced by P0 and read by

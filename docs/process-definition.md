@@ -535,12 +535,18 @@ created: <iso8601>
 runner_version: <version>
 plugin_version: <version>
 repo_commit: <sha>
-files: [{ path: ..., sha256: ... }]
+files: [{ path: ..., sha256: ..., bytes: ... }]
 rules_applied: [{ path: ..., version: ... }]
 template_source: <plugin|project>
 plugin: { version: ..., sha256: ... }
 tools: []        # context tools used, each with name, version, response hash
 ```
+
+Each entry of `files` carries the size of the file as well as its hash. The size is
+recorded because the budget is judged against what the phase was given and not against
+what the tree holds now: measured at the time of the check, a file that grew after a
+verdict would move a sealed phase's standing, and every other number in this process is
+judged against what the artifact recorded.
 
 `tools` names every context tool a phase used, with its version and the hash of its
 answer: in v1 the symbol index, in v2 a code graph or a comparable tool without a

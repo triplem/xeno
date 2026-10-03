@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T12:06:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      The specification clause for this intent was written an hour before the code, to answer the
+      question the code would ask, and the result was the fastest design phase of the twenty-nine:
+      nothing to interpret, four alternatives refused by rules that already existed. The first
+      standing rule's ordering turned out to be an economy rather than a formality.
+    proposal: >-
+      When a piece needs a document change, write the clause before the intake rather than after the
+      implementation. The rule asks for the ordering anyway, and the reason to want it is that the
+      intake then reads a sentence written for the question instead of inferring one from prose
+      written months earlier.
+    target: .xeno/intents

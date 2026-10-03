@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#176"
+created: 2026-10-03T11:58:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      The demonstration grew a document by three hundred thousand bytes, which is what a month of
+      writing does to this repository rather than an arbitrary number, and the phase's standing did
+      not move. Choosing a plausible growth rather than a round one is what made the result legible:
+      the figure is the claim, not the mechanism.
+    proposal: >-
+      When demonstrating that something no longer changes, make the change the size the project
+      actually produces. A verdict that survives an absurd input proves the branch; one that
+      survives a month's work proves the property somebody cares about.
+    target: .xeno/intents
