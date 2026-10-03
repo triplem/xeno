@@ -17,7 +17,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      # The whole history, because the step below compares the trail against the base of
+      # the pull request and a shallow clone does not have that commit.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -44,6 +48,46 @@ jobs:
             echo "Describe the marker instead of writing it."
             exit 1
           fi
+
+      # Section 7: what is sealed is never rewritten. An edit to a sealed artifact is
+      # caught by `gate verify`, which recomputes the hash and reports a divergence. A
+      # deletion is caught by nothing: removing an intent takes its verdicts out of the
+      # count and the remainder verifies clean, because nothing in the repository says
+      # how many there should be. Measured — `rm -rf` one intent and verify exits 0 with
+      # six fewer verdicts (#193).
+      #
+      # A tree comparison against the base rather than a commit range: a directory
+      # created and then dropped inside one branch never existed on main and is
+      # nobody's business, and the two-dot form does not report it. HEAD is the merge
+      # result for a pull request, which is the tree the merge would produce and so
+      # the right subject.
+      #
+      # Modification is left to `gate verify`. Rename is included because Appendix B
+      # puts the path inside artifacts_hash, so a moved artifact is a changed one.
+      - name: the trail is not rewritten
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          # A base that is not in the clone would make the comparison vacuous, and a
+          # vacuous guard reports the same thing as a clean one.
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "the base commit $BASE is not in this clone, so the trail cannot be"
+            echo "compared against it. Refusing rather than passing on no evidence."
+            exit 1
+          fi
+          gone=$(git diff --diff-filter=DR --name-only "$BASE" HEAD -- .xeno/intents/)
+          if [ -n "$gone" ]; then
+            echo "This removes or renames part of the trail:"
+            echo "$gone" | sed 's/^/  /'
+            echo
+            echo "What is sealed is never rewritten (section 7). A verdict's hash"
+            echo "covers the path as well as the contents, and a verdict that is gone"
+            echo "is not distinguishable from one that never existed."
+            exit 1
+          fi
+          echo "no path under .xeno/intents/ is removed or renamed"
 
       - name: format
         run: |
@@ -78,5 +122,31 @@ jobs:
         run: go test ./...
       - name: build
         run: go build -o xeno ./cmd/xeno
+      # squash_merge_commit_title is PR_TITLE for this repository, so the pull request's
+      # title is the commit subject that reaches main and the subject written on the
+      # branch is discarded. CLAUDE.md asks subjects to be Conventional Commits; this is
+      # the only place that rule now has any effect, and nothing checked it. Fifteen
+      # merges carried prose titles, semantic-release read them as nothing to release,
+      # and no release ran for five days (#190).
+      #
+      # The plain pattern rather than conventional-commits-with-issue: the author writes
+      # the title without a reference and the host appends one, so requiring the suffix
+      # would ask for something nobody types, and forbidding it would reject a title
+      # that has been through a rename. The shipped pattern accepts both.
+      - name: the title is the commit subject, so it is a Conventional Commit
+        if: github.event_name == 'pull_request'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -eu
+          if ! printf '%s' "$TITLE" |
+              ./xeno check commit-message --pattern conventional-commits; then
+            echo
+            echo "The title becomes the squashed commit subject, and semantic-release"
+            echo "reads it to decide whether anything is released. A prose title"
+            echo "releases nothing, silently."
+            exit 1
+          fi
+
       - name: verify
         run: ./xeno gate verify

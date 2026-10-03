@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:10:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      Both checks this intent adds use machinery that was already here and already unused: the
+      command and its two patterns for the title, and the base of the pull request for the trail.
+      The intake's work was finding what existed rather than deciding what to build, and the title
+      step reuses an environment decision the neighbouring step had already taken and commented.
+    proposal: >-
+      Before designing a check, grep for the command that would perform it and read the step that
+      sits nearest to where it belongs. Twice now the answer has been a command this repository
+      ships and invokes nowhere, and the second time it also supplied the argument handling.
+    target: .xeno/intents

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:30:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 04-verification
+learnings:
+  - category: context-rule
+    observation: >-
+      Writing the gaps found one nobody had thought of: the title check runs on `pull_request`,
+      whose default types do not include `edited`, so a title changed after the last push is never
+      re-checked and GitHub re-runs required checks on a commit rather than on a retitle. The check
+      this intent adds has a window in exactly the field it guards.
+    proposal: >-
+      For a check that reads pull request metadata rather than the tree, write down which event
+      types re-run it and whether the metadata can change without one. A check on the tree is
+      re-run by every push; a check on a title is not, and the difference is invisible in the step.
+    target: .xeno/intents

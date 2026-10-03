@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:15:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion that a missing base fails rather than passes was written because the same error
+      had been made three times in one day in this repository — a monitor reading an earlier
+      commit's results, a push reported from an echo, a check believed green on a commit nothing had
+      tested. A guard that compares against something absent reports what a clean one reports.
+    proposal: >-
+      For any check that compares two things, write a criterion about the case where one of them is
+      missing, and make it a failure. The vacuous pass is the failure mode of comparisons, it looks
+      exactly like success, and it is the one a reviewer cannot see.
+    target: .xeno/intents

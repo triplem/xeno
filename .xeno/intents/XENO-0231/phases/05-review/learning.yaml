@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#190"
+created: 2026-10-03T16:35:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the fourth intent in a row whose subject is a rule stated in one place with nothing
+      comparing the repository against it: a check that could not run before the merge, a convention
+      that could not survive it, a rule with no reader, and a gate that runs too late to see an
+      incomplete intent. Each was found by something failing rather than by anybody auditing.
+    proposal: >-
+      The documents state more rules than the repository checks, and the gap is not visible from
+      either side. Worth one pass that lists every normative "never" and "always" in the process
+      definition against what reads it, as a finding rather than as work — the four found this way
+      cost a morning each, and they were found by accident.
+    target: .xeno/intents
