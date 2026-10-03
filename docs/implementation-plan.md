@@ -679,13 +679,23 @@ file, a cause and a next step.
 `context-profile.yaml` as a P0 artifact with include, exclude, declared links and
 budget, validated by G-Schema, plus change driven re-reading from the hashes already
 in `context.lock.yaml`. Phases read the preceding digest rather than rescanning the
-codebase. Reading outside the profile is recorded, not blocked.
+codebase.
+
+Reading outside the profile is recorded in the phase's digest, not blocked, and not in
+`context.lock.yaml`. Section 5 of the process definition says why the lock cannot carry
+it: the lock is written before the agent starts and states what the phase was given, so
+treating it as a measurement of what was read would be wrong, and one rewritten at the
+end would describe nothing. The digest is written when the phase closes, by the agent,
+and the phases after it read it, which the process definition already relies on where it
+has later phases work from the digest rather than a fresh scan. That is the weakest record
+that is still a record: it is the agent's own account, because nothing in the harness
+reports what was opened.
 
 This half needs no baseline, only hashes that already exist, and P0 cannot produce a
 profile until the format is fixed. The measured half is WP15.
 
-Done when a repeated phase reads only what changed, and when every read outside the
-profile appears in `context.lock.yaml`.
+Done when a repeated phase reads only what changed, and when a read outside the profile
+is named in the digest of the phase that made it.
 
 ### WP9 Initialisation on an existing repository
 
