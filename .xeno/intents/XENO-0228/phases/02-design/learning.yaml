@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T13:50:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      The best mechanism needed a specification change the agent may not make, so the choice was put
+      to the maintainer before any code existed, with both options and what each would cost. The
+      answer took one exchange and the design was then unambiguous; discovering the constraint at
+      implementation would have meant either a wrong mechanism or a stalled phase.
+    proposal: >-
+      Where a design's preferred option requires a document change, surface the choice at design
+      with the alternative that needs none, rather than designing the one the agent can build and
+      recording the better one as a non-goal. The first standing rule makes this a recurring shape,
+      not a one-off.
+    target: .xeno/intents

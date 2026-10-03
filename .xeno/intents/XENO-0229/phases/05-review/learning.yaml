@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:55:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      This is the first intent whose specification commit was made by the agent, under an explicit
+      approval, and the review's most useful question was whether the approval had been used for
+      more than was approved. The answer was checkable in one diff, and the one unrequested thing in
+      it — three lines re-aligned — was already recorded as a deviation.
+    proposal: >-
+      Where a document was opened under approval, make the review ask what else that diff contains
+      and answer it against the diff. An approval is for a change, not for a file, and the
+      difference is only visible if somebody looks for it while the diff is still small.
+    target: .xeno/intents

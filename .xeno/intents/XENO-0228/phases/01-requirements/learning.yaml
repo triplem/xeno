@@ -1,0 +1,17 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T13:45:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion that mattered most — a second `phase finish` keeps the value — is a property of
+      rerunning a command, not of running it. It was found by asking which of the two writers was
+      paid repeatedly rather than by listing what the field should contain.
+    proposal: >-
+      For a field with a new writer, write a criterion about the second run of every command that
+      writes it. The commands of this process are all rerunnable by design, and a writer that is
+      correct once and lossy twice reads as correct in every test that runs it once.
+    target: .xeno/intents

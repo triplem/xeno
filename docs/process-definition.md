@@ -1118,9 +1118,10 @@ environment before starting the runner. The runner only ever sees `XENO_*` and d
 not know which harness it runs under.
 
 ```
-XENO_PLUGIN_ROOT    root of the effective plugin
-XENO_PLUGIN_DATA    local data location, always .xeno/local/
-XENO_HARNESS        claude-code | codex | unknown, recorded only
+XENO_PLUGIN_ROOT      root of the effective plugin
+XENO_PLUGIN_DATA      local data location, always .xeno/local/
+XENO_HARNESS          claude-code | codex | unknown, recorded only
+XENO_HARNESS_VERSION  that harness's own version, recorded only
 ```
 
 Resolution order, first match wins: the `--plugin-root` argument, an already set
@@ -1130,8 +1131,17 @@ ranks above whatever the client happens to have installed, because that is the o
 G-Supply hashes and `context.lock.yaml` records. A mismatch between the two is a
 finding, not a reason to fall back: G-Supply fails red.
 
-`XENO_HARNESS` is recorded, never branched on. The moment the runner behaves
-differently per harness, the tools stop being interchangeable.
+`XENO_HARNESS` and `XENO_HARNESS_VERSION` are recorded, never branched on. The
+moment the runner behaves differently per harness, the tools stop being
+interchangeable.
+
+The version is in this list because `tool_version` in section 5 is a property of
+the session that produced an artifact, and the harness is the only thing that
+knows it. A runner that worked the value out would have to ask which harness it
+was under, which is the branching the paragraph above forbids. So it is reported
+and never derived, and a harness that reports nothing leaves the field absent
+rather than defaulted: a plausible value in a field nobody produced says a
+session happened that did not.
 
 **Two constraints.**
 

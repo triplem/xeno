@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:45:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: context-rule
+    observation: >-
+      Clearing the variable in `newFixture` made every existing test in the package hermetic in one
+      line, and it was written for one new test. The suite had not depended on the environment
+      before this change, so there was no precedent to follow and nothing would have failed on the
+      machine it was written on.
+    proposal: >-
+      The first time the runner reads ambient state, clear that state in the package's shared
+      fixture rather than in the test that cares. Every later test inherits the hygiene, and the
+      alternative is remembered once and forgotten afterwards.
+    target: .xeno/intents

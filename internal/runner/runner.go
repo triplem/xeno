@@ -48,11 +48,33 @@ type Runner struct {
 	// deliberately not recorded: after a squash a recorded range would point at commits
 	// that no longer exist. Section 9's commit predicates read them through gates.Ctx.
 	Base, Head string
+	// ToolVersion is the harness reporting its own version, for the one field of section 5
+	// the runner cannot know (A35, #181). Reported rather than worked out, because working
+	// it out means asking which harness this is, which section 7 forbids: the moment the
+	// runner behaves differently per harness, the tools stop being interchangeable.
+	//
+	// Empty means absent, as before. A35's reason is that a plausible value in a field
+	// nobody produced is worse than an absent one, and nothing here produces one.
+	//
+	// Set from --tool-version, or from XENO_HARNESS_VERSION where the flag is not given.
+	// Section 7 lists the variable and calls it recorded only, which is what this is: the
+	// value reaches two frontmatter fields and nothing reads it back.
+	ToolVersion string
 }
 
 func New(root string) *Runner {
-	return &Runner{Root: root, Now: func() time.Time { return time.Now().UTC() }}
+	return &Runner{Root: root, Now: func() time.Time { return time.Now().UTC() },
+		ToolVersion: os.Getenv(HarnessVersionEnv)}
 }
+
+// HarnessVersionEnv is the variable section 7 lists for the harness's own version. The runner
+// reads it here and nowhere else, and reads no client specific variable at all: normalising
+// one into XENO_* is the entry point's work, which is #183 and is not built.
+//
+// It is the only XENO_* variable anything in this binary reads today, which is the finding that
+// issue records. The three beside it in that list — the plugin root, the data location and the
+// harness name — are specified and read by nothing.
+const HarnessVersionEnv = "XENO_HARNESS_VERSION"
 
 func (r *Runner) abs(rel string) string { return filepath.Join(r.Root, rel) }
 func (r *Runner) stamp() string         { return r.Now().Format(time.RFC3339) }
@@ -634,6 +656,16 @@ func (r *Runner) writeDigest(key, phase, summary string) error {
 			front["tool"] = tool
 		}
 	}
+	// Carried over from the artifact beside it rather than taken as an input of its own.
+	// The digest is the same phase produced in the same session, `output.md` already records
+	// which harness wrote it, and this function is rerun by every `phase finish` — an input
+	// would have to be supplied again on each one, which is the hand edit this replaces
+	// (#181). A reported version wins, for a digest written before any section was.
+	if v := r.ToolVersion; v != "" {
+		front["tool_version"] = v
+	} else if v := r.recordedToolVersion(key, phase); v != "" {
+		front["tool_version"] = v
+	}
 	// Section 16: the agent writes the summary text, the runner filters it against the
 	// effective filter, hashes it and writes the file, so the filtering is deterministic and
 	// outside the model's reach. An empty filter, which is a repository before its plugin is
@@ -653,6 +685,19 @@ func (r *Runner) writeDigest(key, phase, summary string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(out), 0o644)
+}
+
+// recordedToolVersion reads what the phase's output.md says wrote it. A phase with no artifact,
+// no frontmatter or no such field answers empty, which is the field absent and is the state of
+// every phase written before there was a way to report it.
+func (r *Runner) recordedToolVersion(key, phase string) string {
+	var front struct {
+		ToolVersion string `yaml:"tool_version"`
+	}
+	if _, err := fm.ReadFront(r.abs(model.PhaseDir(key, phase)+"/output.md"), &front); err != nil {
+		return ""
+	}
+	return front.ToolVersion
 }
 
 // writeCost writes the cost record of section 11 from what the hook attributed to this phase.
@@ -795,6 +840,13 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 		if tool != "" {
 			front["tool"] = tool
 		}
+	}
+	// The one field that does come from the harness, where the harness said. Written only
+	// when reported, and a report never erases what an earlier write carried over: a phase
+	// whose first sections named the version and whose last did not is one session, and the
+	// field describes the session rather than the invocation.
+	if r.ToolVersion != "" {
+		front["tool_version"] = r.ToolVersion
 	}
 	lockPath := r.abs(model.PhaseDir(key, phase) + "/context.lock.yaml")
 	if h, err := hashing.FileHash(lockPath); err == nil {

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T13:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      This intake's first act was `grep os.Getenv` over `internal/` and `cmd/`, which returned one
+      hit and settled the problem statement: the channel section 7 designs for harness facts is
+      specified and unbuilt. Two previous records had named the field writerless without noticing
+      that the mechanism behind it was missing too.
+    proposal: >-
+      Where a document says a value comes from somewhere, grep for the reader before describing the
+      gap. A field with no writer and a field whose whole channel was never built are different
+      findings, and the cheap command tells them apart before the design has to guess.
+    target: .xeno/intents

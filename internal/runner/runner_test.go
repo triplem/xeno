@@ -35,13 +35,21 @@ type fixture struct {
 }
 
 func newFixture(t *testing.T) *fixture {
-	root := t.TempDir()
-	r := New(root)
-	r.Now = func() time.Time { return time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC) }
-	f := &fixture{t, root, r}
+	// Cleared so that every test is hermetic: New reads XENO_HARNESS_VERSION, and a
+	// developer whose shell exports it would otherwise see the absence tests pass a value.
+	t.Setenv(HarnessVersionEnv, "")
+	f := &fixture{t: t, root: t.TempDir()}
+	f.reopen()
 	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n")
 	f.write(model.IntentDir(key)+"/assumptions.yaml", "assumptions: []\n")
 	return f
+}
+
+// reopen builds the runner over the same tree. Separate from newFixture because New reads the
+// environment, so a test that changes what it would read has to build it again.
+func (f *fixture) reopen() {
+	f.r = New(f.root)
+	f.r.Now = func() time.Time { return time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC) }
 }
 
 func (f *fixture) write(rel, content string) {
@@ -2550,3 +2558,139 @@ func TestANewIntentIsListedAndItsPhaseStarts(t *testing.T) {
 // mustIntent discards the record and keeps the error, as must2 does for a verdict: a test
 // that only needs the intent to exist says so without naming a variable it ignores.
 func (f *fixture) mustIntent(_ *model.Intent, err error) { f.t.Helper(); f.must(err) }
+
+// ---- the harness reports the one field the runner cannot know (#181)
+
+// set writes one section and keeps the error. These tests are about the frontmatter the write
+// produces and never about the resolved template, so naming a variable for it would be naming
+// one to ignore it.
+func (f *fixture) set(key, phase, section, content string) {
+	f.t.Helper()
+	_, err := f.r.SectionSet(key, phase, section, content)
+	f.must(err)
+}
+
+// TestTheReportedToolVersionReachesBothArtifacts is the point of `--tool-version`: the field
+// G-Schema requires, written by a command into the two files that carry it, with no edit to
+// either. The digest takes it from `output.md` rather than from a second input.
+func TestTheReportedToolVersionReachesBothArtifacts(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.r.ToolVersion = "2.1.276"
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	if got := f.frontField("00-intake", "tool_version"); got != "2.1.276" {
+		t.Errorf("output.md records tool_version %q, want 2.1.276", got)
+	}
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+	front, _ := digestFront(t, f.root, "00-intake")
+	if front["tool_version"] != "2.1.276" {
+		t.Errorf("digest.md records tool_version %v, want 2.1.276", front["tool_version"])
+	}
+}
+
+// The digest is rewritten by every `phase finish`, which is where the hand edit was paid
+// again and again. A second finish that reports nothing keeps what the artifact beside it
+// records, because the two describe one session and `output.md` is the one that says so.
+func TestASecondFinishKeepsTheToolVersionWithoutBeingToldAgain(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.r.ToolVersion = "2.1.276"
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	f.r.ToolVersion = ""
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	front, _ := digestFront(t, f.root, "00-intake")
+	if front["tool_version"] != "2.1.276" {
+		t.Errorf("the second finish lost it: tool_version %v", front["tool_version"])
+	}
+}
+
+// A reported version wins over the artifact's, which is the case of a digest written before
+// any section was: there is no output.md to carry anything over from, and the harness saying
+// what it is cannot be overruled by a file that does not exist.
+func TestAReportedVersionBeatsTheRecordedOne(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.r.ToolVersion = "2.1.276"
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	f.r.ToolVersion = "2.2.0"
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+	front, _ := digestFront(t, f.root, "00-intake")
+	if front["tool_version"] != "2.2.0" {
+		t.Errorf("the reported version did not win: tool_version %v", front["tool_version"])
+	}
+}
+
+// Nothing reported is the field absent, which is A35's rule and the state of every artifact
+// written before there was a way to report it. A plausible value here would be worse than
+// none, so neither writer invents one and G-Schema goes on reporting it missing.
+func TestWithoutAReportTheFieldStaysAbsent(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	if got := f.frontField("00-intake", "tool_version"); got != "" {
+		t.Errorf("output.md invented a tool_version: %q", got)
+	}
+	front, _ := digestFront(t, f.root, "00-intake")
+	if _, ok := front["tool_version"]; ok {
+		t.Errorf("digest.md invented a tool_version: %v", front["tool_version"])
+	}
+}
+
+// Section 7 lists XENO_HARNESS_VERSION for a value that holds for a whole session, so the
+// runner reads it where no flag said otherwise. This is the same assertion as the first test
+// in this section, reached through the channel the specification names rather than an
+// argument (#183).
+func TestTheHarnessVersionIsReadFromTheEnvironment(t *testing.T) {
+	f := newFixture(t)
+	// Set after the fixture cleared it, and the runner built again, because New is where
+	// the variable is read and that reading is what this asserts.
+	t.Setenv(HarnessVersionEnv, "2.1.276")
+	f.reopen()
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+	f.must2(f.r.Finish(key, "00-intake", "a summary"))
+
+	if got := f.frontField("00-intake", "tool_version"); got != "2.1.276" {
+		t.Errorf("output.md records tool_version %q, want 2.1.276", got)
+	}
+	front, _ := digestFront(t, f.root, "00-intake")
+	if front["tool_version"] != "2.1.276" {
+		t.Errorf("digest.md records tool_version %v, want 2.1.276", front["tool_version"])
+	}
+}
+
+// A later section write that reports nothing does not erase what an earlier one recorded.
+// The field describes the session and not the invocation, and `SectionSet` carries the
+// frontmatter of an existing artifact over, which is what makes that true.
+func TestALaterSectionWriteDoesNotEraseTheVersion(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.r.ToolVersion = "2.1.276"
+	f.must(f.r.Start(key, "00-intake"))
+	f.set(key, "00-intake", "problem", "what is wrong")
+
+	f.r.ToolVersion = ""
+	f.set(key, "00-intake", "scope", "what is in")
+
+	if got := f.frontField("00-intake", "tool_version"); got != "2.1.276" {
+		t.Errorf("the second section write lost it: %q", got)
+	}
+}

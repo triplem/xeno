@@ -44,7 +44,9 @@ const usage = `usage:
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
   xeno version
-common: --root DIR (default .), --no-next to leave out the next step`
+common: --root DIR (default .), --no-next to leave out the next step
+        --tool-version V on section set and phase finish, which record what wrote a phase;
+        XENO_HARNESS_VERSION says the same thing for a whole session`
 
 // main is the only place the real files appear. Everything below writes through what it is
 // given, so that the exit code staircase this package promises can be asserted in process
@@ -70,7 +72,7 @@ type opts struct {
 	project, mdl, language         string
 	pluginFrom, host, branch       string
 	base, head, reason             string
-	issue                          string
+	issue, toolVersion             string
 	text, origin, confidence       string
 	resolves                       string
 	vendor, noNext, export, isJSON bool
@@ -181,6 +183,10 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.head, "head", "", "the head of the commit range under review")
 	fs.StringVar(&o.reason, "reason", "", "why")
 	fs.StringVar(&o.issue, "for", "", "the issue an intent belongs to, as a key or as the whole qualified id")
+	// The one field of section 5 the runner cannot know, so the harness says it. Absent
+	// where it is not given, which is what every artifact written before this carries.
+	fs.StringVar(&o.toolVersion, "tool-version", "",
+		"the version of the harness writing this phase, overriding "+runner.HarnessVersionEnv)
 	fs.StringVar(&o.text, "text", "", "the statement being assumed")
 	fs.StringVar(&o.origin, "origin", "", "where the assumption came from")
 	fs.StringVar(&o.confidence, "confidence", "", "how much weight it carries")
@@ -199,6 +205,12 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 
 	o.r = runner.New(o.root)
 	o.r.EvidenceFrom = o.from
+	// The flag beats the variable, and silence leaves what New read from the environment.
+	// An argument is somebody saying it about this run; the variable is whatever set it,
+	// which for a session is usually the entry point and not a person.
+	if o.toolVersion != "" {
+		o.r.ToolVersion = o.toolVersion
+	}
 	return o, 0
 }
 

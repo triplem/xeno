@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:35:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: context-rule
+    observation: >-
+      The criterion that would have been missed is the one about the test suite: a runner that reads
+      the environment is a suite whose absence tests depend on the machine running them, and it has
+      nothing to do with the feature. It was found by asking what reading the variable costs rather
+      than what it buys.
+    proposal: >-
+      When a change makes the runner read ambient state, write a criterion about the test suite's
+      independence from that state in the same breath. A suite that inherits the environment is
+      green for the wrong reason, and the reason is invisible on the machine where it was written.
+    target: .xeno/intents

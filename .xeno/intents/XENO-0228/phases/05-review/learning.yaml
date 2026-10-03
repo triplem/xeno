@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#181"
+created: 2026-10-03T14:10:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: context-rule
+    observation: >-
+      The problem had been written down twice as a field with no writer. One `grep os.Getenv` turned
+      it into a mechanism that was specified and never built, which is a larger finding and a
+      different fix: the field was a symptom and the entry point is the cause. Both earlier records
+      described the symptom accurately and neither looked.
+    proposal: >-
+      When a record says a value has no writer, grep for the reader of the channel the document
+      assigns it to before accepting the description. A missing writer is a gap in the code and a
+      missing channel is a gap in the build, and the second one keeps producing the first.
+    target: .xeno/intents

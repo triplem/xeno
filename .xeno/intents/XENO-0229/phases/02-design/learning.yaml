@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#184"
+created: 2026-10-03T14:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      The change is four lines of runner because #181 put the value on the Runner rather than
+      passing it to the two writers. A second channel reached both writers without either knowing a
+      channel exists, and the design phase had nothing to decide about them.
+    proposal: >-
+      Where a value will plausibly arrive by more than one route, put it on the Runner and let the
+      writers read the field. The first channel costs the same either way and the second one costs
+      four lines instead of touching every writer, which is the difference between a follow-up being
+      worth doing and being deferred.
+    target: .xeno/intents
