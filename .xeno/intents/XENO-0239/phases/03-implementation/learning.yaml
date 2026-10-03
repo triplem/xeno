@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#213
+phase: 03-implementation
+created: "2026-10-03T20:05:25Z"
+schema_version: "1.0"
+runner_version: dev+427eeb7
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The clause audit of #202 checked every normative clause against the code and never checked clauses against each other, so a direct contradiction between WP8 and section 5 survived it; CLAUSE-READERS.md has no column for two documents disagreeing'
+      proposal: A clause that names an artifact should be read against every other clause naming the same artifact, not only against its reader in the code
+      target: rules/learned/org
