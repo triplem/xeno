@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#188
+phase: 03-implementation
+created: "2026-10-03T21:41:41Z"
+schema_version: "1.0"
+runner_version: dev+efc44a9.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: |-
+        Q-2 was recorded with three options, put to the maintainer, sent back for a consequence
+        per option and an explicit recommendation, and put again with a fourth option. The
+        artifact carries the three it was recorded with: `question record` appends and has
+        no way to replace an entry, not even in a phase nothing has judged yet, so the entry
+        is sealed at the moment of writing while the asking is iterative.
+      proposal: |-
+        Put the question to the person first and record it once it has settled, or give
+        `question record` a way to replace an entry in a phase that has no verdict. The
+        first costs nothing and is what this phase should have done; the second is a change
+        to the command and belongs in an issue of its own, because a replace path that did
+        not refuse a judged phase would let somebody rewrite a sealed question.
+      target: .xeno/intents

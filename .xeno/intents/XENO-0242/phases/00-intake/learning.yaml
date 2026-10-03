@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#188
+phase: 00-intake
+created: "2026-10-03T21:16:03Z"
+schema_version: "1.0"
+runner_version: dev+efc44a9.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: |-
+        The question this intent is about was put to the maintainer in the session before
+        the artifact could carry it, because the command that writes `open_questions` is what
+        the intent is building. The exchange happened in the right order anyway — options
+        with consequences and a recommendation, then a choice — and only the recording
+        lagged it by one hand edit of the frontmatter.
+      proposal: |-
+        Where a phase needs a shape the tool cannot yet write, record it by hand in the
+        frontmatter in the same shape the gate checks, and say in the artifact that the
+        hand edit is the bootstrap case rather than the practice. The alternative is prose,
+        which is what #188 measured: the exchange is then unrecoverable from the trail even
+        though it happened correctly.
+      target: .xeno/intents
