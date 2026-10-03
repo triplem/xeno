@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      The issue described one defect and the intake found three. The two it did not have — that one
+      of five contexts was required, and that three shared a name and so could not be required at all
+      — were invisible from the workflow that failed and came from reading the host's settings and
+      the job ids. The fix for the described defect alone would have left the gate still not binding.
+    proposal: >-
+      When a gate did not bind, treat the failing workflow as the symptom and read the host's
+      settings in the same phase. A trigger explains why a job did not run; only the protection
+      settings and the reported context names explain why its result bound nothing, and fixing the
+      first without the other two produces a change that looks complete and enforces nothing.
+    target: .xeno/intents
