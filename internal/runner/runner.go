@@ -400,6 +400,20 @@ func (r *Runner) Start(key, phase string) error {
 	if fm.Exists(r.marker(key, phase)) {
 		return refuse("%s is already running; if that run died, remove %s", phase, r.marker(key, phase))
 	}
+	// A phase that has been judged is not started again. Start writes context.lock.yaml
+	// unconditionally, and the lock is inside artifacts_hash, so a second start rewrites a
+	// sealed artifact: section 11's "what is sealed is never rewritten" caught that as a
+	// divergence afterwards, and this refuses it at the point of the act. The lock is also
+	// the only record of what the phase was given, which is what Changed compares against,
+	// so the overwrite destroyed the answer to "what changed" as well (#215).
+	//
+	// Redoing the work does not need a second start: write the sections again and run
+	// phase finish, which recomputes the hash and carries the decisions forward. Starting
+	// over from nothing is deliberate and stays possible, by removing the verdict first.
+	if fm.Exists(r.abs(model.PhaseDir(key, phase) + "/gate.yaml")) {
+		return refuse("%s has a verdict; redo the work with section set and phase finish, "+
+			"or remove %s to start it over", phase, model.PhaseDir(key, phase)+"/gate.yaml")
+	}
 	common, err := r.common(key, phase)
 	if err != nil {
 		return err

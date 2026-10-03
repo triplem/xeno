@@ -168,6 +168,45 @@ func TestSecondStartIsRefused(t *testing.T) {
 	}
 }
 
+// A judged phase is not started again. Start writes context.lock.yaml unconditionally, and the
+// lock is inside artifacts_hash, so a second start rewrote a sealed artifact and left gate verify
+// to report the divergence afterwards. It also overwrote the only record of what the phase was
+// given, which is what ChangedSince compares against (#215).
+func TestStartIsRefusedWhereThePhaseHasAVerdict(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.run("00-intake", "")
+
+	lock := filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml")
+	before, err := hashing.FileHash(lock)
+	f.must(err)
+
+	var ref *Refusal
+	if err := f.r.Start(key, "00-intake"); !errors.As(err, &ref) {
+		t.Fatalf("a judged phase was started again: %v", err)
+	}
+	// The refusal names the way to redo the work, because a refusal that only says no is one
+	// somebody works around by deleting something.
+	if !strings.Contains(ref.Reason, "section set") || !strings.Contains(ref.Reason, "gate.yaml") {
+		t.Errorf("the refusal does not name the alternative: %s", ref.Reason)
+	}
+	after, err := hashing.FileHash(lock)
+	f.must(err)
+	if after != before {
+		t.Error("the refused start rewrote the lock it was refused for")
+	}
+}
+
+// Removing the verdict is the deliberate way to start a phase over, and it stays open: the
+// refusal above is about a sealed artifact, and a phase with no verdict has nothing sealed.
+func TestStartAfterRemovingTheVerdictIsAllowed(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.run("00-intake", "")
+	f.must(os.Remove(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "gate.yaml")))
+	f.must(f.r.Start(key, "00-intake"))
+}
+
 func (f *fixture) redIntake() *model.Gate {
 	f.t.Helper()
 	f.must(f.r.Start(key, "00-intake"))
