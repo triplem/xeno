@@ -42,8 +42,12 @@ on:
 permissions:
   contents: read
 
+# The job id is the name of the check GitHub reports, and three workflows called it
+# `scan`. A required check is matched by that name, so three identical ones cannot be
+# required individually and `scan` could not be made to bind any particular workflow.
+# Named for what it runs (#186).
 jobs:
-  scan:
+  gitleaks:
     runs-on: ubuntu-latest
     env:
       GITLEAKS_VERSION: 8.30.1

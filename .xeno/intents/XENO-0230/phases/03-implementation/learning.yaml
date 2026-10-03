@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:25:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: context-rule
+    observation: >-
+      The baseline is a number this phase could not verify: it was measured under a different node
+      than the workflows pin, and the container run that would have matched them timed out. The
+      change being made is exactly what lets CI measure it on the pull request, so the unverified
+      number is checked by the first run of the thing being built.
+    proposal: >-
+      Where a change makes a job report earlier, use that job to verify the change's own unverified
+      number rather than asserting it. Recording the measurement as best-available and naming the
+      run that will confirm it is more honest than a figure presented as checked, and the gap closes
+      before the merge rather than after.
+    target: .xeno/intents

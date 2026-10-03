@@ -9,6 +9,10 @@
 # such a commit and never satisfied, and enforce_admins leaves nothing to step over. The
 # release notes of each release carry what the file rendered (#121, and #122 for the plan).
 #
+# The version is written here and nowhere else. The audit job reads it out of this file
+# rather than keeping a copy, because two copies of one number is how an audit comes to
+# examine a tree that nothing ships (#187).
+#
 # semantic-release arrives as an action and not as a dependency of this project. There is
 # no package.json and nothing of it is vendored: a Go repository whose only dependency is
 # one vendored YAML library does not grow a Node dependency tree to cut a tag. Another
@@ -84,11 +88,19 @@ jobs:
       # build before its artifacts do. The gates above have already passed at that point,
       # so what remains is cross compilation of tested code, and a release briefly
       # without assets is easier to repair than a release aborted halfway.
+      # semantic-release 25 declares an engine, ^22.14.0 || >= 24.10.0, and this job used
+      # to run under whatever node the runner image happened to ship. The audit job pins
+      # the same major, so the tree it examines is resolved under the node that resolves
+      # the one this step runs (#187).
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
       - name: release
         id: release
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
-          semantic_version: 24.2.9
+          semantic_version: 25.0.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

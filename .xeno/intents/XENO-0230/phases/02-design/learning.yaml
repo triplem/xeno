@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#186"
+created: 2026-10-03T15:20:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: project-convention
+    observation: >-
+      Three of the seven alternatives were refused as the same shape of defect at different scales: a
+      path filter that must be kept in step with the release path, a version written in two files, and
+      a baseline with a margin. Each one trades a silent wrong answer for a small convenience, and
+      each had already been taken once in this repository.
+    proposal: >-
+      When refusing an alternative, name the silence it buys rather than the work it saves. "This
+      list goes stale and nothing reports it" is an argument a reader can check against the next
+      proposal; "it is simpler" is not.
+    target: .xeno/intents
