@@ -390,6 +390,57 @@ func missing(raw map[string]any, fields ...[]string) []string {
 	return m
 }
 
+// budget reports a recorded context that exceeded the budget its profile declared.
+//
+// Section 5 puts this check here and says what it is for in the same breath: "deliberately a
+// finding and not a red gate in the sense of stopping work", because "blocking against a number
+// nobody has experience with yet would be the wrong way round", and because what it prevents is
+// the budget quietly becoming decoration. So it is a finding like any other — visible, decidable,
+// recorded — and it names both numbers, since a finding that says only "over budget" is one
+// nobody can act on.
+//
+// The comparison is between two files: the profile declares the budget and the lock records what
+// the phase was given. Bytes come from the tree when the check runs rather than from the lock,
+// which carries paths and hashes and no sizes; a file the lock names and the tree has lost is
+// skipped, because its absence is G-Freshness's finding and one cause reported by two gates is
+// what #160 avoided.
+func budget(c Ctx) []model.Finding {
+	var p model.Profile
+	profile := c.phaseRel(model.Phases[0]) + "/" + model.ContextProfile
+	if err := fm.ReadYAML(c.abs(profile), &p); err != nil {
+		return nil // no profile is no budget
+	}
+	if p.Budget.Files == 0 && p.Budget.Bytes == 0 {
+		return nil
+	}
+	rel := c.phaseRel(c.Phase) + "/context.lock.yaml"
+	var lock model.ContextLock
+	if err := fm.ReadYAML(c.abs(rel), &lock); err != nil {
+		return nil // the lock's absence is G-Freshness's finding
+	}
+	var fs []model.Finding
+	if p.Budget.Files > 0 && len(lock.Files) > p.Budget.Files {
+		fs = append(fs, finding(rel,
+			fmt.Sprintf("the recorded context is %d files and the budget is %d",
+				len(lock.Files), p.Budget.Files),
+			"narrow the profile's include, or raise the budget in "+profile+" and say why"))
+	}
+	if p.Budget.Bytes > 0 {
+		var total int
+		for _, f := range lock.Files {
+			if info, err := os.Stat(c.abs(f.Path)); err == nil {
+				total += int(info.Size())
+			}
+		}
+		if total > p.Budget.Bytes {
+			fs = append(fs, finding(rel,
+				fmt.Sprintf("the recorded context is %d bytes and the budget is %d", total, p.Budget.Bytes),
+				"narrow the profile's include, or raise the budget in "+profile+" and say why"))
+		}
+	}
+	return fs
+}
+
 func schema(c Ctx) model.Check {
 	dir := c.phaseRel(c.Phase)
 	o, fs := phaseResult(c, dir)
@@ -397,6 +448,7 @@ func schema(c Ctx) model.Check {
 	fs = append(fs, yamlFindings(c, dir)...)
 	fs = append(fs, directoryFindings(c, dir)...)
 	fs = append(fs, undeclaredEvidence(c, dir, o)...)
+	fs = append(fs, budget(c)...)
 	return result(fs)
 }
 

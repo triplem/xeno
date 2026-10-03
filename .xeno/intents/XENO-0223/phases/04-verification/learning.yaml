@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T10:30:00Z
+phase: 04-verification
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+learnings:
+  - category: project-convention
+    observation: >-
+      Mapping the criteria found one that had not been implemented: a link naming a document that
+      does not exist should be a finding and is silently skipped. Nothing failed, because no test
+      had been written for it — the criterion was written in P1, the code took a different path in
+      P3, and only the table in P4 put them side by side.
+    proposal: >-
+      Build the criterion table before writing the results, and read it against the code rather
+      than against the tests. A criterion with no test is invisible to a green suite, and the
+      mapping is the only place in the sequence where the two lists are forced to meet.
+    target: .xeno/intents

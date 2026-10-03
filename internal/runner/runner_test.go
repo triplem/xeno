@@ -1358,9 +1358,12 @@ func TestGivenFilesAreComparedAgainstTheTree(t *testing.T) {
 	for _, c := range lock.Files {
 		paths = append(paths, c.Path)
 	}
-	want := []string{"docs/adr/0012-payments.md", "src/payment/card.go"}
+	// The order is the profile's include order, not the alphabet: section 5 asks for an order of
+	// volatility and says the lock records the assembly order rather than only the set, so the
+	// project writes its patterns from stable to volatile and this follows (#171).
+	want := []string{"src/payment/card.go", "docs/adr/0012-payments.md"}
 	if strings.Join(paths, " ") != strings.Join(want, " ") {
-		t.Fatalf("the information base is %v, want %v: the profile's exclude and the files it does not name", paths, want)
+		t.Fatalf("the information base is %v, want %v: the profile's include order, its exclude, and the files it does not name", paths, want)
 	}
 
 	f.output("00-intake", "")
@@ -2236,5 +2239,166 @@ func TestNoDeclarationLeavesTheVerdictAsItWas(t *testing.T) {
 		if ch.Provenance == "external" {
 			t.Fatalf("an external check appeared without a declaration: %+v", ch)
 		}
+	}
+}
+
+// Section 5: context is assembled in order of volatility and the lock records the assembly order
+// rather than only the set. The project decides which of its directories is stable by the order it
+// writes its patterns in, so reversing the profile reverses the base (#171).
+func TestTheBaseFollowsTheProfilesIncludeOrder(t *testing.T) {
+	base := func(t *testing.T, include string) []string {
+		t.Helper()
+		f := newFixture(t)
+		f.write("src/a.go", "package a\n")
+		f.write("docs/b.md", "# b\n")
+		f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile, include)
+		f.must(f.r.Start(key, "00-intake"))
+		var lock model.ContextLock
+		f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+		var paths []string
+		for _, c := range lock.Files {
+			paths = append(paths, c.Path)
+		}
+		return paths
+	}
+
+	docsFirst := base(t, "include:\n  - docs/**\n  - src/**\n")
+	if strings.Join(docsFirst, " ") != "docs/b.md src/a.go" {
+		t.Errorf("docs first gives %v", docsFirst)
+	}
+	srcFirst := base(t, "include:\n  - src/**\n  - docs/**\n")
+	if strings.Join(srcFirst, " ") != "src/a.go docs/b.md" {
+		t.Errorf("src first gives %v", srcFirst)
+	}
+}
+
+// A declared link's document is part of what the phase was given, whether or not include matches
+// it. Section 5 has links declared and never inferred, and a declaration that put nothing in the
+// base would be ornamental.
+func TestADeclaredLinksDocumentIsInTheBase(t *testing.T) {
+	f := newFixture(t)
+	f.write("src/payment/card.go", "package payment\n")
+	f.write("docs/adr/0012-payments.md", "# payments\n")
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile,
+		"include:\n  - src/payment/**\nlinks:\n  - component: src/payment\n    docs: docs/adr/0012-payments.md\n")
+
+	f.must(f.r.Start(key, "00-intake"))
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+
+	var paths []string
+	for _, c := range lock.Files {
+		paths = append(paths, c.Path)
+	}
+	// The link goes last: it is the most specific thing in a profile and the most likely to move.
+	if strings.Join(paths, " ") != "src/payment/card.go docs/adr/0012-payments.md" {
+		t.Fatalf("the base is %v, want the include then the link's document", paths)
+	}
+	for _, c := range lock.Files {
+		if c.SHA256 == "" {
+			t.Errorf("%s is in the base with no hash, so G-Freshness cannot guard it", c.Path)
+		}
+	}
+}
+
+// Section 5 writes repo_commit into the lock and the tree never wrote it. Absent where the
+// repository has none, because a lock saying which commit a phase ran against is a claim.
+func TestTheLockRecordsTheCommitWhereThereIsOne(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if lock.RepoCommit != "" {
+		t.Errorf("a fixture that is no git repository recorded commit %q", lock.RepoCommit)
+	}
+}
+
+// rules_applied answers what rules_hash cannot: which rules, and which revision of each. Absent
+// where no rule is in force, because an empty list says a set was resolved and came out empty.
+func TestTheLockRecordsWhichRulesApplied(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.write(rules.ConfigDir+"/given/org/notes.yaml",
+		"id: release-notes-say-something\nversion: 3\nscope: org\nkind: review\napplies_to: [00-intake]\n"+
+			"statement: >\n  The release notes say what changed.\n")
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if len(lock.RulesApplied) != 1 {
+		t.Fatalf("rules_applied is %v, want the one rule in force", lock.RulesApplied)
+	}
+	got := lock.RulesApplied[0]
+	if got.Path != rules.ConfigDir+"/given/org/notes.yaml" || got.Version != 3 {
+		t.Fatalf("rules_applied carries %+v, want the path and the version counter", got)
+	}
+
+	// And the list agrees with the hash, because one resolution answers both.
+	read, _ := rules.Load(f.root)
+	effective, _ := rules.Effective(read)
+	if len(effective) != len(lock.RulesApplied) {
+		t.Errorf("%d rules in force and %d in the lock", len(effective), len(lock.RulesApplied))
+	}
+
+	// With no rule tree the field is absent, not empty.
+	g := newFixture(t)
+	g.project(agentBlock)
+	g.templated()
+	g.must(g.r.Start(key, "00-intake"))
+	var bare model.ContextLock
+	g.must(fm.ReadYAML(filepath.Join(g.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &bare))
+	if bare.RulesApplied != nil {
+		t.Errorf("rules_applied is %v where no rule is in force, want absent", bare.RulesApplied)
+	}
+}
+
+// WP8's first clause: "a repeated phase reads only what changed". The runner cannot read for the
+// agent, so what it does is say which files of the predecessor's base moved — derived from that
+// lock and the tree, printed rather than recorded, because section 5's field list has no entry for
+// it and the lock states what was declared (#171).
+func TestChangedSinceNamesWhatMovedAndNothingElse(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.write("src/a.go", "package a\n")
+	f.write("src/b.go", "package b\n")
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile, "include:\n  - src/**\n")
+
+	// The first phase has no predecessor, so there is nothing to compare.
+	if got := f.r.ChangedSince(key, "00-intake"); got != nil {
+		t.Fatalf("the first phase reports %v", got)
+	}
+	f.run("00-intake", "")
+
+	// Nothing moved: nothing to say.
+	if got := f.r.ChangedSince(key, "01-requirements"); len(got) != 0 {
+		t.Fatalf("an untouched tree reports %v", got)
+	}
+
+	// One file edited, one left alone, one of the base removed.
+	f.write("src/a.go", "package a // changed\n")
+	if got := f.r.ChangedSince(key, "01-requirements"); strings.Join(got, " ") != "src/a.go" {
+		t.Fatalf("after one edit the changed set is %v, want src/a.go alone", got)
+	}
+	if err := os.Remove(filepath.Join(f.root, "src/b.go")); err != nil {
+		t.Fatal(err)
+	}
+	got := f.r.ChangedSince(key, "01-requirements")
+	if strings.Join(got, " ") != "src/a.go src/b.go (gone)" {
+		t.Fatalf("the changed set is %v, want the edit and the removal, in the base's order", got)
+	}
+}
+
+// A repository with no profile declared no base, so nothing can have moved: every project today,
+// and this one.
+func TestChangedSinceIsSilentWithoutAProfile(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	f.write("src/a.go", "package a\n")
+	f.run("00-intake", "")
+	f.write("src/a.go", "package a // changed\n")
+	if got := f.r.ChangedSince(key, "01-requirements"); got != nil {
+		t.Fatalf("a repository with no profile reports %v", got)
 	}
 }

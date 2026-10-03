@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T09:46:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      The intake was asked for one unverified clause and found five gaps, four of them fields
+      section 5 writes out and the tree does not. Two of the four became writable only in the last
+      two weeks, when the rule set and the git reader landed, so nobody had been ignoring them —
+      the specification had moved ahead of the tree and then the tree caught up past them.
+    proposal: >-
+      When a piece makes a field writable that the specification already enumerates, name the field
+      in that piece's review as owed rather than leaving it for whoever next reads the section. A
+      gap that appears because a dependency landed is invisible to both pieces: the one that made
+      it possible was not about it, and the one that needs it has not started.
+    target: .xeno/intents

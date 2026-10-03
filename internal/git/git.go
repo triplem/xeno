@@ -131,3 +131,14 @@ func exitText(err error) []byte {
 	}
 	return nil
 }
+
+// Head is the commit a repository is on, or an empty string where it has none: a directory that is
+// not a repository, a repository with no commit yet, or no git at all are the same answer, because
+// the caller records a fact about the repository and an invented one would be a false claim.
+func Head(root string) string {
+	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}

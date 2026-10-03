@@ -1,0 +1,20 @@
+intent: "github.com/triplem/xeno#171"
+created: 2026-10-03T10:00:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 02-design
+learnings:
+  - category: context-rule
+    observation: >-
+      The decision that took the longest was where the changed set lives, and the specification
+      answered it twice: its field enumeration has no entry for it, and its sentence that the lock
+      records what was declared rather than what was read rules out recording it on principle. Both
+      readings were in the section read during the intake, and the design still spent its time
+      weighing a record against a report.
+    proposal: >-
+      When a design is choosing where something lives, quote the specification's own sentence about
+      what the file is for before weighing the options. The enumeration says what may be written;
+      the sentence about the file's purpose usually says what should be, and the second is the one
+      that settles it.
+    target: .xeno/intents
