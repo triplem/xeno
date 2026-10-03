@@ -1,0 +1,19 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T10:52:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 03-implementation
+learnings:
+  - category: project-convention
+    observation: >-
+      First implementation phase of twenty-eight with no deviation, and the three reasons are
+      visible: the piece is one condition, its specification was another intent's acceptance
+      criterion rather than a document to interpret, and the shape it had to match was three weeks
+      old and in the tree.
+    proposal: >-
+      When a piece has all three of those properties, expect the implementation to hold and spend
+      the reading on the criterion rather than on the design. The deviations in this project have
+      come from pieces that were interpreting a document or inventing a shape, and this one did
+      neither.
+    target: .xeno/intents

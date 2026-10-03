@@ -125,3 +125,59 @@ func TestTheBudgetFindingComesFromGSchema(t *testing.T) {
 		t.Fatalf("G-Schema did not report the budget: %s", causes(got))
 	}
 }
+
+// ---- a declared link whose document is not there (#172)
+
+// #171's criterion, met by #172: "a link naming a document that does not exist is a finding against
+// the profile rather than a silently missing file".
+func TestALinkNamingADocumentThatIsNotThereIsAFinding(t *testing.T) {
+	c := phaseWithProfile(t,
+		"include:\n  - src/**\nlinks:\n  - component: src/payment\n    docs: docs/adr/0012-payments.md\n",
+		map[string]string{"src/a.go": "package a\n"})
+	fs := links(c)
+	if len(fs) != 1 {
+		t.Fatalf("%d findings, want 1: %v", len(fs), fs)
+	}
+	if !strings.Contains(fs[0].Cause, "src/payment") || !strings.Contains(fs[0].Cause, "docs/adr/0012-payments.md") {
+		t.Errorf("the cause is %q, want the component and the path", fs[0].Cause)
+	}
+	if !strings.Contains(fs[0].File, model.ContextProfile) {
+		t.Errorf("the finding names %q, want the profile: the profile is the claim", fs[0].File)
+	}
+	if fs[0].Next == "" {
+		t.Error("the finding has no next step")
+	}
+}
+
+// A link whose document is there is not a finding, and nothing is reported for a profile with no
+// links or a repository with no profile.
+func TestALinkWhoseDocumentExistsIsNoFinding(t *testing.T) {
+	c := phaseWithProfile(t,
+		"include:\n  - src/**\nlinks:\n  - component: src/payment\n    docs: docs/adr/0012.md\n",
+		map[string]string{"src/a.go": "package a\n", "docs/adr/0012.md": "# payments\n"})
+	if fs := links(c); fs != nil {
+		t.Fatalf("a link whose document exists produced %v", fs)
+	}
+	bare := phaseWithProfile(t, "include:\n  - src/**\n", map[string]string{"src/a.go": "package a\n"})
+	if fs := links(bare); fs != nil {
+		t.Fatalf("a profile with no links produced %v", fs)
+	}
+	if fs := links(Ctx{Root: t.TempDir(), Key: "PROJ-1", Phase: model.Phases[0]}); fs != nil {
+		t.Fatalf("a repository with no profile produced %v", fs)
+	}
+}
+
+// The gate the finding belongs to, so that it is decidable like any other and reported at every
+// phase rather than once at P0.
+func TestTheLinkFindingComesFromGSchemaAtAnyPhase(t *testing.T) {
+	root, _ := corpus(t)
+	dir := filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]))
+	if err := os.WriteFile(filepath.Join(dir, model.ContextProfile),
+		[]byte("include:\n  - src/**\nlinks:\n  - component: src\n    docs: docs/nobody.md\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := schema(ctxFor(root))
+	if !strings.Contains(causes(got), "which is not in the tree") {
+		t.Fatalf("G-Schema did not report the link: %s", causes(got))
+	}
+}

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T11:08:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 05-review
+learnings:
+  - category: project-convention
+    observation: >-
+      Two intents in a row have ended by handing a specification change to a person: #171 named
+      four lock fields and two of them needed nothing, this one needs a clause for the fifth. The
+      handover has worked both times because the wording was written out in the review rather than
+      described.
+    proposal: >-
+      When an intent is blocked on a document change, put the sentence a person would add into the
+      review, not a description of it. A described change is a task; a written one is a decision
+      somebody can take in a minute, and the first standing rule makes that minute theirs.
+    target: .xeno/intents

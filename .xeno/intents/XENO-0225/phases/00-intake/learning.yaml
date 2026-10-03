@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T10:36:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 00-intake
+learnings:
+  - category: context-rule
+    observation: >-
+      This is the first intent whose specification is another intent's acceptance criterion rather
+      than a section of the documents. Reading #171's 01-requirements and 04-verification answered
+      in two minutes what a section would have taken longer to settle: the criterion says what is
+      wanted and the verification says how it was missed.
+    proposal: >-
+      Where an intent exists to close a gap another intent recorded, read that intent's criterion
+      and its verification as the specification and cite them in the intake. The trail is the
+      cheapest context this process produces and it is the one nobody thinks to read.
+    target: .xeno/intents

@@ -1,0 +1,18 @@
+intent: "github.com/triplem/xeno#172"
+created: 2026-10-03T10:40:00Z
+schema_version: "1.0"
+runner_version: 0.1.0-dev
+plugin_version: 0.1.0-dev
+phase: 01-requirements
+learnings:
+  - category: project-convention
+    observation: >-
+      The non-goals here are mostly about what not to check: a pattern matching nothing, a
+      component that may not be a directory. Writing them was what established that a link is the
+      profile's only unambiguous error, which is the argument the whole intent rests on and which
+      the intake had asserted without proving.
+    proposal: >-
+      When adding a validation, list the neighbouring fields and say why each one is not checked.
+      The list is short, it is where the argument for checking this one actually lives, and it is
+      what stops the next intent from validating a field whose empty case is legitimate.
+    target: .xeno/intents
