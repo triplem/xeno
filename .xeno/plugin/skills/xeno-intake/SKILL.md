@@ -40,6 +40,12 @@ phase.
 Write a `learning.yaml` in the phase directory before finishing: every phase owes one,
 and `no_finding: true` is the honest empty record.
 
+The one field the runner cannot know is `tool_version`, because section 7 forbids it
+branching on the harness. G-Schema requires it, so report it on the first `section set`
+of the phase and the digest takes it from the artifact rather than asking again:
+
+    --tool-version 2.1.276
+
 ## What the gate refuses
 
 - **G-Schema** — a missing required section, a missing frontmatter field, a hash that is

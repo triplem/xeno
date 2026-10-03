@@ -38,6 +38,12 @@ than assume it:
 An open assumption blocks the phase, which is the point: it is released by a person with
 `xeno assumption confirm` or `xeno assumption reject`.
 
+The one field the runner cannot know is `tool_version`, because section 7 forbids it
+branching on the harness. G-Schema requires it, so report it on the first `section set`
+of the phase and the digest takes it from the artifact rather than asking again:
+
+    --tool-version 2.1.276
+
 ## What the gate refuses
 
 Everything the intake's gate refuses, plus:

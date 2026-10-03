@@ -35,6 +35,12 @@ Where the design settles a question an earlier phase raised, say so in a `decisi
 entry with `resolves:` naming the question's key: the gate reads it from any later
 phase.
 
+The one field the runner cannot know is `tool_version`, because section 7 forbids it
+branching on the harness. G-Schema requires it, so report it on the first `section set`
+of the phase and the digest takes it from the artifact rather than asking again:
+
+    --tool-version 2.1.276
+
 ## What the gate refuses
 
 Everything the earlier gates refuse, plus:

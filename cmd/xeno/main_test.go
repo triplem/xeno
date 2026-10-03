@@ -321,3 +321,57 @@ func TestIntentStartWithoutAnIssueIsRefused(t *testing.T) {
 		t.Errorf("exit %d saying %q, want 1 and a refusal naming --for", code, errw)
 	}
 }
+
+// The flag is read for every command and acted on by the two that write a phase artifact, so
+// it is asserted where somebody types it: one `section set` with it, then `phase finish`
+// without, and both files carry the version with nothing edited by hand (#181).
+func TestTheToolVersionFlagReachesBothArtifacts(t *testing.T) {
+	root := repo(t)
+	args := []string{"--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next"}
+	if code, _, e := invoke(t, append([]string{"phase", "start"}, args...)...); code != 0 {
+		t.Fatalf("could not start the phase: %s", e)
+	}
+	set := append([]string{"section", "set", "problem", "--file", writeTemp(t, root, "what is wrong")},
+		append(args, "--tool-version", "2.1.276")...)
+	if code, _, e := invoke(t, set...); code != 0 {
+		t.Fatalf("section set exits %d: %s", code, e)
+	}
+	if got := frontOf(t, root, "output.md"); got != "2.1.276" {
+		t.Errorf("output.md records tool_version %q, want 2.1.276", got)
+	}
+
+	// No --tool-version here: the digest takes it from the artifact beside it.
+	summary := writeTemp(t, root, "a summary")
+	if code, _, e := invoke(t, append([]string{"phase", "finish", "--summary", summary}, args...)...); code == 2 {
+		t.Fatalf("phase finish could not run: %s", e)
+	}
+	if got := frontOf(t, root, "digest.md"); got != "2.1.276" {
+		t.Errorf("digest.md records tool_version %q, want 2.1.276", got)
+	}
+}
+
+// writeTemp puts content in a file under the repository and returns the path, for the flags
+// that take one.
+func writeTemp(t *testing.T, root, content string) string {
+	t.Helper()
+	p := filepath.Join(root, "in-"+strings.ReplaceAll(content, " ", "-")+".md")
+	if err := os.WriteFile(p, []byte(content+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// frontOf reads tool_version out of one artifact of PROJ-1's first phase.
+func frontOf(t *testing.T, root, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if v, ok := strings.CutPrefix(line, "tool_version:"); ok {
+			return strings.Trim(strings.TrimSpace(v), `"`)
+		}
+	}
+	return ""
+}
