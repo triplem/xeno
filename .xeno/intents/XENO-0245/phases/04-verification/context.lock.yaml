@@ -1,0 +1,149 @@
+intent: github.com/triplem/xeno#217
+phase: 04-verification
+created: "2026-10-04T21:02:57Z"
+schema_version: "1.0"
+runner_version: dev+fbf8a72.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 12277c5fee0cb905ec8ea18b5b1a5aabfab5e3a7fbc40e9f3e8c7733776e2835
+evidence_source: ci
+template_source: plugin
+repo_commit: fbf8a7264331183af4754410af5ab1b8c3ee3e87
+files:
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: ASSUMPTIONS.md
+      sha256: b5f33772690246f565b3cff36d26475cc6faf503003985e6922652d9c62a69e7
+      bytes: 84107
+    - path: CLAUDE.md
+      sha256: 5112c1009da659d207d492e9b728c1b6c5d8183fc65b0435489e30690ae7d1e8
+      bytes: 4173
+    - path: CONTRIBUTING.md
+      sha256: 562492a10b8e86f76affe6341b7da4a678d4b882f2ce0b0cf96738431576658a
+      bytes: 7616
+    - path: internal/model/glob.go
+      sha256: 00a401761c49dca4e083d5180e6aa92c18f782522763bed187451957e10f99c7
+      bytes: 1367
+    - path: internal/model/glob_test.go
+      sha256: e237a30ce816d05b795b3df513901169f2c51a1f64c4273f9903af212d15dc70
+      bytes: 1073
+    - path: internal/model/identity.go
+      sha256: e13aebcb18fe95cd8835b9bf71a4c943ac8def3d4b040fa82d327525a5295bfa
+      bytes: 5312
+    - path: internal/model/identity_test.go
+      sha256: d0f18bafa6ced9472b83b2eef955745e2f4939394f32efeaa06253aadc1165f3
+      bytes: 4836
+    - path: internal/model/model.go
+      sha256: 1123cc979ed3fbc767f7f97c4377302bc3e4a53705bf1d2cd34054d9917f1293
+      bytes: 25427
+    - path: internal/model/version_test.go
+      sha256: 9039ed8bfa3e148ab00f1def197a6ca2d9ba6cf99c87a5cb7af9049bad3a1b42
+      bytes: 2713
+    - path: internal/hashing/hashing.go
+      sha256: c92e8fdb95c1fea08b7d3ede3431eab6e76e7cf70661f5fce376f0b6bba99f7d
+      bytes: 2451
+    - path: internal/hashing/hashing_test.go
+      sha256: 3ca678700f47e0436de6f83a31edd7b33db29dc5583dc32f919773741b7ba08c
+      bytes: 3048
+    - path: internal/gates/budget_test.go
+      sha256: 58184f636a252f4f90772cc3abaf0ce445e25c2693308e6415a509865ece54e8
+      bytes: 9444
+    - path: internal/gates/carryforward_test.go
+      sha256: 32e257e371da665384c9c14373b0b073a3b2457b39536b9e936a486a0a9dbad9
+      bytes: 12898
+    - path: internal/gates/evidence_test.go
+      sha256: b338342840c4974d2b2dd931ca31f4d4669416682ed7f00740ef3836d8a9b476
+      bytes: 11452
+    - path: internal/gates/gates.go
+      sha256: 5342cd1240f59219c2ff7c195c1f11f4da5e299635d8768c5ef68c08b871d370
+      bytes: 75729
+    - path: internal/gates/learning_test.go
+      sha256: fc1507c3a7225de31155faceb8a21cf3415f45d3f43659614a1fd07663826426
+      bytes: 3042
+    - path: internal/gates/patterns.go
+      sha256: f8969d729228728ce0be2d05a05470e8b50cf83c49216567bb24377276778005
+      bytes: 2397
+    - path: internal/gates/patterns_test.go
+      sha256: c16749b24ddbbfc89ec49fb4408ac32c165163f2cdb73ddd3eac21e40fb0981a
+      bytes: 3057
+    - path: internal/gates/policy_test.go
+      sha256: 0b12a8bff442371a1a790ec10bbba1ee214797c0d79349af694e4ae8ad7fde8c
+      bytes: 11959
+    - path: internal/gates/predicates_test.go
+      sha256: 4bc670bd12fd32b656e34086f328c71d6519dc9c5b59472d48a9310f7533fd49
+      bytes: 21971
+    - path: internal/gates/rules_test.go
+      sha256: 4966b1f9996ac37dc9944830f1edd5271fa7fd7902c496cf85fcba37d3eae841
+      bytes: 3169
+    - path: internal/gates/schema_test.go
+      sha256: d870ae0c134090647494fabcd5b6e1bf5b7b237589b9c81e444a1f1c7665a8a8
+      bytes: 13911
+    - path: internal/gates/staleness_test.go
+      sha256: be3d87377d31a873459e29aa9e207a82b8bf06e9735909651c3c617ef9d11add
+      bytes: 6649
+    - path: internal/gates/supply_test.go
+      sha256: 23df0dd9f595addcb3f23070c36588899065d5ffb01adaa4de2bf246cf9326cd
+      bytes: 6247
+    - path: internal/runner/enforcement.go
+      sha256: d6b715289643fa99996b57b516f5a27bf89291c8c9ca38ece7ce5050b8818203
+      bytes: 2589
+    - path: internal/runner/evidence.go
+      sha256: 7fd695a7cf8c8f7579c6bbbbb28b8115a8a82dcce83f49250bfe964410c1f4ac
+      bytes: 6704
+    - path: internal/runner/evidence_test.go
+      sha256: e4f081f9f49b6e720a87a30df83f2110ccdf7375af5d2406594111857c5b7d54
+      bytes: 13042
+    - path: internal/runner/exchange.go
+      sha256: 4276a657d9b0b4f06ad48d33a0464772c8b57fe09f91730288fed0b42831151b
+      bytes: 9070
+    - path: internal/runner/exchange_test.go
+      sha256: ae86de93c95b72d5e527dfac3390c874f9b42410d6f730ce533f9827ec049013
+      bytes: 10383
+    - path: internal/runner/init.go
+      sha256: 9cc800dd5a9493bc1d871caaa923dc1d3fe44254ccdfde98f5f49ec9ca07869b
+      bytes: 10571
+    - path: internal/runner/init_test.go
+      sha256: 8f9413a4d3db5ab14c62cd1e023f5db655dcea449db35e294abf1ce02c5f5059
+      bytes: 21840
+    - path: internal/runner/next.go
+      sha256: 2a6bd4c612c9fc96ed728b057c5624093d9e3ae5836305e1ed2c12bfb5603529
+      bytes: 7343
+    - path: internal/runner/runner.go
+      sha256: 6664028bcc50e19d29fd200fbad08025a216ae502f2c45d9f3c2d92a2cd9b9a8
+      bytes: 66113
+    - path: internal/runner/runner_test.go
+      sha256: 492db7f12eaee3a78c6f276c614985528a2740aa403a6bbab60048223cb15d18
+      bytes: 119445
+    - path: internal/runner/scope.go
+      sha256: 65064134e72d9e74e197f91753b15a07cfca3fc5dba6f4a9a5cefd2b4968f7ee
+      bytes: 6827
+    - path: internal/runner/scope_test.go
+      sha256: 6f6918af33de730ebd29c68a44ad6f6d192a0437cad5376caa56f9ec4cb752dd
+      bytes: 5572
+    - path: internal/runner/wrapper.go
+      sha256: f230a559a9a06458a0d2a894a6d68190580fba05a2fa7d0d4ab5d1632f915985
+      bytes: 4007
+    - path: cmd/xeno/list_test.go
+      sha256: d66bace58338b8f0ab154dbd6d6e8e460f8c3a5aa180f546081cd91ac1011382
+      bytes: 2446
+    - path: cmd/xeno/main.go
+      sha256: 9d82fb79c1bcf9b9219d11554d4fdf479d43627050bfa36e45be1a524c5a16e2
+      bytes: 37779
+    - path: cmd/xeno/main_test.go
+      sha256: a42c217bc2b467441415d7e72a7fdf74c845522f44935d772254ff81b1811274
+      bytes: 29181
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 69f5a05767c1a6dd0260f05d714ff11d757e5aef6f4358411f66d0848f8486da

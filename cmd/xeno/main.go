@@ -49,6 +49,7 @@ const usage = `usage:
   xeno intent status  [--intent KEY] [--all]    without one, the last ten by creation
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
+  xeno scope set      --intent KEY [--file PATH]   P0's context scope, read from stdin
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
   xeno version
@@ -125,6 +126,7 @@ var commands = map[string]command{
 	"gate approve":       {needsKey: true, needsPhase: true, run: cmdGateApprove},
 	"gate override":      {needsKey: true, needsPhase: true, run: cmdGateOverride},
 	"assumption record":  {needsKey: true, needsPhase: true, run: cmdAssumptionRecord},
+	"scope set":          {needsKey: true, run: cmdScopeSet},
 	"question record":    {needsKey: true, needsPhase: true, run: cmdQuestionRecord},
 	"decision record":    {needsKey: true, needsPhase: true, run: cmdDecisionRecord},
 	"obligation close":   {needsKey: true, needsPhase: true, run: cmdObligationClose},
@@ -322,6 +324,34 @@ func cmdSectionSet(o *opts) int {
 	return o.next(0)
 }
 
+// cmdScopeSet writes the intent's context scope and reports what its patterns resolve to.
+//
+// The entry is read whole rather than assembled from flags, which is cmdQuestionRecord's
+// argument: include patterns, exclude patterns, a link per component and two budget numbers are
+// a nested structure however they are spelled. There is no --phase, because the scope is P0's
+// artifact and is read from P0 by every phase of the intent.
+//
+// The figure is printed because a budget set from a guess is what this intent's own P0 did, and
+// it had to be corrected before the phase was judged. The sentence about that moment is here
+// rather than in a comment: the scope lies inside P0's artifacts_hash, so a budget revised after
+// the verdict makes the phase report as changed.
+func cmdScopeSet(o *opts) int {
+	entry, err := readMessage(o.file)
+	if err != nil {
+		fmt.Fprintln(o.errw, err)
+		return 2
+	}
+	res, err := o.r.ScopeSet(o.key, []byte(entry))
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%s %s resolves %d files and %d bytes\n",
+		o.key, model.ContextScope, res.Files, res.Bytes)
+	fmt.Fprintln(o.out, "set the budget from these figures: it cannot be changed once "+
+		"00-intake is judged, because the scope lies inside its artifacts_hash")
+	return o.next(0)
+}
+
 // cmdQuestionRecord writes one open_questions entry. The entry is read whole rather than
 // assembled from flags: two to four options with a consequence each, a recommendation and the
 // free entry are a nested structure however they are spelled, and section set already reads
@@ -395,7 +425,7 @@ func cmdPhaseStart(o *opts) int {
 	// What a repeated phase has to read again, from the predecessor's lock and the tree. Printed
 	// rather than recorded: section 5's field list has no entry for it, and the lock states what
 	// was declared rather than what was read. Silent where nothing moved, which is also what a
-	// repository with no context profile gets, since it declared no base to move.
+	// repository with no context scope gets, since it declared no base to move.
 	if changed := o.r.ChangedSince(o.key, o.phase); len(changed) > 0 {
 		fmt.Fprintf(o.out, "\nchanged since %s, and nothing else needs rereading:\n", previousPhase(o.phase))
 		for _, p := range changed {

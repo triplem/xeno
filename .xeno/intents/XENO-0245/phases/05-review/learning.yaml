@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#217
+phase: 05-review
+created: "2026-10-04T21:31:16Z"
+schema_version: "1.0"
+runner_version: dev+fbf8a72.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: template
+      observation: 'The review checklist is the last artifact field in the process with no writing command: G-Policy judges review_checklist and only a hand edit of output.md''s frontmatter produces it. This intent closed the same gap for the context scope and met this one at its own P5, four hours later, in a phase whose subject was that very family.'
+      proposal: The review checklist gets a writer of the shape xeno scope set and xeno question record now share, so that the last field a person edits by hand is written by a command and the review template carries the rules rather than the person recalling them.
+      target: template

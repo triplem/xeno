@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#217
+phase: 02-design
+created: "2026-10-04T19:57:38Z"
+schema_version: "1.0"
+runner_version: dev+dce3eab
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: 'Three separate findings in this one intent want the same missing mechanism: a budget overrun that must not stop work (#235), a P0 with no scope that cannot be named in a verdict, and a staleness half that cannot say it had no commit range to narrow to. Each was reached independently and each ends at the same place, that a finding fails its check and a failed check reds the phase.'
+      proposal: Where a second finding in an intent wants the same absent mechanism as the first, the intent records the count rather than filing a second issue about a symptom, so that the mechanism is argued once with every caller named.
+      target: rules

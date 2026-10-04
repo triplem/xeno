@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#217
+phase: 00-intake
+created: "2026-10-04T11:32:28Z"
+schema_version: "1.0"
+runner_version: dev+dce3eab
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The issue that opened this intent carried a wrong premise about the trail''s own safety: #217 states that A74 keeps sealed verdicts from being re-judged, and A74 is scoped to G-Policy alone. The cost of the chosen option was stated to the maintainer on that basis and was wrong, and the error was found by reading the register rather than the issue. A second question had to be put after the first had been answered.'
+      proposal: Where an issue asserts a property of the trail as the reason a change is affordable, the intake verifies that property against the assumption register and the code before any option is put to a person, and names the verification in the context rationale.
+      target: context-rule

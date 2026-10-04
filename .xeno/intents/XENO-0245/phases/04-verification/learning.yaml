@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#217
+phase: 04-verification
+created: "2026-10-04T21:28:02Z"
+schema_version: "1.0"
+runner_version: dev+fbf8a72.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The evidence format set refused ''text'' twice before the declaration was accepted: section 4 fixes junit, trx, tap, go-test-json and other, and a plain go test report is ''other'' while a -json one is go-test-json. The refusal named the set, so the correction took one step, but the better artifact was only reached because the refusal prompted a second look at what the job could emit.'
+      proposal: Where a phase declares a test report, it emits the machine-readable form the format set names rather than the console output, because the set exists to make an attachment readable by something other than a person.
+      target: rules

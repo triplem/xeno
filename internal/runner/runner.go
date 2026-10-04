@@ -513,87 +513,22 @@ func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
 	return h, nil
 }
 
-// informationBase resolves the context profile into the files a phase is given, with a
-// hash each. The profile is P0's artifact and applies to every phase of the intent, which
-// is what section 12 means by a phase reading what it names; a phase does not get a
-// profile of its own, so there is one budget per intent rather than six.
+// informationBase is the files a phase is given: the intent's scope, resolved.
 //
-// A repository without a profile gets an empty list, and the second half of G-Freshness
-// then has nothing to compare, which is the state every intent in this repository is in.
-// That is a smaller claim than an empty profile would be: nothing was declared, rather
-// than nothing was read.
+// The scope is P0's artifact and applies to every phase of the intent, which is what section
+// 12 means by a phase reading what it names; a phase does not get a scope of its own, so
+// there is one budget per intent rather than six.
+//
+// A repository without a scope gets an empty list, and the staleness half of G-Freshness then
+// has nothing to compare. That is a smaller claim than an empty scope would be: nothing was
+// declared, rather than nothing was read. From #217 a P0 cannot be finished without one, so
+// the case is a phase started before that rule rather than a project opting out.
 func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
-	var p model.Profile
-	path := r.abs(model.PhaseDir(key, model.Phases[0]) + "/" + model.ContextProfile)
-	if err := fm.ReadYAML(path, &p); err != nil {
-		return nil, nil // no profile is not an error; it is a project that has not written one
-	}
-	// One walk, and the files are bucketed by the include pattern that claimed them first. The
-	// order the buckets are emitted in is the profile's own, because section 5 asks for an order
-	// of volatility and the project is what knows which of its directories is stable. A file two
-	// patterns match takes the position of the first: a stable prefix is decided by the first
-	// thing that claims it.
-	buckets := make([][]model.ContextFile, len(p.Include))
-	seen := map[string]bool{}
-	err := filepath.WalkDir(r.Root, func(abs string, d os.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		rel, rerr := filepath.Rel(r.Root, abs)
-		if rerr != nil {
-			return rerr
-		}
-		rel = filepath.ToSlash(rel)
-		if strings.HasPrefix(rel, ".git/") || seen[rel] {
-			return nil
-		}
-		i := firstMatch(p.Include, rel)
-		if i < 0 || matchesAny(p.Exclude, rel) {
-			return nil
-		}
-		h, herr := hashing.FileHash(abs)
-		if herr != nil {
-			return herr
-		}
-		// The size comes from the entry the walk already has, rather than from a second stat:
-		// two reads of one file can see two versions of it, and the recorded size exists to
-		// describe the same read as the hash.
-		info, ierr := d.Info()
-		if ierr != nil {
-			return ierr
-		}
-		seen[rel] = true
-		buckets[i] = append(buckets[i], model.ContextFile{Path: rel, SHA256: h, Bytes: info.Size()})
-		return nil
-	})
-	if err != nil {
+	s, err := r.readScope(key)
+	if err != nil || s == nil {
 		return nil, err
 	}
-	var files []model.ContextFile
-	for _, b := range buckets {
-		sort.Slice(b, func(i, j int) bool { return b[i].Path < b[j].Path })
-		files = append(files, b...)
-	}
-	// A declared link's document is part of what the phase was given, whether or not include
-	// matches it. Section 5 has links declared and never inferred, and a declaration that put
-	// nothing in the base would be ornamental. It goes last: a link is the most specific thing
-	// in a profile and therefore the most likely to move.
-	for _, l := range p.Links {
-		if l.Docs == "" || seen[l.Docs] {
-			continue
-		}
-		h, herr := hashing.FileHash(r.abs(l.Docs))
-		if herr != nil {
-			continue // a link naming a document that is not there is G-Schema's finding
-		}
-		info, ierr := os.Stat(r.abs(l.Docs))
-		if ierr != nil {
-			continue // gone between the hash and the stat, which the same finding covers
-		}
-		seen[l.Docs] = true
-		files = append(files, model.ContextFile{Path: l.Docs, SHA256: h, Bytes: info.Size()})
-	}
-	return files, nil
+	return r.resolveScope(s)
 }
 
 // firstMatch is the index of the first pattern that claims the path, or -1.
@@ -630,6 +565,22 @@ func matchesAny(patterns []string, path string) bool {
 func (r *Runner) Finish(key, phase, summary string) (*model.Gate, error) {
 	if model.PhaseIndex(phase) < 0 {
 		return nil, fmt.Errorf("unknown phase %q", phase)
+	}
+	// Section 5 puts the context scope among P0's artifacts and calls it a budget P0 produces,
+	// and for a hundred intents nothing produced one, because no command wrote it and no check
+	// asked for it (#217). The requirement is here and not in a gate for the reason D-2
+	// records: Verify recomputes a verdict and compares it against the committed one, so a
+	// check in a gate re-judges every phase already sealed, which is what A74 was written
+	// about. A command is not re-run, so this binds every new P0 and reaches no old one.
+	//
+	// First statement, before the digest and the cost are written, so a refused finish writes
+	// nothing at all. Not in phase start of P1 either: a P0 can only be left without a scope if
+	// it was allowed to finish.
+	if phase == model.Phases[0] &&
+		!fm.Exists(r.abs(model.PhaseDir(key, phase)+"/"+model.ContextScope)) {
+		return nil, refuse("%s has no %s, which section 5 has P0 produce as an artifact of its "+
+			"own and the phases after it read; write it with xeno scope set --intent %s",
+			phase, model.ContextScope, key)
 	}
 	if strings.TrimSpace(summary) != "" {
 		if err := r.writeDigest(key, phase, summary); err != nil {

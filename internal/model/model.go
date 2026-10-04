@@ -143,7 +143,7 @@ var KnownIntentFiles = map[string]bool{
 // PhasesDir is the one directory an intent directory may hold, as evidence is the one a phase may.
 const PhasesDir = "phases"
 
-const ContextProfile = "context-profile.yaml" // P0 only
+const ContextScope = "context-scope.yaml" // P0 only
 
 // TemplateID is the phase without its ordering prefix: 02-design is rendered from the
 // template design. The prefix orders the phases and says nothing a template needs.
@@ -388,11 +388,11 @@ type ContextLock struct {
 	// phase ran against is a claim and an invented value would be a false one.
 	RepoCommit string `yaml:"repo_commit,omitempty"`
 	// Files is the information base the phase was given, resolved from the context
-	// profile when the phase started and never refreshed: the lock describes the input
+	// scope when the phase started and never refreshed: the lock describes the input
 	// state, and one rewritten at the end would describe nothing. G-Freshness compares
 	// these hashes against the tree for every preceding phase.
 	//
-	// The order is the profile's include order, with paths sorted inside each pattern. Section 5
+	// The order is the scope's include order, with paths sorted inside each pattern. Section 5
 	// asks for an order of volatility and says the lock records the assembly order rather than
 	// only the set, so the project writes its patterns from stable to volatile and this follows;
 	// the tie-break is what keeps two runs over one tree byte-identical, which the hash needs.
@@ -439,10 +439,10 @@ type ContextFile struct {
 	Bytes  int64  `yaml:"bytes,omitempty"`
 }
 
-// Profile is the context profile section 12 defines: a budget, produced by P0 and read by
+// Scope is the context scope section 12 defines: a budget, produced by P0 and read by
 // every phase. Links are declared and never inferred, and the runner records them without
 // resolving them: what they are for is the agent's reading, not the gate's.
-type Profile struct {
+type Scope struct {
 	Common  `yaml:",inline"`
 	Include []string `yaml:"include"`
 	Exclude []string `yaml:"exclude,omitempty"`

@@ -1,0 +1,12 @@
+intent: github.com/triplem/xeno#217
+phase: 00-intake
+created: "2026-10-04T20:02:38Z"
+schema_version: "1.0"
+runner_version: dev+fbf8a72.dirty
+plugin_version: 0.0.0-dev
+evidence: self-reported
+tokens_in: 142
+tokens_out: 63369
+tokens_cached: 5043494
+sessions:
+    - ff449517-2730-4eba-990e-2383856e7449

@@ -280,7 +280,7 @@ it asserts, and when a missing bundle fails rather than falling back.
 ### WP3 Shipped template set
 
 The six phase templates with their section ids, order and required fields, the
-strings bundles in English and German, and the context profile format used by P0.
+strings bundles in English and German, and the context scope format used by P0.
 
 **The section count is the proportionality lever**, not the gates, which cost nothing.
 Six phases with six required sections each are thirty-six fields to fill for a one line
@@ -674,9 +674,9 @@ against the digest the runner carries, when a secret in the session text does no
 `digest.md` regardless of what the model proposes, and when every red verdict names a
 file, a cause and a next step.
 
-### WP8 Context profile and change driven re-reading
+### WP8 Context scope and change driven re-reading
 
-`context-profile.yaml` as a P0 artifact with include, exclude, declared links and
+`context-scope.yaml` as a P0 artifact with include, exclude, declared links and
 budget, validated by G-Schema, plus change driven re-reading from the hashes already
 in `context.lock.yaml`. Phases read the preceding digest rather than rescanning the
 codebase.
@@ -1325,7 +1325,7 @@ definition rather than standing beside it.
 ### WP20 Token economy
 
 The levers that no other package owns, pulled in this order: measure, order, choose,
-and only then trim. The context profile (WP8), the symbol index (WP15) and the digest
+and only then trim. The context scope (WP8), the symbol index (WP15) and the digest
 mechanism are already the large savings and are not repeated here.
 
 **Baseline before levers.** After M1, a fixed reference intent is run through all six
@@ -1601,7 +1601,7 @@ acceptance is usually cheaper than continuing from a long session.
 
 Load the part of the specification that governs the package, not the whole file. It is
 well over a thousand lines, and sending all of it into every session for the sake of
-one section is the exact habit the context profile exists to break.
+one section is the exact habit the context scope exists to break.
 
 ### What to watch
 
@@ -1670,7 +1670,7 @@ than the process: agent, artifact, gate, pipeline, merge gate. That is where the
 surprises live, and none of them are about rules. It is deliberately not a statement
 about whether Xeno is any good, which is what M1 is for.
 
-**M1, the process on one intent.** Rule engine, assumption register and context profile
+**M1, the process on one intent.** Rule engine, assumption register and context scope
 in place, so an intent runs through all six phases under an effective rule set.
 Dogfooding starts here. Evidence handling is not in it: a phase that declares no
 evidence passes G-Evidence, and WP6 follows once there is something to attach.
@@ -1690,7 +1690,7 @@ somewhere else.
 | Size | Packages |
 |---|---|
 | Large | WP3 templates, WP4 rule engine, WP7 runner, WP11 agent layer, WP16 documentation, WP17 test strategy |
-| Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context profile, WP10 CI wrapper and enforcement check, WP15 symbol index, WP19 conformance, WP20 token economy |
+| Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context scope, WP10 CI wrapper and enforcement check, WP15 symbol index, WP19 conformance, WP20 token economy |
 | Small | WP5 assumptions, WP9 init, WP12 GitHub adapter, WP13 token recording, WP14 learning |
 | Not sized | WP18 dashboard, specified and deferred to 1.1 |
 

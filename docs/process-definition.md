@@ -109,7 +109,7 @@ All paths in this document are relative to the repository root.
       gate.yaml           G-Complete result, written when an intent is abandoned
       phases/
         00-intake/
-          context-profile.yaml
+          context-scope.yaml
         01-requirements/
         02-design/
         03-implementation/
@@ -130,7 +130,7 @@ Every phase directory contains:
 | `learning.yaml`      | learning record for this phase                                |
 | `cost.yaml`          | cost record for this phase                                    |
 
-P0 additionally holds `context-profile.yaml`, described under context economy. A
+P0 additionally holds `context-scope.yaml`, described under context economy. A
 phase may also carry an `evidence/` directory. That is where produced evidence
 lands, most often in verification.
 
@@ -553,7 +553,7 @@ answer: in v1 the symbol index, in v2 a code graph or a comparable tool without 
 schema break. It is empty where a phase ran without any, which is allowed.
 
 **It records the context that was declared, not everything that was read.** The file is
-written before the agent starts, from the context profile, and nothing stops an agent
+written before the agent starts, from the context scope, and nothing stops an agent
 from opening a file the profile does not name. Treating it as a measurement of what was
 read would be wrong; it is the statement of what the phase was given.
 
@@ -598,13 +598,13 @@ process excludes.
 Brownfield repositories are large and phases repeat, so reading is the dominant
 cost. Five mechanisms keep it bounded, none of them language specific:
 
-**The context profile is a budget.** P0 produces it as an artifact of its own, and a
-phase reads what it names. Any extension beyond it is written into
-`context.lock.yaml`, which makes visible where the reading actually happens. Without
-that visibility, any optimisation is guesswork.
+**The context scope declares the information base, and bounds it.** P0 produces it as an
+artifact of its own, and a phase reads what it names. Any extension beyond it is written
+into `context.lock.yaml`, which makes visible where the reading actually happens.
+Without that visibility, any optimisation is guesswork.
 
 ```yaml
-# phases/00-intake/context-profile.yaml
+# phases/00-intake/context-scope.yaml
 include: [ "src/payment/**", "docs/adr/**" ]
 exclude: [ "**/testdata/**" ]
 links:                      # declared, never inferred
@@ -653,7 +653,7 @@ exactly as far as the first difference. A profile listing an intent id or a time
 near the front would forfeit the whole saving, which is why `context.lock.yaml`
 records the assembly order and not only the set.
 
-Links between code and documentation are declared in the context profile, not
+Links between code and documentation are declared in the context scope, not
 inferred. An inferred mapping is an assumption, and assumptions in this process are
 either registered or absent.
 
@@ -706,7 +706,7 @@ anchors do not match its declared template version fails G-Schema.
 
 | Phase                | Input    | Output                                                      |
 |----------------------|----------|-------------------------------------------------------------|
-| P0 Intake            | issue    | `intent.yaml`, context profile, initial assumption register  |
+| P0 Intake            | issue    | `intent.yaml`, context scope, initial assumption register    |
 | P1 Requirements      | P0       | specification with acceptance criteria and non goals         |
 | P2 Design            | P1       | design decision, affected components                         |
 | P3 Implementation    | P2       | code, draft merge request                                    |
@@ -1675,7 +1675,7 @@ and writes the file. The filtering is therefore deterministic and outside the mo
 reach, so a model cannot route around it, not even by accident. The summary itself
 stays marked as a derived artifact rather than a basis for decisions.
 
-**What the gate runner reads.** Artifacts under `.xeno/`, the files a context profile
+**What the gate runner reads.** Artifacts under `.xeno/`, the files a context scope
 names, and the commit history of the change under review. Nothing else: the input is
 the state of the repository plus an explicitly passed commit range, never a query to
 the code host. Where a rule needs the range and none was passed, the gate is red
