@@ -1,0 +1,55 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.74.0"
+  },
+  "ReportID": "01a10615-9998-7e06-965d-d7f18802fbbb",
+  "CreatedAt": "2026-10-04T08:44:01.304920535Z",
+  "ArtifactName": "xeno",
+  "ArtifactType": "filesystem",
+  "Results": [
+    {
+      "Target": "xeno",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Packages": [
+        {
+          "ID": "github.com/triplem/xeno@v0.0.0-20261004084325-a2ae5898cd81",
+          "Name": "github.com/triplem/xeno",
+          "Identifier": {
+            "PURL": "pkg:golang/github.com/triplem/xeno@v0.0.0-20261004084325-a2ae5898cd81",
+            "UID": "b1ec57a575e768b6"
+          },
+          "Version": "v0.0.0-20261004084325-a2ae5898cd81",
+          "Relationship": "root",
+          "DependsOn": [
+            "go.yaml.in/yaml/v3@v3.0.5",
+            "stdlib@v1.27.1"
+          ],
+          "AnalyzedBy": "gobinary"
+        },
+        {
+          "ID": "stdlib@v1.27.1",
+          "Name": "stdlib",
+          "Identifier": {
+            "PURL": "pkg:golang/stdlib@v1.27.1",
+            "UID": "4eee62ac91e8a6b4"
+          },
+          "Version": "v1.27.1",
+          "Relationship": "direct",
+          "AnalyzedBy": "gobinary"
+        },
+        {
+          "ID": "go.yaml.in/yaml/v3@v3.0.5",
+          "Name": "go.yaml.in/yaml/v3",
+          "Identifier": {
+            "PURL": "pkg:golang/go.yaml.in/yaml/v3@v3.0.5",
+            "UID": "9a8bd35cf96cf683"
+          },
+          "Version": "v3.0.5",
+          "AnalyzedBy": "gobinary"
+        }
+      ]
+    }
+  ]
+}
