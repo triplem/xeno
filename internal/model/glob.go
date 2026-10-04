@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// MatchPath answers whether a repository relative path matches a profile pattern of the
+// MatchPath answers whether a repository relative path matches a scope pattern of the
 // form section 12 writes: `src/payment/**`, `**/testdata/**`, `docs/adr/*.md`.
 //
 // Written here rather than taken from a library because the project has one dependency

@@ -47,6 +47,12 @@ func newFixture(t *testing.T) *fixture {
 	// absent and G-Schema says so, which is correct and is asserted on its own below
 	// rather than made the condition of every other test (#177).
 	f.write(plugin.Dir+"/.claude-plugin/plugin.json", `{"name":"xeno","version":"9.9.9"}`)
+	// A context scope, for the same reason as the plugin above: from #217 a P0 cannot be
+	// finished without one, so every intent has one and a fixture without one is a case to
+	// assert on its own rather than the condition of every other test. The patterns match
+	// nothing in a bare fixture, so the information base stays empty unless a test writes
+	// its own scope over this.
+	f.write(model.PhaseDir(key, model.Phases[0])+"/"+model.ContextScope, "include:\n  - src/**\n")
 	f.write(model.IntentDir(key)+"/intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n")
 	f.write(model.IntentDir(key)+"/assumptions.yaml", "assumptions: []\n")
 	return f
@@ -1401,7 +1407,7 @@ func TestGivenFilesAreComparedAgainstTheTree(t *testing.T) {
 	f.write("src/payment/testdata/golden.json", "{}\n")
 	f.write("docs/adr/0012-payments.md", "# payments\n")
 	f.write("src/shipping/box.go", "package shipping\n")
-	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile,
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextScope,
 		"include:\n  - src/payment/**\n  - docs/adr/*.md\nexclude:\n  - \"**/testdata/**\"\nbudget:\n  files: 120\n")
 
 	f.must(f.r.Start(key, "00-intake"))
@@ -1412,12 +1418,12 @@ func TestGivenFilesAreComparedAgainstTheTree(t *testing.T) {
 	for _, c := range lock.Files {
 		paths = append(paths, c.Path)
 	}
-	// The order is the profile's include order, not the alphabet: section 5 asks for an order of
+	// The order is the scope's include order, not the alphabet: section 5 asks for an order of
 	// volatility and says the lock records the assembly order rather than only the set, so the
 	// project writes its patterns from stable to volatile and this follows (#171).
 	want := []string{"src/payment/card.go", "docs/adr/0012-payments.md"}
 	if strings.Join(paths, " ") != strings.Join(want, " ") {
-		t.Fatalf("the information base is %v, want %v: the profile's include order, its exclude, and the files it does not name", paths, want)
+		t.Fatalf("the information base is %v, want %v: the scope's include order, its exclude, and the files it does not name", paths, want)
 	}
 
 	f.output("00-intake", "")
@@ -1425,28 +1431,21 @@ func TestGivenFilesAreComparedAgainstTheTree(t *testing.T) {
 		t.Fatalf("a phase whose files are untouched is %s", g.Status)
 	}
 
-	// The file the phase was given changes after it was given. The lock is not refreshed,
-	// which is what makes this visible at all.
+	// The file the phase was given changes after it was given, and P0 stays green: section 5
+	// says the check "looks at the locks of the preceding phases, never at the lock of the
+	// phase being gated", and P0 has none. This test asserted the opposite until #236, which
+	// is how the defect lived: "a phase that changes the files it read is not stale, it is
+	// working". What the check does catch now has its own tests beside staleReads, where the
+	// two limits are, because both need a commit range and this fixture has no repository.
 	f.write("src/payment/card.go", "package payment // and more\n")
 	g, err := f.r.GateRun(key, "00-intake")
 	f.must(err)
-	if g.Status != "red" {
-		t.Fatalf("a changed input left the phase %s", g.Status)
-	}
-	if !strings.Contains(causeOf(g, "G-Freshness"), "src/payment/card.go") {
-		t.Fatalf("the finding does not name the file: %s", causeOf(g, "G-Freshness"))
-	}
-
-	// Gone is its own case, since the repair differs: there is nothing to read again.
-	f.must(os.Remove(filepath.Join(f.root, "src/payment/card.go")))
-	g, err = f.r.GateRun(key, "00-intake")
-	f.must(err)
-	if !strings.Contains(causeOf(g, "G-Freshness"), "is gone") {
-		t.Fatalf("a file that left was reported as: %s", causeOf(g, "G-Freshness"))
+	if g.Status != "green" {
+		t.Fatalf("a phase that changed a file its own lock lists is %s, and it is working rather than stale", g.Status)
 	}
 }
 
-// A phase with no profile records no information base, which is a smaller claim than an
+// A phase with no scope records no information base, which is a smaller claim than an
 // empty one: nothing was declared rather than nothing read.
 func TestNoProfileRecordsNoInformationBase(t *testing.T) {
 	f := newFixture(t)
@@ -1454,11 +1453,11 @@ func TestNoProfileRecordsNoInformationBase(t *testing.T) {
 	var lock model.ContextLock
 	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
 	if len(lock.Files) != 0 {
-		t.Fatalf("a repository without a profile recorded %v", lock.Files)
+		t.Fatalf("a repository without a scope recorded %v", lock.Files)
 	}
 	f.output("00-intake", "")
 	if g := f.finish("00-intake"); g.Status != "green" {
-		t.Fatalf("a phase without a profile is %s", g.Status)
+		t.Fatalf("a phase without a scope is %s", g.Status)
 	}
 }
 
@@ -2298,14 +2297,14 @@ func TestNoDeclarationLeavesTheVerdictAsItWas(t *testing.T) {
 
 // Section 5: context is assembled in order of volatility and the lock records the assembly order
 // rather than only the set. The project decides which of its directories is stable by the order it
-// writes its patterns in, so reversing the profile reverses the base (#171).
-func TestTheBaseFollowsTheProfilesIncludeOrder(t *testing.T) {
+// writes its patterns in, so reversing the scope reverses the base (#171).
+func TestTheBaseFollowsTheScopesIncludeOrder(t *testing.T) {
 	base := func(t *testing.T, include string) []string {
 		t.Helper()
 		f := newFixture(t)
 		f.write("src/a.go", "package a\n")
 		f.write("docs/b.md", "# b\n")
-		f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile, include)
+		f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextScope, include)
 		f.must(f.r.Start(key, "00-intake"))
 		var lock model.ContextLock
 		f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
@@ -2333,7 +2332,7 @@ func TestADeclaredLinksDocumentIsInTheBase(t *testing.T) {
 	f := newFixture(t)
 	f.write("src/payment/card.go", "package payment\n")
 	f.write("docs/adr/0012-payments.md", "# payments\n")
-	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile,
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextScope,
 		"include:\n  - src/payment/**\nlinks:\n  - component: src/payment\n    docs: docs/adr/0012-payments.md\n")
 
 	f.must(f.r.Start(key, "00-intake"))
@@ -2344,7 +2343,7 @@ func TestADeclaredLinksDocumentIsInTheBase(t *testing.T) {
 	for _, c := range lock.Files {
 		paths = append(paths, c.Path)
 	}
-	// The link goes last: it is the most specific thing in a profile and the most likely to move.
+	// The link goes last: it is the most specific thing in a scope and the most likely to move.
 	if strings.Join(paths, " ") != "src/payment/card.go docs/adr/0012-payments.md" {
 		t.Fatalf("the base is %v, want the include then the link's document", paths)
 	}
@@ -2417,7 +2416,7 @@ func TestChangedSinceNamesWhatMovedAndNothingElse(t *testing.T) {
 	f.templated()
 	f.write("src/a.go", "package a\n")
 	f.write("src/b.go", "package b\n")
-	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextProfile, "include:\n  - src/**\n")
+	f.write(model.PhaseDir(key, "00-intake")+"/"+model.ContextScope, "include:\n  - src/**\n")
 
 	// The first phase has no predecessor, so there is nothing to compare.
 	if got := f.r.ChangedSince(key, "00-intake"); got != nil {
@@ -2444,16 +2443,20 @@ func TestChangedSinceNamesWhatMovedAndNothingElse(t *testing.T) {
 	}
 }
 
-// A repository with no profile declared no base, so nothing can have moved: every project today,
-// and this one.
-func TestChangedSinceIsSilentWithoutAProfile(t *testing.T) {
+// A scope that names nothing in the tree declared no base, so nothing can have moved.
+//
+// This asserted an absent scope until #217, and that case is now unreachable: a P0 cannot be
+// finished without one, so the silence belongs to a scope that resolved and came out empty
+// rather than to one that was never written. A74's distinction, arriving where it belongs.
+func TestChangedSinceIsSilentWhereTheScopeMatchesNothing(t *testing.T) {
 	f := newFixture(t)
 	f.templated()
+	f.write(model.PhaseDir(key, model.Phases[0])+"/"+model.ContextScope, "include:\n  - vendor/**\n")
 	f.write("src/a.go", "package a\n")
 	f.run("00-intake", "")
 	f.write("src/a.go", "package a // changed\n")
 	if got := f.r.ChangedSince(key, "01-requirements"); got != nil {
-		t.Fatalf("a repository with no profile reports %v", got)
+		t.Fatalf("a scope matching nothing reports %v", got)
 	}
 }
 

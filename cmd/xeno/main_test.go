@@ -41,6 +41,17 @@ func repo(t *testing.T) string {
 	write("intent.yaml", "intent: \"git.example/group/proj#1\"\nkey: PROJ-1\nstatus: in-progress\n"+
 		"created: \"2026-09-20T10:00:00Z\"\n")
 	write("assumptions.yaml", "assumptions: []\n")
+	// A context scope, because from #217 a P0 cannot be finished without one, so every intent
+	// has one and a fixture lacking it is a case to assert on its own. The pattern matches
+	// nothing here, so the information base stays empty.
+	phase0 := filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]))
+	if err := os.MkdirAll(phase0, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(phase0, model.ContextScope),
+		[]byte("include:\n  - src/**\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	// The shipped templates, so that section set can render.
 	src := filepath.Join("..", "..", ".xeno", "plugin", "templates")
 	ids, err := os.ReadDir(src)
@@ -538,6 +549,31 @@ func TestTheMergeCheckWithoutARangeIsTwo(t *testing.T) {
 }
 
 // The two commands section 8's exchange needs, driven the way a session drives them: the
+// The scope command, end to end: the entry read from a file, the figure reported so that a
+// budget is counted, and no --phase, because the scope is P0's artifact.
+func TestTheScopeCommandWritesP0sArtifactAndReportsTheFigure(t *testing.T) {
+	root := repo(t)
+	if err := os.MkdirAll(filepath.Join(root, "src"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "src", "a.go"), []byte("package a\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	entry := inputFile(t, "scope.yaml", "include:\n  - src/**\nbudget:\n  files: 5\n")
+
+	code, out, errw := invoke(t, "scope", "set", "--root", root, "--intent", "PROJ-1",
+		"--file", entry, "--no-next")
+	if code != 0 {
+		t.Fatalf("writing the scope exits %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "resolves 1 files") || !strings.Contains(out, "cannot be changed once") {
+		t.Fatalf("the figure and its caveat did not reach standard output: %q", out)
+	}
+	if _, err := os.Stat(filepath.Join(root, model.PhaseDir("PROJ-1", model.Phases[0]), model.ContextScope)); err != nil {
+		t.Fatalf("the artifact was not written: %v", err)
+	}
+}
+
 // question read from a file, the decision given as flags, and the person never defaulted.
 func TestTheExchangeIsRecordedFromTheCommandLine(t *testing.T) {
 	root := repo(t)

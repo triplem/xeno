@@ -1,0 +1,35 @@
+intent: github.com/triplem/xeno#217
+phase: 00-intake
+created: "2026-10-04T11:13:19Z"
+schema_version: "1.0"
+runner_version: dev+dce3eab
+plugin_version: 0.0.0-dev
+# The first profile in this repository, written by hand because the writer this intent
+# builds does not exist while P0 runs, and because the profile lies inside artifacts_hash
+# and so cannot be added after the verdict. Section 5 asks for an order of volatility and
+# the include order is it: the two normative documents first, then the register, then the
+# conventions, then the four packages the change touches, then the entry point.
+include:
+  - docs/process-definition.md
+  - docs/implementation-plan.md
+  - ASSUMPTIONS.md
+  - CLAUDE.md
+  - CONTRIBUTING.md
+  - internal/model/*.go
+  - internal/hashing/*.go
+  - internal/gates/*.go
+  - internal/runner/*.go
+  - cmd/xeno/*.go
+links:
+  - component: internal/gates
+    docs: docs/process-definition.md
+  - component: internal/runner
+    docs: docs/implementation-plan.md
+# Counted rather than taken from section 5's example: the patterns above resolve to 43
+# files and 904,078 bytes today. The headroom is for the writer this intent adds and its
+# tests, and it is deliberate: the profile lies inside P0's artifacts_hash, so a budget
+# revised after this phase is judged invalidates its verdict and the predecessor hash of
+# every phase after it. The number has to be right before P0 closes or not at all.
+budget:
+  files: 50
+  bytes: 1000000

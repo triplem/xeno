@@ -1,0 +1,37 @@
+intent: github.com/triplem/xeno#217
+phase: 00-intake
+created: "2026-10-04T11:31:53Z"
+schema_version: "1.0"
+runner_version: dev+fbf8a72.dirty
+plugin_version: 0.0.0-dev
+status: green
+run_at: "2026-10-04T20:02:38Z"
+artifacts_hash: ca8132128196fedb5b4a1fe4412c633544111ac03277313ae18a23c3da51de84
+checks:
+    - gate: G-Supply
+      result: not-implemented
+      provenance: xeno
+    - gate: G-Schema
+      result: pass
+      provenance: xeno
+    - gate: G-Trace
+      result: pass
+      provenance: xeno
+    - gate: G-Secret
+      result: not-implemented
+      provenance: xeno
+    - gate: G-Assumptions
+      result: pass
+      provenance: xeno
+    - gate: G-Learning
+      result: pass
+      provenance: xeno
+    - gate: G-Freshness
+      result: pass
+      provenance: xeno
+    - gate: G-Rules
+      result: pass
+      provenance: xeno
+    - gate: G-Policy
+      result: pass
+      provenance: xeno

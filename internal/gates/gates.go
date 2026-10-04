@@ -435,26 +435,26 @@ func missing(raw map[string]any, fields ...[]string) []string {
 
 // links reports a declared link whose document is not in the tree.
 //
-// It is the profile's one unambiguous error. Everything else in the file is a pattern, and a
+// It is the scope's one unambiguous error. Everything else in the file is a pattern, and a
 // pattern that matches nothing is a state rather than a mistake — the files may not be written
 // yet. A link is a specific path, declared because section 5 forbids inferring one: "an inferred
 // mapping is an assumption, and assumptions in this process are either registered or absent". A
 // declaration whose target does not exist is neither.
 //
-// The finding names the profile rather than the lock, because the profile is the claim and the
+// The finding names the scope rather than the lock, because the scope is the claim and the
 // base is the consequence: a finding on the lock would point a reader at a file that is correct
 // about what it was given. The runner, which writes that lock, skips such a link in silence and is
 // right to — it records what the phase was given, and a file that is not there was not given.
 //
-// Checked wherever the profile is read, which is every phase, as the budget check established. A
+// Checked wherever the scope is read, which is every phase, as the budget check established. A
 // configuration error should keep being reported until it is corrected, where a check at P0 alone
 // would report it once into a verdict nobody re-reads. #171 asked for this and did not do it; #172
 // is it.
 func links(c Ctx) []model.Finding {
-	var p model.Profile
-	profile := c.phaseRel(model.Phases[0]) + "/" + model.ContextProfile
-	if err := fm.ReadYAML(c.abs(profile), &p); err != nil {
-		return nil // no profile is no link
+	var p model.Scope
+	scope := c.phaseRel(model.Phases[0]) + "/" + model.ContextScope
+	if err := fm.ReadYAML(c.abs(scope), &p); err != nil {
+		return nil // no scope is no link
 	}
 	var fs []model.Finding
 	for _, l := range p.Links {
@@ -466,7 +466,7 @@ func links(c Ctx) []model.Finding {
 			if at == "" {
 				at = "a link"
 			}
-			fs = append(fs, finding(profile,
+			fs = append(fs, finding(scope,
 				"the link for "+at+" names "+quoted(l.Docs)+", which is not in the tree",
 				"correct the path, or take the link out; a declared link is a claim about a file"))
 		}
@@ -474,7 +474,7 @@ func links(c Ctx) []model.Finding {
 	return fs
 }
 
-// budget reports a recorded context that exceeded the budget its profile declared.
+// budget reports a recorded context that exceeded the budget its scope declared.
 //
 // Section 5 puts this check here and says what it is for in the same breath: "deliberately a
 // finding and not a red gate in the sense of stopping work", because "blocking against a number
@@ -483,15 +483,15 @@ func links(c Ctx) []model.Finding {
 // recorded — and it names both numbers, since a finding that says only "over budget" is one
 // nobody can act on.
 //
-// The comparison is between two files and nothing else: the profile declares the budget and the
+// The comparison is between two files and nothing else: the scope declares the budget and the
 // lock records both what the phase was given and how large each of those files was. Nothing is
 // measured, so a file that grows or disappears after a verdict cannot move a sealed phase's
 // standing — which is the property section 5's clause on bytes was written for (#176).
 func budget(c Ctx) []model.Finding {
-	var p model.Profile
-	profile := c.phaseRel(model.Phases[0]) + "/" + model.ContextProfile
-	if err := fm.ReadYAML(c.abs(profile), &p); err != nil {
-		return nil // no profile is no budget
+	var p model.Scope
+	scope := c.phaseRel(model.Phases[0]) + "/" + model.ContextScope
+	if err := fm.ReadYAML(c.abs(scope), &p); err != nil {
+		return nil // no scope is no budget
 	}
 	if p.Budget.Files == 0 && p.Budget.Bytes == 0 {
 		return nil
@@ -506,7 +506,7 @@ func budget(c Ctx) []model.Finding {
 		fs = append(fs, finding(rel,
 			fmt.Sprintf("the recorded context is %d files and the budget is %d",
 				len(lock.Files), p.Budget.Files),
-			"narrow the profile's include, or raise the budget in "+profile+" and say why"))
+			"narrow the scope's include, or raise the budget in "+scope+" and say why"))
 	}
 	if p.Budget.Bytes > 0 {
 		// The sizes the lock recorded, and nothing measured. Section 5: the budget is judged
@@ -528,7 +528,7 @@ func budget(c Ctx) []model.Finding {
 		if recorded && total > p.Budget.Bytes {
 			fs = append(fs, finding(rel,
 				fmt.Sprintf("the recorded context is %d bytes and the budget is %d", total, p.Budget.Bytes),
-				"narrow the profile's include, or raise the budget in "+profile+" and say why"))
+				"narrow the scope's include, or raise the budget in "+scope+" and say why"))
 		}
 	}
 	return fs
@@ -678,7 +678,7 @@ func directoryFindings(c Ctx, dir string) []model.Finding {
 			}
 			continue
 		}
-		if model.KnownPhaseFiles[name] || (name == model.ContextProfile && c.Phase == model.Phases[0]) {
+		if model.KnownPhaseFiles[name] || (name == model.ContextScope && c.Phase == model.Phases[0]) {
 			continue
 		}
 		fs = append(fs, finding(dir+"/"+name, "unknown file in the phase directory",
@@ -1129,16 +1129,59 @@ func freshness(c Ctx) model.Check {
 // refreshed, so a file whose hash no longer matches the tree is one this phase, or a later
 // one, moved out from under an earlier phase's reading.
 //
-// It looks at this phase and every phase before it, because the question is whether the
-// work already done still rests on what it was given, and a phase does not stop being
-// stale by having a successor.
+// Section 5 states two limits and gives each one its reason. Both were missing until #236,
+// and this intent found out how by being blocked: a specification commit moved two documents
+// its own scope named, the check read the gated phase's own lock, and the phase went red for
+// doing its job.
 //
-// Where no profile was written the lists are empty and there is nothing to compare, which
-// is every intent in this repository so far: the check is not weaker for it, it has simply
-// been told nothing.
+// "And it looks at the locks of the preceding phases, never at the lock of the phase being
+// gated. A phase that changes the files it read is not stale, it is working: that is what P3
+// does, and without this limit every implementation phase would report itself out of date the
+// moment it did its job." Hence i < idx. Do not restore the inclusive bound as a tidy-up.
+//
+// "It looks at the files the change under review touched, not at everything the scope names.
+// The wider reading is the more honest one, since a design made against code that has since
+// changed is genuinely questionable, but in an active repository every rebase onto a moved
+// default branch would set it off, and a check that fires constantly is one people learn to
+// ignore." Hence the touched set below.
+//
+// Where there is no commit range there is no change under review, and section 12 forbids
+// working one out here, so the check reports nothing: in practice this half runs in CI, which
+// passes the range, and not locally. That is a silent pass of the kind #217 was opened about,
+// and saying so needs a result for a check that did not run, which is #235. Stated here
+// because the next reader of this function is who it matters to.
+//
+// Where no scope was written the lists are empty and there is nothing to compare. From #217 a
+// P0 cannot be finished without one, so that is a phase older than the rule.
+// changedPaths is the set of repository paths the change under review touched, or nil where
+// there is no range to ask about.
+//
+// nil and empty are different answers and the caller treats them so: nil is "there was no
+// change under review to narrow to", which stops the check, and empty is "the range touched
+// nothing", which is a real answer and finds nothing stale. That is A74's distinction applied
+// to an input rather than to a rule set.
+func changedPaths(c Ctx) (map[string]bool, error) {
+	if c.Base == "" || c.Head == "" {
+		return nil, nil
+	}
+	paths, err := git.Paths(c.Root, c.Base, c.Head, "")
+	if err != nil {
+		return nil, err
+	}
+	touched := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		touched[p] = true
+	}
+	return touched, nil
+}
+
 func staleReads(c Ctx, idx int) []model.Finding {
+	touched, err := changedPaths(c)
+	if err != nil || touched == nil {
+		return nil
+	}
 	var fs []model.Finding
-	for i := 0; i <= idx; i++ {
+	for i := 0; i < idx; i++ {
 		phase := model.Phases[i]
 		rel := c.phaseRel(phase) + "/context.lock.yaml"
 		var lock model.ContextLock
@@ -1146,6 +1189,9 @@ func staleReads(c Ctx, idx int) []model.Finding {
 			continue // absence is the first half's finding, or a phase that has not run
 		}
 		for _, f := range lock.Files {
+			if !touched[f.Path] {
+				continue // section 5's first limit: only what the change under review touched
+			}
 			h, err := hashing.FileHash(c.abs(f.Path))
 			switch {
 			case os.IsNotExist(err):
