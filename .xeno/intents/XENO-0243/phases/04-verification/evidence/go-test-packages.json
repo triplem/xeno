@@ -1,0 +1,78 @@
+{"Time":"2026-10-04T08:43:55.584385938Z","Action":"start","Package":"github.com/triplem/xeno/cmd/xeno"}
+{"Time":"2026-10-04T08:43:55.606713509Z","Action":"start","Package":"github.com/triplem/xeno/internal/cost"}
+{"Time":"2026-10-04T08:43:55.6166202Z","Action":"start","Package":"github.com/triplem/xeno/internal/enforcement"}
+{"Time":"2026-10-04T08:43:55.619250808Z","Action":"output","Package":"github.com/triplem/xeno/internal/enforcement","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:55.619569386Z","Action":"output","Package":"github.com/triplem/xeno/internal/enforcement","Output":"ok  \tgithub.com/triplem/xeno/internal/enforcement\t0.003s\n"}
+{"Time":"2026-10-04T08:43:55.620069495Z","Action":"pass","Package":"github.com/triplem/xeno/internal/enforcement","Elapsed":0.003}
+{"Time":"2026-10-04T08:43:55.620615837Z","Action":"output","Package":"github.com/triplem/xeno/internal/cost","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:55.620855882Z","Action":"start","Package":"github.com/triplem/xeno/internal/evidence"}
+{"Time":"2026-10-04T08:43:55.621214756Z","Action":"output","Package":"github.com/triplem/xeno/internal/cost","Output":"ok  \tgithub.com/triplem/xeno/internal/cost\t0.014s\n"}
+{"Time":"2026-10-04T08:43:55.623340979Z","Action":"pass","Package":"github.com/triplem/xeno/internal/cost","Elapsed":0.017}
+{"Time":"2026-10-04T08:43:55.624691164Z","Action":"start","Package":"github.com/triplem/xeno/internal/external"}
+{"Time":"2026-10-04T08:43:55.63414966Z","Action":"output","Package":"github.com/triplem/xeno/internal/evidence","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:55.63463431Z","Action":"output","Package":"github.com/triplem/xeno/internal/evidence","Output":"ok  \tgithub.com/triplem/xeno/internal/evidence\t0.014s\n"}
+{"Time":"2026-10-04T08:43:55.637117514Z","Action":"pass","Package":"github.com/triplem/xeno/internal/evidence","Elapsed":0.016}
+{"Time":"2026-10-04T08:43:55.63818583Z","Action":"start","Package":"github.com/triplem/xeno/internal/fm"}
+{"Time":"2026-10-04T08:43:55.638202171Z","Action":"output","Package":"github.com/triplem/xeno/internal/fm","Output":"?   \tgithub.com/triplem/xeno/internal/fm\t[no test files]\n"}
+{"Time":"2026-10-04T08:43:55.638210516Z","Action":"skip","Package":"github.com/triplem/xeno/internal/fm","Elapsed":0}
+{"Time":"2026-10-04T08:43:55.638221156Z","Action":"start","Package":"github.com/triplem/xeno/internal/gates"}
+{"Time":"2026-10-04T08:43:55.726917332Z","Action":"start","Package":"github.com/triplem/xeno/internal/git"}
+{"Time":"2026-10-04T08:43:56.194280112Z","Action":"output","Package":"github.com/triplem/xeno/internal/git","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.194749293Z","Action":"output","Package":"github.com/triplem/xeno/internal/git","Output":"ok  \tgithub.com/triplem/xeno/internal/git\t0.468s\n"}
+{"Time":"2026-10-04T08:43:56.256096729Z","Action":"pass","Package":"github.com/triplem/xeno/internal/git","Elapsed":0.529}
+{"Time":"2026-10-04T08:43:56.257101356Z","Action":"start","Package":"github.com/triplem/xeno/internal/hashing"}
+{"Time":"2026-10-04T08:43:56.284047014Z","Action":"output","Package":"github.com/triplem/xeno/internal/hashing","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.284750042Z","Action":"output","Package":"github.com/triplem/xeno/internal/hashing","Output":"ok  \tgithub.com/triplem/xeno/internal/hashing\t0.028s\n"}
+{"Time":"2026-10-04T08:43:56.287617888Z","Action":"pass","Package":"github.com/triplem/xeno/internal/hashing","Elapsed":0.031}
+{"Time":"2026-10-04T08:43:56.288522336Z","Action":"start","Package":"github.com/triplem/xeno/internal/host"}
+{"Time":"2026-10-04T08:43:56.291918789Z","Action":"output","Package":"github.com/triplem/xeno/internal/host","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.292514353Z","Action":"output","Package":"github.com/triplem/xeno/internal/host","Output":"ok  \tgithub.com/triplem/xeno/internal/host\t0.004s\n"}
+{"Time":"2026-10-04T08:43:56.29293347Z","Action":"pass","Package":"github.com/triplem/xeno/internal/host","Elapsed":0.004}
+{"Time":"2026-10-04T08:43:56.294115009Z","Action":"start","Package":"github.com/triplem/xeno/internal/host/github"}
+{"Time":"2026-10-04T08:43:56.304237313Z","Action":"output","Package":"github.com/triplem/xeno/internal/host/github","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.304745818Z","Action":"output","Package":"github.com/triplem/xeno/internal/host/github","Output":"ok  \tgithub.com/triplem/xeno/internal/host/github\t0.011s\n"}
+{"Time":"2026-10-04T08:43:56.305267467Z","Action":"pass","Package":"github.com/triplem/xeno/internal/host/github","Elapsed":0.011}
+{"Time":"2026-10-04T08:43:56.570631005Z","Action":"output","Package":"github.com/triplem/xeno/internal/gates","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.571345888Z","Action":"output","Package":"github.com/triplem/xeno/internal/gates","Output":"ok  \tgithub.com/triplem/xeno/internal/gates\t0.933s\n"}
+{"Time":"2026-10-04T08:43:56.609597156Z","Action":"start","Package":"github.com/triplem/xeno/internal/host/gitlab"}
+{"Time":"2026-10-04T08:43:56.630754779Z","Action":"output","Package":"github.com/triplem/xeno/internal/host/gitlab","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.631344076Z","Action":"output","Package":"github.com/triplem/xeno/internal/host/gitlab","Output":"ok  \tgithub.com/triplem/xeno/internal/host/gitlab\t0.022s\n"}
+{"Time":"2026-10-04T08:43:56.631854715Z","Action":"pass","Package":"github.com/triplem/xeno/internal/host/gitlab","Elapsed":0.022}
+{"Time":"2026-10-04T08:43:56.761172995Z","Action":"pass","Package":"github.com/triplem/xeno/internal/gates","Elapsed":1.123}
+{"Time":"2026-10-04T08:43:56.818941929Z","Action":"start","Package":"github.com/triplem/xeno/internal/index"}
+{"Time":"2026-10-04T08:43:56.88019966Z","Action":"output","Package":"github.com/triplem/xeno/internal/external","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:56.880731673Z","Action":"output","Package":"github.com/triplem/xeno/internal/external","Output":"ok  \tgithub.com/triplem/xeno/internal/external\t1.256s\n"}
+{"Time":"2026-10-04T08:43:56.883032784Z","Action":"pass","Package":"github.com/triplem/xeno/internal/external","Elapsed":1.258}
+{"Time":"2026-10-04T08:43:57.084147488Z","Action":"start","Package":"github.com/triplem/xeno/internal/model"}
+{"Time":"2026-10-04T08:43:57.093015602Z","Action":"output","Package":"github.com/triplem/xeno/internal/model","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:57.093074863Z","Action":"output","Package":"github.com/triplem/xeno/internal/model","Output":"ok  \tgithub.com/triplem/xeno/internal/model\t0.009s\n"}
+{"Time":"2026-10-04T08:43:57.093691531Z","Action":"pass","Package":"github.com/triplem/xeno/internal/model","Elapsed":0.01}
+{"Time":"2026-10-04T08:43:57.169617655Z","Action":"output","Package":"github.com/triplem/xeno/internal/index","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:57.171014482Z","Action":"output","Package":"github.com/triplem/xeno/internal/index","Output":"ok  \tgithub.com/triplem/xeno/internal/index\t0.352s\n"}
+{"Time":"2026-10-04T08:43:57.172369847Z","Action":"pass","Package":"github.com/triplem/xeno/internal/index","Elapsed":0.353}
+{"Time":"2026-10-04T08:43:57.192325355Z","Action":"start","Package":"github.com/triplem/xeno/internal/plugin"}
+{"Time":"2026-10-04T08:43:57.204816453Z","Action":"output","Package":"github.com/triplem/xeno/internal/plugin","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:57.207801418Z","Action":"output","Package":"github.com/triplem/xeno/internal/plugin","Output":"ok  \tgithub.com/triplem/xeno/internal/plugin\t0.015s\n"}
+{"Time":"2026-10-04T08:43:57.209253846Z","Action":"pass","Package":"github.com/triplem/xeno/internal/plugin","Elapsed":0.017}
+{"Time":"2026-10-04T08:43:57.256627801Z","Action":"output","Package":"github.com/triplem/xeno/cmd/xeno","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:57.257932621Z","Action":"output","Package":"github.com/triplem/xeno/cmd/xeno","Output":"ok  \tgithub.com/triplem/xeno/cmd/xeno\t1.673s\n"}
+{"Time":"2026-10-04T08:43:57.44511973Z","Action":"start","Package":"github.com/triplem/xeno/internal/rules"}
+{"Time":"2026-10-04T08:43:57.492081784Z","Action":"output","Package":"github.com/triplem/xeno/internal/rules","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:57.492651293Z","Action":"output","Package":"github.com/triplem/xeno/internal/rules","Output":"ok  \tgithub.com/triplem/xeno/internal/rules\t0.047s\n"}
+{"Time":"2026-10-04T08:43:57.510270702Z","Action":"pass","Package":"github.com/triplem/xeno/internal/rules","Elapsed":0.065}
+{"Time":"2026-10-04T08:43:57.737685413Z","Action":"pass","Package":"github.com/triplem/xeno/cmd/xeno","Elapsed":2.153}
+{"Time":"2026-10-04T08:43:58.111776015Z","Action":"start","Package":"github.com/triplem/xeno/internal/runner"}
+{"Time":"2026-10-04T08:43:58.111939038Z","Action":"start","Package":"github.com/triplem/xeno/internal/scaffold"}
+{"Time":"2026-10-04T08:43:58.111966139Z","Action":"output","Package":"github.com/triplem/xeno/internal/scaffold","Output":"?   \tgithub.com/triplem/xeno/internal/scaffold\t[no test files]\n"}
+{"Time":"2026-10-04T08:43:58.111979434Z","Action":"skip","Package":"github.com/triplem/xeno/internal/scaffold","Elapsed":0}
+{"Time":"2026-10-04T08:43:58.111989112Z","Action":"start","Package":"github.com/triplem/xeno/internal/secrets"}
+{"Time":"2026-10-04T08:43:58.112202709Z","Action":"start","Package":"github.com/triplem/xeno/internal/template"}
+{"Time":"2026-10-04T08:43:58.121838965Z","Action":"output","Package":"github.com/triplem/xeno/internal/template","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:43:58.122220195Z","Action":"output","Package":"github.com/triplem/xeno/internal/template","Output":"ok  \tgithub.com/triplem/xeno/internal/template\t0.010s\n"}
+{"Time":"2026-10-04T08:43:58.124972875Z","Action":"pass","Package":"github.com/triplem/xeno/internal/template","Elapsed":0.013}
+{"Time":"2026-10-04T08:44:00.031200461Z","Action":"output","Package":"github.com/triplem/xeno/internal/runner","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:44:00.033282263Z","Action":"output","Package":"github.com/triplem/xeno/internal/runner","Output":"ok  \tgithub.com/triplem/xeno/internal/runner\t1.921s\n"}
+{"Time":"2026-10-04T08:44:00.822006168Z","Action":"pass","Package":"github.com/triplem/xeno/internal/runner","Elapsed":2.71}
+{"Time":"2026-10-04T08:45:35.652717123Z","Action":"output","Package":"github.com/triplem/xeno/internal/secrets","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-04T08:45:35.653749368Z","Action":"output","Package":"github.com/triplem/xeno/internal/secrets","Output":"ok  \tgithub.com/triplem/xeno/internal/secrets\t97.542s\n"}
+{"Time":"2026-10-04T08:45:35.705741368Z","Action":"pass","Package":"github.com/triplem/xeno/internal/secrets","Elapsed":97.594}

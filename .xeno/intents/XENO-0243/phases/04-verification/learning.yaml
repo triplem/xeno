@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#208
+phase: 04-verification
+created: "2026-10-04T08:41:59Z"
+schema_version: "1.0"
+runner_version: dev+49f2794.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The one defect this intent found in the existing trail could not be fixed by it. Fifteen attachments carry result: success, a value section 4 does not define, and a check for it would recompute fifteen sealed phases into a status that disagrees with the committed one, which Verify reports as a divergence. So the trail''s own history is what makes a gate unaddable, and the longer a wrong value sits in it the more expensive the reader for it becomes.'
+      proposal: A closed set gets its check in the commit that introduces the field, which is the only moment no artifact can be made a finding by it. This intent did that for format and could not for the attachment's result, and the difference between the two is three weeks. Where a set is already in use, the check comes with a decision about the verdicts it would change, and that decision is a person's.
+      target: docs/process-definition.md section 4, and the gates that read its closed sets

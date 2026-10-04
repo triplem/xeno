@@ -606,3 +606,75 @@ func inputFile(t *testing.T, name, content string) string {
 	}
 	return p
 }
+
+// The declaration from the command line, in the two forms a person types: the pending one
+// that waits for a pipeline, and the bound one whose hash the runner computes. The third
+// form, a uri, differs from the second only in the field it fills.
+//
+// P0 rather than P4, because the sequence is not what is under test here and a declaration
+// is allowed in any phase that has an artifact; section 4 says only that in practice it is
+// P4 that declares.
+func TestEvidenceIsDeclaredFromTheCommandLine(t *testing.T) {
+	root := repo(t)
+	if code, _, errw := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--no-next"); code != 0 {
+		t.Fatalf("starting P0 exits %d: %s", code, errw)
+	}
+	if code, _, errw := invoke(t, "section", "set", "problem", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--file", inputFile(t, "problem.md", "no command declares evidence"),
+		"--no-next"); code != 0 {
+		t.Fatalf("writing a section exits %d: %s", code, errw)
+	}
+
+	code, out, errw := invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--kind", "scan", "--job", "semgrep", "--format", "other",
+		"--produced-by", "semgrep --config .semgrep/golang.yaml --error", "--no-next")
+	if code != 0 {
+		t.Fatalf("declaring a pending item exits %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "declares scan/semgrep: pending") {
+		t.Errorf("the command does not say what state the item is in: %q", out)
+	}
+
+	report := inputFile(t, "go-test.json", "{\"Action\":\"pass\"}\n")
+	code, out, errw = invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--kind", "test-report", "--job", "test", "--result", "pass",
+		"--format", "go-test-json", "--file", report, "--no-next")
+	if code != 0 {
+		t.Fatalf("declaring a report exits %d: %s", code, errw)
+	}
+	// The hash is in the line because it is the thing that binds, and nobody typed it.
+	if !strings.Contains(out, "bound to evidence/go-test.json by ") {
+		t.Errorf("the command does not say what the item is bound to: %q", out)
+	}
+
+	var o model.Output
+	if _, err := fm.ReadFront(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "output.md"), &o); err != nil {
+		t.Fatal(err)
+	}
+	if len(o.Evidence) != 2 || o.Evidence[0].Job != "semgrep" || o.Evidence[1].SHA256 == "" {
+		t.Fatalf("the artifact does not carry the two declarations: %+v", o.Evidence)
+	}
+	if o.Evidence[1].ProducedBy != "" || o.Evidence[1].Format != "go-test-json" {
+		t.Fatalf("provenance was written where nobody gave it, or lost where somebody did: %+v", o.Evidence[1])
+	}
+	b, err := os.ReadFile(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "evidence/go-test.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(b) != "{\"Action\":\"pass\"}\n" {
+		t.Errorf("the report was not copied beside the artifact: %q", b)
+	}
+
+	// A refusal is 1 with a reason on stderr, which is the middle step of the staircase.
+	if code, _, errw = invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--kind", "scan", "--job", "semgrep", "--no-next"); code != 1 ||
+		!strings.Contains(errw, "scan/semgrep") {
+		t.Errorf("declaring the same pair twice exits %d: %s", code, errw)
+	}
+	// And a phase that does not resolve is 2, which is the top of it.
+	if code, _, _ = invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
+		"--phase", "99", "--kind", "scan", "--job", "trivy", "--no-next"); code != 2 {
+		t.Errorf("an unknown phase exits %d, want 2", code)
+	}
+}

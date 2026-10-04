@@ -43,6 +43,8 @@ const usage = `usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno intent verify  --base REF --head REF     every intent the range touches is finished or closed (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
+  xeno evidence declare --intent KEY --phase NN --kind K [--job J] [--result R]
+                        [--file PATH | --uri URL --sha256 HEX] [--produced-by CMD] [--format F]
   xeno evidence attach --intent KEY --phase NN --from DIR
   xeno intent status  [--intent KEY] [--all]    without one, the last ten by creation
   xeno intent close   --intent KEY --reason TEXT
@@ -84,6 +86,9 @@ type opts struct {
 	noFinding                      bool
 	text, origin, confidence       string
 	resolves, chosen, proposedBy   string
+	kind, job, result              string
+	uri, sha256                    string
+	producedBy, format             string
 	withdraw                       bool
 	vendor, noNext, export, isJSON bool
 }
@@ -124,6 +129,7 @@ var commands = map[string]command{
 	"decision record":    {needsKey: true, needsPhase: true, run: cmdDecisionRecord},
 	"obligation close":   {needsKey: true, needsPhase: true, run: cmdObligationClose},
 	"evidence attach":    {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
+	"evidence declare":   {needsKey: true, needsPhase: true, run: cmdEvidenceDeclare},
 }
 
 func run(args []string, out, errw io.Writer) int {
@@ -216,6 +222,18 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.chosen, "chosen", "", "the option taken, in the words of whoever took it")
 	fs.StringVar(&o.proposedBy, "proposed-by", "", "who put the options, where that was not the person deciding")
 	fs.BoolVar(&o.withdraw, "withdraw", false, "section 8's third exit: the question is dropped, with a reason")
+	// Section 4's declaration. --file is the report itself here and not a message to read,
+	// which is the one place that flag means something else; --from was the alternative and
+	// is the attach's word for a directory, and one flag naming a file here and a directory
+	// there is how a reader learns to read it twice. There is no flag for the hash of a
+	// file: where the bytes are present the runner computes it.
+	fs.StringVar(&o.kind, "kind", "", "which kind of evidence, from section 4's set")
+	fs.StringVar(&o.job, "job", "", "the job expected to produce it")
+	fs.StringVar(&o.result, "result", "", "what the run reported against its own threshold")
+	fs.StringVar(&o.uri, "uri", "", "where a large or binary result lies, instead of --file")
+	fs.StringVar(&o.sha256, "sha256", "", "the hash the pipeline published, with --uri")
+	fs.StringVar(&o.producedBy, "produced-by", "", "the command as run")
+	fs.StringVar(&o.format, "format", "", "the shape of the report, from section 4's set")
 	// Section 10's four keys, and the statement that there were none. A record carrying
 	// neither is what G-Learning calls empty, so one of the two has to be said.
 	fs.StringVar(&o.category, "category", "", "which kind of learning, from section 10's four")
@@ -491,6 +509,37 @@ func cmdAssumptionDecide(o *opts) int {
 
 func cmdObligationClose(o *opts) int {
 	return o.next(o.report(o.r.CloseObligation(o.key, o.phase, o.finding)))
+}
+
+// cmdEvidenceDeclare writes one declaration. The line it prints says which of section 4's
+// three states the item is in, because that is what decides what happens next: a bound item
+// is judged by G-Evidence now, and a pending one waits for a pipeline and for the attach.
+func cmdEvidenceDeclare(o *opts) int {
+	e, err := o.r.DeclareEvidence(o.key, o.phase, o.file, model.EvidenceItem{
+		Kind: o.kind, Job: o.job, Result: o.result, URI: o.uri, SHA256: o.sha256,
+		ProducedBy: o.producedBy, Format: o.format,
+	})
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	where := "pending, until the pipeline publishes it"
+	switch {
+	case e.Path != "":
+		where = "bound to " + e.Path + " by " + e.SHA256
+	case e.URI != "":
+		where = "bound to " + e.URI + " by " + e.SHA256
+	}
+	fmt.Fprintf(o.out, "%s %s declares %s: %s\n", o.key, o.phase, declared(e), where)
+	return o.next(0)
+}
+
+// declared names the item the way the gate's findings do, kind and job, and leaves the job
+// out where there is none rather than printing a trailing separator.
+func declared(e *model.EvidenceItem) string {
+	if e.Job == "" {
+		return e.Kind
+	}
+	return e.Kind + "/" + e.Job
 }
 
 func cmdEvidenceAttach(o *opts) int {

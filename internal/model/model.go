@@ -196,13 +196,27 @@ type Decision struct {
 
 // EvidenceItem is a declaration in the frontmatter of output.md. An item that exists
 // at finish time carries sha256 and path or uri; a pending one carries kind and job only.
+//
+// The fields stand in the order section 4 prints them, because a reader compares an
+// artifact against the document and not against this struct, and the order a written item
+// carries is this one. `id` is the one field of the section with no field here: an item is
+// identified by its kind and its job, which is what Collect and evidence.Attach key an
+// attachment to a declaration by, and a second identity both of them ignore would be a
+// name for the pair that no reader uses (D-2).
 type EvidenceItem struct {
-	Kind   string `yaml:"kind"`
-	Job    string `yaml:"job,omitempty"`
-	SHA256 string `yaml:"sha256,omitempty"`
-	Path   string `yaml:"path,omitempty"`
-	URI    string `yaml:"uri,omitempty"`
+	Kind string `yaml:"kind"`
+	// Result is what the run reported against its own threshold, never a statement by Xeno.
 	Result string `yaml:"result,omitempty"`
+	// ProducedBy is the command as run and Format is the shape of the report. Both are
+	// section 4 fields, both are provenance, and nothing reads either: the section says so
+	// of format in as many words, and A-002 records what producedBy means on an item a
+	// pipeline has yet to produce.
+	ProducedBy string `yaml:"produced_by,omitempty"`
+	Format     string `yaml:"format,omitempty"`
+	SHA256     string `yaml:"sha256,omitempty"`
+	Path       string `yaml:"path,omitempty"`
+	URI        string `yaml:"uri,omitempty"`
+	Job        string `yaml:"job,omitempty"`
 }
 
 // Pending reports whether the item still waits for a pipeline.
@@ -319,6 +333,10 @@ var (
 	ChecklistNeedsNote = []string{"deviation", "not-applicable"}
 	EvidenceKinds      = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
 	EvidenceResults    = []string{"pass", "fail"}
+	// Section 4's five shapes of a report. The set is closed there and judged here for the
+	// reason BuildKind records: a value nobody compares against is a spelling that survives
+	// for as long as nothing reads it, which `kind: build` did until #198.
+	EvidenceFormats = []string{"junit", "trx", "tap", "go-test-json", "other"}
 	// The two kinds that must carry a result, because G-Test and G-Build read it.
 	// Elsewhere the field follows the producer: a run with a threshold reports against it
 	// and one without reports nothing, so an absent result there is a producer that had

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#208
+phase: 05-review
+created: "2026-10-04T08:48:17Z"
+schema_version: "1.0"
+runner_version: dev+49f2794.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The review checklist is the last frontmatter block in section 5 with no writer. This phase typed three entries into a file inside artifacts_hash, which is the hand edit #208 was filed about for evidence and #188 for the exchange, and the memory of this project lists it as one of two remaining; after this intent it is the only one. The entries also duplicate the section''s prose, because G-Policy reads the frontmatter and a person reads the body.'
+      proposal: 'A xeno review answer command, one entry per run, refusing a result outside section 9''s three and a deviation or a not-applicable without a note, the way evidence declare refuses through the gate''s own check. The duplication is the harder half and belongs to whoever writes it: either the body is rendered from the entries, which makes the template own the section, or the two are two statements and the artifact says so.'
+      target: cmd/xeno/main.go, and section 9's checklist
