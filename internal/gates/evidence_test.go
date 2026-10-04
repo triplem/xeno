@@ -220,3 +220,47 @@ func TestNothingAttachedIsStillPending(t *testing.T) {
 		t.Fatalf("an unanswered declaration read %s, want pending\n%s", got.Result, causes(got))
 	}
 }
+
+// ---- #221: G-Evidence judges the result an attachment carries
+
+// The other half of what #208 left. The declaration is sealed inside artifacts_hash and
+// judged by G-Schema; this file is the one in a judged phase that can be edited without
+// making any verdict stale, so what it says is checked here or nowhere. Fifteen records in
+// this repository read `success` until the commit that added this check corrected them.
+func TestAnAttachedResultOutsideTheSetIsAFinding(t *testing.T) {
+	c := attachedPhase(t, "- kind: scan\n  job: trivy\n  state: attached\n  result: success\n"+
+		"  uri: https://ci.example/a/7\n  sha256: "+strings.Repeat("3", 64)+"\n")
+	got := evidence(c)
+	if got.Result != "fail" {
+		t.Fatalf("an attachment carrying result: success read %s, want fail\n%s", got.Result, causes(got))
+	}
+	if !strings.Contains(causes(got), "attached with result success") {
+		t.Errorf("the finding does not say what the record carries:\n%s", causes(got))
+	}
+	// On attached.yaml, which is the file somebody had to edit for the record to say this.
+	if !strings.Contains(causes(got), "evidence/attached.yaml") {
+		t.Errorf("the finding does not name attached.yaml:\n%s", causes(got))
+	}
+}
+
+// The set is the document's, read from testdata, so a value added there and not here fails.
+func TestEveryDocumentedResultIsAcceptedOnAnAttachment(t *testing.T) {
+	for _, res := range documented(t).Results {
+		c := attachedPhase(t, "- kind: scan\n  job: trivy\n  state: attached\n  result: "+res+"\n"+
+			"  uri: https://ci.example/a/7\n  sha256: "+strings.Repeat("3", 64)+"\n")
+		if got := evidence(c); got.Result != "pass" {
+			t.Errorf("an attachment reporting %s read %s, want pass\n%s", res, got.Result, causes(got))
+		}
+	}
+}
+
+// A value is judged and an absence is not, which keeps the entry this repository's own
+// vulnerability scan publishes beside its report — a database metadata file with no result —
+// out of the findings. Which kinds must carry one is the declaration's question.
+func TestAnAttachmentWithNoResultIsNotAFinding(t *testing.T) {
+	c := attachedPhase(t, "- kind: scan\n  job: trivy\n  state: attached\n"+
+		"  uri: https://ci.example/a/7\n  sha256: "+strings.Repeat("3", 64)+"\n")
+	if got := evidence(c); got.Result != "pass" {
+		t.Fatalf("an attachment whose producer reports nothing read %s, want pass\n%s", got.Result, causes(got))
+	}
+}

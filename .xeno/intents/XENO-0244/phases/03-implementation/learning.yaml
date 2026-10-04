@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#221
+phase: 03-implementation
+created: "2026-10-04T09:39:34Z"
+schema_version: "1.0"
+runner_version: dev+24becc3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The rename of Unbindable to Declined was not in the design, and it was the field''s name that had kept two callers wrong: both printed republish with a sha256 underneath the list, which is right for one of the three reasons. A name that describes a subset of what a field holds produces advice that is wrong for the rest, and nothing in the type system or the tests reports it.'
+      proposal: 'Where a collection gains a member of a different kind, the name is checked before the member is added: if the name describes the old members rather than the collection''s purpose, rename it in the same commit. Checking the callers for advice they hold about the collection''s contents is the same step, since that is where the wrong assumption shows.'
+      target: internal/evidence/attach.go, and the review checklist's migration note

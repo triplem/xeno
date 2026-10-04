@@ -1,7 +1,7 @@
 - kind: test-report
   job: go-test
   state: attached
-  result: success
+  result: pass
   sha256: 39341b4432e9f6f615283861a69f9ff4cb9ff906d91093d81e9c3f8f86644d17
   path: evidence/go-test.txt
   pipeline: local

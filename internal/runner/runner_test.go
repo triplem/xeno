@@ -1590,7 +1590,7 @@ func TestStartNamesAnEntryThePipelinePublishedWrong(t *testing.T) {
 	if !errors.As(err, &ref) {
 		t.Fatalf("P5 started on an attachment nothing binds: %v", err)
 	}
-	for _, want := range []string{"test-report/unit", "sha256", "waiting will not help"} {
+	for _, want := range []string{"test-report/unit", "sha256", "Waiting will not help"} {
 		if !strings.Contains(ref.Reason, want) {
 			t.Errorf("the refusal does not mention %q:\n%s", want, ref.Reason)
 		}

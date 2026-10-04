@@ -550,14 +550,17 @@ func cmdEvidenceAttach(o *opts) int {
 	}
 	fmt.Fprintf(o.out, "attached %d, pending %d; run xeno gate run to carry the verdict forward\n",
 		res.Attached, res.Pending)
-	// Named on stderr and counted as pending: an entry nothing can bind was not attached,
+	// Named on stderr and counted as pending: an entry that was declined was not attached,
 	// and a run that only printed the counts would report it as evidence still to come
 	// from a job that has already produced it.
-	for _, u := range res.Unbindable {
+	//
+	// No line of advice is added after them. Each sentence says what to republish, because
+	// the reasons are fixed in different places, and a single hint underneath was wrong for
+	// two of the three the moment there were three (#221).
+	for _, u := range res.Declined {
 		fmt.Fprintln(o.errw, "  not attached:", u)
 	}
-	if len(res.Unbindable) > 0 {
-		fmt.Fprintln(o.errw, "  republish with a sha256; a uri is bound by its hash alone.")
+	if len(res.Declined) > 0 {
 		return o.next(1)
 	}
 	return o.next(0)

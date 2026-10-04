@@ -1240,6 +1240,7 @@ func evidence(c Ctx) model.Check {
 			pending = true
 		default:
 			verify(label, attachedRel, r.Attached.SHA256, r.Attached.Path, r.Attached.URI)
+			fs = append(fs, attachedResult(attachedRel, label, r.Attached.Result)...)
 		}
 	}
 	ch := result(fs)
@@ -1247,6 +1248,31 @@ func evidence(c Ctx) model.Check {
 		ch.Result = "pending"
 	}
 	return ch
+}
+
+// attachedResult judges the job's own verdict as it was recorded, against the same closed set
+// EvidenceShape judges a declaration against. It is the other half of what #208 left: the
+// declaration is sealed inside artifacts_hash and judged there, and this file is the one in a
+// judged phase that can be edited without making any verdict stale, so what it says has to be
+// checked here or nowhere.
+//
+// A value is judged and an absence is not. Section 4 has result absent where a producer reports
+// nothing, and this repository's own vulnerability scan publishes such an entry, so a check that
+// demanded one would turn a conformant pipeline into a finding. Which kinds must carry one is the
+// declaration's question and EvidenceShape's; what is asked here is only that a recorded value is
+// a word the document defines.
+//
+// Fifteen records in this repository read `result: success` until #221, written by hand before
+// any command wrote either half. They were corrected in the commit that added this check, because
+// Verify compares a recomputed status against the committed one: added first, this would have
+// reported fifteen sealed phases as divergent.
+func attachedResult(where, label, res string) []model.Finding {
+	if res == "" || model.OneOf(res, model.EvidenceResults) {
+		return nil
+	}
+	return []model.Finding{finding(where, label+" was attached with result "+res,
+		"section 4 fixes the set: "+strings.Join(model.EvidenceResults, ", ")+
+			"; it is what the run reported against its own threshold")}
 }
 
 // BuildKind is the kind G-Build reads, as section 4 spells it. Named rather than written
