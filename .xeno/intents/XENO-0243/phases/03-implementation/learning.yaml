@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#208
+phase: 03-implementation
+created: "2026-10-04T08:38:22Z"
+schema_version: "1.0"
+runner_version: dev+49f2794.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The design phase put a number in its impact section — eight refusals — that it had no way to know, because the refusals were not written yet. It was wrong by four, and the correction cost a deviations paragraph explaining a count nobody needed. The same phase was right about every structural decision it took.
+      proposal: A design phase names the kinds of refusal and leaves the count to the phase that writes them. A figure in a design is a figure about something that does not exist, which is the one thing a sealed artifact cannot be corrected about later without a deviation.
+      target: docs/implementation-plan.md, the design step of the working method

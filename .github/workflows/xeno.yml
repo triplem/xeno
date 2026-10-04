@@ -142,8 +142,80 @@ jobs:
           fi
           echo "the harness is recorded and not branched on"
 
+      # The suite, and the report it writes down. Section 4 binds evidence by a hash in a
+      # declaration, so a verification phase can only carry its test report where a run
+      # leaves a file behind; `go test ./...` left none, and every declaration in this
+      # trail before #208 pointed at a transcript somebody typed.
+      #
+      # continue-on-error, with the failure raised again at the end of the job, for the
+      # reason semgrep.yml records: the run worth reading is the one that failed, and a
+      # report step written after a failing step never runs. The steps between the two
+      # therefore run on a tree whose tests failed, which is a readable report rather than
+      # a truncated one.
       - name: test
-        run: go test ./...
+        id: test
+        continue-on-error: true
+        run: |
+          set -eu
+          mkdir -p .xeno/local/test
+          go test -json ./... > .xeno/local/test/go-test.json
+      # -json writes a machine readable stream and prints nothing, so without this the log
+      # would say only whether the step failed. It also writes the package level stream
+      # beside the full one: the full report is half a megabyte, an attachment is copied
+      # into the repository, and section 4 decides where an item lives by its size. What
+      # the trail keeps is what the section asks a report to say — that the run happened,
+      # with which command, and what it returned, per package.
+      - name: what it reported
+        if: always()
+        run: |
+          set -eu
+          test -f .xeno/local/test/go-test.json
+          python3 - <<'PY'
+          import json
+          packages, failed = {}, []
+          with open(".xeno/local/test/go-test.json") as f, \
+               open(".xeno/local/test/go-test-packages.json", "w") as out:
+              for line in f:
+                  e = json.loads(line)
+                  if e.get("Test") is None:
+                      out.write(line)
+                      if e["Action"] in ("pass", "fail", "skip"):
+                          packages[e.get("Package", "")] = e["Action"]
+                  elif e["Action"] == "fail":
+                      failed.append(e["Package"] + " " + e["Test"])
+          for p, a in sorted(packages.items()):
+              print(a.upper(), p, sep="\t")
+          print(sum(1 for a in packages.values() if a == "pass"), "packages ok,",
+                sum(1 for a in packages.values() if a == "fail"), "failed")
+          for t in failed:
+              print("FAILED", t, sep="\t")
+          PY
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/test
+          # A manifest naming a file that does not exist declares something untrue, so a
+          # run that wrote no report fails here instead.
+          test -f "$out/go-test-packages.json"
+          result=pass
+          if [ "${{ steps.test.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: test-report"
+            echo "  job: test"
+            echo "  result: $result"
+            echo "  file: go-test-packages.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: test-report
+          path: .xeno/local/test/
+
       - name: build
         run: go build -o xeno ./cmd/xeno
       # squash_merge_commit_title is PR_TITLE for this repository, so the pull request's
@@ -192,3 +264,9 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: ./xeno intent verify --base "$BASE" --head HEAD
+
+      # Last, so that everything above reports on a tree whose tests failed before the job
+      # ends on the failure itself.
+      - name: fail if the suite did
+        if: steps.test.outcome == 'failure'
+        run: exit 1

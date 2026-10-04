@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#208
+created: "2026-10-04T07:39:07Z"
+schema_version: "1.0"
+runner_version: dev+49f2794
+plugin_version: 0.0.0-dev
+updated: "2026-10-04T08:26:30Z"
+assumptions:
+    - id: A-001
+      phase: 01-requirements
+      assumption: 'The --file form of a declaration cannot tell a report pulled from an artifact store from one a developer typed, so under evidence.source: ci the command is trusted to be handed the former. What binds the item is the hash of the bytes it was given; where they came from is recorded as the regime in context.lock.yaml and nowhere narrower, and section 4 gives this as the reason evidence is sourced from CI rather than as something a tool can check.'
+      origin: repo-convention
+      confidence: high
+      status: confirmed
+      confirmed_by: triplem
+    - id: A-002
+      phase: 01-requirements
+      assumption: produced_by on a pending declaration names the command the job will run, not a command that has already run locally. Section 4 calls the field the command as run, and for an item a pipeline owes there is no local run to name; the manifest carries no such field either, so a declaration is the only place it can be written at all.
+      origin: repo-convention
+      confidence: medium
+      status: confirmed
+      confirmed_by: triplem

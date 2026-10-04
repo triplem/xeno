@@ -73,7 +73,7 @@ func phaseWith(t *testing.T, phase, item string) Ctx {
 	return Ctx{Root: root, Key: "PROJ-1", Phase: phase, QualifiedID: fixtureIntent}
 }
 
-// declarationFindings is what evidenceShape said about the one item, without the findings
+// declarationFindings is what EvidenceShape said about the one item, without the findings
 // the deliberately sparse fixture provokes elsewhere in G-Schema.
 func declarationFindings(t *testing.T, item string) string {
 	t.Helper()
@@ -85,7 +85,7 @@ func declarationFindings(t *testing.T, item string) string {
 	if len(o.Evidence) != 1 {
 		t.Fatalf("the fixture declared %d items, not one", len(o.Evidence))
 	}
-	return causes(result(evidenceShape("output.md", o)))
+	return causes(result(EvidenceShape("output.md", o)))
 }
 
 const sealed = "    sha256: " + "0000000000000000000000000000000000000000000000000000000000000000" +

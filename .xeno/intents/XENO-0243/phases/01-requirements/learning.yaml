@@ -1,0 +1,15 @@
+intent: github.com/triplem/xeno#208
+phase: 01-requirements
+created: "2026-10-04T08:26:49Z"
+schema_version: "1.0"
+runner_version: dev+49f2794
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The intent register of this intent did not exist until a command refused. xeno intent start writes intent.yaml and no command writes assumptions.yaml; the suggestion after intent start says so in one clause, and the first assumption record of an intent is where it is noticed. Two of the fifteen intents that reach for the register in a late phase would have paid the same interruption.
+      proposal: xeno intent start writes an empty register beside intent.yaml, the way it writes intent.yaml, since the file's header is the same five fields it already has in hand. Until then the suggestion after intent start should be read as a step rather than as a note, and the register created in P0.
+      target: internal/runner/runner.go:IntentStart
+    - category: project-convention
+      observation: 'G-Assumptions had never had an input before this phase. Seventy registers in the trail carry assumptions: [] and no assumption in this repository has ever been recorded, confirmed or rejected, so the gate that refuses an open one passed everywhere by having nothing to read. Two recorded here turned P1 red at once and were confirmed by the maintainer in the same session, which is the loop working as designed and the third one found empty in two days, after the exchange of #188 and the evidence declaration of #208.'
+      proposal: 'The figure belongs beside the one xeno intent status already prints for an intent that reached P5 having asked nothing: an intent whose register is empty at P5 is the same shape of fact, and three empty loops found by hand suggest the listing is where a fourth would be noticed. Not a gate: an intent with nothing to assume is ordinary, as a phase with nothing to ask is.'
+      target: cmd/xeno/main.go:cmdIntentStatus

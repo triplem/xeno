@@ -567,11 +567,11 @@ func phaseResult(c Ctx, dir string) (model.Output, []model.Finding) {
 	fs = append(fs, hashes(c, out, raw)...)
 	fs = append(fs, QuestionShape(out, o)...)
 	fs = append(fs, DecisionShape(out, o)...)
-	fs = append(fs, evidenceShape(out, o)...)
+	fs = append(fs, EvidenceShape(out, o)...)
 	return o, fs
 }
 
-// evidenceShape judges a declaration against the two closed sets of section 4. It is here
+// EvidenceShape judges a declaration against the three closed sets of section 4. It is here
 // and not in G-Evidence because this is shape, read off one file, and G-Evidence resolves
 // content: a gate that reads a result should not also be deciding whether the word is one
 // the document allows.
@@ -588,7 +588,11 @@ func phaseResult(c Ctx, dir string) (model.Output, []model.Finding) {
 // in `evidence/attached.yaml` as the job's own verdict. Requiring it here would make every
 // declaration of future evidence a finding, which is the state P4 is designed to be in
 // between its finish and its pipeline. The kind is known at declaration time either way.
-func evidenceShape(file string, o model.Output) []model.Finding {
+//
+// Exported for the reason QuestionShape is: the command that writes a declaration calls it
+// before it writes, so that nothing can be well formed on the way in and malformed in the
+// file. One authority on shape, and it is the gate's.
+func EvidenceShape(file string, o model.Output) []model.Finding {
 	var fs []model.Finding
 	for _, e := range o.Evidence {
 		at := "evidence item " + e.Kind + "/" + e.Job
@@ -607,6 +611,13 @@ func evidenceShape(file string, o model.Output) []model.Finding {
 			fs = append(fs, finding(file, at+" has result "+e.Result,
 				"section 4 fixes the set: "+strings.Join(model.EvidenceResults, ", ")+
 					"; it is what the run reported against its own threshold"))
+		}
+		// The format is optional and its set is closed, so a value is judged and an absence
+		// is not. Nothing parses the report either way: the field exists so that a later
+		// version could, without a schema change and without guessing from an extension.
+		if e.Format != "" && !model.OneOf(e.Format, model.EvidenceFormats) {
+			fs = append(fs, finding(file, at+" has format "+e.Format,
+				"section 4 fixes the set: "+strings.Join(model.EvidenceFormats, ", ")))
 		}
 	}
 	return fs
