@@ -496,10 +496,12 @@ func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
 		}
 		// An entry the pipeline published wrong keeps the phase provisional exactly as a
 		// missing one does, and waiting is the wrong advice for it: nothing arrives by
-		// waiting for a job that has already run. So the refusal names it instead.
-		if g.Status == "provisional" && len(att.Unbindable) > 0 {
-			return "", refuse("%s waits for evidence the pipeline published in a form nothing can bind:\n  %s\nRepublish it with a sha256, or declare it differently; waiting will not help.",
-				pred, strings.Join(att.Unbindable, "\n  "))
+		// waiting for a job that has already run. So the refusal names it instead, and each
+		// sentence carries its own remedy, because the three reasons are fixed in three
+		// different places (#221).
+		if g.Status == "provisional" && len(att.Declined) > 0 {
+			return "", refuse("%s waits for evidence the pipeline published in a form nothing can record:\n  %s\nWaiting will not help; republish it as each line says.",
+				pred, strings.Join(att.Declined, "\n  "))
 		}
 		if g.Status == "provisional" {
 			return "", refuse("%s still waits for evidence from the pipeline; start again once it has run", pred)

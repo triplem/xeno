@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#221
+phase: 04-verification
+created: "2026-10-04T09:41:10Z"
+schema_version: "1.0"
+runner_version: dev+24becc3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The one figure this intent turns on could only be taken by running the change: gate verify at exit 0 over 342 verdicts after correcting fifteen files that no hash was supposed to cover. The reading of Appendix B that made the correction safe was established in the intake from DirHash''s own code, and the middle of three readings is what proved it. Had the reading been wrong, fifteen divergences would have appeared at once.'
+      proposal: Where an intent's safety rests on a property of the hashing, the verification phase takes the figure before the change, between the steps, and after, and the artifact prints all three. One reading after the fact cannot tell a property that held from a property that was never tested, and this is the cheapest possible test of a claim about Appendix B.
+      target: docs/implementation-plan.md, the verification step of the working method

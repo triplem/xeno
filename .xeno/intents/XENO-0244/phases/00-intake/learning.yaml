@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#221
+phase: 00-intake
+created: "2026-10-04T09:27:41Z"
+schema_version: "1.0"
+runner_version: dev+24becc3
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The decision this intent carries out was taken in an issue comment, because the question was put and answered in the session that filed #221 and the intent did not exist yet. That is the second time in two intents that an exchange ran correctly and the recording lagged it: XENO-0242 recorded the same thing about Q-1 before question record existed.'
+      proposal: Where a question is settled before its intent exists, the intake raises it verbatim and the requirements phase records the decision with the person who took it, and the artifact says that the exchange happened earlier and where. The issue comment is then the evidence and the trail is the record, rather than the trail pointing at a comment thread nobody hashes.
+      target: .xeno/intents, and the intake step of the working method
