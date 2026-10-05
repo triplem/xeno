@@ -37,6 +37,7 @@ const usage = `usage:
   xeno question record --intent KEY --phase NN [--file PATH]   reads the entry on stdin
   xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
   xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
+  xeno review answer  RULE --intent KEY --result R [--note TEXT]   answers one review rule
   xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO
@@ -88,6 +89,7 @@ type opts struct {
 	text, origin, confidence       string
 	resolves, chosen, proposedBy   string
 	kind, job, result              string
+	note                           string
 	uri, sha256                    string
 	producedBy, format             string
 	withdraw                       bool
@@ -129,9 +131,12 @@ var commands = map[string]command{
 	"scope set":          {needsKey: true, run: cmdScopeSet},
 	"question record":    {needsKey: true, needsPhase: true, run: cmdQuestionRecord},
 	"decision record":    {needsKey: true, needsPhase: true, run: cmdDecisionRecord},
-	"obligation close":   {needsKey: true, needsPhase: true, run: cmdObligationClose},
-	"evidence attach":    {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
-	"evidence declare":   {needsKey: true, needsPhase: true, run: cmdEvidenceDeclare},
+	// No phase: G-Policy judges the checklist only on the last phase, so there is one
+	// phase it can mean and the writer resolves it, as scope set does for P0.
+	"review answer":    {needsKey: true, run: cmdReviewAnswer},
+	"obligation close": {needsKey: true, needsPhase: true, run: cmdObligationClose},
+	"evidence attach":  {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
+	"evidence declare": {needsKey: true, needsPhase: true, run: cmdEvidenceDeclare},
 }
 
 func run(args []string, out, errw io.Writer) int {
@@ -231,7 +236,8 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	// file: where the bytes are present the runner computes it.
 	fs.StringVar(&o.kind, "kind", "", "which kind of evidence, from section 4's set")
 	fs.StringVar(&o.job, "job", "", "the job expected to produce it")
-	fs.StringVar(&o.result, "result", "", "what the run reported against its own threshold")
+	fs.StringVar(&o.result, "result", "", "what the run reported against its own threshold, or how a review rule was answered")
+	fs.StringVar(&o.note, "note", "", "why a review rule was passed over")
 	fs.StringVar(&o.uri, "uri", "", "where a large or binary result lies, instead of --file")
 	fs.StringVar(&o.sha256, "sha256", "", "the hash the pipeline published, with --uri")
 	fs.StringVar(&o.producedBy, "produced-by", "", "the command as run")
@@ -519,6 +525,34 @@ func cmdLearningRecord(o *opts) int {
 	} else {
 		fmt.Fprintf(o.out, "%s records %d learning(s), the last of category %s\n",
 			where, len(rec.Learnings), rec.Learnings[len(rec.Learnings)-1].Category)
+	}
+	return o.next(0)
+}
+
+// cmdReviewAnswer answers one review rule of the effective set. The rule is the positional
+// argument, as it is for gate approve and obligation close, and o.finding is where parse puts
+// one.
+//
+// The report names what is still unanswered because the writer has resolved the set anyway,
+// and a checklist finished by reading phase finish's findings is the loop this command exists
+// to close.
+func cmdReviewAnswer(o *opts) int {
+	a, err := o.r.ReviewAnswer(o.key, model.ChecklistEntry{
+		Rule: o.finding, Result: o.result, Note: o.note,
+	})
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	wrote := "answers"
+	if a.Replaced {
+		wrote = "re-answers"
+	}
+	fmt.Fprintf(o.out, "%s %s %s %s: %s\n", o.key, model.Phases[len(model.Phases)-1], wrote,
+		a.Entry.Rule, a.Entry.Result)
+	if len(a.Unanswered) == 0 {
+		fmt.Fprintln(o.out, "every review rule of the effective set is answered")
+	} else {
+		fmt.Fprintf(o.out, "still unanswered: %s\n", strings.Join(a.Unanswered, ", "))
 	}
 	return o.next(0)
 }

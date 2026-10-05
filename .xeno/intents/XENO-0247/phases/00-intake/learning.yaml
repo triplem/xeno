@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#242
+phase: 00-intake
+created: "2026-10-05T12:10:42Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: '#242 specified the writer before anyone read internal/runner/exchange.go. Two of its five bullets are wrong against the tree: it asks the command to refuse a phase whose verdict is written ''the way the decision commands do'', and the decision commands deliberately do not, because a write after a verdict changes the hash and the next phase finish reports it, which is the mechanism #216 built; and it offers an optional --phase, where the gate judges the checklist only on the last phase, so there is one phase it can mean. The issue was written from the artifacts and the gate''s message, which were enough to see the gap and not enough to specify the fix.'
+      proposal: An issue that proposes a command names the writer it is modelled on and reads it before listing behaviour. Where this project already has three writers for the same kind of field, the behaviour is theirs to settle, and a bullet list written without them produces work that intake has to undo rather than do.
+      target: CLAUDE.md

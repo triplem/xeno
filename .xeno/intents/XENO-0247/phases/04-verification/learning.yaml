@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#242
+phase: 04-verification
+created: "2026-10-05T12:19:24Z"
+schema_version: "1.0"
+runner_version: dev+8f4b75b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The results section first reported twelve test functions and nineteen cases for a file holding eight and fifteen. Both figures came from go test -run with a pattern wide enough to match three pre-existing tests in the same package, and the pattern was the one used to run the new tests while writing them. The numbers were read off a filtered run and written into an artifact as a property of the new file.
+      proposal: A count of tests in an artifact comes from the file, by grep over func Test and the subtest table, not from the -run output used while writing them. A filtered run counts the filter, and the pattern that was convenient for iterating is the one least likely to match exactly what was added.
+      target: CLAUDE.md
