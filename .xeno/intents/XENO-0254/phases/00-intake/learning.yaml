@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#254
+phase: 00-intake
+created: "2026-10-05T18:56:24Z"
+schema_version: "1.0"
+runner_version: dev+e471bbb
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A finding in #201 said internal/plugin/embedded/plugin is not gitignored. It is, at .gitignore:10, added by #200 with a comment. The check ran git check-ignore against the path moments after the rehearsal copy was deleted, and git reports nothing for a path that does not exist, so an absent directory read as an absent rule. The claim reached the verification phase, the review phase, the pull request and two reports to the maintainer before anything tested it with the directory present.'
+      proposal: A negative result from a path-based check is only evidence when the path exists. git check-ignore, test -f and a grep over a tree all answer "no" for "not there" and for "not matching", and the first is the likelier reading right after a cleanup step. Recreate the path, then re-run, before writing the finding down.
+      target: CLAUDE.md

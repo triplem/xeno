@@ -33,7 +33,7 @@ kinds, and for the first kind the reader was looked up in the code rather than r
 
 | kind | count |
 |---|---|
-| tool requirement | 37 |
+| tool requirement | 38 |
 | architectural property | 11 |
 | addressed to a person | 48 |
 | explanation | 126 |
@@ -58,6 +58,16 @@ and it is the only row here reporting a gate that judges part of what it is aske
 The alternative was to leave G-Test at `not-implemented`, which was honest and caught
 nothing; #212 weighed the two and this document is where the cost was put.
 
+Two of the rows below are a correction rather than a late addition, and the
+difference matters to what this pass claims. #229 gave two more of section 8's
+requirements a reader and did not touch the row describing them, so until #254 the
+table said a question's shape was read by G-Questions alone. It is read by G-Schema,
+which calls the shape check through `phaseResult` from P0 — the fact #229 itself
+turned on, since a check added there reaches every artifact ever written. One row
+describing a third of the clause and naming the wrong gate became two describing all
+of it and naming what reads each, which is why the count is thirty-eight. The pass was
+not incomplete here; it was overtaken, and then wrong.
+
 **Why the mapping half has no reader.** It needs an acceptance criterion to be
 identifiable, so that a gate can say the mapping covers it. Nothing identifies one: of
 the 55 P1 artifacts in this trail, 46 carry no numbered criteria at all, and of the nine
@@ -81,7 +91,8 @@ section 9 and therefore a specification change. Measured on 2026-10-05.
 | 5 | the budget is judged against the size the lock recorded | G-Schema's budget check |
 | 5 | a missing strings bundle fails red | G-Schema |
 | 5 | gates match section ids, never headings | `template.Parse`, test |
-| 6 | a question carries two to four options and one free entry | G-Questions |
+| 6 | a question carries two to four options, each with its consequence, and one free entry | G-Schema's shape check, G-Questions |
+| 8 | a question recommends exactly one of its options | `QuestionAsked`, the writer only; no gate reads it |
 | 6 | a decision carries id, chosen, rationale and `decided_by` | G-Questions' decision shape |
 | 6 | `phase start` refuses a predecessor with no completed verdict | `predecessorAllowsStart`, test |
 | 6 | `phase start` refuses a second start of a running phase | the run marker, test |
