@@ -6,6 +6,7 @@ package model
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -242,6 +243,52 @@ type Output struct {
 	// section id is hyphenated and the key is not, as open-questions and open_questions
 	// already are.
 	ReviewChecklist []ChecklistEntry `yaml:"review_checklist,omitempty"`
+}
+
+// LocalDataEnv is the variable section 7 lists in the normalised environment, and
+// LocalDefault the location it names: "XENO_PLUGIN_DATA  local data location, always
+// .xeno/local/".
+//
+// The entry point exports it and, until #205, nothing read it: six places wrote the path as a
+// literal instead, one of them twice. So the export promised something the runner did not keep.
+const (
+	LocalDataEnv = "XENO_PLUGIN_DATA"
+	LocalDefault = ".xeno/local"
+)
+
+// LocalDir is where a repository's local data goes: the run marker, phase.env, the cost ledger
+// and the enforcement report.
+//
+// Reading the variable is safe in a way that reading XENO_PLUGIN_ROOT was not, which is the
+// distinction A89 and this one's row turn on: nothing under here is covered by artifacts_hash,
+// so no verdict can be made to depend on the environment. The plugin root resolves rules_hash
+// and a rendered artifact, which is why section 7 lost that one rather than gaining a reader.
+//
+// An absolute value is returned as it stands, because the entry point exports
+// `${XENO_PLUGIN_DATA:=$root/.xeno/local}` and joining that to the root would nest one path
+// inside another. A relative value is relative to the repository root, as every other path the
+// runner handles is, and not to the process's working directory: a value meaning different
+// things depending on where the command was invoked is a worse promise than none.
+//
+// Empty reads as unset. os.Getenv cannot tell them apart, an exported-but-empty variable is
+// what `export XENO_PLUGIN_DATA=` produces, and resolving it to the root would put the ledger
+// and the run marker at the top of the tree.
+//
+// Nothing is created here. The writers already make what they need, and a resolver that made
+// directories would do it on every read, including the reads that only report a path.
+func LocalDir(root string) string {
+	if v := strings.TrimSpace(os.Getenv(LocalDataEnv)); v != "" {
+		if filepath.IsAbs(v) {
+			return v
+		}
+		return filepath.Join(root, v)
+	}
+	return filepath.Join(root, LocalDefault)
+}
+
+// LocalPath is a file or directory inside LocalDir.
+func LocalPath(root string, parts ...string) string {
+	return filepath.Join(append([]string{LocalDir(root)}, parts...)...)
 }
 
 // ChecklistEntry is one answer in the P5 checklist. Rule is the anchor section 9 gives each

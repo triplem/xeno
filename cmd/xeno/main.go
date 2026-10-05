@@ -295,7 +295,7 @@ func cmdEnforcementCheck(o *opts) int {
 		fmt.Fprintln(o.errw, err)
 		return 2
 	}
-	printEnforcement(o.out, rep)
+	printEnforcement(o.out, o.root, rep)
 	if rep.Unmet() > 0 {
 		return 1
 	}
@@ -849,7 +849,7 @@ func cmdCostTurn(o *opts) int {
 	if err != nil || totals.Zero() {
 		return 0
 	}
-	intent, phase := cost.LivePhase(o.root, ".xeno/local/phase.env")
+	intent, phase := cost.LivePhase(o.root, model.LocalPath(o.root, runner.PhaseEnvFile))
 	if phase == "" {
 		phase = cost.NoPhase
 	}
@@ -932,7 +932,7 @@ func printInit(out io.Writer, res *runner.InitResult) {
 // printEnforcement prints the report. not-available is its own line rather than folded
 // into unmet, because a setting the host does not have is nobody's oversight and
 // reporting it as one sends somebody looking for a checkbox that is not there.
-func printEnforcement(out io.Writer, rep *enforcement.Report) {
+func printEnforcement(out io.Writer, root string, rep *enforcement.Report) {
 	fmt.Fprintf(out, "%s, branch %s\n", rep.Repository, rep.Branch)
 	for _, q := range rep.Requirements {
 		fmt.Fprintf(out, "  %-13s %-20s declared %-6s actual %s\n", q.State, q.Name, q.Declared, q.Actual)
@@ -940,7 +940,7 @@ func printEnforcement(out io.Writer, rep *enforcement.Report) {
 			fmt.Fprintf(out, "                  %s\n", q.Note)
 		}
 	}
-	fmt.Fprintf(out, "\nreport written to %s\n", runner.ReportPath)
+	fmt.Fprintf(out, "\nreport written to %s\n", runner.ReportPath(root))
 	if rep.Unmet() > 0 {
 		fmt.Fprintf(out, "\n%d requirement(s) are neither met nor waived. Where the host cannot express one,\n"+
 			"record it as waived in project.yaml with a reason and a date: an unmeetable requirement\n"+

@@ -1,0 +1,50 @@
+intent: github.com/triplem/xeno#205
+phase: 04-verification
+created: "2026-10-05T16:50:05Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 62d6ef23456c3abd17a068b511b46b87c779565fdcfbe85f08a1eec1c03d76a3
+evidence_source: ci
+template_source: plugin
+repo_commit: 9eec4ed9b8b9b8296416e5d8ed3d648f7631aed8
+files:
+    - path: internal/model/model.go
+      sha256: 5b973d1df9e99632cc04365c2b1cfff8731f53e3ceaf242fc69dff4c8d927476
+      bytes: 27666
+    - path: internal/runner/runner.go
+      sha256: c9d69da52464c39713e73a25147059ef1e73f7157eeb259614253b3fa25b0ff3
+      bytes: 66415
+    - path: internal/runner/enforcement.go
+      sha256: 1204d1c866b69335bb7cf173753e725629405376b5c81def92b45f720abf6a65
+      bytes: 2790
+    - path: internal/runner/init.go
+      sha256: c673d95efdf60c23419d296a8455620730552acb4be72dc60aacea4ff3425617
+      bytes: 10898
+    - path: internal/cost/cost.go
+      sha256: 8d094f91a97aae4fbc7b8f53d8d1997b7931db9cf65b0830562fb6424fc43d12
+      bytes: 6556
+    - path: cmd/xeno/main.go
+      sha256: a3583322e6d4ecdf6d848e6c5746b4ff8dca48cdcac451427c1904e1899cf864
+      bytes: 39292
+    - path: .xeno/plugin/bin/xeno-env.sh
+      sha256: 6b5ddfc1b7900c27e89db7bde7b894bf50550950495961fb1408df9a2d9b9eed
+      bytes: 2420
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/assumptions.md
+      sha256: 3670968bb9c64b684afbfe52c11b461778813d2092936e11f0b654d432e828ba
+      bytes: 93171
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17

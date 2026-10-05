@@ -12,10 +12,14 @@ import (
 	"github.com/triplem/xeno/internal/model"
 )
 
-// ReportPath is where the enforcement report is written. Under .xeno/local/, which is
-// gitignored, because the report is a pipeline artifact and a job status and never a
-// commit: CI verifies artifacts that exist and produces none.
-const ReportPath = ".xeno/local/enforcement.yaml"
+// ReportFile is the name of the enforcement report, inside the local data location, which
+// is where a pipeline artifact belongs rather than in the trail (A39). It is a file name and
+// not a path from #205: the directory is XENO_PLUGIN_DATA's to decide, through
+// model.LocalDir.
+const ReportFile = "enforcement.yaml"
+
+// ReportPath is where this repository's enforcement report is written, resolved.
+func ReportPath(root string) string { return model.LocalPath(root, ReportFile) }
 
 // EnforcementCheck compares what the project declares it requires of its host against
 // what the host is configured to do.
@@ -60,5 +64,5 @@ func (r *Runner) EnforcementCheck(branch, token string) (*enforcement.Report, er
 		return nil, err
 	}
 	rep := enforcement.Compare(p.Tracker.Project, branch, p.Enforcement, answered, r.Now())
-	return &rep, fm.WriteYAML(r.abs(ReportPath), rep)
+	return &rep, fm.WriteYAML(ReportPath(r.Root), rep)
 }

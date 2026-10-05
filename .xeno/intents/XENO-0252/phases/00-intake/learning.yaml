@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#205
+phase: 00-intake
+created: "2026-10-05T16:26:31Z"
+schema_version: "1.0"
+runner_version: dev+97d07da.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Section 7''s line reads ''local data location, always .xeno/local/'', which on its own argues against reading the variable at all: if the value is always one thing, a reader can only ever produce that thing. What settles it is the section''s heading, ''Environment normalisation'', and its sentence that the runner only ever sees XENO_*. The clause and its context point in opposite directions, and the clause is what an issue quotes.'
+      proposal: 'Where a decision turns on a clause, read the section around it before the clause. This repository''s issues quote clauses accurately and the quotation is what makes a wrong reading persuasive: #205, #212 and #229 each turned on something the surrounding paragraph said and the quoted sentence did not.'
+      target: CLAUDE.md
