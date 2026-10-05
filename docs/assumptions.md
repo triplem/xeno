@@ -1,15 +1,35 @@
 # Assumptions made while building the core
 
-**This record is closed. M0 is reached, and the implementation plan's section 4 says
-that from M0 the same loop runs through the runner and the hand held record stops.** A77
-is the last row. Closed by XENO-0224 on 2026-10-03, which carries the evidence it was
-closed against.
+**This register is open.** It holds assumptions and decisions about how this repository
+is built: the places where the process definition or the implementation plan says what,
+and the how had to be chosen.
 
-Nothing is added here. A decision taken from now on belongs to the design phase of the
-intent that took it, and a learning belongs to that phase's `learning.yaml` and from
-there to a merge request against the rule set, as section 10 describes. The cost of the
-switch is that a row in a table was findable and a paragraph in one intent's P2 is not,
-which is the plan's choice rather than this file's.
+What closed at M0 is a different thing with the same name. The implementation plan's
+section 4 describes the record kept while Xeno could not yet govern its own
+construction, and says of it that "the record is a file in the branch rather than an
+artifact under `.xeno/`", and that from M0 "the same loop runs through the runner, and
+the hand held record stops". That record was the stand-in for a phase's artifacts, and
+it did stop: every change since M0 runs six phases and writes real ones. This file is
+not that stand-in, and neither normative document closes it.
+
+This file said otherwise from #174 until #243. It opened by declaring the record closed
+at A77, on the reading that section 4's sentence was about this register; seventeen rows
+were added after it, across twelve commits, by intents that each read the banner and
+recorded their row anyway. A95 carries the correction, and the sentence quoted above is
+quoted rather than summarised so that the next reader can check the inference instead of
+inheriting it.
+
+A learning never comes here. It belongs to the phase's `learning.yaml` and from there to
+a merge request against the rule set, as section 10 describes, so that it takes effect
+after review and not on being noticed. That half of the old banner was right and
+practice has observed it without exception.
+
+What separates a row here from a decision in an intent's design phase is how long it
+lasts. A decision taken inside one intent and sealed with it belongs to that intent and
+is read there. A row belongs here when the fact outlives the intent that found it, which
+is what the rows below have in common: A74 for how a rule set binds a verdict, A86 for
+what G-Supply is anchored to, A94 for the references a move left stale, each read by
+intents that did not write them.
 
 Every row stays, with its state column. They are where a reader of this tree learns why
 it is the way it is — A6 for the half-implemented gate that is now whole, A62 and A66
@@ -18,13 +38,14 @@ re-judge what was sealed yesterday, A77 for a manifest the specification draws i
 wrong place. A row deleted for having been superseded would be the rewriting this
 process refuses everywhere else.
 
-What follows is that record. Before M0, Xeno did not govern its own construction and
-this was kept by hand (implementation plan, section 4). Every entry is a place where the
-process definition or the implementation plan says what, and the how had to be chosen. A
-row wants a yes, a no or a replacement from a person, and the state column says which of
-those it has had. `approved` is that yes. `accepted until` names the work package that
-closes the row, so that a scheduled answer is not read as an unanswered question. An
-`open` row waits on somebody, and the sentence in it says on what.
+What follows is the register. The rows up to A77 were written before M0, when Xeno could
+not govern its own construction and nothing but a person gated them; the rows after it
+were written by intents that ran the six phases, and nothing about a row says which,
+because the test a row meets is the same either way. A row wants a yes, a no or a
+replacement from a person, and the state column says which of those it has had.
+`approved` is that yes. `accepted until` names the work package that closes the row, so
+that a scheduled answer is not read as an unanswered question. An `open` row waits on
+somebody, and the sentence in it says on what.
 
 | # | Assumption | Why | Where | State |
 |---|---|---|---|---|
@@ -122,6 +143,7 @@ closes the row, so that a scheduled answer is not read as an unanswered question
 | A92 | A read outside the context profile is recorded in the phase's digest, not in `context.lock.yaml`, and the plan says it is the agent's own account | WP8 asked for every such read to appear in the lock and section 5 forbids exactly that, in a paragraph with its own heading: the lock "records the context that was declared, not everything that was read", and "treating it as a measurement of what was read would be wrong". Two normative documents disagreeing rather than a missing writer, with the code following section 5, so WP8 could not be finished without breaking it. Section 5's reasoning is load-bearing: the lock is written before the agent starts, `context_hash` seals it, and one rewritten at the end would describe nothing — a record of what was read can only be written afterwards, which would make one file a measurement taken at two times. WP8's intent is sound too: G-Schema judges the budget against `files`, so an out-of-profile read costs nothing today and is invisible, which makes the budget one in name for anything an agent chooses to open. The digest resolves it because it has all four properties the record needs and nothing else in the trail does — written at `phase finish`, inside `artifacts_hash` so it cannot be altered without a divergence, outside `context_hash` so the lock's seal is undisturbed, and read by the phases after it, which the process definition already relies on where later phases work from the digest rather than a fresh scan. Three resolutions were put to the maintainer: the field in section 5, which makes the lock two files written at two times and touches the document every verdict is judged against; dropping the clause on A89's precedent, which was the closest call and lost because the digest already exists, so the clause costs a sentence rather than a mechanism; and this one. No gate, by A90: a check that an out-of-profile read was declared would have to know what was read, which is the thing nothing reports. The clause is therefore honest about being a self-report, which is #207's lesson applied before rather than after | `docs/implementation-plan.md` | open, explained (#213); the specification change is its own commit and no code followed from it |
 | A93 | `phase start` refuses a phase that has a verdict, keying on `gate.yaml` rather than on the lock | `Start` wrote `context.lock.yaml` unconditionally after the run marker check, and the lock is inside `artifacts_hash`, so starting a judged phase rewrote a sealed artifact — section 11's "what is sealed is never rewritten" — and `gate verify` reported the divergence afterwards, twice in one day, with `git checkout --` as the recovery. A clause caught after the act had no reader at the act. The overwrite also destroyed the only statement of what the phase was given, which is what `ChangedSince` compares against. It keys on the verdict because a phase with a lock and no verdict is the dead-run recovery `Start`'s own refusal points at, "if that run died, remove the marker", and refusing on the lock would have closed it; the verdict is also the right test on the merits, since it is what seals the directory. The message names both ways forward — `section set` with `phase finish` to redo the work, which never needed a second start, and removing the verdict to start over — because a refusal that only says no is worked around by deleting whatever is in the way, which is how a sealed artifact gets rewritten in the first place. The issue this came from also claimed nothing tells a repeated phase what changed, and that was wrong: #171 built it, `ChangedSince` derives it from the predecessor's lock and `phase start` prints it, with two tests. A second derivation had been written here before the first was found and was deleted rather than finished, because section 5 has no field for a changed set and two derivations of one answer can disagree — the existing comment says it: "A derivation that is printed cannot drift from its inputs; one that is recorded can" | `internal/runner/runner.go` | open, explained (#215) |
 | A94 | Moving `ASSUMPTIONS.md`, `SUPPLY-CHAIN.md`, `CLAUSE-READERS.md` and `M0.md` under `docs/` leaves 274 references to their old root paths standing in the trail and one in the implementation plan, and all of them are recorded here rather than corrected | the 274 sit in sealed artifacts whose `artifacts_hash` covers them, so rewriting one would stale every verdict over it; that is the arithmetic #217 met over its own artifact and resolved the same way, which is that what is sealed is never rewritten. The plan's line 2009 names `ASSUMPTIONS.md` in a sentence about the core's other choices, and the first standing rule puts a normative document beyond the agent, so correcting it is a person's commit made before the code that follows from it rather than part of this one. Neither kind resolves to anything a tool reads: no Go file, workflow step, rule or template opens any of the four by path, and the nine references in code and CI are comments, so nothing fails and nothing could be made to fail by a checker either. What a reader loses is that a path copied out of an old artifact does not exist in this tree, and the two naming schemes are how they tell which tree it was written against. The sealed count was 172 by #239's table on 2026-10-04, which gave 189 against 17 correctable ones, and is 274 against 27 a day later; it grows with every intent that cites a document, so this move was cheaper today than it will be again | `.xeno/intents/`, `docs/implementation-plan.md` | open, explained (#239); the plan's line is the only one of them a person can close |
+| A95 | This register is open, and a construction assumption or decision belongs in it when the fact outlives the intent that found it; what closed at M0 is the hand held record of the plan's section 4, the stand-in for a phase's artifacts | #174 closed this file on the reading that section 4's "the hand held record stops" was about it. The sentence it relies on is "the record is a file in the branch rather than an artifact under `.xeno/`", which is the substitute for the artifacts a runner writes; that substitute did stop at M0 and this register is not it. The misreading was available because the file had two roles and one name, and nothing checked the citation against the cited text. Seventeen rows, A78 to A94, were added after the banner across twelve commits, including every documentation change of the three days before this one: each of those intents read "nothing is added here", added a row, and left the banner standing. That is evidence about the banner and not about the twelve, and it is the second half of why this is a correction rather than a reversal — the practice was right and the stated rule was wrong. The alternative, keeping the register closed and recording the seventeen as drift, was weighed and rejected: "every row stays" forecloses deleting them, so the file would keep seventeen rows it declared impossible, and it would re-accept the unfindability the banner itself named as the cost of the switch, which is what drove the twelve. The test is durability rather than significance because a threshold would be a rule nobody could apply the same way twice, and the second standing rule makes an invented rule a specification change first. Nothing reads this register or will: no gate, no rule, no code opens it, and `artifacts_hash` does not cover it, so this row states a convention whose reader is a person, which is A90's finding applied to the file that documents it | `docs/assumptions.md` | **decided** (#243); the register is open, and the correction is prose because nothing could check it |
 
 ## Decisions
 
