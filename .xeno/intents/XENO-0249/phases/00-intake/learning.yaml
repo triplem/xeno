@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#201
+phase: 00-intake
+created: "2026-10-05T12:48:01Z"
+schema_version: "1.0"
+runner_version: dev+f2f65d5.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: internal/plugin/embedded.go carries the sentence 'The copy is therefore the same bytes the digest was taken over' as an explanation of why the arrangement is safe. Nothing checked it, and the hash could not have checked it even if something had tried, because it keys each line on the path relative to the repository root and the two trees are at different paths. A comment asserted a property the code made unverifiable.
+      proposal: 'Where a comment explains why an arrangement is safe, the sentence is a claim and worth testing as one: either something checks it or the comment says that nothing does. The tell here was the word ''therefore'' doing the work of a check, and this repository has found the same shape in plugin_version, in init --vendor and in the clause audit.'
+      target: CLAUDE.md

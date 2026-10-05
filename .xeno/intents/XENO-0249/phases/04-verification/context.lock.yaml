@@ -1,0 +1,50 @@
+intent: github.com/triplem/xeno#201
+phase: 04-verification
+created: "2026-10-05T12:55:28Z"
+schema_version: "1.0"
+runner_version: dev+325b27a.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 04f485d05ac77f2e9af870c5dbf81dd89c8c699aa1cc67ad179adf24b02121ea
+evidence_source: ci
+template_source: plugin
+repo_commit: 325b27a0bbee6526bfbaf4b73047664bbe5c2a4e
+files:
+    - path: internal/plugin/plugin.go
+      sha256: 97d9857df0db9bd6ae4650f097f37c2738f3ed752cf0c01b2ce2aaa1d0f9089e
+      bytes: 9672
+    - path: internal/plugin/embedded.go
+      sha256: ef2f02275fdabc27f0b5955fcf2d0f9284c2bae0bf1224469192e479914c5ab1
+      bytes: 1726
+    - path: internal/plugin/plugin_test.go
+      sha256: a47894f5ea54f4ed027befa817db99d188a4d7d4f6a8e589cc3185641d0afeef
+      bytes: 13416
+    - path: scripts/plugin-digest.go
+      sha256: e8918234a9158a40b5799e67ae3d54b546ce2fb79342bf8e566b13f5e03293c7
+      bytes: 2529
+    - path: .github/workflows/release.yml
+      sha256: 41491f7fe4a7f59990fcbc70f493715c7762f0e9166be3a883c7f615a973cb58
+      bytes: 11248
+    - path: internal/gates/gates.go
+      sha256: 5342cd1240f59219c2ff7c195c1f11f4da5e299635d8768c5ef68c08b871d370
+      bytes: 75729
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/assumptions.md
+      sha256: 976544bd0da81bcd730f5c246c687686128277b8581c0040db6d9167c2ba3c8a
+      bytes: 91098
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17

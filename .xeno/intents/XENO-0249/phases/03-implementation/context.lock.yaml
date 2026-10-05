@@ -1,0 +1,50 @@
+intent: github.com/triplem/xeno#201
+phase: 03-implementation
+created: "2026-10-05T12:49:35Z"
+schema_version: "1.0"
+runner_version: dev+f2f65d5.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: a7cbd111258a6f318f33cf1a3e3b931b35fa8e4bea32c8fb77c641739485a761
+evidence_source: ci
+template_source: plugin
+repo_commit: 325b27a0bbee6526bfbaf4b73047664bbe5c2a4e
+files:
+    - path: internal/plugin/plugin.go
+      sha256: c76c3137fe5b8906ace11fe7e6b2339cc3d631764b9a869860e0d1a5334a3841
+      bytes: 5877
+    - path: internal/plugin/embedded.go
+      sha256: ef2f02275fdabc27f0b5955fcf2d0f9284c2bae0bf1224469192e479914c5ab1
+      bytes: 1726
+    - path: internal/plugin/plugin_test.go
+      sha256: a47894f5ea54f4ed027befa817db99d188a4d7d4f6a8e589cc3185641d0afeef
+      bytes: 13416
+    - path: scripts/plugin-digest.go
+      sha256: 2067682f886cf53552af219ebd5f7f525de9e57fc09d034aa8d5df78cad7a4a9
+      bytes: 666
+    - path: .github/workflows/release.yml
+      sha256: 51900b5ab29dd572e324d6fa4c3cbc902d6d1f6ac7e9d962df625a9b030eef88
+      bytes: 10602
+    - path: internal/gates/gates.go
+      sha256: 5342cd1240f59219c2ff7c195c1f11f4da5e299635d8768c5ef68c08b871d370
+      bytes: 75729
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/assumptions.md
+      sha256: d54cd726ada8f967fce7b54b11bf45c110f8c9b5224e7ab459c30760f339ac6d
+      bytes: 89184
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 69f5a05767c1a6dd0260f05d714ff11d757e5aef6f4358411f66d0848f8486da

@@ -147,7 +147,14 @@ jobs:
           # Computed by the same code that compares it, so the release and the check
           # cannot disagree about the definition — which is the one way this arrangement
           # fails silently.
-          DIGEST=$(go run scripts/plugin-digest.go)
+          # --require-shipped is what makes step 2 checked rather than assumed. The digest
+          # is taken over .xeno/plugin and the binaries carry internal/plugin/embedded/
+          # plugin, and until #201 nothing compared them: `cp -R` under `set -eu` catches a
+          # copy that fails, not one that succeeds while producing a different tree. The
+          # flag refuses to print a digest unless the two trees hash equal by the same
+          # definition G-Supply uses, and names the differing paths when they do not. It is
+          # passed here, beside the copy, so that a refactor moving one moves the other.
+          DIGEST=$(go run scripts/plugin-digest.go --require-shipped)
           echo "plugin digest: $DIGEST"
 
           # The runner's own version and nothing else. It used to set PluginVersion to the
