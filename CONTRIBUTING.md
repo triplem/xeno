@@ -3,7 +3,7 @@
 ## Every change is an intent
 
 A change to Xeno starts from an issue and is recorded under `.xeno/intents/<KEY>/`.
-While the process can honestly carry only P0 (see `ASSUMPTIONS.md`, A6), an intent
+While the process can honestly carry only P0 (see `docs/assumptions.md`, A6), an intent
 runs its intake through Xeno and the rest is recorded by hand. The commit carries the
 intent in a trailer:
 

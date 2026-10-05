@@ -147,7 +147,7 @@ func raisedIn(raised []model.Question, key string) bool {
 // nextExchangeID continues the intent's own numbering rather than counting entries, so that
 // a question dropped from a draft does not hand its key to the next one. It is
 // nextAssumptionID's reason, and the ids are per intent as the register's are; the D- table
-// of ASSUMPTIONS.md is a separate sequence in a separate file, exactly as its A80 is
+// of docs/assumptions.md is a separate sequence in a separate file, exactly as its A80 is
 // separate from a register's A-001.
 //
 // Unpadded, because the four questions the trail already holds are Q-1 and the decisions

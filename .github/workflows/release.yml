@@ -26,7 +26,7 @@
 #
 # Only push to main triggers it, never pull_request, so nothing from a fork reaches the
 # write permission below. Every action is pinned to a commit sha and every tool to an exact
-# version; SUPPLY-CHAIN.md says which and why.
+# version; docs/supply-chain.md says which and why.
 name: release
 
 on:
@@ -171,7 +171,7 @@ jobs:
       # selects the same modules; build constraints can change that selection. The check
       # is here rather than in an audit because what has to fail is the release: a
       # document describing one target and claiming five is worse than a release that
-      # stops. A24 in ASSUMPTIONS.md records the condition.
+      # stops. A24 in docs/assumptions.md records the condition.
       - name: the targets select one module set
         if: steps.release.outputs.new_release_published == 'true'
         run: scripts/module-set.sh $TARGETS

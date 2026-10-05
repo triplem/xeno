@@ -19,7 +19,7 @@
 # absence of an error.
 #
 # Every action is pinned to a commit sha and every tool to a digest or an exact version;
-# SUPPLY-CHAIN.md says which and why.
+# docs/supply-chain.md says which and why.
 name: semgrep
 
 on:
