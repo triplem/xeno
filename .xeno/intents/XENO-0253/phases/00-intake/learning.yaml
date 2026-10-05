@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#225
+phase: 00-intake
+created: "2026-10-05T17:14:39Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The guard #215 added refuses a second start of a judged phase, and its comment gives two reasons that are both true one step earlier: a second start rewrites a sealed artifact and destroys the record of what the phase was given. The unjudged case was left open, so the same act does the same damage and is reported two commands later as a G-Schema finding about a hash. The guard was written against the case somebody hit rather than against the condition that produces it.'
+      proposal: When a guard is added after a defect, read its own justification back as a condition and ask where else that condition holds. Here the comment stated the general rule and the code tested a special case of it, and the gap between them was the whole of this issue.
+      target: CLAUDE.md

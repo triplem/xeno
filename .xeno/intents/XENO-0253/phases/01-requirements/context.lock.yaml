@@ -1,0 +1,47 @@
+intent: github.com/triplem/xeno#225
+phase: 01-requirements
+created: "2026-10-05T17:15:07Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 7d93f4ac2d2343f7395fd1c79fedda2f20e30da6989c09bbeada7e91360c4da4
+evidence_source: ci
+template_source: plugin
+repo_commit: 6adc0f920dd61f20f251316cd04327e80def7a8e
+files:
+    - path: internal/runner/runner.go
+      sha256: c9d69da52464c39713e73a25147059ef1e73f7157eeb259614253b3fa25b0ff3
+      bytes: 66415
+    - path: internal/runner/runner_test.go
+      sha256: b8dd69d0bd0902166eb0ee6896797cd71a5926e33ba0739dc0b29b25dc1696a8
+      bytes: 122032
+    - path: internal/runner/next.go
+      sha256: 2a6bd4c612c9fc96ed728b057c5624093d9e3ae5836305e1ed2c12bfb5603529
+      bytes: 7343
+    - path: internal/model/model.go
+      sha256: 5b973d1df9e99632cc04365c2b1cfff8731f53e3ceaf242fc69dff4c8d927476
+      bytes: 27666
+    - path: internal/gates/gates.go
+      sha256: 257e04dfa3326b894dcac3039c8b72c14a14dcbc8b81e2d8eac8778e04764620
+      bytes: 81330
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/assumptions.md
+      sha256: 3670968bb9c64b684afbfe52c11b461778813d2092936e11f0b654d432e828ba
+      bytes: 93171
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17

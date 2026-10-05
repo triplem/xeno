@@ -414,10 +414,32 @@ func (r *Runner) Start(key, phase string) error {
 	//
 	// Redoing the work does not need a second start: write the sections again and run
 	// phase finish, which recomputes the hash and carries the decisions forward. Starting
-	// over from nothing is deliberate and stays possible, by removing the verdict first.
+	// over from nothing is deliberate and stays possible, by removing the phase directory —
+	// the verdict alone is no longer enough, because from #225 the artifact left behind is
+	// itself a phase under way.
 	if fm.Exists(r.abs(model.PhaseDir(key, phase) + "/gate.yaml")) {
 		return refuse("%s has a verdict; redo the work with section set and phase finish, "+
-			"or remove %s to start it over", phase, model.PhaseDir(key, phase)+"/gate.yaml")
+			"or remove %s to start it over", phase, model.PhaseDir(key, phase))
+	}
+	// And the state between the two guards above: sections written, no verdict yet, and the
+	// marker gone. That is a phase under way, which section 6 already says is not started again;
+	// the marker is only the machine-local evidence of it, and its absence is ordinary — A9 puts
+	// it under .xeno/local/ because it describes a machine and not the trail, so a phase begun
+	// elsewhere has none here and retention expires it at thirty days.
+	//
+	// Starting again would rewrite context.lock.yaml, which is inside artifacts_hash and is the
+	// only record of what the phase was given: the two reasons #215 gives for refusing a judged
+	// phase, both true one step earlier. The rewrite moves `created`, so the artifact's
+	// context_hash stops matching the lock and phase finish reports red on G-Schema two commands
+	// later, which is not where the mistake was made (#225).
+	//
+	// The condition is the artifact and not a comparison against the lock. Before a second start
+	// the two still agree — the staleness is what the start causes, not what it finds — so
+	// comparing them here would pass in exactly the case the damage is about to be done.
+	if fm.Exists(r.abs(model.PhaseDir(key, phase) + "/output.md")) {
+		return refuse("%s is already under way; carry on with section set and phase finish, "+
+			"which need no second start, or remove %s to start the phase over",
+			phase, model.PhaseDir(key, phase))
 	}
 	common, err := r.common(key, phase)
 	if err != nil {
@@ -1178,6 +1200,13 @@ func (r *Runner) Status(key string) ([]PhaseState, error) {
 			if g.ArtifactsHash != h {
 				s.State = "changed-after-verdict"
 			}
+		// An artifact with no verdict is a phase under way, whether or not this machine holds
+		// the marker. The marker is machine-local (A9) and expires at thirty days, so keying the
+		// state on it alone reported a phase begun elsewhere as not-started — the first of the
+		// three gaps #225 names, and what let `phase start` be suggested for a phase that had
+		// already been started.
+		case fm.Exists(filepath.Join(dir, "output.md")):
+			s.State = "running"
 		}
 		if i > 0 && fm.Exists(filepath.Join(dir, "context.lock.yaml")) {
 			var lock model.ContextLock
