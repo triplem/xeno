@@ -290,3 +290,91 @@ func TestOneEntryOfEitherKindAnswersTheFigure(t *testing.T) {
 		t.Fatalf("an intent with a decision in it was marked as asking nothing: %+v", s)
 	}
 }
+
+// ---- #229: the three things section 8 asks of a question's options
+
+// bare is askable with the consequences taken off, which is the shape section 8 was written to
+// forbid and which was well formed as far as anything could tell until #229.
+const bare = `text: which error behaviour?
+options:
+  - text: fail fast
+    recommended: true
+  - text: retry internally
+  - text: something else, in the words of whoever decides
+    free: true
+`
+
+// unrecommended is askable with nothing marked, which is XENO-3's Q-2's shape: every
+// consequence present and the decision handed back whole.
+const unrecommended = `text: which error behaviour?
+options:
+  - text: fail fast
+    consequence: the caller retries
+  - text: retry internally
+    consequence: the caller never sees it
+  - text: something else, in the words of whoever decides
+    free: true
+`
+
+func TestAnOptionWithNoConsequenceIsRefusedBeforeTheWrite(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	before := f.body("00-intake")
+
+	_, err := f.r.RecordQuestion(key, "00-intake", []byte(bare))
+	if !isRefusal(err) || !strings.Contains(err.Error(), "2 of 2 options with no consequence") {
+		t.Fatalf("a question with bare options was accepted: %v", err)
+	}
+	var o model.Output
+	f.readFront("00-intake", &o)
+	if len(o.OpenQuestions) != 0 || f.body("00-intake") != before {
+		t.Fatal("a refused question changed the artifact")
+	}
+}
+
+// The free entry carries no consequence and cannot: it stands for an answer nobody has written
+// yet. askable is the project's own well-formed question and its free entry is bare, so a check
+// that required one would refuse the fixture rather than catch anything.
+func TestTheFreeEntryNeedsNoConsequence(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	f.question("00-intake", askable)
+}
+
+// The recommendation is the writer's check and not the gate's, for the reason QuestionShape's
+// comment carries: the gate judges every artifact in the trail and XENO-3's Q-2 fails this.
+func TestAQuestionThatRecommendsNothingIsRefusedBeforeTheWrite(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+
+	_, err := f.r.RecordQuestion(key, "00-intake", []byte(unrecommended))
+	if !isRefusal(err) || !strings.Contains(err.Error(), "recommends 0 of its options") {
+		t.Fatalf("a question recommending nothing was accepted: %v", err)
+	}
+}
+
+// Three recommendations is no recommendation. Section 8 says "the agent's recommendation",
+// singular, and a list with everything starred has made no choice.
+func TestAQuestionThatRecommendsMoreThanOneIsRefused(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	two := strings.Replace(unrecommended,
+		"    consequence: the caller never sees it\n",
+		"    consequence: the caller never sees it\n    recommended: true\n", 1)
+	two = strings.Replace(two,
+		"    consequence: the caller retries\n",
+		"    consequence: the caller retries\n    recommended: true\n", 1)
+
+	_, err := f.r.RecordQuestion(key, "00-intake", []byte(two))
+	if !isRefusal(err) || !strings.Contains(err.Error(), "recommends 2 of its options") {
+		t.Fatalf("a question recommending two options was accepted: %v", err)
+	}
+}
+
+// no_options is the exception section 8 names, and a question with no options to offer cannot
+// recommend one. Exempt from both halves, here as in the gate.
+func TestNoOptionsIsExemptFromBothChecks(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	f.question("00-intake", "text: who owns the schedule?\nno_options: true\n")
+}

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#229
+phase: 03-implementation
+created: "2026-10-05T15:29:28Z"
+schema_version: "1.0"
+runner_version: dev+2d997e0.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A test fixture had been carrying the exact shape section 8 forbids — two options, no consequences — since WP5, and three tests about question resolution passed over it. Adding the gate check broke all three, in internal/runner, while internal/gates had no test for QuestionShape at all. The fixture was not wrong for what the tests asserted; it was the least input the gate would accept, and the gate accepted too little.
+      proposal: 'A fixture standing in for a well-formed artifact is written to the clause rather than to what the gate currently enforces, because the two drift apart in exactly the direction that hides the gap: the gate gets stricter and the fixture turns out to have been illustrating the defect. Where a shape function is exported for a writer to share, the package that owns it carries the tests for it.'
+      target: CLAUDE.md

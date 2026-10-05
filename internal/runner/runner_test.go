@@ -382,7 +382,10 @@ func TestTamperedEvidenceIsRejected(t *testing.T) {
 
 // ---- WP5 and WP7: open questions are resolved, and only P5 insists
 
-const question = "open_questions:\n  - key: Q-1\n    text: which error behaviour?\n    options:\n      - text: fail fast\n        recommended: true\n      - text: retry\n      - text: free entry\n        free: true\n"
+// The options carry their consequence because section 8 asks for one and #229 made the gate
+// read it. These tests are about a question being resolved and not about its shape, so the
+// fixture is the shape the section asks for rather than the least the gate once accepted.
+const question = "open_questions:\n  - key: Q-1\n    text: which error behaviour?\n    options:\n      - text: fail fast\n        consequence: the caller retries\n        recommended: true\n      - text: retry\n        consequence: the caller never sees it\n      - text: free entry\n        free: true\n"
 
 func TestUnresolvedQuestionTurnsP5RedAndLeavesP1Green(t *testing.T) {
 	f := newFixture(t)
