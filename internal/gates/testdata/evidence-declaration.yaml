@@ -7,9 +7,9 @@
 # and corpus agreed with each other while neither agreed with the document. Written from
 # the document the two lists are independent, and a disagreement between them is a finding.
 #
-# `build_kind` names the one G-Build reads. It is a member of kinds and is called out
-# separately because that is the value the gate compares against, and the defect was a
-# comparison against a word that is not here.
+# `build_kind` names the one G-Build reads and `test_kind` the one G-Test reads. Both are
+# members of kinds and are called out separately because those are the values the gates
+# compare against, and the defect was a comparison against a word that is not here.
 kinds:
   - test-report
   - coverage
@@ -26,3 +26,4 @@ result_required_on:
   - test-report
   - build-log
 build_kind: build-log
+test_kind: test-report
