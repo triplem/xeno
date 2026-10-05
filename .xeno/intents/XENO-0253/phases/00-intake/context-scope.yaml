@@ -1,0 +1,23 @@
+intent: github.com/triplem/xeno#225
+phase: 00-intake
+created: "2026-10-05T17:14:05Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+include:
+    - internal/runner/runner.go
+    - internal/runner/runner_test.go
+    - internal/runner/next.go
+    - internal/model/model.go
+    - internal/gates/gates.go
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+links:
+    - component: internal/runner
+      docs: docs/implementation-plan.md
+    - component: internal/gates
+      docs: docs/process-definition.md
+budget:
+    files: 10
+    bytes: 700000

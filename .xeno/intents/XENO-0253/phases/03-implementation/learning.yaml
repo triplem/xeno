@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#225
+phase: 03-implementation
+created: "2026-10-05T17:26:26Z"
+schema_version: "1.0"
+runner_version: dev+6adc0f9.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'P2 specified a condition that compared the artifact against its lock, and the reproduction failed against it: before a second start the two still agree, because the staleness is what the start causes rather than what it finds. The design had reasoned about the damaged state and written a test for the state before the damage. The same phase also claimed next.go needed no change, and the agreement test failed because the wrong answer came from the state computation rather than from the suggestion.'
+      proposal: Where a guard prevents damage, write the reproduction before the condition and let it pick the condition. A design reasoning backwards from the broken state will describe the symptom, and a condition matching the symptom fires after the loss rather than before it. Both of this phase two errors were caught by tests the criteria had required rather than by review.
+      target: CLAUDE.md

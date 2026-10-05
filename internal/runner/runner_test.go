@@ -195,7 +195,11 @@ func TestStartIsRefusedWhereThePhaseHasAVerdict(t *testing.T) {
 	}
 	// The refusal names the way to redo the work, because a refusal that only says no is one
 	// somebody works around by deleting something.
-	if !strings.Contains(ref.Reason, "section set") || !strings.Contains(ref.Reason, "gate.yaml") {
+	// The alternative is redoing the work in place, and the way out is the phase directory —
+	// from #225 the verdict alone is not enough, because the artifact left behind is itself a
+	// phase under way.
+	if !strings.Contains(ref.Reason, "section set") ||
+		!strings.Contains(ref.Reason, model.PhaseDir(key, "00-intake")) {
 		t.Errorf("the refusal does not name the alternative: %s", ref.Reason)
 	}
 	after, err := hashing.FileHash(lock)
@@ -205,13 +209,22 @@ func TestStartIsRefusedWhereThePhaseHasAVerdict(t *testing.T) {
 	}
 }
 
-// Removing the verdict is the deliberate way to start a phase over, and it stays open: the
-// refusal above is about a sealed artifact, and a phase with no verdict has nothing sealed.
-func TestStartAfterRemovingTheVerdictIsAllowed(t *testing.T) {
+// Starting a phase over stays deliberate and stays possible, and from #225 it takes the phase
+// directory rather than the verdict alone: an artifact left behind is itself a phase under way,
+// so removing gate.yaml now lands on the second refusal instead of the first.
+func TestStartingOverTakesThePhaseDirectory(t *testing.T) {
 	f := newFixture(t)
 	f.templated()
 	f.run("00-intake", "")
-	f.must(os.Remove(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "gate.yaml")))
+	dir := filepath.Join(f.root, model.PhaseDir(key, "00-intake"))
+
+	f.must(os.Remove(filepath.Join(dir, "gate.yaml")))
+	err := f.r.Start(key, "00-intake")
+	if !isRefusal(err) || !strings.Contains(err.Error(), "already under way") {
+		t.Fatalf("removing the verdict alone should now leave a phase under way: %v", err)
+	}
+
+	f.must(os.RemoveAll(dir))
 	f.must(f.r.Start(key, "00-intake"))
 }
 
@@ -3249,5 +3262,124 @@ func TestTheReportAndTheLedgerResolveToTheSameDirectory(t *testing.T) {
 	}
 	if got, want := cost.LedgerPath(root), filepath.Join(elsewhere, cost.LedgerFile); got != want {
 		t.Errorf("the ledger resolves to %s, want %s", got, want)
+	}
+}
+
+// ---- #225: a second start that would stale the artifact
+
+// moving replaces the fixture's pinned clock. newFixture fixes Now, so a rewritten lock is
+// byte-identical and the artifact stays consistent with it — which is why this defect survived:
+// a test in the package's usual style passes against the broken code. The damage is the created
+// stamp moving, and only a clock that moves moves it.
+func (f *fixture) moving() {
+	n := 0
+	f.r.Now = func() time.Time { n++; return time.Date(2026, 9, 20, 10, n, 0, 0, time.UTC) }
+}
+
+// The reproduction. Sections written, no verdict, marker gone — which is what a phase begun on
+// another machine looks like here, and what retention leaves after thirty days. Before #225 the
+// second start succeeded, rewrote the lock, and phase finish went red on G-Schema.
+func TestAStartThatWouldStaleTheArtifactIsRefused(t *testing.T) {
+	f := newFixture(t)
+	f.moving()
+	f.must(f.r.Start(key, model.Phases[0]))
+	f.output(model.Phases[0], "")
+	lock := filepath.Join(f.root, model.PhaseDir(key, model.Phases[0]), "context.lock.yaml")
+	before, err := hashing.FileHash(lock)
+	f.must(err)
+
+	f.must(os.Remove(f.r.marker(key, model.Phases[0])))
+
+	err = f.r.Start(key, model.Phases[0])
+	if !isRefusal(err) {
+		t.Fatalf("a start that would stale the artifact was allowed: %v", err)
+	}
+	for _, want := range []string{
+		"already under way", "section set and phase finish", model.PhaseDir(key, model.Phases[0]),
+	} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the refusal does not say %q: %v", want, err)
+		}
+	}
+	after, err := hashing.FileHash(lock)
+	f.must(err)
+	if before != after {
+		t.Fatal("the refused start rewrote the lock anyway")
+	}
+}
+
+// The case P2 expected to be harmless and is not. With the fixture's pinned clock a rewritten
+// lock is byte-identical, so "the marker is gone and nothing else changed" looks safe; with a
+// clock that moves, `created` moves and the artifact goes stale. There is no safe second start
+// of a phase under way, which is why the condition is the artifact rather than a comparison
+// against the lock.
+func TestThereIsNoHarmlessSecondStartOfAPhaseUnderWay(t *testing.T) {
+	f := newFixture(t)
+	f.moving()
+	f.must(f.r.Start(key, model.Phases[0]))
+	f.output(model.Phases[0], "")
+	f.must(os.Remove(f.r.marker(key, model.Phases[0])))
+
+	if err := f.r.Start(key, model.Phases[0]); !isRefusal(err) {
+		t.Fatalf("a second start of a phase under way was allowed: %v", err)
+	}
+}
+
+// A phase under way is reported as running whether or not this machine holds the marker, which
+// is the first of #225's three gaps: a phase begun on one machine read as not-started on
+// another, and retention made it read that way on the same one after thirty days.
+func TestAPhaseWithAnArtifactIsRunningWithoutItsMarker(t *testing.T) {
+	f := newFixture(t)
+	f.must(f.r.Start(key, model.Phases[0]))
+	f.output(model.Phases[0], "")
+	f.must(os.Remove(f.r.marker(key, model.Phases[0])))
+
+	states, err := f.r.Status(key)
+	f.must(err)
+	if states[0].State != "running" {
+		t.Fatalf("a phase with sections written and no verdict reads %q", states[0].State)
+	}
+}
+
+// A first start has no artifact, so the condition cannot fire. This is every normal start.
+func TestAFirstStartIsUnaffected(t *testing.T) {
+	f := newFixture(t)
+	f.moving()
+	f.must(f.r.Start(key, model.Phases[0]))
+}
+
+// The two guards that were already there keep their conditions and their wording.
+func TestTheOlderTwoRefusalsAreUnchanged(t *testing.T) {
+	f := newFixture(t)
+	f.moving()
+	f.must(f.r.Start(key, model.Phases[0]))
+	if err := f.r.Start(key, model.Phases[0]); !isRefusal(err) ||
+		!strings.Contains(err.Error(), "already running") {
+		t.Fatalf("a present marker no longer says already running: %v", err)
+	}
+
+	f.output(model.Phases[0], "")
+	f.finish(model.Phases[0])
+	if err := f.r.Start(key, model.Phases[0]); !isRefusal(err) ||
+		!strings.Contains(err.Error(), "has a verdict") {
+		t.Fatalf("a judged phase no longer says it has a verdict: %v", err)
+	}
+}
+
+// The refusal and the printed next step have to point the same way, or somebody follows the
+// suggestion into the thing just refused.
+func TestTheSuggestionAgreesWithTheRefusal(t *testing.T) {
+	f := newFixture(t)
+	f.moving()
+	f.must(f.r.Start(key, model.Phases[0]))
+	f.output(model.Phases[0], "")
+	f.must(os.Remove(f.r.marker(key, model.Phases[0])))
+
+	s := f.r.Next(key)
+	if s == nil {
+		t.Fatal("no suggestion for a phase under way")
+	}
+	if strings.Contains(s.Command, "phase start") {
+		t.Fatalf("the next step offers the start that is refused: %q", s.Command)
 	}
 }
