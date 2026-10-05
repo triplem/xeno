@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#243
+phase: 00-intake
+created: "2026-10-05T12:35:06Z"
+schema_version: "1.0"
+runner_version: dev+f2f65d5
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The banner closing the register cited the plan''s section 4 and was wrong about what it said. Section 4''s sentence is that the record kept before M0 is ''a file in the branch rather than an artifact under .xeno/'', so what stops at M0 is the substitute for phase artifacts; #174 read it as closing a cross-intent register that is not that substitute. The citation was never checked against the cited text, and twelve intents afterwards read the banner, disagreed with it in practice, and did not check it either.'
+      proposal: 'A document that closes or restricts itself by citing a normative one quotes the sentence it relies on, so the next reader can check the inference rather than the conclusion. Where a rule in this repository has been contradicted by practice more than once, the first thing to test is whether its stated basis says what it claims: twelve commits disagreeing with a rule is evidence about the rule, not about the commits.'
+      target: CLAUDE.md
