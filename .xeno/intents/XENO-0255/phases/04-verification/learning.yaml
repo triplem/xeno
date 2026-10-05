@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#247
+phase: 04-verification
+created: "2026-10-05T19:47:02Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: This phase declared its test report while a background go test was still writing the file. The declaration bound the hash of a partial run; the suite finished, the file grew, and G-Evidence reported that the content no longer matched. The file had been tailed before declaring and its last three lines looked like the end of a run, but they were the end of what had been written so far — packages are reported as they finish, so a tail of a growing file always looks complete.
+      proposal: 'Evidence is declared from a file nothing is still writing. Where the producing command runs in the background, wait for it to exit rather than inspecting its output: a tail of a partial log is indistinguishable from a tail of a finished one, which is the same class as reading a path based check against a path that is not there (#256). The gate catches it, and it catches it two commands later and costs the phase.'
+      target: CLAUDE.md

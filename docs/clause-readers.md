@@ -33,7 +33,7 @@ kinds, and for the first kind the reader was looked up in the code rather than r
 
 | kind | count |
 |---|---|
-| tool requirement | 38 |
+| tool requirement | 39 |
 | architectural property | 11 |
 | addressed to a person | 48 |
 | explanation | 126 |
@@ -68,8 +68,15 @@ describing a third of the clause and naming the wrong gate became two describing
 of it and naming what reads each, which is why the count is thirty-eight. The pass was
 not incomplete here; it was overtaken, and then wrong.
 
-**Why the mapping half has no reader.** It needs an acceptance criterion to be
-identifiable, so that a gate can say the mapping covers it. Nothing identifies one: of
+**Why the mapping half has no reader**, and what a project can do about it. A rule
+answered by a person is available as `examples/rules/mapping-is-complete.yaml`, which is
+not enabled here or anywhere: adopting it gives the clause a reader once per intent rather
+than once per criterion, which is weaker than the gate section 7 asks for and is the
+ceiling until a criterion is identifiable. The reader column above says `nothing` because
+an example nobody has enabled fails nothing.
+
+It needs an acceptance criterion to be identifiable, so that a gate can say the mapping
+covers it. Nothing identifies one: of
 the 55 P1 artifacts in this trail, 46 carry no numbered criteria at all, and of the nine
 that do, one already fails a check by number. So a completeness check would re-judge
 most of the trail, and would first need a numbering convention, which is an addition to
@@ -93,6 +100,7 @@ section 9 and therefore a specification change. Measured on 2026-10-05.
 | 5 | gates match section ids, never headings | `template.Parse`, test |
 | 6 | a question carries two to four options, each with its consequence, and one free entry | G-Schema's shape check, G-Questions |
 | 8 | a question recommends exactly one of its options | `QuestionAsked`, the writer only; no gate reads it |
+| 8 | the recommendation carries a reason | **no field to carry it**; nothing reads it (#247) |
 | 6 | a decision carries id, chosen, rationale and `decided_by` | G-Questions' decision shape |
 | 6 | `phase start` refuses a predecessor with no completed verdict | `predecessorAllowsStart`, test |
 | 6 | `phase start` refuses a second start of a running phase | the run marker, test |

@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#247
+phase: 00-intake
+created: "2026-10-05T19:33:45Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b
+plugin_version: 0.0.0-dev
+include:
+    - docs/clause-readers.md
+    - CLAUDE.md
+    - examples/rules/documentation-follows-the-change.yaml
+    - internal/model/model.go
+    - internal/gates/gates.go
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+links:
+    - component: internal/gates
+      docs: docs/process-definition.md
+budget:
+    files: 11
+    bytes: 510000

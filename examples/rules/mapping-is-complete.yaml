@@ -1,0 +1,34 @@
+# An example, not a shipped rule, and the only reader section 7's G-Test row can honestly have
+# for its second half today.
+#
+# That row asks for two things: "declared test result successful, mapping of acceptance criteria
+# complete". From #212 the first is read by G-Test. The second is read by nothing, because a gate
+# would have to identify an acceptance criterion in order to say the mapping covers it, and
+# nothing identifies one: of the 55 P1 artifacts in this repository 46 carry no numbered criteria
+# at all, so a completeness check would re-judge most of the trail and would first need a
+# numbering convention in section 9 — a specification change (#250).
+#
+# What this buys, and what it does not: a person answers it once per intent, in the P5 checklist,
+# where the gate would have answered once per criterion. That is weaker, and adopting this does
+# not make the clause mechanically covered. docs/clause-readers.md goes on recording the mapping
+# half as read by nothing, because a rule nobody has enabled fails nothing.
+#
+# Why not in given/builtin/: A72's reasoning, and the same as documentation-follows-the-change's.
+# A review rule there reaches every project everywhere, including every project whose acceptance
+# criteria are prose rather than a list, and it would be answered not-applicable with a note at
+# every review for ever.
+#
+# Adopt it by copying it into .xeno/config/rules/given/org/ or given/project/, with the scope
+# corrected to the level.
+id: mapping-is-complete
+version: 1
+scope: org
+binding: false
+kind: review
+applies_to: [04-verification, 05-review]
+statement: >
+  Every acceptance criterion the requirements phase declared is answered in the verification
+  phase's test mapping, or the mapping says why it is not answerable. Completeness is what this
+  asks for, not selection and not existence: the mapping names tests as free text because an
+  identifier looks different in every ecosystem and nothing resolves it, so what is checked is
+  that somebody made the connection for each criterion.
