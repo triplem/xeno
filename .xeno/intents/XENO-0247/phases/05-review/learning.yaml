@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#242
+phase: 05-review
+created: "2026-10-05T12:20:40Z"
+schema_version: "1.0"
+runner_version: dev+8f4b75b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'This intent''s P5 checklist is the first in the repository written by a command, and writing it found the writer''s one rough edge: the three notes are long, and a note is a shell argument, so each is a single quoted string of several hundred characters with no way to wrap it. section set and question record take a document on stdin; review answer takes flags, which was the right call for three scalars and is awkward for the one scalar that carries prose.'
+      proposal: 'Where a writer takes prose through a flag, it is worth offering the same field on stdin as well, the way phase finish takes --summary PATH|-. Not a change to this command''s shape: a note is still a scalar and flags are still right for an entry. What is wanted is --note - reading the note from stdin, so that a paragraph does not have to be a shell argument.'
+      target: CLAUDE.md
