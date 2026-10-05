@@ -21,6 +21,7 @@ type declaration struct {
 	Results          []string `yaml:"results"`
 	ResultRequiredOn []string `yaml:"result_required_on"`
 	BuildKind        string   `yaml:"build_kind"`
+	TestKind         string   `yaml:"test_kind"`
 }
 
 func documented(t *testing.T) declaration {
@@ -53,6 +54,12 @@ func TestTheClosedSetsAreTheDocumentsOwn(t *testing.T) {
 	}
 	if !model.OneOf(BuildKind, d.Kinds) {
 		t.Errorf("G-Build reads %q, which is not in the set at all", BuildKind)
+	}
+	if d.TestKind != TestKind {
+		t.Errorf("G-Test reads %q, section 4 spells it %q", TestKind, d.TestKind)
+	}
+	if !model.OneOf(TestKind, d.Kinds) {
+		t.Errorf("G-Test reads %q, which is not in the set at all", TestKind)
 	}
 }
 
@@ -262,5 +269,89 @@ func TestAnAttachmentWithNoResultIsNotAFinding(t *testing.T) {
 		"  uri: https://ci.example/a/7\n  sha256: "+strings.Repeat("3", 64)+"\n")
 	if got := evidence(c); got.Result != "pass" {
 		t.Fatalf("an attachment whose producer reports nothing read %s, want pass\n%s", got.Result, causes(got))
+	}
+}
+
+// ---- #212: G-Test's result half
+
+// G-Test had never judged anything: it was notImplemented in the table, in every P4 of this
+// trail, while the templates carried acceptance-criteria and test-mapping because the plan says
+// it reads them. These cover the half it reads now. The other half of section 7's row, the
+// completeness of the mapping, has no reader and docs/clause-readers.md says so.
+
+// The kind comes from the document, as G-Build's does, so a rename there fails here rather than
+// making the gate inert again — which is what TestGBuildJudgesTheKindTheDocumentDefines records.
+func TestGTestJudgesTheDeclaredTestResult(t *testing.T) {
+	kind := documented(t).TestKind
+	for _, c := range []struct{ result, want string }{{"pass", "pass"}, {"fail", "fail"}} {
+		ctx := phaseWith(t, "04-verification",
+			"  - kind: "+kind+"\n    job: go-test\n    result: "+c.result+"\n"+sealed)
+		if got := testReport(ctx); got.Result != c.want {
+			t.Errorf("a %s test report: G-Test said %s, want %s\n%s",
+				c.result, got.Result, c.want, causes(got))
+		}
+	}
+}
+
+// A60: a pending item owes no result. Reading the declaration's empty result as a non-pass
+// would have failed seventeen sealed artifacts in this trail, which an audit script predicted
+// and the probe disproved — so this case is why the change was safe to make at all.
+func TestAPendingTestReportIsPendingAndNotAFailure(t *testing.T) {
+	// Pending is SHA256 == "": a declaration with no hash is awaiting its pipeline, which is
+	// how every test-report in this trail is written. Not `sealed`, which supplies one.
+	ctx := phaseWith(t, "04-verification", "  - kind: "+TestKind+"\n    job: go-test\n")
+	if got := testReport(ctx); got.Result != "pending" {
+		t.Errorf("a declared test report awaiting its artifact: G-Test said %s, want pending\n%s",
+			got.Result, causes(got))
+	}
+}
+
+// The two gates read one kind each and neither reads the other's, which is what keeps one row
+// of section 7 from answering for two.
+func TestGTestAndGBuildReadTheirOwnKind(t *testing.T) {
+	failing := func(kind string) Ctx {
+		return phaseWith(t, "04-verification",
+			"  - kind: "+kind+"\n    job: j\n    result: fail\n"+sealed)
+	}
+	if got := build(failing(TestKind)); got.Result != "pass" {
+		t.Errorf("G-Build judged a test report: %s\n%s", got.Result, causes(got))
+	}
+	if got := testReport(failing(BuildKind)); got.Result != "pass" {
+		t.Errorf("G-Test judged a build log: %s\n%s", got.Result, causes(got))
+	}
+}
+
+// A phase declaring neither is green for both. The gate counts from the declarations, so an
+// artifact with nothing to judge is not a finding — the mapping half is where "nothing declared"
+// would have been a question, and that half has no reader.
+func TestNeitherGateFiresWithoutADeclaration(t *testing.T) {
+	ctx := phaseWith(t, "04-verification", "  - kind: scan\n    job: trivy\n    result: pass\n"+sealed)
+	if got := testReport(ctx); got.Result != "pass" {
+		t.Errorf("G-Test fired with no test report declared: %s\n%s", got.Result, causes(got))
+	}
+	if got := build(ctx); got.Result != "pass" {
+		t.Errorf("G-Build fired with no build log declared: %s\n%s", got.Result, causes(got))
+	}
+}
+
+// G-Test is in the table at P4 and no longer reports not-implemented, which is the one assertion
+// about the table rather than about the comparison.
+func TestGTestIsImplementedAtP4(t *testing.T) {
+	var found bool
+	for _, s := range table {
+		if s.id != "G-Test" {
+			continue
+		}
+		found = true
+		if s.from != 4 {
+			t.Errorf("G-Test runs from phase %d, section 7 says P4", s.from)
+		}
+		ctx := phaseWith(t, "04-verification", "  - kind: "+TestKind+"\n    job: j\n    result: pass\n"+sealed)
+		if got := s.fn(ctx); got.Result == "not-implemented" {
+			t.Error("G-Test still reports not-implemented")
+		}
+	}
+	if !found {
+		t.Fatal("G-Test is not in the table")
 	}
 }

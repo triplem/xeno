@@ -33,7 +33,7 @@ kinds, and for the first kind the reader was looked up in the code rather than r
 
 | kind | count |
 |---|---|
-| tool requirement | 35 |
+| tool requirement | 37 |
 | architectural property | 11 |
 | addressed to a person | 48 |
 | explanation | 126 |
@@ -48,6 +48,22 @@ One row arrived after the pass. The review-rule coverage clause was missed, and 
 intent's own review phase went red on it, which is why the implementation phase's digest
 says thirty-four and this table says thirty-five. It is left visible because a pass that
 quietly absorbed its own miss would be the thing #202 warns about.
+
+Two more arrived later still, in #212, and they are one sentence of section 7 split in
+two because its halves have different readers. G-Test's row asks for a declared test
+result and for the completeness of the mapping of acceptance criteria; the first is read
+from #212 and the second by nothing, so a green G-Test now means half of its row.
+Splitting one clause over two rows is why the count is thirty-seven and not thirty-six,
+and it is the only row here reporting a gate that judges part of what it is asked for.
+The alternative was to leave G-Test at `not-implemented`, which was honest and caught
+nothing; #212 weighed the two and this document is where the cost was put.
+
+**Why the mapping half has no reader.** It needs an acceptance criterion to be
+identifiable, so that a gate can say the mapping covers it. Nothing identifies one: of
+the 55 P1 artifacts in this trail, 46 carry no numbered criteria at all, and of the nine
+that do, one already fails a check by number. So a completeness check would re-judge
+most of the trail, and would first need a numbering convention, which is an addition to
+section 9 and therefore a specification change. Measured on 2026-10-05.
 
 | § | clause | reader |
 |---|---|---|
@@ -74,6 +90,8 @@ quietly absorbed its own miss would be the thing #202 warns about.
 | 6 | a decision is recorded on the finding, not rewritten to green | `Decide`, carry-forward test |
 | 6 | a decision names a person and a reason | `Decide` refusal |
 | 6 | a decision against a stale verdict is refused | `rewriteStatus`, test |
+| 7 | G-Test: declared test result successful | `gates.testReport`, `TestKind`, from #212 |
+| 7 | G-Test: mapping of acceptance criteria complete | **nothing**; see below |
 | 7 | G-Supply compares the vendored tree against the binary's digest | `gates.supply` |
 | 7 | G-Freshness reads the predecessors' locks, never the phase's own | `gates.freshness` |
 | 7 | an unimplemented gate is written, not skipped | `notImplemented` |

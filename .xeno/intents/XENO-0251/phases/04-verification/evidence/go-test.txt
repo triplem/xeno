@@ -1,0 +1,20 @@
+ok  	github.com/triplem/xeno/cmd/xeno	0.766s
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+ok  	github.com/triplem/xeno/internal/external	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/git	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/host	(cached)
+ok  	github.com/triplem/xeno/internal/host/github	(cached)
+ok  	github.com/triplem/xeno/internal/host/gitlab	(cached)
+ok  	github.com/triplem/xeno/internal/index	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/plugin	(cached)
+ok  	github.com/triplem/xeno/internal/rules	(cached)
+ok  	github.com/triplem/xeno/internal/runner	0.893s
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	108.658s
+ok  	github.com/triplem/xeno/internal/template	(cached)

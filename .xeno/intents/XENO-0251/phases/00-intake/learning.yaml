@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#212
+phase: 00-intake
+created: "2026-10-05T15:48:15Z"
+schema_version: "1.0"
+runner_version: dev+09e2aa6
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'An audit script read each declared test-report''s own result field, found seventeen of eighteen empty, and suggested the result half of G-Test could not be implemented without re-judging the trail. The probe showed the opposite: gate verify at exit 0, because those items are pending and their results arrive through evidence/attached.yaml, which G-Build''s existing path already reads. The script counted the field the artifact carries; the gate reads the field plus the attachment, and the two answers pointed in opposite directions.'
+      proposal: 'Where a check''s input can arrive by more than one path, a script over the artifacts is a hypothesis and the gate is the measurement. Build the check and run gate verify; in this repository that is cheap, and it was the step that inverted both of #212''s premises.'
+      target: CLAUDE.md

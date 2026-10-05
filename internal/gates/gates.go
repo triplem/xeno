@@ -69,7 +69,7 @@ var table = []spec{
 	{"G-Freshness", 0, freshness},
 	{"G-Evidence", 3, evidence},
 	{"G-Build", 3, build},
-	{"G-Test", 4, notImplemented},
+	{"G-Test", 4, testReport},
 	{"G-Rules", 0, rulesGate},
 	{"G-Policy", 0, policy},
 	{"G-Complete", 5, completeInReview},
@@ -1388,7 +1388,42 @@ func attachedResult(where, label, res string) []model.Finding {
 // against it, so a spelling nobody defined cannot reach this gate again.
 const BuildKind = "build-log"
 
+// TestKind is the kind G-Test reads, for BuildKind's reason and with its history: a spelling
+// written into a comparison rather than named is one nothing checks, and `build` matched no
+// conformant declaration for as long as that was how G-Build was written. G-Schema judges a
+// value against model.EvidenceKinds, so this is the gate's end of a set defined there.
+const TestKind = "test-report"
+
 func build(c Ctx) model.Check {
+	return declaredResults(c, BuildKind, "build", "fix the build and let the pipeline produce a new result")
+}
+
+// testReport is the result half of section 7's G-Test row, "declared test result successful".
+//
+// The other half of that row, "mapping of acceptance criteria complete", has no reader and is
+// not implemented here. It needs an acceptance criterion to be identifiable so that a gate can
+// say the mapping covers it, and nothing identifies one: 46 of 55 P1 artifacts in this trail
+// carry no numbered criteria, so a completeness check would re-judge most of the trail and
+// would first need a numbering convention, which is an addition to section 9 and so a person's
+// commit. #212 recorded the measurement and docs/clause-readers.md carries the gap, because a
+// green G-Test now means half of its row rather than all of it.
+func testReport(c Ctx) model.Check {
+	return declaredResults(c, TestKind, "test report", "fix the suite and let the pipeline produce a new result")
+}
+
+// declaredResults is what G-Build and G-Test both are: the declared results of one kind,
+// compared against pass, with the pipeline rather than the artifact owning the repair.
+//
+// One body because the two gates differ by a constant and two strings; the repair is each
+// caller's because a build and a suite are fixed in different places, and G-Build's own wording
+// is unchanged by this. Section 7 asks each for a
+// declared result and the plan is explicit that neither runs anything itself, so the pending
+// path, the attachment and the `pending` result are one rule and not two that have to agree.
+//
+// A pending item whose artifact has not arrived is pending and not a failure (A60): it owes no
+// result yet, and reading the declaration's empty result as a non-pass would fail seventeen
+// sealed artifacts in this trail — which an audit script predicted and the probe disproved.
+func declaredResults(c Ctx, kind, label, repair string) model.Check {
 	items, err := Collect(c)
 	if err != nil {
 		return result(nil)
@@ -1396,7 +1431,7 @@ func build(c Ctx) model.Check {
 	var fs []model.Finding
 	pending := false
 	for _, r := range items {
-		if r.Decl.Kind != BuildKind {
+		if r.Decl.Kind != kind {
 			continue
 		}
 		res := r.Decl.Result
@@ -1408,7 +1443,7 @@ func build(c Ctx) model.Check {
 			res = r.Attached.Result
 		}
 		if res != "pass" {
-			fs = append(fs, finding(c.phaseRel(c.Phase)+"/output.md", "build "+r.Decl.Job+" did not succeed", "fix the build and let the pipeline produce a new result"))
+			fs = append(fs, finding(c.phaseRel(c.Phase)+"/output.md", label+" "+r.Decl.Job+" did not succeed", repair))
 		}
 	}
 	ch := result(fs)

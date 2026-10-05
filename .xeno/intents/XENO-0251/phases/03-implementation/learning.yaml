@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#212
+phase: 03-implementation
+created: "2026-10-05T16:08:19Z"
+schema_version: "1.0"
+runner_version: dev+97d07da.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'This intent added a reader for half a clause and wrote the row in docs/clause-readers.md as part of the same commit. #229, two intents earlier, added a reader for part of a clause that already has a row in that table and did not touch it, so line 84 still names only G-Questions for a clause that is now read by G-Schema''s shape check and by the writer. The audit document is only as current as the intent that last remembered it exists.'
+      proposal: An intent that adds, removes or changes what reads a normative clause updates that clause's row in docs/clause-readers.md in the same commit, and says so in its changes section. The document is a dated measurement by construction, so the only thing that keeps it from being wrong is each intent treating its own row as part of the work rather than as documentation about it.
+      target: CLAUDE.md
