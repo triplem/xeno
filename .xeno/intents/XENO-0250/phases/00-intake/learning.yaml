@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#229
+phase: 00-intake
+created: "2026-10-05T15:20:56Z"
+schema_version: "1.0"
+runner_version: dev+325b27a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A stricter check in QuestionShape was assumed to affect only intents that reached P5, because G-Questions runs from P5. It is reached through phaseResult and therefore through G-Schema, which runs from P0, so the stricter check reached every artifact in the trail and turned a sealed pre-M0 verdict red: gate verify reported DIVERGENT XENO-3 00-intake and exited 1. The gate table''s From column says when a gate runs and says nothing about which gates call a shared shape function.'
+      proposal: Before adding a check to a shared shape function, find its callers rather than the gate it is named after, and then run gate verify over the whole trail. A check's reach is its callers' reach, and in this repository the cost of guessing is a sealed verdict that cannot be rewritten.
+      target: CLAUDE.md

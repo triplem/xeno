@@ -61,7 +61,11 @@ func (r *Runner) RecordQuestion(key, phase string, entry []byte) (*model.Questio
 		used = append(used, e.Key)
 	}
 	q.Key = nextExchangeID("Q", used)
-	if err := shapeRefusal(gates.QuestionShape(
+	// QuestionAsked and not QuestionShape: the writer requires the recommendation section 8
+	// asks for, and the gate does not, because a check added to the gate's half is applied to
+	// every artifact in the trail and one sealed question fails it (#229). The asymmetry is
+	// deliberate and QuestionShape's comment carries the measurement.
+	if err := shapeRefusal(gates.QuestionAsked(
 		model.PhaseDir(key, phase)+"/output.md", model.Output{OpenQuestions: []model.Question{q}})); err != nil {
 		return nil, err
 	}

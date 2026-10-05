@@ -687,12 +687,25 @@ func directoryFindings(c Ctx, dir string) []model.Finding {
 	return fs
 }
 
-// A question carries two to four options plus the free entry, or states that none
-// were found. It never carries two invented ones to satisfy this check.
+// A question carries two to four options plus the free entry, each option saying what taking
+// it leads to, or states that none were found. It never carries two invented ones to satisfy
+// this check.
 //
 // Exported because the command that writes a question refuses on these checks before the
 // write rather than leaving them to be reported afterwards, and a second opinion about the
 // shape of a question would be a second definition of one (#188).
+//
+// **This is the gate's half of section 8 and not all of it.** The section also asks for "the
+// agent's recommendation with a reason", and the recommendation is checked by QuestionAsked,
+// which only the writer calls. That is not an oversight and moving it here breaks the trail:
+// this function is reached through phaseResult and so through G-Schema, which runs from P0,
+// so a check added here is applied to every artifact ever written. XENO-3's Q-2 recommends no
+// option — three options, each with a consequence, none marked — and with the check here
+// `xeno gate verify` reports "DIVERGENT XENO-3 00-intake: committed status green, recomputed
+// red" and exits 1. What is sealed is never rewritten, so the choice was to release that
+// finding on a pre-M0 verdict or to enforce the clause on questions written from now on, and
+// #229 took the second. The reason for the recommendation has no field at all, which is a
+// specification change and so a person's.
 func QuestionShape(file string, o model.Output) []model.Finding {
 	var fs []model.Finding
 	keys := map[string]bool{}
@@ -708,17 +721,64 @@ func QuestionShape(file string, o model.Output) []model.Finding {
 		if q.NoOptions {
 			continue
 		}
-		proper, free := 0, 0
+		proper, free, bare := 0, 0, 0
 		for _, op := range q.Options {
+			// The free entry carries no consequence, and cannot: it stands for an answer
+			// nobody has written yet. Section 8 asks for "two to four options with their
+			// consequence" and then for the free entry "as a further option", so it is
+			// outside the set the consequence is asked of.
 			if op.Free {
 				free++
-			} else {
-				proper++
+				continue
+			}
+			proper++
+			if strings.TrimSpace(op.Consequence) == "" {
+				bare++
 			}
 		}
 		if proper < 2 || proper > 4 || free != 1 {
 			fs = append(fs, finding(file, fmt.Sprintf("question %s needs two to four options and one free entry, has %d and %d", q.Key, proper, free),
 				"offer the options found, or state no_options: true where there are none"))
+		}
+		if bare > 0 {
+			fs = append(fs, finding(file, fmt.Sprintf("question %s has %d of %d options with no consequence", q.Key, bare, proper),
+				"say what taking each one leads to; an option without a consequence is a label"))
+		}
+	}
+	return fs
+}
+
+// QuestionAsked is what the writer requires of a question being asked, which is QuestionShape
+// plus the recommendation section 8 wants: "the agent's recommendation with a reason".
+//
+// It calls QuestionShape rather than restating it, so the half the gate also reads cannot
+// drift between the two. The extra half is here and not there because the gate judges every
+// artifact in the trail and one sealed question fails it — QuestionShape's own comment carries
+// the measurement, and a reader tempted to move this up should read that first.
+//
+// Exactly one, so a question recommending nothing and a question recommending three options are
+// both refused: section 8 says "the agent's recommendation", and three recommendations is no
+// recommendation. A free entry may carry it, and recommending one is its author's business —
+// what the section forbids is handing the whole decision back, and an agent that recommends the
+// free entry has done exactly that out loud rather than by omission.
+//
+// A question stating no_options is exempt, here as in QuestionShape, because the exception
+// section 8 names is a question with no options to offer and a recommendation needs one.
+func QuestionAsked(file string, o model.Output) []model.Finding {
+	fs := QuestionShape(file, o)
+	for _, q := range o.OpenQuestions {
+		if q.NoOptions {
+			continue
+		}
+		recommended := 0
+		for _, op := range q.Options {
+			if op.Recommended {
+				recommended++
+			}
+		}
+		if recommended != 1 {
+			fs = append(fs, finding(file, fmt.Sprintf("question %s recommends %d of its options", q.Key, recommended),
+				"recommend exactly one, and say in the question why that one"))
 		}
 	}
 	return fs
