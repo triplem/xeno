@@ -147,7 +147,11 @@ func (r *Runner) createMode(res *InitResult, rel, content string, mode fs.FileMo
 // only appends lines that are not there. A .gitignore belongs to the project.
 func (r *Runner) appendGitignore(res *InitResult) error {
 	const rel = ".gitignore"
-	want := []string{".xeno/local/"}
+	// The default location and not model.LocalDir's answer, which is the one site #205 left
+	// unresolved on purpose: a .gitignore describes this repository, not where a person
+	// redirected their own state with XENO_PLUGIN_DATA. A directory outside the tree needs no
+	// entry, and one inside it is covered by this.
+	want := []string{model.LocalDefault + "/"}
 	existing := ""
 	if b, err := os.ReadFile(r.abs(rel)); err == nil {
 		existing = string(b)

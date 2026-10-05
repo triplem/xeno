@@ -15,6 +15,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/triplem/xeno/internal/cost"
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/hashing"
@@ -3189,5 +3190,64 @@ func TestTheMergeCheckRefusesWithoutBothEndsOfTheRange(t *testing.T) {
 	}
 	if _, err := f.r.Completeness("no-such-ref", "HEAD"); err == nil {
 		t.Error("a ref that does not resolve passed as a clean comparison")
+	}
+}
+
+// ---- #205: the local data location is read
+
+// Criterion 6: setting XENO_PLUGIN_DATA moves the run marker and phase.env, which is what the
+// entry point's export has been promising since it was written. Nothing under there is covered
+// by artifacts_hash, which is why reading the variable cannot make a verdict depend on the
+// environment — the distinction from XENO_PLUGIN_ROOT that A89 removed.
+func TestTheLocalDataLocationMovesWithTheVariable(t *testing.T) {
+	f := newFixture(t)
+	elsewhere := t.TempDir()
+	t.Setenv(model.LocalDataEnv, elsewhere)
+
+	f.must(f.r.Start(key, model.Phases[0]))
+
+	for _, rel := range []string{
+		filepath.Join("runs", key, model.Phases[0]+".lock"),
+		PhaseEnvFile,
+	} {
+		if !fm.Exists(filepath.Join(elsewhere, rel)) {
+			t.Errorf("%s was not written under the redirected location", rel)
+		}
+		if fm.Exists(filepath.Join(f.root, model.LocalDefault, rel)) {
+			t.Errorf("%s was written under the default as well", rel)
+		}
+	}
+}
+
+// Criterion 7, end to end rather than over the resolver: with the variable unset the paths are
+// exactly where every existing repository already has them.
+func TestWithTheVariableUnsetTheLocalPathsDoNotMove(t *testing.T) {
+	f := newFixture(t)
+	t.Setenv(model.LocalDataEnv, "")
+
+	f.must(f.r.Start(key, model.Phases[0]))
+
+	for _, rel := range []string{
+		filepath.Join("runs", key, model.Phases[0]+".lock"),
+		PhaseEnvFile,
+	} {
+		if !fm.Exists(filepath.Join(f.root, model.LocalDefault, rel)) {
+			t.Errorf("%s is not under %s, where it has always been", rel, model.LocalDefault)
+		}
+	}
+}
+
+// The enforcement report and the ledger resolve through the same function, so one setting moves
+// all four files rather than two of them.
+func TestTheReportAndTheLedgerResolveToTheSameDirectory(t *testing.T) {
+	elsewhere := t.TempDir()
+	t.Setenv(model.LocalDataEnv, elsewhere)
+	root := t.TempDir()
+
+	if got, want := ReportPath(root), filepath.Join(elsewhere, ReportFile); got != want {
+		t.Errorf("the enforcement report resolves to %s, want %s", got, want)
+	}
+	if got, want := cost.LedgerPath(root), filepath.Join(elsewhere, cost.LedgerFile); got != want {
+		t.Errorf("the ledger resolves to %s, want %s", got, want)
 	}
 }

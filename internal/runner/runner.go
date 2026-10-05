@@ -86,13 +86,18 @@ func (r *Runner) abs(rel string) string { return filepath.Join(r.Root, rel) }
 func (r *Runner) stamp() string         { return r.Now().Format(time.RFC3339) }
 
 func (r *Runner) marker(key, phase string) string {
-	return r.abs(filepath.Join(".xeno/local/runs", key, phase+".lock"))
+	return model.LocalPath(r.Root, "runs", key, phase+".lock")
 }
 
 // phaseEnv is where the running phase is written for whatever makes model requests. It
 // lives beside the run marker, under the gitignored local directory (A9), because it
 // describes a machine's current state and not the trail.
-func (r *Runner) phaseEnv() string { return r.abs(".xeno/local/phase.env") }
+// PhaseEnvFile is the name of the file naming the open phase, inside the local data location.
+// Exported because `xeno cost turn` resolves the same file from the command and the two used to
+// write the path as separate literals, which is half of what #205 was about.
+const PhaseEnvFile = "phase.env"
+
+func (r *Runner) phaseEnv() string { return model.LocalPath(r.Root, PhaseEnvFile) }
 
 // PhaseEnv is what a harness wrapper or a hook sources so that a model request can carry
 // the intent and the phase it belongs to. The plan asks `phase start` to export them; a

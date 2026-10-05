@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#205
+phase: 03-implementation
+created: "2026-10-05T16:49:19Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Turning an exported path constant into a resolved path broke a caller the design had not looked for: printEnforcement printed runner.ReportPath and had no repository root in scope, because a constant needs no context and a function does. The design listed the files holding the literal and not the places that read the constant, and those are different sets.'
+      proposal: 'When a constant becomes a function, list its readers as well as the places that duplicate its value.  for the identifier and not only for the string: this change''s string appeared in six places and the identifier in two more, and one of those two was the only compile error.'
+      target: CLAUDE.md

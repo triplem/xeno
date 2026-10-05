@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#205
+phase: 04-verification
+created: "2026-10-05T16:52:32Z"
+schema_version: "1.0"
+runner_version: dev+9eec4ed.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A learning recorded in P3 lost a word. The proposal was passed as a double-quoted shell argument containing a backquoted tool name, so the shell treated it as a command substitution, ran the word as a command, and substituted its empty output; the sentence now begins "for the identifier". The artifact was already judged when it was noticed, so the choice was to rewrite a sealed artifact, re-judge a verdict over a typo, or leave it. It was left and said in P4.
+      proposal: Prose passed to a command goes through single quotes or a heredoc, never double quotes, because backquotes and $ are live in double quotes and this project writes prose that contains both. Every observation and proposal in this trail names symbols and paths; the artifacts are the record, and a record that loses a word silently is worse than a command that refuses.
+      target: CLAUDE.md

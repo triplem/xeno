@@ -23,11 +23,21 @@ import (
 	"strings"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/triplem/xeno/internal/model"
 )
 
-// Ledger is where turns are recorded, relative to a repository root. It lies under .xeno/local/
-// because it is a job status and never a commit (A39).
-const Ledger = ".xeno/local/cost-ledger.yaml"
+// LedgerFile is the name of the turn ledger, inside the local data location: it is a
+// machine's own record and not part of the trail, so it lies outside artifacts_hash and is
+// gitignored with the rest of that directory.
+//
+// A file name rather than a path from #205. The directory is XENO_PLUGIN_DATA's to decide and
+// model.LocalDir resolves it, so this package and the runner cannot disagree about where a
+// repository's local data is.
+const LedgerFile = "cost-ledger.yaml"
+
+// LedgerPath is the ledger of one repository, resolved.
+func LedgerPath(root string) string { return model.LocalPath(root, LedgerFile) }
 
 // NoPhase is what a turn spent with no phase open records.
 const NoPhase = "none"
@@ -97,7 +107,7 @@ func TranscriptTotals(path string) (Totals, error) {
 
 // Append adds one line to the ledger, creating it where it does not exist.
 func Append(root string, turn Turn) error {
-	path := filepath.Join(root, Ledger)
+	path := LedgerPath(root)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -115,7 +125,7 @@ func Append(root string, turn Turn) error {
 
 // Read returns the ledger, or nothing where there is none.
 func Read(root string) ([]Turn, error) {
-	b, err := os.ReadFile(filepath.Join(root, Ledger))
+	b, err := os.ReadFile(LedgerPath(root))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
