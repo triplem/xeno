@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#201
+phase: 03-implementation
+created: "2026-10-05T12:55:08Z"
+schema_version: "1.0"
+runner_version: dev+325b27a.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Three intents in a row wrote their implementation between P2''s verdict and phase start --phase 03, so P3''s recorded elapsed time measured writing two sections rather than doing the work, and #117''s figures said so three times without the habit changing. Opening the phase first costs nothing and was simply not done; the phase exists to hold the work and was being used to describe work already finished.'
+      proposal: phase start comes before the work the phase is about, not after. The sequence is already what the runner's next step suggests, and the figure it produces is only a measurement of anything if the phase was open while the work happened. Where an intent reports its proportionality figures, an elapsed time taken from a phase opened on finished work should be marked as not measuring the phase.
+      target: CLAUDE.md

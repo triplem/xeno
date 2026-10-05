@@ -1,0 +1,24 @@
+intent: github.com/triplem/xeno#201
+phase: 00-intake
+created: "2026-10-05T12:47:10Z"
+schema_version: "1.0"
+runner_version: dev+f2f65d5.dirty
+plugin_version: 0.0.0-dev
+include:
+    - internal/plugin/plugin.go
+    - internal/plugin/embedded.go
+    - internal/plugin/plugin_test.go
+    - scripts/plugin-digest.go
+    - .github/workflows/release.yml
+    - internal/gates/gates.go
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+links:
+    - component: internal/plugin
+      docs: docs/process-definition.md
+    - component: internal/gates
+      docs: docs/process-definition.md
+budget:
+    files: 12
+    bytes: 500000

@@ -50,6 +50,12 @@ var ExpectedDigest = ""
 // rules/given/builtin/ and secrets.yaml already are.
 const Dir = ".xeno/plugin"
 
+// ShippedDir is where the release copies the vendored tree so that the binaries carry it,
+// relative to the repository root. It is declared beside Dir because the two paths are the
+// subject of one check: the digest is taken over the tree at Dir and the binaries carry the
+// tree at ShippedDir, and #201 is what happens when nothing compares them.
+const ShippedDir = "internal/plugin/embedded/plugin"
+
 // manifestPath is where the client reads a plugin's manifest from, which A77 settled
 // against section 13's tree after checking the installed client:
 // <root>/.claude-plugin/plugin.json.
@@ -87,21 +93,61 @@ func Version(root string) string {
 //
 // **The definition.** Every file under the plugin directory, at any depth, with no
 // exclusions. Each contributes one line, "<sha256 of its normalised content>  <path
-// relative to the repository root, slash separated>\n", and the lines are sorted by
+// relative to the plugin directory, slash separated>\n", and the lines are sorted by
 // path in byte order. The hash is the sha256 of that stream. It is Appendix B's
 // artifacts_hash computation with the descent that one deliberately omits, because a
 // phase directory's subdirectory is evidence and a plugin's subdirectories are the
 // plugin.
 //
-// Symbolic links are not followed and directories contribute nothing of their own, so
-// an empty directory is invisible to it — which is what git records too, and the tree
-// this hashes is one git carries.
-func Hash(root string) string {
-	dir := filepath.Join(root, Dir)
-	if _, err := os.Stat(dir); err != nil {
+// The path is relative to the plugin directory and not to the repository root, which is a
+// change #201 made and which changes the value for identical bytes. Nothing compares a
+// digest across that change: a released binary carries the digest taken at its own release
+// together with the code that recomputes it, so each release is consistent with itself, and
+// no digest is recorded anywhere in this repository. A96 says so, because a number that
+// moved for no visible reason is read as a bug by whoever meets it first.
+func Hash(root string) string { return HashTree(filepath.Join(root, Dir)) }
+
+// HashTree is the same computation over a tree at any path, with each line's path relative
+// to dir rather than to a repository root.
+//
+// That relativity is the whole of why this function exists separately. The release takes the
+// digest over the tree at Dir and the binaries carry the tree at ShippedDir, and with paths
+// relative to the repository root the same bytes at those two places hash differently by
+// construction — so the two trees could not be compared with the definition G-Supply uses,
+// and were compared with nothing (#201). Relative to the tree root, a tree hashes to what it
+// is rather than to where it sits, and one definition serves both.
+//
+// Empty where dir is not there, which is Hash's contract for a repository with no vendored
+// plugin and is what G-Supply reads as a tree it cannot judge. A hash of nothing would
+// compare unequal instead, which is a verdict where there was none.
+func HashTree(dir string) string {
+	lines, err := treeLines(dir)
+	if err != nil {
 		return ""
 	}
-	type line struct{ path, sum string }
+	var stream strings.Builder
+	for _, l := range lines {
+		fmt.Fprintf(&stream, "%s  %s\n", l.sum, l.path)
+	}
+	return hashing.Hex([]byte(stream.String()))
+}
+
+// line is one file of a tree: its path relative to the tree root, slash separated, and the
+// hash of its normalised contents.
+type line struct{ path, sum string }
+
+// treeLines walks a tree into sorted lines, which is what both the hash and the comparison
+// read. Normalise is applied per file because the digest has to agree across a Windows
+// checkout and a Linux runner, and anything comparing trees has to inherit that rather than
+// compare raw bytes.
+//
+// Symbolic links are not followed and directories contribute nothing of their own, so an
+// empty directory is invisible to it — which is what git records too, and the tree this
+// hashes is one git carries.
+func treeLines(dir string) ([]line, error) {
+	if _, err := os.Stat(dir); err != nil {
+		return nil, err
+	}
 	var lines []line
 	err := filepath.WalkDir(dir, func(abs string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -110,7 +156,7 @@ func Hash(root string) string {
 		if d.IsDir() || !d.Type().IsRegular() {
 			return nil
 		}
-		rel, err := filepath.Rel(root, abs)
+		rel, err := filepath.Rel(dir, abs)
 		if err != nil {
 			return err
 		}
@@ -122,12 +168,52 @@ func Hash(root string) string {
 		return nil
 	})
 	if err != nil {
-		return ""
+		return nil, err
 	}
 	sort.Slice(lines, func(i, j int) bool { return lines[i].path < lines[j].path })
-	var stream strings.Builder
-	for _, l := range lines {
-		fmt.Fprintf(&stream, "%s  %s\n", l.sum, l.path)
+	return lines, nil
+}
+
+// Differences names what two trees disagree about, sorted, and is empty where they agree.
+//
+// It decides nothing: equality is the hashes', so that the check and G-Supply cannot differ
+// about what makes two trees the same. This exists so that a refusal can be acted on. The
+// defect #201 describes ends with an adopter holding two hex strings and no way forward, and
+// a fix whose own failure said only "the digests differ" would have reproduced it one level
+// up.
+func Differences(a, b string) []string {
+	al, aerr := treeLines(a)
+	bl, berr := treeLines(b)
+	switch {
+	case aerr != nil && berr != nil:
+		return []string{"neither " + a + " nor " + b + " is a tree"}
+	case aerr != nil:
+		return []string{a + " is not there"}
+	case berr != nil:
+		return []string{b + " is not there"}
 	}
-	return hashing.Hex([]byte(stream.String()))
+	am := make(map[string]string, len(al))
+	for _, l := range al {
+		am[l.path] = l.sum
+	}
+	bm := make(map[string]string, len(bl))
+	for _, l := range bl {
+		bm[l.path] = l.sum
+	}
+	var out []string
+	for _, l := range al {
+		switch sum, ok := bm[l.path]; {
+		case !ok:
+			out = append(out, "only in "+a+": "+l.path)
+		case sum != l.sum:
+			out = append(out, "contents differ: "+l.path)
+		}
+	}
+	for _, l := range bl {
+		if _, ok := am[l.path]; !ok {
+			out = append(out, "only in "+b+": "+l.path)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
