@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#239
+phase: 05-review
+created: "2026-10-05T09:03:10Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The P5 review checklist is a review_checklist list in output.md''s frontmatter, required by G-Policy and answered in every intent in this repository, and no command writes it. Every other artifact field has one: section set, learning record, decision record, assumption record, evidence declare. So the one field a gate refuses the phase without is the one field written by editing a sealed-on-finish artifact by hand, which is the practice this project otherwise forbids.'
+      proposal: 'The checklist wants a writer, as the learning record got one in #195 and the context scope in #217: xeno review answer RULE --result met|deviation|not-applicable --note TEXT, appending an entry and refusing a rule outside the effective set. Until it exists, the hand edit is unavoidable rather than permitted, and the difference is worth stating where the ban on hand edits is stated.'
+      target: CLAUDE.md

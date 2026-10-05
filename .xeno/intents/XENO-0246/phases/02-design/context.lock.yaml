@@ -1,0 +1,71 @@
+intent: github.com/triplem/xeno#239
+phase: 02-design
+created: "2026-10-05T08:52:37Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: d81d1f2cc1663b76f43fe799c5c24569288c4f71ee79468e8e9466336f4dbc04
+evidence_source: ci
+template_source: plugin
+repo_commit: 3f5ad34b61cb0ae20b48951a6741dad1c1ca0d0e
+files:
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: ASSUMPTIONS.md
+      sha256: b5f33772690246f565b3cff36d26475cc6faf503003985e6922652d9c62a69e7
+      bytes: 84107
+    - path: SUPPLY-CHAIN.md
+      sha256: 94a2960be1bb7b544378a9d39f26da9989bbf473e8ab22f5df7a3421733f40e9
+      bytes: 9564
+    - path: CLAUSE-READERS.md
+      sha256: bbf75bdbfb4dff7d0a6e138afc0f0adbad94193cf8a7206c54434bb75a36ba25
+      bytes: 9265
+    - path: M0.md
+      sha256: fe8475d148522351a390690acaf4c390be36cb599d17739710dd8cc2b56d2578
+      bytes: 5311
+    - path: CLAUDE.md
+      sha256: 5112c1009da659d207d492e9b728c1b6c5d8183fc65b0435489e30690ae7d1e8
+      bytes: 4173
+    - path: CONTRIBUTING.md
+      sha256: 562492a10b8e86f76affe6341b7da4a678d4b882f2ce0b0cf96738431576658a
+      bytes: 7616
+    - path: README.md
+      sha256: b6b94905c8cbefd9028e26c8bccaf4a7a983b3bae18888c2e76d23f203aab8cb
+      bytes: 11320
+    - path: .github/workflows/audit.yml
+      sha256: 01da2a5f53dff09a3be2f3b98871b04be52183533bc6c60be86abb28fc817d32
+      bytes: 6052
+    - path: .github/workflows/gitleaks.yml
+      sha256: d51c04ab9e50b5fcb27d26eb54870b72d731c95733505d957695ee4b68170f8e
+      bytes: 5309
+    - path: .github/workflows/release.yml
+      sha256: d2f7f9a3615af79b125491979a63bbf3a49d5278af9632f6a5fb321f2e363203
+      bytes: 10592
+    - path: .github/workflows/semgrep.yml
+      sha256: c4c43cd61e8f22bd484015982fdc066c3c9e4e80b59b9635781863f31148afb1
+      bytes: 4735
+    - path: .github/workflows/trivy.yml
+      sha256: 0b9e1818788880fc8825ee96acf2af3953ffe0067e4653c7617dc63691695eee
+      bytes: 6340
+    - path: .github/workflows/xeno.yml
+      sha256: 7673b1ba2169759a144e3ba879667d99f87dbb465076340dd1a4f33dcfa988de
+      bytes: 13694
+    - path: internal/runner/exchange.go
+      sha256: 4276a657d9b0b4f06ad48d33a0464772c8b57fe09f91730288fed0b42831151b
+      bytes: 9070
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 69f5a05767c1a6dd0260f05d714ff11d757e5aef6f4358411f66d0848f8486da

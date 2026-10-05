@@ -2,7 +2,7 @@
 # no agent. Read only permissions, no secrets, and pull_request rather than
 # pull_request_target, so a pull request from a fork never runs with write access.
 # Every action is pinned to a commit sha and every tool to an exact version;
-# SUPPLY-CHAIN.md says which and why.
+# docs/supply-chain.md says which and why.
 name: xeno
 
 on:

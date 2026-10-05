@@ -1,5 +1,8 @@
 # The M0 gate job: Xeno verifies its own repository
 
+This is a record of how M0 was reached once, in the tree and with the tooling of the
+day, not a procedure to follow now.
+
 The implementation plan uses M0 for two things. In the milestone table it is the gate
 job, the point from which Xeno checks its own repository; that is what this guide
 builds. In section 6 it is the walking skeleton, one intent, one phase and one agent end
@@ -22,7 +25,9 @@ path to move with it. A18 is void.
   docs/implementation-plan.md     renamed from xeno-implementation-plan-v1.md
   docs/orchestrator-evaluation.md
   docs/v2-delta.md                renamed from v2-delta-against-v1.md
-  cmd/  internal/  vendor/  go.mod  README.md  ASSUMPTIONS.md  .gitignore
+  docs/assumptions.md             renamed from ASSUMPTIONS.md
+  docs/m0-gate-job.md             this guide, renamed from M0.md
+  cmd/  internal/  vendor/  go.mod  README.md  .gitignore
 ```
 
 Build once locally:
@@ -159,12 +164,12 @@ green, the gate job stands. The walking skeleton does not yet.
 ## From here
 
 Each work package is opened as an intent and its intake runs through Xeno; the rest of
-the work is recorded by hand in `ASSUMPTIONS.md`, as before. That is less than every
-change running through Xeno, and deliberately so: G-Freshness checks only its first
-half until WP8 (A6), so no phase beyond P0 runs in this process before that gap is
-closed, and the hand kept record ends with the walking skeleton rather than with this
-job. A red verdict stops the next phase (A12), which is where proportionality will show
-itself first.
+the work is recorded by hand in `docs/assumptions.md`, as before. That is less than
+every change running through Xeno, and deliberately so: G-Freshness checks only its
+first half until WP8 (A6), so no phase beyond P0 runs in this process before that gap
+is closed, and the hand kept record ends with the walking skeleton rather than with
+this job. A red verdict stops the next phase (A12), which is where proportionality will
+show itself first.
 
 WP0 is the first such intent, `XENO-2`. Its intake is in the repository without
 `context.lock.yaml` and `gate.yaml`: replace `OWNER/REPO` in its files, write its

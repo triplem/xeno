@@ -1,0 +1,24 @@
+intent: github.com/triplem/xeno#239
+phase: 00-intake
+created: "2026-10-05T08:49:53Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34
+plugin_version: 0.0.0-dev
+include:
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - ASSUMPTIONS.md
+    - SUPPLY-CHAIN.md
+    - CLAUSE-READERS.md
+    - M0.md
+    - CLAUDE.md
+    - CONTRIBUTING.md
+    - README.md
+    - .github/workflows/*.yml
+    - internal/runner/exchange.go
+links:
+    - component: internal/runner
+      docs: docs/implementation-plan.md
+budget:
+    files: 20
+    bytes: 500000

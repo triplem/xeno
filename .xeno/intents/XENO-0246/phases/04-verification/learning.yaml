@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#239
+phase: 04-verification
+created: "2026-10-05T09:01:25Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Criterion 6 asked for exit 0 over 351 verdicts, the count before the move, and was written in P1 by an author who had just run gate verify on an unchanged tree. It is unsatisfiable by any intent that judges its own phases, because a verdict is written per judged phase: the count was 355 with four phases judged and will be 357 at P5. The criterion was wrong about the project''s own tooling in a way that reading the tool''s output once would have settled, and P1 was sealed before anyone noticed.'
+      proposal: An acceptance criterion stated as a count of something the intent itself produces names what the intent will add, or it is a criterion that fails on success. Where the number comes from running a command, run it once against the shape the intent will have at the end rather than the shape it has at the start.
+      target: CLAUDE.md

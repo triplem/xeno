@@ -25,7 +25,7 @@
 # without it.
 #
 # The binary is pinned by version and verified by checksum rather than taken from an
-# action, so nothing here runs code that was not named. SUPPLY-CHAIN.md says which and
+# action, so nothing here runs code that was not named. docs/supply-chain.md says which and
 # why.
 name: gitleaks
 

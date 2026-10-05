@@ -2,8 +2,8 @@
 
 The Xeno runner: hashing, gates, the phase sequence, evidence attachment, the digest and
 its secret filter, the cost record, the branch rules port and the symbol index reader.
-Built by hand before M0; the assumptions made on the way are in `ASSUMPTIONS.md` and
-want confirming, and what is built and what is not is the last two sections of it.
+Built by hand before M0; the assumptions made on the way are in `docs/assumptions.md`
+and want confirming, and what is built and what is not is the last two sections of it.
 
 The gate path makes no network call, which is the property the verdicts rest on.
 `xeno enforcement check` is the one command that does, because asking a host what it
@@ -93,10 +93,10 @@ there is no endpoint for it to leave towards.
 ## The trail in this repository
 
 `.xeno/intents/` holds Xeno's own process artifacts, in two shapes. The intents up to
-`XENO-0106` run P0 and stop there, which was deliberate rather than abandoned: `M0.md`
-runs one intake per work package and goes no further, so an intent whose P1 to P5 read
-`not-started` is complete for what it set out to record. `M0.md` has that reasoning and
-the sequence, `ASSUMPTIONS.md` has it as A20.
+`XENO-0106` run P0 and stop there, which was deliberate rather than abandoned:
+`docs/m0-gate-job.md` runs one intake per work package and goes no further, so an intent
+whose P1 to P5 read `not-started` is complete for what it set out to record. That guide
+has the reasoning and the sequence, and `docs/assumptions.md` has it as A20.
 
 From `XENO-0107` the intents run all six phases and finish green, which is what the
 second half of G-Freshness made judgeable (A6, #63): a later phase can be compared

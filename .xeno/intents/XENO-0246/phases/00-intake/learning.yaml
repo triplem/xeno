@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#239
+phase: 00-intake
+created: "2026-10-05T08:51:38Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Intake claimed no normative document governs where a non-normative document lives, which was true of the process definition and false of the plan: one line names ASSUMPTIONS.md. The claim was written before it was checked, and the check was a single grep over two files. Had it stayed unchecked, the move would have reported every reference corrected while leaving one broken in the document the agent may not edit, which is the one place a correction costs a person''s commit rather than a line in this one.'
+      proposal: 'A change that renames a path greps the normative documents for the old name before claiming they are untouched. The first standing rule makes a reference inside them categorically different from every other: it cannot be fixed in the same commit, so finding it late changes who has to act, not just what.'
+      target: CLAUDE.md

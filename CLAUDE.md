@@ -70,9 +70,9 @@ written down rather than absorbed.
 
 ## Where things are written down
 
-Assumptions and decisions taken while building the core: `ASSUMPTIONS.md`. Learnings do
-not go here or in this file. Section 10 routes them from a phase's `learning.yaml`
-through a merge request against the rule set, so that they take effect after review and
-not on being noticed.
+Assumptions and decisions taken while building the core: `docs/assumptions.md`.
+Learnings do not go here or in this file. Section 10 routes them from a phase's
+`learning.yaml` through a merge request against the rule set, so that they take effect
+after review and not on being noticed.
 
 This file is sent with every request of every session. Keep it short.

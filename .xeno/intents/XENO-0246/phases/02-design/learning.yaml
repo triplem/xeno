@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#239
+phase: 02-design
+created: "2026-10-05T08:54:22Z"
+schema_version: "1.0"
+runner_version: dev+3f5ad34
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The register ASSUMPTIONS.md opens with a banner saying the record is closed, that A77 is the last row, and that nothing is added here. A78 through A93 were added after that banner, by sixteen intents, including the four most recent documentation ones. Each of those intents read the banner, added a row anyway, and left the banner saying otherwise. The file that documents this project's unread rules opens with one.
+      proposal: 'Where a document states a rule about itself, the commit that breaks the rule either corrects the statement or records why it stands. A banner contradicted sixteen times is worse than no banner: a reader who believes it puts their row somewhere else, and a reader who does not stops believing the rest of the file.'
+      target: CLAUDE.md
