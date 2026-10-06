@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#235
+phase: 03-implementation
+created: "2026-10-06T15:22:22Z"
+schema_version: "1.0"
+runner_version: dev+8decfdc
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Three specification sentences were drafted in issue comments and approved there, and all three needed changing on contact with the document: a heading that would have deleted an existing sentence, a figure citing this repository where the specification cites none, and a placement that splits a two-paragraph argument. None was visible in the comment. What the person approved and what landed differed every time, in small ways that had to be reported afterwards.'
+      proposal: A drafted specification sentence is placed in the document and read in place before it is offered for approval, and the draft shown to the person is the diff rather than the prose. A comment can show what a clause says; only the file can show what it does to the clauses around it.
+      target: .xeno/config/rules/learned/project/a-drafted-clause-is-read-in-place.yaml

@@ -398,6 +398,7 @@ checks:
         file: phases/02-design/output.md
         cause: <text>
         next: <text>
+        advisory: true                  # absent in the ordinary case
         decision:                       # absent while undecided
           type: <approved|overridden>
           by: <person>
@@ -436,6 +437,19 @@ The four values are not interchangeable. `red` means nobody has decided anything
 it; the finding stays failed, the approval is the governance statement this process
 exists to record. `overridden` means somebody took the merge first and still owes the
 artifacts, which is why it carries an obligation and `approved` does not.
+
+**An advisory finding does not fail its check.** `advisory` marks a finding that is
+reported rather than held against the phase: the check carrying it is `pass`, the
+phase is `green`, and the finding is in `gate.yaml` with its id, its cause and its
+remedy like any other. Where a check asks for something nobody has experience with
+yet, blocking against the answer would be the wrong way round, and a check that fires
+with nothing to do about it is one people learn to route around. What the field
+prevents is the alternative, which is leaving the measurement out and letting the
+number become decoration.
+
+It is the exception and stays one. A finding is the thing that fails, and an advisory
+one is readable only because it is rare; the clause that asks for it says so where the
+check is described, and nothing else writes the field.
 
 **Finding ids are stable across runs.** The runner rewrites `gate.yaml` on every run
 and carries decisions forward, so an id must not depend on the run. It is a hash over
@@ -616,7 +630,8 @@ budget:
 ```
 
 G-Schema validates the profile like any other artifact, and reports a finding where the
-recorded context exceeded the budget. That is deliberately a finding and not a red gate
+recorded context exceeded the budget. The finding is `advisory`, so G-Schema stays
+`pass` and the phase stays green. That is deliberately a finding and not a red gate
 in the sense of stopping work: it is visible, it can be decided like any other finding,
 and blocking against a number nobody has experience with yet would be the wrong way
 round. What it prevents is the budget quietly becoming decoration.
