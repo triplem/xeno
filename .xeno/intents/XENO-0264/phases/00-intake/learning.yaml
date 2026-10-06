@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 00-intake
+created: "2026-10-06T17:29:07Z"
+schema_version: "1.0"
+runner_version: dev+d3983d3
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The first attempt to measure whether a template bump costs the strings_hash reader used a corrupted value of sixty-four digits. YAML types that as a number, raw["strings_hash"].(string) fails, and hashes() skips the field as absent — so both the bumped and unbumped runs looked green and the experiment appeared to show no cost. Changing the value to one containing letters showed the opposite: red before the bump, green after.'
+      proposal: A fixture value standing in for a hash contains letters. Sixty-four digits is a valid sha256 by shape and is a YAML number by type, so it exercises a different path from the one under test — and the two are indistinguishable from the outside, because both produce no finding.
+      target: .xeno/config/rules/learned/project/a-fixture-hash-contains-letters.yaml

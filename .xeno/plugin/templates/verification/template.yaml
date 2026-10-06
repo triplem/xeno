@@ -2,7 +2,7 @@
 # structure puts its own under .xeno/config/templates/verification/, which beats this
 # one for that id alone and leaves the rest of the set in place.
 id: verification
-version: 1.0.0
+version: 1.1.0
 phase: 04-verification
 sections:
   - { id: test-mapping, required: true }

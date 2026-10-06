@@ -20,13 +20,16 @@ func isRefusal(err error) bool {
 	return errors.As(err, &ref)
 }
 
-// The question a person can act on: two options with their consequence, a recommendation,
-// and the free entry section 8 asks for always. Without a key, because the key is assigned.
+// The question a person can act on: two options with their consequence, a recommendation with
+// its reason, and the free entry section 8 asks for always. Without a key, because the key is
+// assigned. The reason is on the recommended option and not on the question, which is where
+// section 5 puts it so that a recommendation moved elsewhere takes it along.
 const askable = `text: which error behaviour?
 options:
   - text: fail fast
     consequence: the caller retries
     recommended: true
+    reason: a retry the caller can see is one it can decide about
   - text: retry internally
     consequence: the caller never sees it
   - text: something else, in the words of whoever decides
@@ -353,6 +356,51 @@ func TestAQuestionThatRecommendsNothingIsRefusedBeforeTheWrite(t *testing.T) {
 	}
 }
 
+// Section 8: "The reason belongs to the option the recommendation names and is carried there
+// rather than on the question." A recommendation with no reason is the half of that clause which
+// had no field until the section 8 commit and no reader until this one (#247, #258).
+func TestAQuestionWhoseRecommendationHasNoReasonIsRefused(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	noReason := strings.Replace(askable,
+		"    reason: a retry the caller can see is one it can decide about\n", "", 1)
+
+	_, err := f.r.RecordQuestion(key, "00-intake", []byte(noReason))
+	if !isRefusal(err) || !strings.Contains(err.Error(), "recommends an option with no reason") {
+		t.Fatalf("a recommendation with no reason was accepted: %v", err)
+	}
+}
+
+// And the reason is read on the option that carries the recommendation, not on any option: a
+// reason on the one nobody recommended leaves the clause unsatisfied. This is what the field being
+// on Option rather than on Question buys, and the only test that can tell the two designs apart.
+func TestAReasonOnAnotherOptionDoesNotSatisfyTheClause(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+	moved := strings.Replace(askable,
+		"    reason: a retry the caller can see is one it can decide about\n", "", 1)
+	moved = strings.Replace(moved,
+		"    consequence: the caller never sees it\n",
+		"    consequence: the caller never sees it\n    reason: a reason about the wrong option\n", 1)
+
+	_, err := f.r.RecordQuestion(key, "00-intake", []byte(moved))
+	if !isRefusal(err) || !strings.Contains(err.Error(), "recommends an option with no reason") {
+		t.Fatalf("a reason on an unrecommended option was accepted: %v", err)
+	}
+}
+
+// A question stating no_options is exempt, here as for the recommendation itself: section 8's
+// exception is a question with no options to offer, and a reason needs one.
+func TestAQuestionWithNoOptionsOwesNoReason(t *testing.T) {
+	f := newFixture(t)
+	f.started("00-intake")
+
+	if _, err := f.r.RecordQuestion(key, "00-intake",
+		[]byte("text: which error behaviour?\nno_options: true\n")); err != nil {
+		t.Fatalf("a question with no options was refused: %v", err)
+	}
+}
+
 // Three recommendations is no recommendation. Section 8 says "the agent's recommendation",
 // singular, and a list with everything starred has made no choice.
 func TestAQuestionThatRecommendsMoreThanOneIsRefused(t *testing.T) {
@@ -360,10 +408,10 @@ func TestAQuestionThatRecommendsMoreThanOneIsRefused(t *testing.T) {
 	f.started("00-intake")
 	two := strings.Replace(unrecommended,
 		"    consequence: the caller never sees it\n",
-		"    consequence: the caller never sees it\n    recommended: true\n", 1)
+		"    consequence: the caller never sees it\n    recommended: true\n    reason: because\n", 1)
 	two = strings.Replace(two,
 		"    consequence: the caller retries\n",
-		"    consequence: the caller retries\n    recommended: true\n", 1)
+		"    consequence: the caller retries\n    recommended: true\n    reason: because\n", 1)
 
 	_, err := f.r.RecordQuestion(key, "00-intake", []byte(two))
 	if !isRefusal(err) || !strings.Contains(err.Error(), "recommends 2 of its options") {

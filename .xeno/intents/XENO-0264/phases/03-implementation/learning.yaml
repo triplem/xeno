@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 03-implementation
+created: "2026-10-06T17:42:30Z"
+schema_version: "1.0"
+runner_version: dev+d3983d3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'P1''s criterion 9 said both new checks would fire on this intent''s own artifacts, because its P1 and P4 would render at the bumped template version. They do not: the template is bumped in the implementation phase, which runs after the requirements phase has rendered and sealed its artifact at the old version. The intent that introduces a forward-only anchor is structurally the one intent the anchor cannot judge.'
+      proposal: A criterion about an intent judging its own artifacts names the phase in which the mechanism lands, and is written only where that phase precedes the artifact being rendered. A convention carried by a shipped template or a rule set reaches the next intent, never the one that ships it.
+      target: .xeno/config/rules/learned/project/a-forward-only-anchor-skips-its-own-intent.yaml

@@ -587,7 +587,8 @@ func TestTheExchangeIsRecordedFromTheCommandLine(t *testing.T) {
 	}
 
 	entry := inputFile(t, "question.yaml", "text: which error behaviour?\noptions:\n  - text: fail fast\n"+
-		"    consequence: the caller retries\n    recommended: true\n  - text: retry internally\n"+
+		"    consequence: the caller retries\n    recommended: true\n"+
+		"    reason: a retry the caller can see is one it can decide about\n  - text: retry internally\n"+
 		"    consequence: the caller never sees it\n  - text: something else\n    free: true\n")
 	code, out, errw := invoke(t, "question", "record", "--root", root, "--intent", "PROJ-1",
 		"--phase", "00", "--file", entry, "--no-next")

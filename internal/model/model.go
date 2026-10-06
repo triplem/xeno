@@ -182,6 +182,12 @@ type Option struct {
 	Consequence string `yaml:"consequence,omitempty"`
 	Recommended bool   `yaml:"recommended,omitempty"`
 	Free        bool   `yaml:"free,omitempty"` // the free entry, an option like the others
+	// Section 8: "The reason belongs to the option the recommendation names and is carried
+	// there rather than on the question." Empty on every option but one, which the clause
+	// names as the cost: a recommendation that moves to another option takes its reason with
+	// it or QuestionAsked refuses, where a reason beside the question would go on describing
+	// the option it used to be about.
+	Reason string `yaml:"reason,omitempty"`
 }
 
 // Decision is an entry of the decisions section.

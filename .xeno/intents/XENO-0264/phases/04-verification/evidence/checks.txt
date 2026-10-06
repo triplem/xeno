@@ -1,0 +1,33 @@
+# checks over the two clauses' code, 2026-10-06
+## both checks firing end to end, on a scratch copy at the bumped templates
+P1 at requirements@1.1.0 with unnumbered criteria:
+  01-requirements: red / G-Schema fail
+  F-8e30a3 ...: acceptance-criteria carries no numbered criterion and requirements@1.1.0 requires a numbered list
+the same P1 with a numbered list: 01-requirements green / G-Schema pass
+
+P4 at verification@1.1.0 whose mapping names 1 and 3 of 1,2,3:
+  G-Test fail
+  F-8d9150 ...: test-mapping does not name acceptance criteria 2
+the same P4 naming all three in a table: G-Test pass
+the same P4 naming all three in prose:  G-Test pass
+
+## every assertion confirmed able to fail, by mutation
+  templateAtLeast made lexical            -> TestTenthMinorVersionIsLaterThanTheNinth fails
+  numberedCriteria ignoring the version   -> TestAtTheOldTemplateUnnumberedCriteriaAreNotReported fails
+  mappingComplete reporting nothing       -> TestAMappingThatMissesACriterionIsReported fails
+  namesNumber made a substring match      -> TestANumberIsNamedAsATokenAndNotAsASubstring fails
+
+## the trail is not re-judged
+gate verify:
+verified 463 verdicts
+P1 artifacts by declared template:
+     69 template: requirements@1.0.0
+P4 artifacts by declared template:
+     68 template: verification@1.0.0
+
+## the clause table, counted rather than quoted
+rows at HEAD: 39, prose at HEAD said thirty-eight
+rows now: 40
+
+## no copy of the section parser
+bodies that read an artifact back into sections: 1
