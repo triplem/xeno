@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 04-verification
+created: "2026-10-06T07:29:28Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The previous intent bound an evidence hash to a log a background suite was still writing, and the gate caught it two commands later at the cost of two phases. This phase waited for the producing process to be gone and took the file hash twice before declaring, which took one extra step and cost nothing. The declared hash and the file hash were then identical by construction rather than by luck.
+      proposal: Where evidence comes from a command run in the background, wait on the process rather than on its output, then hash the file once before declaring and compare the declaration against it. Both halves are cheap; the failure they prevent costs the phase and the one after it, because DeclareEvidence refuses a second declaration of the same kind and job.
+      target: CLAUDE.md
