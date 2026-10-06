@@ -1,12 +1,12 @@
 {
   "comment": "What npm audit reports for the pinned release toolchain today. The job fails when a count rises, not when a count is non-zero: none of these is this project's to fix, and a check that fires with no action available is one people learn to route around. Raising a number here is a deliberate act and belongs in the commit message that raises it.",
-  "measured": "2026-10-03",
-  "toolchain": "semantic-release@25.0.9, read from .github/workflows/release.yml",
-  "advisories": "20 distinct advisories on 24.2.9, 12 on 25.0.9. The upgrade is what moved them, not a waiver: sigstore's dropped certificateOIDs constraints, pacote's addGitSha DoS, picomatch, postcss-selector-parser and three of the five brace-expansion advisories are gone with it, and undici's three are new. What remains is brace-expansion, braces, http-cache-semantics, ip-address and undici, reached through npm-as-a-library and the release plugin's fetch stack, and none of them has a fix this repository can apply: npm's own suggestion for 30 of the 31 is to downgrade semantic-release to 15, which is not one.",
+  "measured": "2026-10-06",
+  "toolchain": "semantic-release@25.0.9, read from .github/workflows/release.yml, and also the latest published version",
+  "advisories": "12 distinct advisories, in brace-expansion, braces, http-cache-semantics, ip-address, micromatch, postcss-selector-parser, undici, semantic-release itself and four of its plugins, reached through npm-as-a-library and the release plugin's fetch stack. Measured against the previous figures of 2026-10-03 the direction is mostly down: high fell from 30 to 10 as upstream published fixes, and moderate rose from 1 to 2 because postcss-selector-parser returned — the earlier note said it had gone with the 24.2.9 to 25.0.9 upgrade, and a freshly resolved tree reaches it again. Nothing in this repository changed between the two measurements. The counts drift on their own because the tree is resolved at install time: audit.yml runs `npm init -y` and `npm install semantic-release@<pinned>` with no lockfile anywhere here, so transitive dependencies resolve fresh on every run and these numbers are a property of npm's registry at the moment of the run rather than of this repository. Treat them as a dated measurement and not as a bound. Upgrading and fixing were both tried on 2026-10-06 and neither is available: 25.0.9 is the latest published version, so an install of @latest produces an identical tree and identical counts, and `npm audit fix` resolves none of the twelve — high 10 and moderate 2 before and after, with semantic-release still at 25.0.9. The five advisories npm marks fixAvailable are not fixable in practice, because with no lockfile every install already takes the newest transitives their parents' ranges allow, so the constraint is the parent's range. For the other seven npm's only suggestion is semantic-release@15.14.0, a major downgrade of the release machinery, which A44 declined and A28's pinning exists to prevent. Whether the tree should be pinned so that these numbers stop moving without a commit is the open half of #260.",
   "vulnerabilities": {
     "critical": 0,
-    "high": 30,
-    "moderate": 1,
+    "high": 10,
+    "moderate": 2,
     "low": 0
   }
 }

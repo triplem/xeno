@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 00-intake
+created: "2026-10-06T07:22:20Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The audit baseline measures a tree that is resolved at install time. audit.yml does npm init -y and npm install semantic-release@<pinned> with no lockfile, so transitive dependencies resolve fresh on every run and the recorded counts go stale when upstream publishes rather than when this repository changes. The check then fails on a pull request whose diff is three Markdown files, which is the shape A44 warned about arriving from the other direction: not a check with no action available, but a check whose input is somebody else schedule.'
+      proposal: A baseline recorded against a tree this repository does not pin is a date, not a bound, and the file should say which it is. Where a check compares against recorded numbers, the thing measured has to be reproducible from the repository or the baseline needs a refresh cadence; otherwise the first symptom is an unrelated pull request going red.
+      target: CLAUDE.md

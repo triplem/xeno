@@ -53,6 +53,15 @@ every verdict in it. Those numbers reach `XENO-0121`, so the sequence starts bey
 anything they can collide with, and the gap is how a reader tells which scheme a key
 follows.
 
+A decision put to a person is put one at a time. Section 8 asks for options with their
+consequence and a recommendation, and says why: an open question moves the whole of the
+thinking onto somebody. A batch does the same thing while satisfying the letter of it.
+XENO-0243 asked three at once and the later two assumed an answer to the first that
+nobody had given, so answering all three meant answering two under an assumption not yet
+made; the free entry has the same problem, since a person who writes their own option
+changes what the next question should ask and a batch has already asked it. Nothing
+checks this (#248).
+
 ## Three standing rules
 
 **The documents are not editable by the agent.** Where the code and the specification
