@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 00-intake
+created: "2026-10-06T15:08:29Z"
+schema_version: "1.0"
+runner_version: dev+90593d0
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The first standing rule says the documents are not editable by the agent, and this intent edits one. The rule''s purpose is that a person decides the specification, and the person did: they were handed the drafted wording on #258 and on #235, read it, and asked for the commits to be made rather than writing them. So the rule''s substance held and its letter did not, and nothing in the process records which of the two happened.'
+      proposal: Where the agent writes a normative document on a person's instruction, the intent's artifacts say so and name where the instruction was given. The first standing rule makes the agent's edit the exception; an exception that leaves no trace is indistinguishable from the rule never having applied.
+      target: .xeno/config/rules/learned/project/an-agent-edit-of-a-normative-document.yaml

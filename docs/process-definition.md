@@ -702,6 +702,20 @@ Gates therefore match anchors, never headings, and the same artifact can be
 re-rendered in another language without changing what it asserts. A file whose
 anchors do not match its declared template version fails G-Schema.
 
+### Acceptance criteria are identifiable
+
+From `requirements@1.1.0` the `acceptance-criteria` section is a numbered list, and
+from `verification@1.1.0` the `test-mapping` section names each criterion by its
+number. Section 7 asks G-Test for the completeness of the mapping, and nothing could
+answer it because nothing identified a criterion: a sentence cannot be reported as
+covered or uncovered, so there was nothing to count.
+
+The requirement is carried by the template version and not by the schema. An artifact
+declaring `requirements@1.0.0` is judged as it always was. What is sealed is never
+rewritten, and a check reaching backwards would re-judge every mapping a project wrote
+before it adopted the convention. `template` is already in the frontmatter of every
+artifact, so the anchor is read and not added.
+
 ## 6. Phase model
 
 | Phase                | Input    | Output                                                      |
@@ -1226,6 +1240,12 @@ intent level, because only they have a state that changes.
 with their consequence, the agent's recommendation with a reason, and always a free
 entry as a further option. An open question without options moves the whole of the
 thinking onto the person, which is what the agent was there to take off them.
+
+The reason belongs to the option the recommendation names and is carried there rather
+than on the question. A recommendation that later moves to another option takes its
+reason with it or the writer refuses, where a reason held beside the question would go
+on describing the option it used to be about with nothing able to notice. It is empty
+on every option but one, which is what that costs.
 
 Two things keep that honest. Where the agent finds no options, the question says so
 rather than inventing two. And the free entry is not an escape hatch but the normal case

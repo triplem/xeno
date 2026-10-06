@@ -1,0 +1,19 @@
+# checks over the two amendments, 2026-10-06
+## the specification never cites this repository (so the draft's trail count was removed)
+grep -cE '#[0-9]{2,3}\b|XENO-|this trail' docs/process-definition.md:
+0
+the same pattern over CLAUDE.md, which proves it matches something:
+4
+
+## the sentence the draft heading would have deleted is still there
+1
+
+## section 7's G-Test row is untouched
+ docs/process-definition.md | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+## every P1 artifact still declares requirements@1.0.0, so the clause binds nothing yet
+     67 template: requirements@1.0.0
+
+## no new line over 88 columns outside tables
+before: 27   after: 27   same multiset: True

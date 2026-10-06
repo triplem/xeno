@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 03-implementation
+created: "2026-10-06T15:12:25Z"
+schema_version: "1.0"
+runner_version: dev+90593d0
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: P1 wrote a criterion asking for two commits and P2 decided on two, and neither phase asked how this repository merges. Every merge on main is a squash, which CLAUDE.md states in passing, so two commits on a branch arrive as one and the criterion was unmeetable from the moment it was written. It was a question about the tree, answerable in P1 with one git log.
+      proposal: A criterion about the shape of the history — how many commits, what each carries, what a bisect lands on — is checked against how the repository merges before it is written down. The branch is not the history; under a squash merge only the pull request is.
+      target: .xeno/config/rules/learned/project/a-criterion-about-the-history.yaml

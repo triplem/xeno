@@ -1,0 +1,7 @@
+intent: github.com/triplem/xeno#258
+phase: 02-design
+created: "2026-10-06T15:10:19Z"
+schema_version: "1.0"
+runner_version: dev+90593d0
+plugin_version: 0.0.0-dev
+no_finding: true
