@@ -548,8 +548,17 @@ func (r *Runner) predecessorAllowsStart(key, pred string) (string, error) {
 //
 // A repository without a scope gets an empty list, and the staleness half of G-Freshness then
 // has nothing to compare. That is a smaller claim than an empty scope would be: nothing was
-// declared, rather than nothing was read. From #217 a P0 cannot be finished without one, so
-// the case is a phase started before that rule rather than a project opting out.
+// declared, rather than nothing was read. From P1 on, #217 means a project cannot opt out —
+// a P0 cannot be finished without a scope — so an empty list there is a phase started before
+// that rule.
+//
+// At P0 it is empty always, and not as an exception. ScopeSet writes the scope into the phase
+// directory and refuses to run before the phase has started, so at the moment Start resolves
+// the base there is nothing to resolve, and the lock is never written again. Section 5 says
+// so where the lock is described, and the budget check and the staleness half each say it
+// where they are described. It is a property of the order and not a repair waiting to happen:
+// #267 put the two candidates that would change the order and the decision was to record the
+// consequence instead.
 func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
 	s, err := r.readScope(key)
 	if err != nil || s == nil {
