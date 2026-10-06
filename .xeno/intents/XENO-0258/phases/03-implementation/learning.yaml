@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#256
+phase: 03-implementation
+created: "2026-10-06T08:37:26Z"
+schema_version: "1.0"
+runner_version: dev+5163d1b
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The first draft of this paragraph listed four tools that share the ambiguity, which P1 non-goals had explicitly ruled out one phase earlier, naming the reason: the paragraph names the class and one instance, and the issue holds the table. The non-goal was written, read while being written, and then violated in the next phase of the same intent.'
+      proposal: Read the non-goals again when writing the thing they bound, not only when agreeing them. In a change small enough that the artifact is the work, a non-goal is a specification of the output and the only reader is whoever is writing it a phase later.
+      target: CLAUDE.md

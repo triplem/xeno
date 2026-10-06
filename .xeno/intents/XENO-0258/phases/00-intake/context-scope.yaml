@@ -1,0 +1,18 @@
+intent: github.com/triplem/xeno#256
+phase: 00-intake
+created: "2026-10-06T08:34:02Z"
+schema_version: "1.0"
+runner_version: dev+5163d1b
+plugin_version: 0.0.0-dev
+include:
+    - CLAUDE.md
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+    - docs/clause-readers.md
+links:
+    - component: docs
+      docs: docs/process-definition.md
+budget:
+    files: 7
+    bytes: 400000
