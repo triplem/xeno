@@ -166,3 +166,110 @@ func findingText(fs []model.Finding) string {
 	}
 	return b.String()
 }
+
+// Section 7: "A stale phase is not deleted, it is re-run or explicitly approved as still
+// valid." The remedy named neither and named the one act Start refuses, so a person following
+// it was refused, then offered section set and phase finish, which re-render the artifact and
+// leave the finding where it was: the lock is written only by phase start (#237).
+//
+// These assert what the remedy names rather than its wording. A test matching the literal
+// would break on every rewording and pass on a route silently dropped, which is the wrong way
+// round for a string whose fault was that nothing read it.
+func TestAStalePhasesRemedyNamesBothRoutesSectionSevenNames(t *testing.T) {
+	c, root := stalenessFixture(t,
+		map[string][]string{model.Phases[1]: {"internal/gates/gates.go"}},
+		map[string]string{"internal/gates/gates.go": "package gates\n"})
+
+	if err := os.WriteFile(filepath.Join(root, "internal/gates/gates.go"),
+		[]byte("package gates // moved under P1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c.Phase = model.Phases[3]
+	c.Head = gitCommit(t, root, "the ground moves under an earlier phase")
+
+	fs := staleReads(c, 3)
+	if len(fs) != 1 {
+		t.Fatalf("want one finding, got %d: %v", len(fs), findingText(fs))
+	}
+	assertSealedLockRemedy(t, fs[0].Next, model.Phases[1], model.Phases[3])
+}
+
+// The same two routes for a file that has gone, which is the other shape of the ground moving
+// under a sealed phase. The old remedy for this one offered "record why the file left", which
+// is not an act either: nothing in the runner records that against a lock.
+func TestAVanishedInputGetsTheSameTwoRoutes(t *testing.T) {
+	c, root := stalenessFixture(t,
+		map[string][]string{model.Phases[1]: {"internal/gates/gates.go"}},
+		map[string]string{"internal/gates/gates.go": "package gates\n"})
+
+	if err := os.Remove(filepath.Join(root, "internal/gates/gates.go")); err != nil {
+		t.Fatal(err)
+	}
+	c.Phase = model.Phases[3]
+	c.Head = gitCommit(t, root, "the file leaves")
+
+	fs := staleReads(c, 3)
+	if len(fs) != 1 {
+		t.Fatalf("want one finding, got %d: %v", len(fs), findingText(fs))
+	}
+	if !strings.Contains(fs[0].Cause, "is gone") {
+		t.Fatalf("the finding is not the vanished one: %s", fs[0].Cause)
+	}
+	assertSealedLockRemedy(t, fs[0].Next, model.Phases[1], model.Phases[3])
+}
+
+// The third case is not like the other two and its remedy already worked. An unreadable file is
+// a condition of this machine — a permission, a broken link, a filesystem — so the next gate run
+// clears the finding with nobody approving anything and nothing started over. The test exists so
+// that a later pass does not make all three alike for symmetry.
+func TestAnUnreadableInputIsTheTreesFaultAndNeedsNoRelease(t *testing.T) {
+	c, root := stalenessFixture(t,
+		map[string][]string{model.Phases[1]: {"internal/gates/gates.go"}},
+		map[string]string{"internal/gates/gates.go": "package gates\n"})
+
+	p := filepath.Join(root, "internal/gates/gates.go")
+	if err := os.WriteFile(p, []byte("package gates // in the change\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c.Phase = model.Phases[3]
+	c.Head = gitCommit(t, root, "the change under review")
+	// After the commit, so that the range still names the path: what is unreadable is the
+	// working tree's copy, which is what the check hashes.
+	if err := os.Chmod(p, 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(p, 0o644) })
+
+	fs := staleReads(c, 3)
+	if len(fs) != 1 {
+		t.Fatalf("want one finding, got %d: %v", len(fs), findingText(fs))
+	}
+	if !strings.Contains(fs[0].Cause, "cannot be read") {
+		t.Fatalf("the finding is not the unreadable one: %s", fs[0].Cause)
+	}
+	if !strings.Contains(fs[0].Next, "make it readable") {
+		t.Fatalf("the remedy does not name the act that works: %s", fs[0].Next)
+	}
+	for _, unwanted := range []string{"approves", "start " + model.Phases[1] + " over"} {
+		if strings.Contains(fs[0].Next, unwanted) {
+			t.Fatalf("the remedy asks for %q, which this fault does not need: %s", unwanted, fs[0].Next)
+		}
+	}
+}
+
+// assertSealedLockRemedy holds the two routes and the reason to one place, because the two cases
+// that share a remedy should fail together if a route is dropped.
+func assertSealedLockRemedy(t *testing.T, next, stale, gated string) {
+	t.Helper()
+	for what, want := range map[string]string{
+		"the re-run route":                 "start " + stale + " over",
+		"what the re-run discards":         "every phase after it",
+		"the release route":                "approves",
+		"the phase the release is made on": gated,
+		"why the obvious route does not":   "section set and phase finish will not clear it",
+	} {
+		if !strings.Contains(next, want) {
+			t.Fatalf("the remedy does not name %s (%q): %s", what, want, next)
+		}
+	}
+}

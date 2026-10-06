@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#237
+phase: 00-intake
+created: "2026-10-06T12:02:19Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The release route is already named to a reader, by Runner.red in next.go, whose comment says it deliberately offers neither way out as a command because releasing a finding is a second person''s statement. That was found by searching for ''gate approve'' across the runner rather than by reading staleReads alone, and it changes the design: the remedy has to be true without duplicating a sentence another function prints on purpose.'
+      proposal: Before a message is rewritten, every place that composes or prints it is found and read. A string in this runner is shown in three shapes — the gate's own output, the suggestion that wraps it, and gate.yaml itself — and a rewrite that reads well in one can be a duplicate or a contradiction in another.
+      target: .xeno/config/rules/learned/project/every-place-a-message-is-shown.yaml

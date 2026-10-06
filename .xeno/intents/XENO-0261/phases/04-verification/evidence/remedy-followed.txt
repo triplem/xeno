@@ -1,0 +1,22 @@
+# following the remedy, on a scratch copy, 2026-10-06
+## the finding the new remedy carries
+        - id: F-2c54fb
+          file: .xeno/intents/XENO-9001/phases/01-requirements/context.lock.yaml
+          cause: 01-requirements was given probe.txt and it has changed since
+          next: start 01-requirements over, which discards it and every phase after it, or a second person approves this finding on 02-design as still valid; section set and phase finish will not clear it, because the lock keeps what the phase was given and only phase start writes one
+          decision:
+            type: approved
+            by: a second person
+            at: "2026-10-06T12:06:52Z"
+            against: e3d9e063401b47eb35f09b9f33e86d75ca5cb644e52d394172acc4814063e72f
+            reason: the requirements do not depend on the line of probe.txt that moved
+    - gate: G-Rules
+
+## the verdict after a second person approved it on 02-design
+7:status: approved
+## and 03-implementation started, so the finding no longer stops work
+context.lock.yaml
+
+## the first attempt, which passed because P0's lock records no files
+P0 locks in the trail with a files list: 0 of 117
+P1 locks in the trail with a files list: 17 of 66
