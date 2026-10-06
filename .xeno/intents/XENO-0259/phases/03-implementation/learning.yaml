@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 03-implementation
+created: "2026-10-06T09:20:57Z"
+schema_version: "1.0"
+runner_version: dev+081da51.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The sed that extracts the action's sha was written against the wrong line shape — '- uses:' rather than the bare 'uses:' release.yml actually has. Running it against the file took two seconds and would otherwise have reached CI as an empty ref. A sed matching nothing and a sed matching the wrong thing are indistinguishable in a diff, and only the test -n guard would have caught it, at the point where the job already failed.
+      proposal: An extraction written into a workflow — sed, grep or jq against a file in the repository — is run against that file in the phase that writes it, and the resolved value appears in the implementation artifact. A pattern is code with no test, and the file it reads is available.
+      target: .xeno/config/rules/learned/project/an-extraction-is-run-before-it-is-committed.yaml

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 01-requirements
+created: "2026-10-06T09:14:08Z"
+schema_version: "1.0"
+runner_version: dev+081da51
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The criteria here are numbered, which nine of 55 P1 artifacts in this trail do and 46 do not. Numbering cost nothing to write and made P4''s mapping checkable by a reader: a mapping that names criterion 3 can be compared against criterion 3, where one naming a sentence cannot. #258''s third decision is open on whether a criterion becomes identifiable, and the cost it weighs is re-judging the 46 that are not.'
+      proposal: A P1 artifact numbers its acceptance criteria and a P4 test-mapping references them by number. The convention is worth adopting forward-only ahead of any gate, because the writing cost is nil and it is the prerequisite the completeness half of G-Test waits on.
+      target: .xeno/config/rules/learned/project/acceptance-criteria-are-numbered.yaml

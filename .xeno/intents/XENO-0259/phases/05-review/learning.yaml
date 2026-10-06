@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 05-review
+created: "2026-10-06T09:26:03Z"
+schema_version: "1.0"
+runner_version: dev+081da51.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The audit''s false claim survived four intents because nothing inside this repository could contradict it: audit.yml and release.yml read consistently with each other, and the difference lived at the action''s sha. XENO-0230''s P0, P1 and P3 each restate the claim as a premise they had checked. The claim was ''installed exactly as the release installs it'', which is a claim about somebody else''s code reached by reading our own.'
+      proposal: Where a CI job claims to reproduce something that happens outside this repository, the artifact that makes the claim records the command it ran to confirm it and the figures that came back. A premise about a delegated step is a measurement or it is a guess, and a guess written as a premise is indistinguishable from a checked one a phase later.
+      target: .xeno/config/rules/learned/project/a-premise-about-a-delegated-step.yaml

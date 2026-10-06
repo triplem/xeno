@@ -1,0 +1,44 @@
+intent: github.com/triplem/xeno#260
+phase: 04-verification
+created: "2026-10-06T09:21:20Z"
+schema_version: "1.0"
+runner_version: dev+081da51.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: d4190372c2e6f08ed5925220ef1478e82a61a6e977f3dd4d64d15fad0b9aa452
+evidence_source: ci
+template_source: plugin
+repo_commit: 081da5186c06f6d996e610c9fbee8b8b917a000e
+files:
+    - path: .github/workflows/audit.yml
+      sha256: 783c47202e7488818fc6615607453815cf105c16ed32ebeea5861d0501f357cc
+      bytes: 7816
+    - path: .github/workflows/release.yml
+      sha256: 41491f7fe4a7f59990fcbc70f493715c7762f0e9166be3a883c7f615a973cb58
+      bytes: 11248
+    - path: .github/npm-audit-baseline.json
+      sha256: a2a01f728a8b1501fb883417729a74ef2ed2d4b4b14762db854fa84a631ff32e
+      bytes: 3071
+    - path: docs/supply-chain.md
+      sha256: d4579cc6746d60bb178391580d2b8a434930a1248d7f4e87c324ff4110f2f954
+      bytes: 10246
+    - path: docs/assumptions.md
+      sha256: 2d14ced99aa740f712c7ec536cdb1e462b30985ee18c118b8c451a49daedd147
+      bytes: 93844
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17

@@ -1,31 +1,46 @@
 # What the pipeline runs, as opposed to what the release ships. Trivy answers the
-# second; this answers the first, for the part of it that is not pinned.
+# second; this answers the first, for the part of it that is not pinned here.
 #
-# semantic_version pins semantic-release one package deep and npm resolves the rest at
-# run time, so the tree that cuts every release is resolved fresh and is the largest
-# unexamined thing in this repository. It is installed here exactly as the release
-# installs it, and audited.
+# The release installs semantic-release through an action, and what the action does is
+# not in this repository: cycjimmy/semantic-release-action runs `npm ci` against its own
+# committed package-lock.json and only then installs the pinned semantic-release on top
+# of that tree. This job used to say it installed "exactly as the release installs it"
+# and did not — it started from `npm init -y`, so npm resolved every transitive fresh and
+# took the newest each range allowed. Measured on 2026-10-06 the two trees differ by
+# sixteen advisories, two of them critical: the fresh resolution reaches a newer
+# conventional-changelog-writer that no longer pulls handlebars, and the action's
+# lockfile holds the older one that does. The pin is what keeps the vulnerable versions
+# and the unpinned resolution is what hid them (#260).
 #
-# "Exactly as the release installs it" was a claim and is now a check: the version is
-# written in two workflows and the step below reads it out of the release's and refuses
-# where they differ. Two copies of one number is how an audit comes to examine a tree
-# nothing ships, and nothing would have said so.
+# So the three steps below are the action's own three steps, in its order, against the
+# sha the release pins. Both identifiers are read out of the release's workflow rather
+# than written again here: two copies of one identifier is how an audit comes to examine
+# a tree nothing ships, and that is the fault this job is repairing rather than a risk it
+# is guarding against (#187).
+#
+# One flag differs deliberately. The action passes `--only=prod`, which npm 12 deprecates
+# in favour of `--omit=dev`; the two select the same set and the replacement is used, so
+# that a reader comparing this job against the action finds a decision and not a
+# discrepancy.
 #
 # Node is pinned here and in the release, because semantic-release 25 declares an engine
 # and neither workflow used to say which node it ran under. The major rather than the
 # patch, which is D-5's reasoning for the Go directive: a patch reaches the release
-# without anybody editing a file, and the exact form freezes CI on one.
+# without anybody editing a file, and the exact form freezes CI on one. It matters less
+# than it did: 531 of the 532 packages come from the lockfile, which no node version can
+# re-resolve.
 #
-# The check is on drift and not on presence. The audit reported nineteen findings on
-# the day it was written, almost all of them under node_modules/npm/node_modules/
-# because semantic-release depends on npm as a library, and none of them is this
-# project's to fix. A job that failed on those would fail on its first run with no
-# action available, which is what trivy.yaml already refuses for unfixed findings.
-# .github/npm-audit-baseline.json holds the counts; a twentieth finding fails, because
-# that is a change somebody has to look at.
+# The check is on drift and not on presence. None of the twenty-eight is this project's
+# to fix — the sixteen new ones sit inside the action's lockfile, which only a bump of
+# its sha can move, and the twelve older ones survive `npm audit fix` with
+# semantic-release@15.14.0 npm's only other suggestion. A job that failed on those would
+# fail on every run with no action available, which is what trivy.yaml already refuses
+# for unfixed findings. .github/npm-audit-baseline.json holds the counts; a rise fails,
+# because that is a change somebody has to look at. It can now only come from a commit
+# here, since both pins live in this repository.
 #
-# It does not answer staleness. A count that does not move says nothing about whether
-# the pinned versions are still the ones to be on, and #44 keeps that apart on purpose.
+# It does not answer staleness. A count that does not move says nothing about whether the
+# pinned versions are still the ones to be on, and #44 keeps that apart on purpose.
 name: audit
 
 on:
@@ -55,27 +70,38 @@ jobs:
         with:
           node-version: '24'
 
-      # The version is the release's, read out of the release's own workflow rather than
-      # written again here. A second copy would be correct on the day it was written.
-      - name: the version the release installs
+      # Both identifiers are the release's, read out of the release's own workflow rather
+      # than written again here. A second copy would be correct on the day it was written.
+      - name: what the release installs, and with what
         id: pin
         run: |
           set -eu
           v=$(sed -n 's/^ *semantic_version: *\([0-9][0-9.]*\) *$/\1/p' \
                 .github/workflows/release.yml)
           test -n "$v"
+          a=$(sed -n 's|^ *uses: cycjimmy/semantic-release-action@\([0-9a-f]\{40\}\).*|\1|p' \
+                .github/workflows/release.yml)
+          test -n "$a"
           echo "version=$v" >> "$GITHUB_OUTPUT"
-          echo "auditing semantic-release@$v"
+          echo "action=$a" >> "$GITHUB_OUTPUT"
+          echo "auditing semantic-release@$v as installed by the action at $a"
 
-      # What the release workflow installs, and no package.json in this repository: the
-      # tree exists for the length of this job. One package since #121, which dropped the
-      # two plugins that wrote a changelog back to main.
+      # The action's own install, performed rather than described. Step one is the action's
+      # checkout; step two and three are index.js and
+      # src/installSpecifyingVersionSemantic.task.js, which run in the action's directory
+      # and not in a workspace of ours. There is no package.json in this repository and
+      # the tree exists for the length of this job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: cycjimmy/semantic-release-action
+          ref: ${{ steps.pin.outputs.action }}
+          path: release-toolchain
+
       - name: install what the release installs
         run: |
           set -eu
-          mkdir -p /tmp/release-toolchain
-          cd /tmp/release-toolchain
-          npm init -y > /dev/null
+          cd "$GITHUB_WORKSPACE/release-toolchain"
+          npm --loglevel error ci --omit=dev
           npm install --no-audit --no-fund \
             "semantic-release@${{ steps.pin.outputs.version }}"
 
@@ -84,7 +110,7 @@ jobs:
         run: |
           set -eu
           mkdir -p "$GITHUB_WORKSPACE/.xeno/local/scan"
-          cd /tmp/release-toolchain
+          cd "$GITHUB_WORKSPACE/release-toolchain"
           # npm audit exits non-zero when it finds anything, which is every run here,
           # so the exit code is not the signal; the comparison below is.
           npm audit --json > "$GITHUB_WORKSPACE/.xeno/local/scan/npm-audit.json" || true
