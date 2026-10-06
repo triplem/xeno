@@ -1,0 +1,32 @@
+# the advisory finding, end to end and by mutation, 2026-10-06
+## a phase whose only finding is a budget overrun, on a scratch copy
+with result changed and Status not:
+  00-intake: red / G-Schema pass / F-2af1d8 the recorded context is 9999 bytes and the budget is 10
+with both changed:
+  00-intake: green
+  xeno phase start --phase 01  -> started, so the finding does not stop work
+  xeno gate approve F-2af1d8   -> 00-intake: approved, so it is still decidable
+
+## every assertion confirmed able to fail, by mutation
+  result counting findings again      -> TestACheckOfOnlyAdvisoryFindingsPasses, TestABudgetOverrunLeavesGSchemaPassing
+  result ignoring every finding       -> TestACheckWithOneOrdinaryFindingStillFails, TestACheckOfOrdinaryFindingsStillFailsAndAnEmptyOnePasses
+  budget no longer marking its own    -> TestABudgetOverrunLeavesGSchemaPassing, TestOnlyTheBudgetClauseWritesTheAdvisoryField
+  a second check reaching for the field -> TestOnlyTheBudgetClauseWritesTheAdvisoryField (3 want 2)
+  Status counting advisory findings   -> TestAPhaseWhoseOnlyFindingIsAdvisoryIsGreen
+
+## the four check results and the five phase statuses are untouched
+394:    result: <pass|fail|pending|not-implemented>
+387:status: <green|red|provisional|approved|overridden>   # derived, never written directly
+
+## nothing else writes the field
+advisory(finding( in gates.go: 2
+Advisory = true in gates.go:    1
+Advisory set anywhere else:     0
+
+## the trail is not re-judged
+gate verify: verified 469 verdicts
+sealed gate.yaml files carrying an advisory key: 0
+
+## what the existing budget tests assert
+calls to budget( in budget_test.go: 9
+assertions on a check Result there: 0

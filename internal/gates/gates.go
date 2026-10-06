@@ -229,6 +229,12 @@ func Status(checks []model.Check) (string, error) {
 			}
 			seen[f.ID] = true
 			switch {
+			// Section 5: "the check carrying it is pass, the phase is green". Two statements
+			// and two readers — result answers the first and this answers the second. An
+			// advisory finding is undecided for ever, because nothing asks anybody to decide
+			// it, so counting it here would make the phase red through a check that passed and
+			// honour half the clause (#235).
+			case f.Advisory && f.Decision == nil:
 			case f.Decision == nil:
 				undecided = true
 			case f.Decision.Type == "overridden":
@@ -297,16 +303,35 @@ func notImplemented(Ctx) model.Check {
 	return model.Check{Result: "not-implemented", Provenance: "xeno"}
 }
 
+// result is the only constructor of a check, which is why the advisory property is read here and
+// not in a caller: schema appends the findings of six checks before calling it, so nothing upstream
+// knows which finding came from where, and this has them all in front of it.
+//
+// A check fails where any finding is not advisory. One of each therefore fails, on the ordinary one,
+// and the advisory one rides along in the verdict — which is the whole of the distinction and the
+// case a count of findings cannot express (#235).
 func result(fs []model.Finding) model.Check {
 	r := "pass"
-	if len(fs) > 0 {
-		r = "fail"
+	for _, f := range fs {
+		if !f.Advisory {
+			r = "fail"
+			break
+		}
 	}
 	return model.Check{Result: r, Provenance: "xeno", Findings: fs}
 }
 
 func finding(file, cause, next string) model.Finding {
 	return model.Finding{File: file, Cause: cause, Next: next}
+}
+
+// advisory marks a finding as reported rather than held against the phase. Section 5 asks for it of
+// one clause, the context budget, and bounds it to that clause: "nothing else writes the field."
+// This is the only place in the runner that sets it, and a test asserts that, because the bound is
+// prose and prose has no reader.
+func advisory(f model.Finding) model.Finding {
+	f.Advisory = true
+	return f
 }
 
 // ---- G-Schema
@@ -504,10 +529,10 @@ func budget(c Ctx) []model.Finding {
 	}
 	var fs []model.Finding
 	if p.Budget.Files > 0 && len(lock.Files) > p.Budget.Files {
-		fs = append(fs, finding(rel,
+		fs = append(fs, advisory(finding(rel,
 			fmt.Sprintf("the recorded context is %d files and the budget is %d",
 				len(lock.Files), p.Budget.Files),
-			"narrow the scope's include, or raise the budget in "+scope+" and say why"))
+			"narrow the scope's include, or raise the budget in "+scope+" and say why")))
 	}
 	if p.Budget.Bytes > 0 {
 		// The sizes the lock recorded, and nothing measured. Section 5: the budget is judged
@@ -527,9 +552,9 @@ func budget(c Ctx) []model.Finding {
 			}
 		}
 		if recorded && total > p.Budget.Bytes {
-			fs = append(fs, finding(rel,
+			fs = append(fs, advisory(finding(rel,
 				fmt.Sprintf("the recorded context is %d bytes and the budget is %d", total, p.Budget.Bytes),
-				"narrow the scope's include, or raise the budget in "+scope+" and say why"))
+				"narrow the scope's include, or raise the budget in "+scope+" and say why")))
 		}
 	}
 	return fs

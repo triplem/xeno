@@ -519,10 +519,26 @@ type DecisionOnFinding struct {
 }
 
 type Finding struct {
-	ID       string             `yaml:"id"`
-	File     string             `yaml:"file"`
-	Cause    string             `yaml:"cause"`
-	Next     string             `yaml:"next"`
+	ID    string `yaml:"id"`
+	File  string `yaml:"file"`
+	Cause string `yaml:"cause"`
+	Next  string `yaml:"next"`
+	// Section 5: "An advisory finding does not fail its check. advisory marks a finding that is
+	// reported rather than held against the phase: the check carrying it is pass, the phase is
+	// green, and the finding is in gate.yaml with its id, its cause and its remedy like any
+	// other."
+	//
+	// And the bound, which is the half no code can enforce: "It is the exception and stays one.
+	// A finding is the thing that fails, and an advisory one is readable only because it is
+	// rare; the clause that asks for it says so where the check is described, and nothing else
+	// writes the field." Nothing can tell a clause that legitimately asked for this from a check
+	// somebody found inconvenient, so the limit is the sentence above and a test over how many
+	// places set it.
+	//
+	// It is deliberately absent from hashing.FindingID, which hashes gate, rule id, file and
+	// cause: section 5 says a finding's id does not depend on the run, and an id that moved
+	// when this flag moved would not be stable.
+	Advisory bool               `yaml:"advisory,omitempty"`
 	Decision *DecisionOnFinding `yaml:"decision,omitempty"`
 }
 
