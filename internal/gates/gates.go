@@ -513,6 +513,12 @@ func links(c Ctx) []model.Finding {
 // lock records both what the phase was given and how large each of those files was. Nothing is
 // measured, so a file that grows or disappears after a verdict cannot move a sealed phase's
 // standing — which is the property section 5's clause on bytes was written for (#176).
+//
+// Because the lock it reads is the gated phase's own, the check applies from P1 on: a P0 lock
+// names no files, so the intake declares the budget and the five phases that inherit its scope
+// are the ones judged against it. Section 5 says so under the clause and gives the reason where
+// the lock is described (#267). An entry count of zero is therefore the ordinary state here and
+// not a context that came out empty, which is why neither comparison below can fire at P0.
 func budget(c Ctx) []model.Finding {
 	var p model.Scope
 	scope := c.phaseRel(model.Phases[0]) + "/" + model.ContextScope
@@ -1381,8 +1387,17 @@ func freshness(c Ctx) model.Check {
 // and saying so needs a result for a check that did not run, which is #235. Stated here
 // because the next reader of this function is who it matters to.
 //
-// Where no scope was written the lists are empty and there is nothing to compare. From #217 a
-// P0 cannot be finished without one, so that is a phase older than the rule.
+// Where no scope was written the lists are empty and there is nothing to compare. From P1 on
+// that is a phase older than #217's rule, which refuses to finish a P0 without a scope.
+//
+// P0 is outside the check for a different reason, and permanently. Its lock names no files
+// however old the intent is, because the scope the lock would resolve is the artifact P0
+// produces and ScopeSet cannot run before the phase has started. So the files an intake was
+// given are never compared against the tree, and the rest of the intent is compared against
+// the locks of P1 onwards, which resolve the same scope. Section 7 says this is not a third
+// limit beside the two above, which are trades against noise, and names what escapes: a file
+// that moved while the intake itself ran. #267 is where the two candidates for changing the
+// order are written down.
 // changedPaths is the set of repository paths the change under review touched, or nil where
 // there is no range to ask about.
 //

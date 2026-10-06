@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#267
+phase: 03-implementation
+created: "2026-10-06T20:05:55Z"
+schema_version: "1.0"
+runner_version: dev+3f1fab3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Two comments in two packages explained an empty files list by citing #217''s rule that a P0 cannot be finished without a scope, and the explanation was false at the one phase where the list is always empty. Both were written while the author was reading the P1-to-P5 case, where the sentence is true, and the P0 case never came up because nothing reads the lock at P0 and so nothing ever failed. The fault was found by counting the trail for #267 — 0 of 117 — and not by reading either comment.'
+      proposal: 'Where a comment explains an absent or empty value by citing a rule, it names which phases the rule covers. The six phases are not interchangeable here: a scope exists for five of them and is being produced by the sixth, and every reader of the lock inherits that asymmetry. A comment that says ''a phase older than the rule'' without naming a phase is true somewhere and false somewhere, and the reader cannot tell which they are in.'
+      target: .xeno/config/rules/learned/project/a-comment-citing-a-rule-names-its-phases.yaml

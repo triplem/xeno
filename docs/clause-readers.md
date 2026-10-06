@@ -36,7 +36,7 @@ kinds, and for the first kind the reader was looked up in the code rather than r
 | tool requirement | 39 |
 | architectural property | 11 |
 | addressed to a person | 48 |
-| explanation | 126 |
+| explanation | 129 |
 
 ## Tool requirements, and what reads each
 
@@ -169,6 +169,21 @@ prose said thirty-eight where the table already carried thirty-nine. Counted on
 went unremarked is not recoverable from the file, and the gap is the one XENO-0260
 recorded about this document a few hours earlier — a figure in prose beside the rows it
 describes, with nothing checking that the two agree.
+
+**Three clauses added by #267 are not in the table, and the reason is the taxonomy.**
+Section 5 now says an intake's `files` is empty and why, section 5's budget clause says
+the check applies from P1 on, and section 7's staleness clause says P0 is outside it.
+None of the three asks a tool for anything: they state a consequence of the order in
+which `phase start` and `scope set` run, so a reader of the code cannot violate them by
+writing the wrong thing. In this pass's four kinds that is an explanation, which is
+counted and not enumerated, and the count below moves from 126 to 129.
+
+One of them is reader-shaped all the same, and is left without one deliberately. "An
+intake's `files` is empty" becomes false the day either of #267's candidates is adopted,
+and nothing in the repository would notice. That is the intended way round: the two
+candidates are written down in #267 with what each costs, and the sentence is phrased so
+that adopting one means deleting it rather than editing around it, which makes the
+specification commit that opens the change visible as a deletion.
 
 | § | clause | reader |
 |---|---|---|

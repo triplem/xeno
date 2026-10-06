@@ -1,0 +1,88 @@
+# Criteria 1-9: the three paragraphs, read in the file.
+
+## 1-6 section 5, the lock subsection
+579:**At P0 it names no files.** The lock is written from the context scope, and the scope
+580-is P0's own artifact: `xeno scope set` writes it into the phase directory, so it cannot
+581-run before the phase has started. The order is forced, the lock is born before the thing
+582-it resolves, and nothing fills it in afterwards: the lock sits inside the phase's
+583-`artifacts_hash` and is the only record of what the phase was given, so writing it a
+584-second time would rewrite a hashed artifact and destroy the answer to what changed. An
+585-intake's `files` is empty, and the two checks that read it apply from P1 on, each saying
+586-so where it is described. What P0 declares is binding all the same: the scope it writes
+587-is the information base of every later phase of the intent, which is where the budget is
+588-counted and where a file moved out from under a reading is found.
+
+552:files: [{ path: ..., sha256: ..., bytes: ... }]      # empty at P0, see below
+
+## 7 section 5, the budget clause
+650:The budget is judged from P1 on. The comparison is against the lock of the phase being
+651-gated, and P0's lock names no files for the reason given where the lock is described, so
+652-the intake declares the budget and the five phases that inherit its scope are the ones
+653-judged against it. That is what keeps one number per intent from being decoration while
+654-the phase that writes it cannot be measured against it.
+
+## 8-9 section 7, the staleness clause
+1044:Two limits keep the check useful rather than noisy.
+1058:P0 stands outside the check for a third reason, which is not a limit chosen against
+1059-noise. Its lock names no files, because the scope the lock would resolve is the artifact
+1060-P0 produces, so the files an intake was given are never compared against the tree. The
+1061-rest of the intent is compared against the locks of P1 onwards, which resolve the same
+1062-scope. What this loses is a file that moved while the intake itself ran, since the next
+1063-phase's lock records it as it was by then and that is the state the comparison starts
+1064-from.
+
+## the count of limits is still two
+0
+
+# Criteria 10-11: the comments.
+551:// declared, rather than nothing was read. From P1 on, #217 means a project cannot opt out —
+552-// a P0 cannot be finished without a scope — so an empty list there is a phase started before
+553-// that rule.
+554-//
+555-// At P0 it is empty always, and not as an exception. ScopeSet writes the scope into the phase
+556-// directory and refuses to run before the phase has started, so at the moment Start resolves
+557-// the base there is nothing to resolve, and the lock is never written again. Section 5 says
+558-// so where the lock is described, and the budget check and the staleness half each say it
+559-// where they are described. It is a property of the order and not a repair waiting to happen:
+560-// #267 put the two candidates that would change the order and the decision was to record the
+561-// consequence instead.
+562-func (r *Runner) informationBase(key string) ([]model.ContextFile, error) {
+
+1391:// that is a phase older than #217's rule, which refuses to finish a P0 without a scope.
+1392-//
+1393-// P0 is outside the check for a different reason, and permanently. Its lock names no files
+1394-// however old the intent is, because the scope the lock would resolve is the artifact P0
+1395-// produces and ScopeSet cannot run before the phase has started. So the files an intake was
+1396-// given are never compared against the tree, and the rest of the intent is compared against
+1397-// the locks of P1 onwards, which resolve the same scope. Section 7 says this is not a third
+1398-// limit beside the two above, which are trades against noise, and names what escapes: a file
+1399-// that moved while the intake itself ran. #267 is where the two candidates for changing the
+1400-// order are written down.
+1401-// changedPaths is the set of repository paths the change under review touched, or nil where
+
+# Criterion 12: docs/clause-readers.md
+173:**Three clauses added by #267 are not in the table, and the reason is the taxonomy.**
+174-Section 5 now says an intake's `files` is empty and why, section 5's budget clause says
+175-the check applies from P1 on, and section 7's staleness clause says P0 is outside it.
+176-None of the three asks a tool for anything: they state a consequence of the order in
+177-which `phase start` and `scope set` run, so a reader of the code cannot violate them by
+178-writing the wrong thing. In this pass's four kinds that is an explanation, which is
+179-counted and not enumerated, and the count below moves from 126 to 129.
+180-
+181-One of them is reader-shaped all the same, and is left without one deliberately. "An
+182-intake's `files` is empty" becomes false the day either of #267's candidates is adopted,
+183-and nothing in the repository would notice. That is the intended way round: the two
+184-candidates are written down in #267 with what each costs, and the sentence is phrased so
+185-that adopting one means deleting it rather than editing around it, which makes the
+186-specification commit that opens the change visible as a deletion.
+187-
+188-| § | clause | reader |
+189-|---|---|---|
+39:| explanation | 129 |
+
+# Criterion 14: two commits, specification first.
+3f1fab3 docs(spec): the intake's lock names no files, and the two checks say so
+5dbba24 fix(comments): an empty information base names the phase it belongs to
+3f1fab3 docs(spec): the intake's lock names no files, and the two checks say so
+ docs/process-definition.md | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)

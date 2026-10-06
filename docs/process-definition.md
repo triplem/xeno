@@ -549,7 +549,7 @@ created: <iso8601>
 runner_version: <version>
 plugin_version: <version>
 repo_commit: <sha>
-files: [{ path: ..., sha256: ..., bytes: ... }]
+files: [{ path: ..., sha256: ..., bytes: ... }]      # empty at P0, see below
 rules_applied: [{ path: ..., version: ... }]
 template_source: <plugin|project>
 plugin: { version: ..., sha256: ... }
@@ -575,6 +575,17 @@ It is written once per phase and not refreshed. Where the agent changes a file t
 lock lists, the recorded hash no longer matches the working tree, and that is correct:
 the lock describes the input state, and a lock rewritten at the end would describe
 nothing.
+
+**At P0 it names no files.** The lock is written from the context scope, and the scope
+is P0's own artifact: `xeno scope set` writes it into the phase directory, so it cannot
+run before the phase has started. The order is forced, the lock is born before the thing
+it resolves, and nothing fills it in afterwards: the lock sits inside the phase's
+`artifacts_hash` and is the only record of what the phase was given, so writing it a
+second time would rewrite a hashed artifact and destroy the answer to what changed. An
+intake's `files` is empty, and the two checks that read it apply from P1 on, each saying
+so where it is described. What P0 declares is binding all the same: the scope it writes
+is the information base of every later phase of the intent, which is where the budget is
+counted and where a file moved out from under a reading is found.
 
 Version numbers appear in both places on purpose: the frontmatter names what was
 used, `context.lock.yaml` proves it with a hash. Where the two disagree, the hash
@@ -635,6 +646,12 @@ recorded context exceeded the budget. The finding is `advisory`, so G-Schema sta
 in the sense of stopping work: it is visible, it can be decided like any other finding,
 and blocking against a number nobody has experience with yet would be the wrong way
 round. What it prevents is the budget quietly becoming decoration.
+
+The budget is judged from P1 on. The comparison is against the lock of the phase being
+gated, and P0's lock names no files for the reason given where the lock is described, so
+the intake declares the budget and the five phases that inherit its scope are the ones
+judged against it. That is what keeps one number per intent from being decoration while
+the phase that writes it cannot be measured against it.
 
 **Re-reading follows change.** `context.lock.yaml` already carries paths with
 hashes, so a repeated phase knows which files changed and reads only those.
@@ -1037,6 +1054,14 @@ gated. A phase that changes the files it read is not stale, it is working: that 
 P3 does, and without this limit every implementation phase would report itself out of
 date the moment it did its job. What the check catches is the other direction, a phase
 whose ground moved after it finished.
+
+P0 stands outside the check for a third reason, which is not a limit chosen against
+noise. Its lock names no files, because the scope the lock would resolve is the artifact
+P0 produces, so the files an intake was given are never compared against the tree. The
+rest of the intent is compared against the locks of P1 onwards, which resolve the same
+scope. What this loses is a file that moved while the intake itself ran, since the next
+phase's lock records it as it was by then and that is the state the comparison starts
+from.
 
 ### Execution
 
