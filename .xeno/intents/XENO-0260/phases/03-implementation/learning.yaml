@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 03-implementation
+created: "2026-10-06T11:37:40Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: Eleven of the replacement's lines came out at 89 or 90 columns, and the reflow then split a code span across a line break. Writing prose to 88 by hand and measuring afterwards costs a second pass over the same paragraph and can introduce a fault the first pass did not have. The second fault was only visible by reading the file, not the diff.
+      proposal: A replaced paragraph is wrapped by a wrapper over the whole block, not line by line, and then read back from the file rather than from the diff. The convention already says to read it back as a paragraph; what this adds is that the wrap itself can be the thing that breaks it.
+      target: .xeno/config/rules/learned/project/a-replaced-paragraph-is-wrapped-whole.yaml

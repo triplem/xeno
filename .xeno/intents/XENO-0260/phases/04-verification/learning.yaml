@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 04-verification
+created: "2026-10-06T11:41:12Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The figures written in P0 and P3 disagreed with the same count re-run in P4, by one artifact each way: this intent''s own P1 entered the trail between the two, and it numbers its criteria. A count of a trail taken from inside that trail moves while it is being taken, and the direction is always that the measuring intent looks like the exception it is arguing for.'
+      proposal: A figure measured over the trail names the population it counted and whether the measuring intent is in it. Three documents in this repository now carry trail-wide counts and none of them says which side of that line it is on.
+      target: .xeno/config/rules/learned/project/a-count-of-the-trail-names-its-population.yaml
