@@ -54,7 +54,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `actions/setup-go` | `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e`, v7.0.0 | github.com |
 | Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
 | `cycjimmy/semantic-release-action` | `b12c8f6015dc215fe37bc154d4ad456dd3833c90`, v6.0.0 | github.com |
-| semantic-release | 24.2.9 | npm |
+| semantic-release | 25.0.9 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
 | `cyclonedx-gomod` | v1.12.0 | github.com |
 | `actions/upload-artifact` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`, v7.0.1 | github.com |
@@ -90,12 +90,20 @@ days blind. That is a number somebody chooses, and it belongs wherever the scan 
 is read.
 
 **What is watched, and what is not.** Trivy reads the binary a release ships. The
-`audit` workflow reads the tree that produces it: it installs the three pinned
-semantic-release packages exactly as the release does and audits what npm resolved
-around them, which on the day it was written was nineteen findings, almost all of them
-under `node_modules/npm/node_modules/` because semantic-release depends on npm as a
-library. The counts are recorded in `.github/npm-audit-baseline.json` and the job fails
-when one rises, not when one is non-zero: none of them is this project's to fix.
+`audit` workflow reads the tree that produces it, and reading that tree means performing
+somebody else's install: the release installs semantic-release through
+`cycjimmy/semantic-release-action`, which runs `npm ci` against its own committed
+lockfile and installs the pinned version on top of the result. So the audit checks the
+action out at the sha pinned above and runs those steps, taking both identifiers out of
+`release.yml` rather than keeping copies. It used to install the pinned package into a
+bare `npm init -y` instead, and that is a different tree: measured on 2026-10-06 it
+carried twelve advisories and no critical, against twenty-eight and two for the tree the
+release installs. The difference is the lockfile — a fresh resolution takes the newest
+each range allows, and the action's lockfile holds older versions, so the pin is what
+keeps the vulnerable ones and the unpinned resolution is what hid them (#260). The
+counts are recorded in `.github/npm-audit-baseline.json` and the job fails when one
+rises, not when one is non-zero: none of them is this project's to fix, and the sixteen
+that only the corrected tree shows can move only when the action's sha does.
 
 Two things stay unwatched and are written here rather than assumed covered. **Staleness
 is not watched at all** — nothing says whether a pinned action or tool is still the one

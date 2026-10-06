@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#260
+phase: 00-intake
+created: "2026-10-06T09:11:22Z"
+schema_version: "1.0"
+runner_version: dev+081da51
+plugin_version: 0.0.0-dev
+include:
+    - .github/workflows/audit.yml
+    - .github/workflows/release.yml
+    - .github/npm-audit-baseline.json
+    - docs/supply-chain.md
+    - docs/assumptions.md
+    - docs/process-definition.md
+    - CLAUDE.md
+links:
+    - component: ci
+      docs: docs/supply-chain.md
+budget:
+    files: 7
+    bytes: 400000

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 00-intake
+created: "2026-10-06T09:12:43Z"
+schema_version: "1.0"
+runner_version: dev+081da51
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The audit job asserted that it installs semantic-release ''exactly as the release installs it''. The release installs it through an action, and what the action does lives at the action''s sha and not in this repository: npm ci against the action''s own committed lockfile, then npm install of the pinned version on top. Reading the two workflows side by side cannot show the difference, because one of them delegates. Both trees had to be installed and audited to find that the audit sees 12 advisories and the release 28, two of them critical.'
+      proposal: Where a workflow claims to reproduce another job's install, the claim is checked by performing both installs and comparing the resolved trees, not by reading the two workflow files. A delegated install is a tree described somewhere this repository does not contain.
+      target: .xeno/config/rules/learned/project/claims-about-a-delegated-install.yaml

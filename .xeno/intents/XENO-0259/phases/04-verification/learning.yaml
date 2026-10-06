@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#260
+phase: 04-verification
+created: "2026-10-06T09:24:31Z"
+schema_version: "1.0"
+runner_version: dev+081da51.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Numbering P1''s criteria made this phase''s mapping a ten-row table keyed on a number, and the four criteria whose reader is a person were visible as a column rather than hidden in prose. Writing it cost nothing extra. #258''s third decision weighs a numbering convention against re-judging the 46 P1 artifacts that have none, and this phase is a datapoint on the writing side of that trade: the cost is zero and the mapping becomes checkable by a reader on the day it is written.'
+      proposal: Adopt numbered acceptance criteria and numbered mapping rows forward-only, ahead of any gate, and record in docs/clause-readers.md that the completeness half of G-Test has a person-reader until the numbering is general enough for a gate to judge it.
+      target: .xeno/config/rules/learned/project/the-mapping-names-a-number.yaml
