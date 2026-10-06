@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 05-review
+created: "2026-10-06T17:47:13Z"
+schema_version: "1.0"
+runner_version: dev+d3983d3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The clause table carried thirty-nine rows while the prose said thirty-eight, before this intent touched either, and the drift was found only because a row was being added and the rows had to be counted. XENO-0260 recorded the same shape about the same document a few hours earlier, as a prose figure beside the structured values it describes with nothing checking that the two agree. Two instances in one day, in one file.
+      proposal: A count stated in docs/clause-readers.md's prose is derived from the table rather than written beside it — a line saying how to count it, or a check in the verify job that counts the rows and compares. It is the one figure in this repository whose source of truth is in the same file, so it is the cheapest of them to give a reader.
+      target: .xeno/config/rules/learned/project/the-clause-count-is-derived.yaml

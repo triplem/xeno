@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/triplem/xeno/internal/fm"
@@ -543,6 +544,7 @@ func schema(c Ctx) model.Check {
 	fs = append(fs, undeclaredEvidence(c, dir, o)...)
 	fs = append(fs, budget(c)...)
 	fs = append(fs, links(c)...)
+	fs = append(fs, numberedCriteria(c)...)
 	return result(fs)
 }
 
@@ -779,9 +781,152 @@ func QuestionAsked(file string, o model.Output) []model.Finding {
 		if recommended != 1 {
 			fs = append(fs, finding(file, fmt.Sprintf("question %s recommends %d of its options", q.Key, recommended),
 				"recommend exactly one, and say in the question why that one"))
+			continue
+		}
+		// Section 8 puts the reason on the option the recommendation names, so it is read
+		// there and only where there is exactly one to read it on: a question recommending
+		// none or three has a finding already, and a second one about a missing reason would
+		// name a consequence of the first.
+		for _, op := range q.Options {
+			if op.Recommended && strings.TrimSpace(op.Reason) == "" {
+				fs = append(fs, finding(file, "question "+q.Key+" recommends an option with no reason",
+					"say on the recommended option why it is the one; the reason moves with the recommendation"))
+			}
 		}
 	}
 	return fs
+}
+
+// templateAtLeast answers whether an artifact's declared template ref is at or past a version.
+// The ref is id@major.minor.patch, and the comparison is on the three numbers rather than on the
+// string: a string compare puts 1.10.0 before 1.9.0, so a check keyed that way would stop
+// applying at the tenth minor version with nothing to say so.
+//
+// A ref naming another id, or one that does not parse, is not at the version: section 5 carries
+// the requirement on the template version, and a check cannot read a version it cannot find.
+func templateAtLeast(ref, id string, want ...int) bool {
+	name, version, ok := strings.Cut(ref, "@")
+	if !ok || name != id {
+		return false
+	}
+	parts := strings.Split(version, ".")
+	for i, w := range want {
+		if i >= len(parts) {
+			return false
+		}
+		n, err := strconv.Atoi(parts[i])
+		if err != nil {
+			return false
+		}
+		if n != w {
+			return n > w
+		}
+	}
+	return true
+}
+
+// criterionNumber matches a numbered list item, which is what section 5 asks the
+// acceptance-criteria section to be: "From requirements@1.1.0 the acceptance-criteria section is
+// a numbered list."
+var criterionNumber = regexp.MustCompile(`(?m)^([0-9]+)\.\s`)
+
+// numberedCriteria is section 5's "Acceptance criteria are identifiable", read on the phase whose
+// section it is about. The requirement is on the shape of an artifact, which is G-Schema's half of
+// the document, and it is read here rather than in G-Test so that the phase which can still fix it
+// is the phase that fails: a P1 judged at P4 is three phases and a seal too late.
+//
+// It applies from the declared template version and not from the one the repository carries, which
+// is the clause's own anchor: "An artifact declaring requirements@1.0.0 is judged as it always
+// was." Every P1 artifact written before the bump declares 1.0.0 and none of them is re-judged.
+//
+// Nothing is asked of the numbering beyond its being numbered. Consecutiveness, starting at one and
+// a bound are none of them in section 5, and the second standing rule makes each an addition.
+func numberedCriteria(c Ctx) []model.Finding {
+	if model.TemplateID(c.Phase) != "requirements" {
+		return nil
+	}
+	rel := c.phaseRel(c.Phase) + "/output.md"
+	var o model.Output
+	raw, err := fm.ReadFront(c.abs(rel), &o)
+	if err != nil {
+		return nil // a missing or unreadable artifact is phaseResult's finding
+	}
+	ref, _ := raw["template"].(string)
+	if !templateAtLeast(ref, "requirements", 1, 1) {
+		return nil
+	}
+	sections, ok := parseSections(c.abs(rel))
+	if !ok {
+		return nil
+	}
+	if criterionNumber.MatchString(sections["acceptance-criteria"]) {
+		return nil
+	}
+	return []model.Finding{finding(rel, "acceptance-criteria carries no numbered criterion and "+ref+" requires a numbered list",
+		"number the criteria, so that the verification phase's mapping can name each one")}
+}
+
+// mappingComplete is the other half of section 7's G-Test row, "mapping of acceptance criteria
+// complete". It reads the numbers the requirements phase raised and reports any the verification
+// phase's mapping does not name.
+//
+// It does nothing unless both artifacts are at 1.1.0 of their template. A P4 at 1.1.0 behind a P1
+// at 1.0.0 is a legitimate state — it is every intent already under way when the bump lands — and
+// reading it as a failure would make the bump re-judge what the anchor exists to protect.
+//
+// A criterion counts as named where its number appears as a standalone token anywhere in the
+// section. Section 5 says the mapping "names each criterion by its number" and does not say how, so
+// a table cell, a list item and a sentence all qualify. The cost is that a stray number satisfies
+// it, so this can report a false green and never a false red — which is the right way round for a
+// finding that stops a phase.
+func mappingComplete(c Ctx) []model.Finding {
+	if model.TemplateID(c.Phase) != "verification" {
+		return nil
+	}
+	rel := c.phaseRel(c.Phase) + "/output.md"
+	var o model.Output
+	raw, err := fm.ReadFront(c.abs(rel), &o)
+	if err != nil {
+		return nil
+	}
+	if !templateAtLeast(fmt.Sprint(raw["template"]), "verification", 1, 1) {
+		return nil
+	}
+	pred := c.phaseRel("01-requirements") + "/output.md"
+	var p model.Output
+	praw, err := fm.ReadFront(c.abs(pred), &p)
+	if err != nil {
+		return nil // no requirements phase to map against
+	}
+	if !templateAtLeast(fmt.Sprint(praw["template"]), "requirements", 1, 1) {
+		return nil
+	}
+	criteria, ok := parseSections(c.abs(pred))
+	if !ok {
+		return nil
+	}
+	mapping, ok := parseSections(c.abs(rel))
+	if !ok {
+		return nil
+	}
+	var missing []string
+	for _, m := range criterionNumber.FindAllStringSubmatch(criteria["acceptance-criteria"], -1) {
+		if !namesNumber(mapping["test-mapping"], m[1]) {
+			missing = append(missing, m[1])
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	return []model.Finding{finding(rel, "test-mapping does not name acceptance criteria "+strings.Join(missing, ", "),
+		"map every criterion the requirements phase numbered, or record why one is not covered")}
+}
+
+// namesNumber is the loose reading of "names each criterion by its number": the number as a token
+// with no digit either side of it, so that 1 does not match inside 10 and a table cell, a list item
+// and a sentence all count.
+func namesNumber(section, n string) bool {
+	return regexp.MustCompile(`(?:^|[^0-9])` + regexp.QuoteMeta(n) + `(?:[^0-9]|$)`).MatchString(section)
 }
 
 // Exported for the same reason as QuestionShape, and read by the command that writes a
@@ -1427,17 +1572,22 @@ func build(c Ctx) model.Check {
 	return declaredResults(c, BuildKind, "build", "fix the build and let the pipeline produce a new result")
 }
 
-// testReport is the result half of section 7's G-Test row, "declared test result successful".
+// testReport is both halves of section 7's G-Test row: "declared test result successful, mapping of
+// acceptance criteria complete".
 //
-// The other half of that row, "mapping of acceptance criteria complete", has no reader and is
-// not implemented here. It needs an acceptance criterion to be identifiable so that a gate can
-// say the mapping covers it, and nothing identifies one: 46 of 55 P1 artifacts in this trail
-// carry no numbered criteria, so a completeness check would re-judge most of the trail and
-// would first need a numbering convention, which is an addition to section 9 and so a person's
-// commit. #212 recorded the measurement and docs/clause-readers.md carries the gap, because a
-// green G-Test now means half of its row rather than all of it.
+// The mapping half had no reader until section 5 gained "Acceptance criteria are identifiable",
+// because a gate cannot say a mapping covers a criterion it cannot name. #212 recorded the
+// measurement and docs/clause-readers.md carried the gap; the convention arrived in that clause,
+// anchored on the template version so that nothing already sealed is re-judged, and mappingComplete
+// reads it. A green G-Test now means its whole row for an artifact at verification@1.1.0, and the
+// result half alone for one at 1.0.0.
 func testReport(c Ctx) model.Check {
-	return declaredResults(c, TestKind, "test report", "fix the suite and let the pipeline produce a new result")
+	ch := declaredResults(c, TestKind, "test report", "fix the suite and let the pipeline produce a new result")
+	if fs := mappingComplete(c); len(fs) > 0 {
+		ch.Findings = append(ch.Findings, fs...)
+		ch.Result = "fail"
+	}
+	return ch
 }
 
 // declaredResults is what G-Build and G-Test both are: the declared results of one kind,
@@ -1681,7 +1831,15 @@ func unknownSection(e *eval, r rules.Rule, names ...string) []model.Finding {
 // renderedSections parses the phase's artifact back into sections, which is the form a reader
 // sees and the form a section predicate asks about.
 func renderedSections(e *eval, rel string) (map[string]string, bool) {
-	body, err := os.ReadFile(e.abs(rel))
+	return parseSections(e.abs(rel))
+}
+
+// parseSections reads one artifact back into its rendered sections by anchor, which is the form a
+// reader sees and the only one that survives a strings bundle changing: section 5 has gates match
+// anchors and never headings. Two callers, one body, so a section read by a rule and a section read
+// by a gate cannot come to mean different things.
+func parseSections(abs string) (map[string]string, bool) {
+	body, err := os.ReadFile(abs)
 	if err != nil {
 		return nil, false
 	}

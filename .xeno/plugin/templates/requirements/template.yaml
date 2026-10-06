@@ -2,7 +2,7 @@
 # structure puts its own under .xeno/config/templates/requirements/, which beats this
 # one for that id alone and leaves the rest of the set in place.
 id: requirements
-version: 1.0.0
+version: 1.1.0
 phase: 01-requirements
 sections:
   - { id: acceptance-criteria, required: true }

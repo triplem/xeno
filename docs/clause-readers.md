@@ -107,33 +107,66 @@ nine intents between the two dates, so part of the difference is growth and part
 which population was counted, and a reader shown only the newer figure cannot tell
 which.
 
-**Decided in #258, and what it waits on.** The anchor is the template version: section 5
-requires numbered criteria from `requirements@1.1.0` and a numbered mapping from
-`verification@1.1.0`, and the check judges only artifacts declaring 1.1.0 or later.
-Nothing is re-judged and no anchor is invented — all 64 P1 artifacts declare
-`requirements@1.0.0` today and `template` is already a frontmatter field, read by
-`model.Template`, so the equivalent of G-Policy's `judgedUnder` that a gate's own checks
-were said to lack is already in every artifact. It waits on the section 5 commit, which
-the first standing rule makes a person's. The reader column still says `nothing`,
-because a decision is not a reader and nothing fails today if a mapping covers three of
-five criteria; A90 is why that is left as it is.
+**Read since #258, and by what.** The anchor is the template version: section 5 requires
+numbered criteria from `requirements@1.1.0` and a numbered mapping from
+`verification@1.1.0`, and each check judges only artifacts declaring that version or
+later. Nothing was re-judged and no anchor was invented — `template` is already a
+frontmatter field, read by `model.Template`, so the equivalent of G-Policy's
+`judgedUnder` that a gate's own checks were said to lack was in every artifact already.
+`gates.numberedCriteria` reads the first half from G-Schema, because a numbered list is
+a statement about an artifact's shape and the phase that can still fix it is the phase
+that should fail; `gates.mappingComplete` reads the second from G-Test, which is the
+gate section 7 names. A green G-Test now means its whole row for an artifact at
+`verification@1.1.0`, and its result half alone for one at 1.0.0.
 
-**Why the recommendation's reason has no field**, and what was decided about it. Section
-8 asks for "the agent's recommendation with a reason" and `model.Option` carries `Text`,
-`Consequence`, `Recommended` and `Free`, so the reason can only live inside the
-question's text or inside a consequence, where it is indistinguishable from what it
-shares the field with. #247 argued both homes without settling: "with a reason" reads as
-one reason per question, which puts it beside `Text` on `Question`; a reason is about
-the option chosen, which puts it on `Option` and costs a field empty on every option but
-one.
+The mapping check reads a criterion's number as a standalone token anywhere in the
+section, so a table cell, a list item and a sentence all count: section 5 says the
+mapping "names each criterion by its number" and does not say how. A stray number
+therefore satisfies it, which means it can report a false green and never a false red —
+the right way round for a finding that stops a phase.
 
-#258 settled it on `Option`, required by `QuestionAsked` wherever `recommended: true`.
-The reason and the recommendation then cannot drift apart — a recommendation that moves
-to another option takes its reason with it or the writer refuses, where a reason held
-beside the question would go on describing the option it used to be about with nothing
-able to notice. A conditionally required field is not new here: `ChecklistEntry.Note` is
-required for two of three results and optional for the third. This waits on the section
-8 commit, and the row goes on saying there is no field until one exists.
+**What the two template bumps cost, measured.** `hashes` treats an artifact whose
+declared template ref differs from the one the repository carries as one whose bundle is
+gone, and `recomputed` then skips `strings_hash`, because a bundle the repository no
+longer has cannot be hashed by anybody. Bumping `requirements` and `verification`
+therefore removed that reader from every P1 and P4 artifact sealed before it — 130 of
+them. Measured on 2026-10-06 by corrupting one sealed artifact's `strings_hash`:
+G-Schema red at `requirements@1.0.0`, green at `requirements@1.1.0`, with nothing
+announcing the difference. It is one of two readers and not the only one: the same
+experiment had `gate verify` report a divergence and exit 1, because editing a sealed
+artifact moves its `artifacts_hash` and the successor's G-Freshness reads the
+predecessor hash. There is no honest repair — a recorded hash that differs from the
+current bundle's cannot be told apart from a right one about a bundle that has been
+replaced, and the two need opposite answers.
+
+**Where the recommendation's reason lives, and why there.** Section 8 asks for "the
+agent's recommendation with a reason". `model.Option` carried `Text`, `Consequence`,
+`Recommended` and `Free`, so the reason could only sit inside the question's text or
+inside a consequence, where it is indistinguishable from what it shares the field with.
+#247 argued both homes without settling: "with a reason" reads as one reason per
+question, which puts it beside `Text` on `Question`; a reason is about the option
+chosen, which puts it on `Option` and costs a field empty on every option but one.
+
+#258 settled it on `Option` and section 8 now says so. `QuestionAsked` requires it
+wherever `recommended: true`, so the reason and the recommendation cannot drift apart: a
+recommendation that moves to another option takes its reason with it or the writer
+refuses. A conditionally required field is not new here — `ChecklistEntry.Note` is
+required for two of three results and optional for the third.
+
+**It is the writer's and not a gate's**, which is the row above it as well. One sealed
+question in this trail already fails the recommendation requirement, so a gate reading
+either half would re-judge the trail; #229 measured that and `QuestionShape`'s own
+comment carries it. So a question written by this runner carries a reason and a question
+written by hand may not, and nothing fails for it.
+
+Three rows therefore moved from reporting no reader to naming one, and one row is new —
+section 5's numbered list, which the clause added and the pass of 2026-10-03 could not
+have seen. **The count is forty, and the last figure this document gave was wrong before
+this intent touched it:** the prose said thirty-eight where the table already carried
+thirty-nine. Counted on 2026-10-06, by reading the rows rather than the sentence. Which
+of the earlier additions went unremarked is not recoverable from the file, and the gap
+is the one XENO-0260 recorded about this document a few hours earlier — a figure in
+prose beside the rows it describes, with nothing checking that the two agree.
 
 | § | clause | reader |
 |---|---|---|
@@ -151,9 +184,10 @@ required for two of three results and optional for the third. This waits on the 
 | 5 | the budget is judged against the size the lock recorded | G-Schema's budget check |
 | 5 | a missing strings bundle fails red | G-Schema |
 | 5 | gates match section ids, never headings | `template.Parse`, test |
+| 5 | acceptance criteria are a numbered list | `gates.numberedCriteria`, from `requirements@1.1.0` |
 | 6 | a question carries two to four options, each with its consequence, and one free entry | G-Schema's shape check, G-Questions |
 | 8 | a question recommends exactly one of its options | `QuestionAsked`, the writer only; no gate reads it |
-| 8 | the recommendation carries a reason | **no field to carry it**; nothing reads it (#247) |
+| 8 | the recommendation carries a reason | `QuestionAsked`, the writer only; no gate reads it |
 | 6 | a decision carries id, chosen, rationale and `decided_by` | G-Questions' decision shape |
 | 6 | `phase start` refuses a predecessor with no completed verdict | `predecessorAllowsStart`, test |
 | 6 | `phase start` refuses a second start of a running phase | the run marker, test |
@@ -163,7 +197,7 @@ required for two of three results and optional for the third. This waits on the 
 | 6 | a decision names a person and a reason | `Decide` refusal |
 | 6 | a decision against a stale verdict is refused | `rewriteStatus`, test |
 | 7 | G-Test: declared test result successful | `gates.testReport`, `TestKind`, from #212 |
-| 7 | G-Test: mapping of acceptance criteria complete | **nothing**; see below |
+| 7 | G-Test: mapping of acceptance criteria complete | `gates.mappingComplete`, from `verification@1.1.0` |
 | 7 | G-Supply compares the vendored tree against the binary's digest | `gates.supply` |
 | 7 | G-Freshness reads the predecessors' locks, never the phase's own | `gates.freshness` |
 | 7 | an unimplemented gate is written, not skipped | `notImplemented` |
