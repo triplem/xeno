@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#235
+phase: 03-implementation
+created: "2026-10-06T18:00:45Z"
+schema_version: "1.0"
+runner_version: dev+5276f4b.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Section 5 says of an advisory finding that the check is pass and the phase is green. Those are two statements with two readers — result and Status — and P2 planned for one. Changing result alone produced a phase that was red with every check passing, which the end-to-end run found and no unit test would have: the criterion that caught it was the one written as a behaviour, a phase coming out green and the next phase starting, rather than as a value.'
+      proposal: Where a clause states two consequences in one sentence, each is traced to its reader before the design is written, and at least one criterion is written as the behaviour rather than as the field. A clause that says pass and green names two mechanisms in this runner, and satisfying one of them looks exactly like satisfying both from inside a unit test.
+      target: .xeno/config/rules/learned/project/a-clause-with-two-consequences.yaml

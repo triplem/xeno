@@ -161,12 +161,14 @@ written by hand may not, and nothing fails for it.
 
 Three rows therefore moved from reporting no reader to naming one, and one row is new —
 section 5's numbered list, which the clause added and the pass of 2026-10-03 could not
-have seen. **The count is forty, and the last figure this document gave was wrong before
-this intent touched it:** the prose said thirty-eight where the table already carried
-thirty-nine. Counted on 2026-10-06, by reading the rows rather than the sentence. Which
-of the earlier additions went unremarked is not recoverable from the file, and the gap
-is the one XENO-0260 recorded about this document a few hours earlier — a figure in
-prose beside the rows it describes, with nothing checking that the two agree.
+have seen. A further row arrived with #235's advisory finding, which section 5 states as
+plainly as any clause in it and which this table had never listed. **The count is
+forty-one, and the last figure this document gave before XENO-0264 was wrong:** the
+prose said thirty-eight where the table already carried thirty-nine. Counted on
+2026-10-06, by reading the rows rather than the sentence. Which of the earlier additions
+went unremarked is not recoverable from the file, and the gap is the one XENO-0260
+recorded about this document a few hours earlier — a figure in prose beside the rows it
+describes, with nothing checking that the two agree.
 
 | § | clause | reader |
 |---|---|---|
@@ -182,6 +184,7 @@ prose beside the rows it describes, with nothing checking that the two agree.
 | 5 | finding ids do not depend on the run | `hashing.FindingID`, test |
 | 5 | `artifacts_hash` excludes `gate.yaml` and `cost.yaml` | `hashing.PhaseExcluded` |
 | 5 | the budget is judged against the size the lock recorded | G-Schema's budget check |
+| 5 | a budget overrun is a finding and not a red gate | `gates.advisory`, `result` and `Status` |
 | 5 | a missing strings bundle fails red | G-Schema |
 | 5 | gates match section ids, never headings | `template.Parse`, test |
 | 5 | acceptance criteria are a numbered list | `gates.numberedCriteria`, from `requirements@1.1.0` |
