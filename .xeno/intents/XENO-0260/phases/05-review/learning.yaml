@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 05-review
+created: "2026-10-06T11:42:14Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Two intents a few hours apart recorded the same residual risk by the same mechanism: a prose comment carrying figures beside the machine-readable counts they describe, with nothing checking that the two agree. XENO-0259 for .github/npm-audit-baseline.json, this one for docs/clause-readers.md''s table and the paragraph naming its population. Three documents here now carry trail-wide or tree-wide counts in prose.'
+      proposal: Where a document carries a figure in prose beside the same figure in a structured field, the structured field is the one a check can read and the prose says it is derived from it. Two instances in one session is the point at which this is a shape rather than an instance, and it is the next thing worth a reader.
+      target: .xeno/config/rules/learned/project/a-figure-in-prose-beside-a-field.yaml

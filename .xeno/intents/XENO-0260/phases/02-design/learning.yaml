@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#258
+phase: 02-design
+created: "2026-10-06T11:34:00Z"
+schema_version: "1.0"
+runner_version: dev+7885661
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The anchor this decision needed was already in every artifact. The earlier framing was that G-Policy has judgedUnder keyed on rules_hash and a gate's own checks have no equivalent, so a forward-only check would need a new anchor and therefore a specification question. template is in the frontmatter of all 64 P1 artifacts, all of them declaring requirements@1.0.0, and model.Template already reads it. The missing mechanism was found by reading an artifact's frontmatter rather than by reasoning about what gates have.
+      proposal: Before a phase concludes that a mechanism has to be added, the fields an artifact already carries are listed from an artifact rather than recalled from the schema section. A field with one reader looks like a field with no reader when it is read from the specification's prose.
+      target: .xeno/config/rules/learned/project/the-fields-an-artifact-already-carries.yaml

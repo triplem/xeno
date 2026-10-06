@@ -1,0 +1,19 @@
+# the figures in the replaced passage, re-run on 2026-10-06
+P1 artifacts: 65
+P4 artifacts: 64
+P1 with a numbered list of criteria: 20
+P4 whose mapping cites a number: 7
+distinct template declarations in P1:
+     65 template: requirements@1.0.0
+
+# section 9 contains no occurrence of 'acceptance'
+grep -n acceptance docs/process-definition.md:
+572:(`acceptance-criteria`, `non-goals`, `open-questions`), their order and the
+692:<!-- xeno:section:acceptance-criteria -->
+710:| P1 Requirements      | P0       | specification with acceptance criteria and non goals         |
+713:| P4 Verification      | P3       | test evidence, mapping of acceptance criteria to tests       |
+942:| G-Test         | declared test result successful, mapping of acceptance criteria complete     | P4   |
+1775:The same applies to specialisations inside a phase. UI, backend and acceptance
+section 9 range:
+1255:## 9. Rule model
+1485:## 10. Learning

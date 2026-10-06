@@ -76,11 +76,64 @@ ceiling until a criterion is identifiable. The reader column above says `nothing
 an example nobody has enabled fails nothing.
 
 It needs an acceptance criterion to be identifiable, so that a gate can say the mapping
-covers it. Nothing identifies one: of
-the 55 P1 artifacts in this trail, 46 carry no numbered criteria at all, and of the nine
-that do, one already fails a check by number. So a completeness check would re-judge
-most of the trail, and would first need a numbering convention, which is an addition to
-section 9 and therefore a specification change. Measured on 2026-10-05.
+covers it, and the convention that would make one identifiable is an addition to
+**section 5** — the Language and Rendering subsections, where `template.yaml` holds the
+section ids, their order and the required fields. It is therefore a specification
+change. This paragraph said section 9 until #258, and section 9 is the Rule model.
+Searching the specification for "acceptance" returns 572 and 692 in section 5, 710 and
+713 in section 6's phase table and 942 in section 7's G-Test row, and nothing in all of
+section 9. A wrong number here is wrong at the moment the document is read, which is
+before somebody writes the commit, and #258 and its first comment had both copied it.
+
+**The check needs two things identifiable and the measurement had counted one.** A
+completeness check reads a P4 `test-mapping` and asks whether it covers every criterion
+P1 raised, so it needs criteria that can be named and a mapping that names them.
+Measured on 2026-10-06 over the trail as it stood before the intent that measured it,
+which is what the counts of 64 are:
+
+| | artifacts | identifiable | not |
+|---|---|---|---|
+| P1 `acceptance-criteria`, as a numbered list | 64 | 19 | 45 |
+| P4 `test-mapping`, citing a criterion by number | 64 | 7 | 57 |
+
+The cost of applying the check to the trail is **57 verdicts**, because a completeness
+check is judged at P4. This intent's own artifacts are not in those counts and move both
+the right way — its P1 numbers its criteria and its P4 mapping cites the numbers, so the
+P1 figure becomes 20 of 65 the moment it lands. That is the whole of what a forward-only
+anchor does, visible one intent at a time. The figure of 2026-10-05 — 55 P1 artifacts,
+46 with no numbered criteria, and one of the nine that had them already failing a check
+by number — stands as a dated measurement rather than being corrected: the trail grew by
+nine intents between the two dates, so part of the difference is growth and part is
+which population was counted, and a reader shown only the newer figure cannot tell
+which.
+
+**Decided in #258, and what it waits on.** The anchor is the template version: section 5
+requires numbered criteria from `requirements@1.1.0` and a numbered mapping from
+`verification@1.1.0`, and the check judges only artifacts declaring 1.1.0 or later.
+Nothing is re-judged and no anchor is invented — all 64 P1 artifacts declare
+`requirements@1.0.0` today and `template` is already a frontmatter field, read by
+`model.Template`, so the equivalent of G-Policy's `judgedUnder` that a gate's own checks
+were said to lack is already in every artifact. It waits on the section 5 commit, which
+the first standing rule makes a person's. The reader column still says `nothing`,
+because a decision is not a reader and nothing fails today if a mapping covers three of
+five criteria; A90 is why that is left as it is.
+
+**Why the recommendation's reason has no field**, and what was decided about it. Section
+8 asks for "the agent's recommendation with a reason" and `model.Option` carries `Text`,
+`Consequence`, `Recommended` and `Free`, so the reason can only live inside the
+question's text or inside a consequence, where it is indistinguishable from what it
+shares the field with. #247 argued both homes without settling: "with a reason" reads as
+one reason per question, which puts it beside `Text` on `Question`; a reason is about
+the option chosen, which puts it on `Option` and costs a field empty on every option but
+one.
+
+#258 settled it on `Option`, required by `QuestionAsked` wherever `recommended: true`.
+The reason and the recommendation then cannot drift apart — a recommendation that moves
+to another option takes its reason with it or the writer refuses, where a reason held
+beside the question would go on describing the option it used to be about with nothing
+able to notice. A conditionally required field is not new here: `ChecklistEntry.Note` is
+required for two of three results and optional for the third. This waits on the section
+8 commit, and the row goes on saying there is no field until one exists.
 
 | § | clause | reader |
 |---|---|---|

@@ -1,0 +1,38 @@
+intent: github.com/triplem/xeno#258
+phase: 05-review
+created: "2026-10-06T11:41:53Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 02648c42f07af3d57c740237d590ecc7bc8085fb5927748242a899b7eeaaff8a
+evidence_source: ci
+template_source: plugin
+repo_commit: 7885661ff67ed7b5f2e3f63a723f776df2b82155
+files:
+    - path: docs/clause-readers.md
+      sha256: 57683cf442724ffb590c0f75bdc58621a6ce89fc7a2adc486cc7af749ffc7624
+      bytes: 15732
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/assumptions.md
+      sha256: 2d14ced99aa740f712c7ec536cdb1e462b30985ee18c118b8c451a49daedd147
+      bytes: 93844
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17
