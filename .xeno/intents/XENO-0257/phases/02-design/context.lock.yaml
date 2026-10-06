@@ -1,0 +1,59 @@
+intent: github.com/triplem/xeno#257
+phase: 02-design
+created: "2026-10-06T07:53:39Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: a2741f87b7f68f754e6d21a64750e3e622577edab425c90b62d74eeef83bec3d
+evidence_source: ci
+template_source: plugin
+repo_commit: 77a35b1aed3a9087c9e00a87ddc474571df4c50c
+files:
+    - path: .xeno/plugin/templates/design/template.yaml
+      sha256: 7bb8c1d59100490b774b0efc366b1f4bf4c59fc5ea9ccdf422003c140aa93cff
+      bytes: 429
+    - path: .xeno/plugin/templates/implementation/template.yaml
+      sha256: 253334c3b4ea5dcf3f582b47a6eb3670e0e5b94ace464abce4a0cdb55c8e0354
+      bytes: 453
+    - path: .xeno/plugin/templates/intake/template.yaml
+      sha256: 776a89787be06aede07f37f55726a9625c077402f8c8bf96b174929f995fa6a8
+      bytes: 470
+    - path: .xeno/plugin/templates/requirements/template.yaml
+      sha256: 12991f86dc12299227af888602d065fa69657809c691dcb0d46e51aec4ca3b54
+      bytes: 498
+    - path: .xeno/plugin/templates/review/template.yaml
+      sha256: 4251b5ad85c285fc10be71589ab66a534bd3d95a73812769b868a7e8cafee32b
+      bytes: 483
+    - path: .xeno/plugin/templates/verification/template.yaml
+      sha256: e7cdacc658f387a26397f82a400fed783c49f64acb8257856e3e5a15c1a86f1e
+      bytes: 482
+    - path: internal/template/template.go
+      sha256: 59559e5f84121865dc0ffe2a0632acdfde3fa6196d4749a598b6519c836b7300
+      bytes: 6659
+    - path: internal/gates/gates.go
+      sha256: 257e04dfa3326b894dcac3039c8b72c14a14dcbc8b81e2d8eac8778e04764620
+      bytes: 81330
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/process-definition.md
+      sha256: f4d1d36fe7cc07136cab49f646fdfd8f6d6ffdd8ad39a28efc7e479eca0c256a
+      bytes: 128330
+    - path: docs/assumptions.md
+      sha256: 3670968bb9c64b684afbfe52c11b461778813d2092936e11f0b654d432e828ba
+      bytes: 93171
+    - path: examples/rules/documentation-follows-the-change.yaml
+      sha256: 92876ebbf35ba6bf660fcb2d921786ba117befbd77b17cad58d6bb00c6934fa7
+      bytes: 1032
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 1c9bd14a9a68ba4e847dcdb08d180d84e3c2e044cd801e58ca85f89d035acf17
