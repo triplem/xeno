@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#237
+phase: 04-verification
+created: "2026-10-06T12:10:53Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The first end-to-end check reported a green gate and was about to be written down as proof the remedy worked. It was green because P0's lock records no files, so the check had nothing to compare — the thing being tested was absent, not passing. The second attempt put the lock where files exist and produced the finding, the approval and the started phase.
+      proposal: 'A verification that rests on a check firing confirms the check can fire on the fixture before reading its silence as a pass. #263''s convention is written about a negative finding; this is the same fault inside a positive one, where the evidence is a green gate rather than an absent match.'
+      target: .xeno/config/rules/learned/project/a-green-gate-is-also-a-negative-result.yaml

@@ -1256,18 +1256,47 @@ func staleReads(c Ctx, idx int) []model.Finding {
 			switch {
 			case os.IsNotExist(err):
 				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it is gone",
-					"read the phase again against what is there, or record why the file left"))
+					sealedLockRemedy(phase, c.Phase)))
 			case err != nil:
 				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it cannot be read: "+err.Error(),
-					"make it readable, or read the phase again against what is there"))
+					"make it readable and run the gate again; the tree is wrong here and not the lock, "+
+						"so nothing has to be approved or started over"))
 			case h != f.SHA256:
 				fs = append(fs, finding(rel, phase+" was given "+f.Path+" and it has changed since",
-					"read the phase again for what changed; the lock records what it was given, not what is there now"))
+					sealedLockRemedy(phase, c.Phase)))
 			}
 		}
 	}
 	sort.Slice(fs, func(i, j int) bool { return fs[i].Cause < fs[j].Cause })
 	return fs
+}
+
+// sealedLockRemedy is section 7's two routes for a stale phase, "re-run or explicitly approved as
+// still valid", named in that order: the re-run is the act that makes the staleness untrue and the
+// approval is the act that accepts it, so leading with the approval would tell a reader the
+// staleness is acceptable before they have looked.
+//
+// It says why section set and phase finish will not clear the finding, because that is the first
+// route Start's refusal offers and the one a person reaches for. The lock is written only by phase
+// start, and #215 refuses a second one: the lock is inside artifacts_hash, and it is the only record
+// of what the phase was given. So re-rendering the artifact recomputes its hash and leaves this
+// finding exactly where it was, which is the second of the two refusals #237 counts.
+//
+// The approval is named as a second person's act and not as a command. Runner.red in next.go already
+// prints `gate approve` and its comment says why it hands over neither way out: releasing a finding
+// is a statement by a second person. But red is not the only reader — gate.yaml carries `next` as
+// text with nothing beside it — so the route has to be in the string, and naming who does it rather
+// than what to type is what both readers can have.
+//
+// The two phases are different and both are named. The finding is about the lock of a preceding
+// phase and is raised while gating a later one, so the re-run applies to the first and the approval
+// to the second, and a remedy naming neither is ambiguous in exactly the way that costs a person a
+// refusal.
+func sealedLockRemedy(stale, gated string) string {
+	return "start " + stale + " over, which discards it and every phase after it, " +
+		"or a second person approves this finding on " + gated + " as still valid; " +
+		"section set and phase finish will not clear it, because the lock keeps what the phase " +
+		"was given and only phase start writes one"
 }
 
 // ---- G-Evidence and G-Build

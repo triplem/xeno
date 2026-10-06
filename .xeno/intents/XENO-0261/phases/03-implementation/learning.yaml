@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#237
+phase: 03-implementation
+created: "2026-10-06T12:07:42Z"
+schema_version: "1.0"
+runner_version: dev+7885661.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: No P0 context.lock.yaml in this trail records a files list, 0 of 117, because phase start writes the lock and scope set writes P0's scope afterwards. Of the P1 locks, 17 of 66 carry files. So the staleness half of G-Freshness and the budget check have had almost nothing to read for most of this trail, which is how a remedy naming an act the runner refuses survived four intents unnoticed. Found while building an end-to-end check, when the first attempt made the ground move under P0 and the gate passed.
+      proposal: A check whose input is an artifact field records how often that field is populated across the trail, before it is argued about. Three issues reason about G-Freshness and the budget check, and none of them measured whether the locks they read carry anything.
+      target: .xeno/config/rules/learned/project/a-check-measures-whether-its-input-exists.yaml
