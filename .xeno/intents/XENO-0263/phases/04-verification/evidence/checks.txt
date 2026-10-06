@@ -1,0 +1,33 @@
+# checks over the advisory amendment, 2026-10-06
+## the diff
+ docs/process-definition.md | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+## the four check results are untouched
+394:    result: <pass|fail|pending|not-implemented>
+2
+(one removed line, the Context economy sentence that was extended)
+
+## drift is untouched and still unimplemented
+Drift in model.go:
+0
+RunAt and ArtifactsHash in model.go, which prove the search works:
+2
+a drift key written anywhere under internal/ or cmd/:
+0
+sealed gate.yaml files carrying a drift list:
+0
+sealed gate.yaml files in total:
+457
+
+## the comment column matches the block
+401:        advisory: true                  # absent in the ordinary case
+402:        decision:                       # absent while undecided
+408:          obligation: <open|closed>     # only with type overridden
+
+## the specification still cites no repository
+0
+the same pattern over CLAUDE.md:
+4
+
+## no new line over 88 outside tables: before 27, after 27, same multiset
