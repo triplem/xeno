@@ -1,0 +1,31 @@
+# A candidate reduced section set, not a shipped template and not enabled anywhere.
+#
+# It exists because #117 has nine intents saying the record is a fixed cost -- 17 required
+# sections and about 1,400 lines whatever the change, against changes from 13 to 440 lines --
+# so proportionality is not a ratio a shortcut could improve by a percentage. The only lever is
+# which of the seventeen a small change may omit, and the plan says the shape of a shortcut
+# should follow from measurement rather than be anticipated. This is the thing to measure.
+#
+# Nothing is deleted. Every section the shipped template defines is still defined here, so
+# `section set` accepts all of them and a rule naming one cannot find it missing. Only the
+# `required` flag moves, which is the whole of the lever: Missing() reports required sections
+# that carry nothing, and nothing else reads the flag.
+#
+# What this file drops, and why:
+#   decisions: there is no design to record; a decision taken anyway belongs in the implementation
+#   alternatives: nothing was weighed, and an alternatives section asserting that is noise
+#   impact: the change is its own impact statement at this size
+#
+# Adopt it by copying this directory to .xeno/config/templates/design/, which beats the
+# shipped one for this id alone and leaves the rest of the set in place. strings.en.yaml must
+# come with it: a missing bundle is an error and never a fall back to another language.
+#
+# See examples/templates/README.md for what to measure once it is adopted.
+id: design
+version: 1.0.0
+phase: 02-design
+sections:
+  - { id: decisions, required: false }
+  - { id: alternatives, required: false }
+  - { id: impact, required: false }
+  - { id: open-questions, required: false }

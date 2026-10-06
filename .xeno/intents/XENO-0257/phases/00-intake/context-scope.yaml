@@ -1,0 +1,22 @@
+intent: github.com/triplem/xeno#257
+phase: 00-intake
+created: "2026-10-06T07:49:35Z"
+schema_version: "1.0"
+runner_version: dev+8e3b29b.dirty
+plugin_version: 0.0.0-dev
+include:
+    - .xeno/plugin/templates/*/template.yaml
+    - internal/template/template.go
+    - internal/gates/gates.go
+    - docs/implementation-plan.md
+    - docs/process-definition.md
+    - docs/assumptions.md
+    - examples/rules/documentation-follows-the-change.yaml
+links:
+    - component: internal/template
+      docs: docs/implementation-plan.md
+    - component: internal/gates
+      docs: docs/process-definition.md
+budget:
+    files: 16
+    bytes: 480000
