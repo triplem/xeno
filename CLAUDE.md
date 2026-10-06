@@ -62,6 +62,16 @@ made; the free entry has the same problem, since a person who writes their own o
 changes what the next question should ask and a batch has already asked it. Nothing
 checks this (#248).
 
+A negative result is evidence only when the thing checked was there to be found, because
+a tool asked about something absent answers as it does about something that does not
+match. So recreate the thing and run the check again before writing the finding down. It
+matters more here than elsewhere: a finding goes into an artifact and is sealed with it,
+so a wrong one is permanent rather than corrected, with the correction somewhere a
+reader of that phase will not be. #201 recorded a directory as not gitignored when the
+entry was at `.gitignore:10` all along, because `git check-ignore` ran moments after the
+directory was deleted; the claim reached two sealed phases and a pull request first.
+Nothing checks this (#256).
+
 ## Three standing rules
 
 **The documents are not editable by the agent.** Where the code and the specification
