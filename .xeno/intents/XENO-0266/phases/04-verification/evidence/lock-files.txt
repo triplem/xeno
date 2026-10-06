@@ -1,0 +1,16 @@
+# The measurement #267 rests on, re-taken on 2026-10-06 against this branch.
+# Counted by testing each context.lock.yaml for a 'files:' key.
+
+00-intake          locks=122  with files=0    without=122
+01-requirements    locks=71   with files=22   without=49
+02-design          locks=71   with files=22   without=49
+03-implementation  locks=71   with files=22   without=49
+04-verification    locks=71   with files=22   without=49
+05-review          locks=70   with files=21   without=49
+
+# This intent's own locks:
+.xeno/intents/XENO-0266/phases/00-intake/context.lock.yaml   no files key
+.xeno/intents/XENO-0266/phases/01-requirements/context.lock.yaml files recorded
+.xeno/intents/XENO-0266/phases/02-design/context.lock.yaml   files recorded
+.xeno/intents/XENO-0266/phases/03-implementation/context.lock.yaml files recorded
+.xeno/intents/XENO-0266/phases/04-verification/context.lock.yaml files recorded

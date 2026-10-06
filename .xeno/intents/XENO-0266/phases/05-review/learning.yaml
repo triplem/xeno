@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#267
+phase: 05-review
+created: "2026-10-06T20:12:31Z"
+schema_version: "1.0"
+runner_version: dev+3f1fab3.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The three paragraphs added here have no reader and one of them can become false: ''An intake''s files is empty'' holds because of the order phase start and scope set run in, and nothing in the repository would notice if that order changed. docs/clause-readers.md exists to name exactly this gap, and the only control put in place was the phrasing of the sentence — it states the fact rather than permitting it, so adopting either of #267''s candidates means deleting it. That is a convention about how a clause is worded, held by nothing but the next author reading it.'
+      proposal: 'Where a specification clause records a consequence of an order rather than requiring something of a tool, it is written as a fact that a change must delete and not as a permission a change can satisfy, and docs/clause-readers.md names it among the reader-shaped clauses deliberately left unread. The difference is visible in the diff of the commit that changes the behaviour: a deleted sentence is a decision, an unchanged permissive one is a silence.'
+      target: .xeno/config/rules/learned/project/a-consequence-clause-is-worded-to-be-deleted.yaml

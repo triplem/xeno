@@ -1,0 +1,34 @@
+# go test ./... on fix/267-p0-lock-records-no-files
+# criterion 13: no new or amended assertion, suite unchanged
+
+ok  	github.com/triplem/xeno/cmd/xeno	1.588s
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+ok  	github.com/triplem/xeno/internal/external	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/git	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/host	(cached)
+ok  	github.com/triplem/xeno/internal/host/github	(cached)
+ok  	github.com/triplem/xeno/internal/host/gitlab	(cached)
+ok  	github.com/triplem/xeno/internal/index	(cached)
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/plugin	(cached)
+ok  	github.com/triplem/xeno/internal/rules	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	130.962s
+ok  	github.com/triplem/xeno/internal/template	(cached)
+
+# gofmt -l . | grep -v vendor
+(nothing)
+
+# go vet ./...
+(no output above means clean)
+
+# git diff --stat against main, test files only
+# xeno gate verify
+verified 475 verdicts
+exit=0
