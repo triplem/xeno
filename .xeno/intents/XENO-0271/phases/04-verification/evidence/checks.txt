@@ -1,0 +1,9 @@
+=== build, format, vet, verify, and the diff ===
+build ok
+gofmt: nothing
+vet ok
+verified 499 verdicts
+
+=== every file this intent changes ===
+ M docs/assumptions.md
+(only docs/assumptions.md; nothing under internal/, cmd/ or .xeno/plugin/)

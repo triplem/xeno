@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#273
+phase: 00-intake
+created: "2026-10-07T09:53:21Z"
+schema_version: "1.0"
+runner_version: dev+0768c44
+plugin_version: 0.0.0-dev
+include:
+    - docs/assumptions.md
+    - docs/process-definition.md
+    - internal/model/model.go
+    - internal/gates/gates.go
+    - internal/template/template.go
+    - CLAUDE.md
+links:
+    - component: internal/template
+      docs: docs/process-definition.md
+budget:
+    files: 6
+    bytes: 400000

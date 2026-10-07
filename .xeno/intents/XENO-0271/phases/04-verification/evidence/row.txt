@@ -1,0 +1,38 @@
+=== A33, read in the file ===
+| A33 | The template id is the phase without its ordering prefix, so `02-design` renders from `d
+esign` | the prefix orders the phases and says nothing a template needs; the alternative was a m
+apping table, which is a second place to keep true | `internal/model` | approved; **what the pre
+fix would cost was measured in #273** and neither form is free. Renaming the shipped directory a
+lone is harmless to the trail — `gate verify` matches all 495 verdicts and a `strings_hash` co
+rrupted to a hex value is still caught — but `Resolved.Ref()` comes from `template.yaml`'s `id
+:` field and the directory is only the path `Load` resolves, so `TemplateID` would collapse to t
+he identity function and resolution would key on the phase. Section 5's "resolution is per templ
+ate id: project beats plugin" then becomes false and a project override moves to `.xeno/config/t
+emplates/00-intake/`, which makes it a specification change with a code change behind it. Renami
+ng the `id:` with it, which is the consistent form and what the issue asks for, sets `goneBundle
+` for every sealed artifact, because each records an old ref and the shipped set answers a new o
+ne: `strings_hash` stops being recomputed across every artifact in the trail that carries a temp
+late ref, which is all of them: 495 when the variants were measured and 499 when this row was wr
+itten, both on 2026-10-07, and growing with each intent. **`gate verify` reported every one of t
+hem verified under either form**, so the one command that recomputes the whole trail would show 
+a reader nothing had broken. Against that the prefix buys `ls` ordering and nothing else, since 
+`template.yaml` already carries `phase: 00-intake`. The maintainer left the directories as they 
+are on 2026-10-07; both variants stay written out in #273 with their measured outputs |
+
+=== the row has five cells, like every other row ===
+fields between pipes: 5
+
+=== the assumption and the reason are byte-identical to before ===
+SAME  #
+SAME  assumption
+SAME  why
+SAME  where
+CHANGED state
+
+=== A33 is not cited from TemplateID: the finding the deviation records ===
+$ grep -rn 'A33' --include='*.go' . | grep -v vendor
+internal/runner/next.go:186:// short form. The prefix orders the phases and says nothing else, which is why A33 keeps
+TemplateID's own comment, which restates the reason without naming the row:
+// TemplateID is the phase without its ordering prefix: 02-design is rendered from the
+// template design. The prefix orders the phases and says nothing a template needs.
+func TemplateID(phase string) string {

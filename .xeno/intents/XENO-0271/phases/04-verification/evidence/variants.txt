@@ -1,0 +1,69 @@
+=== the two variants, measured on throwaway copies ===
+
+Control first: the original layout, strings_hash corrupted to a hex value
+$ sed -i 's/^strings_hash: .*/strings_hash: deadbeef.../' .../00-intake/output.md
+$ xeno gate run --intent XENO-0269 --phase 00
+github.com/triplem/xeno#207 00-intake: red
+  G-Schema       fail
+      F-aaee69 .../00-intake/output.md: strings_hash does not match the strings bundle of intake@1.0.0
+
+Variant A: directories renamed to 00-intake..05-review, TemplateID made identity,
+template.yaml id: left as intake. Same corruption:
+github.com/triplem/xeno#207 00-intake: red
+  G-Schema       fail
+      F-aaee69 .../00-intake/output.md: strings_hash does not match the strings bundle of intake@1.0.0
+$ xeno gate verify
+verified 495 verdicts
+
+Variant B: directories and id: both renamed. Same corruption:
+github.com/triplem/xeno#207 00-intake: green
+  G-Schema       pass
+$ xeno gate verify
+verified 495 verdicts
+
+=== why B is quiet: hashes() and recomputed() ===
+func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
+	// Nothing produced a manual artifact, so none of its hashes had a writer.
+	byHand := raw["tool"] == "manual"
+	// A bundle the repository no longer carries cannot be hashed by anybody. The
+	// artifact names the version it rendered from, and where that is not the version
+	// here, the value is unrecoverable rather than skipped.
+	goneBundle := false
+	if ref, ok := raw["template"].(string); ok {
+		if t, err := template.Load(c.Root, model.TemplateID(c.Phase), language(raw)); err == nil {
+			goneBundle = ref != t.Ref()
+		}
+	}
+	var fs []model.Finding
+	case field == "strings_hash" && !goneBundle:
+		t, err := template.Load(c.Root, model.TemplateID(c.Phase), language(raw))
+		if err != nil {
+			return nil // an unresolvable template is the section writer's finding
+		}
+		covers = "the strings bundle of " + t.Ref()
+		want = t.StringsHash
+
+=== how many artifacts carry a template ref, and under which ids ===
+(495 when the variants above were measured; the count below was taken after this intent's
+own phases were sealed, which is why the row says both numbers.)
+$ grep -l '^template: ' .xeno/intents/*/phases/*/output.md | wc -l
+499
+    108 template: intake@1.0.0
+     75 template: implementation@1.0.0
+     75 template: design@1.0.0
+     74 template: review@1.0.0
+     69 template: requirements@1.0.0
+     68 template: verification@1.0.0
+     18 template: intake@0.1.0
+      6 template: verification@1.1.0
+      6 template: requirements@1.1.0
+
+=== the first attempt, and why its negative was not evidence ===
+strings_hash was first set to 64 zeros, and the gate passed. It also passed on the
+untouched tree, and the same happened for context_hash set to 64 ones. YAML parses an
+all-digit scalar as a number, so raw[f].(string) fails and hashes() skips the field:
+	for _, f := range model.HashFields {
+		v, ok := raw[f].(string)
+		if !ok || v == "" {
+			continue // absence is the missing field finding, not this one
+		}
