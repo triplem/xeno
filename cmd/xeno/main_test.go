@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/triplem/xeno/internal/fm"
+	"github.com/triplem/xeno/internal/learning"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/runner"
 )
@@ -128,6 +129,36 @@ func TestOneIsARefusalAndZeroIsSuccess(t *testing.T) {
 
 	if code, _, errw = invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1", "--phase", "00", "--no-next"); code != 0 {
 		t.Fatalf("starting P0 exits %d, want 0: %s", code, errw)
+	}
+}
+
+// The route to the rule set needs somewhere to put the merge request, and the trail it reads is
+// the one place it may not put it, so there is no default that would be right. Section 10: a
+// learning takes effect after review and never on being noticed.
+func TestTheLearningRouteRefusesWithoutADestination(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "learning", "propose", "--root", root)
+	if code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errw, "refused:") || !strings.Contains(errw, "destination") {
+		t.Errorf("the refusal does not say what is missing: %q", errw)
+	}
+	if out != "" {
+		t.Errorf("a refusal wrote to standard output: %q", out)
+	}
+
+	dest := filepath.Join(t.TempDir(), "bundle")
+	if code, out, errw = invoke(t, "learning", "propose", "--root", root, "--out", dest); code != 0 {
+		t.Fatalf("exit %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "learning records read") {
+		t.Errorf("the figures are not reported: %q", out)
+	}
+	for _, name := range []string{learning.DescriptionFile, learning.PatchFile} {
+		if _, err := os.Stat(filepath.Join(dest, name)); err != nil {
+			t.Errorf("%s is not in the bundle: %v", name, err)
+		}
 	}
 }
 

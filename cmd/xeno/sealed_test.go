@@ -137,6 +137,10 @@ var aimedAtTheSealedPhase = map[string]walk{
 	"review answer":    {args: []string{"deviations-are-traceable", "--result", "met"}},
 	"obligation close": {args: []string{"{overridden}"}, verdict: writesTheVerdict},
 	"evidence attach":  {args: []string{"--from", "{pipeline}"}},
+	// The route writes the rule files, the patch and the description into --out and nothing
+	// anywhere else: it reads the learning records of a sealed phase and leaves that phase
+	// alone, which is the property worth asserting for a command that walks the whole trail.
+	"learning propose": {args: []string{"--out", "{proposals}"}},
 	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"},
 		moves: "the declaration is a frontmatter block of output.md, so a declaration after " +
 			"the verdict leaves the phase stale rather than rewriting it (#216)"},
@@ -215,6 +219,10 @@ func sealedP0(t *testing.T) *seal {
 			"  - text: something else\n    free: true\n"),
 		"{scope}":    inputFile(t, "scope.yaml", "include:\n  - src/**\n"),
 		"{pipeline}": pipelineDir(t),
+		// A destination outside the root entirely, which is the point of the command: it has
+		// no default and refuses a path inside .xeno, because the trail it reads is the one
+		// place a learning may not take effect.
+		"{proposals}": t.TempDir(),
 	}}
 	// A hook's JSON and the transcript it points at, the two inputs `cost turn` takes. The
 	// usage figures are what make the turn worth recording: a transcript summing to nothing
