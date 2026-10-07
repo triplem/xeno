@@ -1,9 +1,9 @@
 ---
 intent: github.com/triplem/xeno#277
 phase: 05-review
-created: "2026-10-07T13:38:38Z"
+created: "2026-10-07T14:18:45Z"
 schema_version: "1.0"
-runner_version: dev+0768c44.dirty
+runner_version: dev+27fc33e.dirty
 plugin_version: 0.0.0-dev
 language: en
 secrets_hash: 8002ba2da35fee01baac158b0842b29929ea7e1e5b4f8636ab6298d44cb135b9
@@ -39,3 +39,13 @@ Three rules answered, two of them deviations: the traceability rule, because P3 
 and both name what they depart from, and the migration rule, because there is no interface
 change and a gate got stricter, which has the same consequence for somebody with artifacts
 already.
+
+After this phase was first judged, CI refused the branch: approving the four findings put
+XENO-1 and XENO-2 in the commit range, and `Completeness` requires every touched intent to be
+complete or abandoned, which a pre-M0 intent whose later phases never started is not. There is
+no way to resolve a finding on such an intent without writing to its files. The maintainer was
+put three options and chose closing the two, which is the ending section 8 already offers; each
+now carries a reason saying nothing was dropped and an intent level `learning.yaml` recorded as
+`--no-finding`. It closes two of about 106 intents in that shape, and the first close ran half
+way and was reset and run again. All of it is recorded here rather than in P3, because it
+happened after P3 was judged.

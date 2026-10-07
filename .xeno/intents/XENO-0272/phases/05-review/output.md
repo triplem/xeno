@@ -73,6 +73,36 @@ earlier today and left standing. So "only facts about the tree" is true and one 
 blunter than the sentence suggests. Both are now written down in the register, A101 and A33,
 which is the most this intent can do about it.
 
+**What CI forced after the work was judged, and where it is recorded.** Approving the four
+findings rewrote XENO-1's and XENO-2's `gate.yaml`, which put both intents in the commit range,
+and `Completeness` requires every touched intent to be `complete` or `abandoned`. Both are
+pre-M0 intents whose later phases are `not-started` on purpose, which `Summarise` calls
+`in-progress`, so `xeno intent verify` refused the branch. There is no way to resolve a finding
+on such an intent without writing to its files, so the problem is not avoidable by doing the
+release differently.
+
+The maintainer was put three options — teach `Completeness` the M0 shape, which needs section 8
+to gain a third ending and so a specification commit; close the two intents, which is the
+ending section 8 already offers; or revert to #277's clause — and chose the close. Each now
+carries `status: abandoned` with a reason saying that nothing was dropped, that
+`m0-gate-job.md` and A20 describe the shape, that `abandoned` is the ending available rather
+than the one that fits, and why it happened today. Each also gained the intent level
+`learning.yaml` section 10 owes at a close, recorded as `--no-finding`: the close is
+administrative and the work it ends was judged weeks ago.
+
+Two things about it are worth a reviewer's attention. It closes two of roughly 106 intents in
+that shape, because this branch happened to touch them, so a reader comparing XENO-1 with
+XENO-3 finds no reason for the difference beyond the reason field. And the first `intent close`
+ran half way — it wrote `status: abandoned` and then went red on the missing learning record —
+so `intent.yaml` was reset from `origin/main` and the close run once more, which is why both
+records are consistent now and why the intermediate state is named here rather than left for
+somebody to infer.
+
+It is recorded in this phase and not in P3, where the implementation is described, because it
+happened after P3 was judged and re-judging P3 would have made P4 stale and P5 with it. The
+phase that records a thing is the phase that was open when it happened; what P3 describes is
+still accurate about what it describes.
+
 **One process note.** This phase's predecessor was judged twice. The removed behaviour was
 specified in two test tables with the same name, `go test ./internal/gates/` passed with only
 the first inverted, and the second surfaced on `go test ./...` during verification. P3 was
@@ -109,6 +139,14 @@ rather than spurious, and that the artifact cannot be corrected. Those two phase
 `tool_version` triple is a declaration and that nothing corroborates it. `tool` was the only one
 of the three any gate read, so one verdict in the process rested on a self-report. It no longer
 does, and `docs/assumptions.md` carries A101 with the measurement and the decision.
+
+**Two pre-M0 intents are now closed.** XENO-1 and XENO-2 carry `status: abandoned`
+with a reason saying that nothing was dropped: `m0-gate-job.md` runs one intake per work
+package and goes no further, A20 records the shape, and `abandoned` is the only ending
+section 8 offers for an intent that will not reach a decided P5. They were closed because
+resolving a finding on an intent puts it in a commit range where `xeno intent verify`
+requires one of those two endings, and about 106 intents are in the same shape without
+being closed.
 
 <!-- xeno:section:residual-risk -->
 ## Residual risk
@@ -150,3 +188,19 @@ worth closing a gap nobody had exploited. The threat model this project does not
 harness that lies about itself, and the argument for the change is not about threat: it is that
 a verdict should not rest on a declaration the documents call a declaration. Somebody could
 reasonably weigh those the other way, and the register row is where that disagreement would go.
+
+**Two intents are closed and about 104 others in the same shape are not.** XENO-1 and
+XENO-2 were closed because this branch touched them, and nothing distinguishes them from
+XENO-3 onwards except that. The reason field carries the truth and the `status` field
+carries `abandoned`, which is the wrong word for what they are; `Summarise` will now call
+them `abandoned` and `xeno intent status` will show it. The alternative was a third ending
+in section 8, which is a specification change the maintainer declined for now, so the
+inconsistency is the chosen cost and it grows each time a change touches another pre-M0
+intent.
+
+**A half-run `intent close` left a record nothing recomputes.** The first attempt wrote
+`status: abandoned` and then failed its own gate on the missing learning record, leaving a
+red close gate that `gate verify` does not recompute — it checks the 513 phase verdicts and
+not the intent level one. The state was reset and the close run again, so the committed
+record is consistent, but the general fact stands: an intent level gate can be stale and the
+command that recomputes everything else will not say so.

@@ -1,0 +1,12 @@
+intent: github.com/triplem/xeno#1
+created: "2026-10-07T14:15:51Z"
+schema_version: "1.0"
+runner_version: dev+27fc33e.dirty
+plugin_version: 0.0.0-dev
+status: green
+run_at: "2026-10-07T14:15:51Z"
+artifacts_hash: 8474194e5f717f38012957ba800e211b72aaa81c406cd637a663812c876f70ad
+checks:
+    - gate: G-Complete
+      result: pass
+      provenance: xeno
