@@ -1,0 +1,15 @@
+=== the test holds the page against the usage: checked both ways ===
+
+$ go test ./cmd/xeno/ -run TestThePublishedReferenceIsTheUsage
+ok  	github.com/triplem/xeno/cmd/xeno	0.002s
+
+Then one line of the page's block was changed, and the same test run again:
+--- FAIL: TestThePublishedReferenceIsTheUsage (0.00s)
+    main_test.go:244: ../../docs/commands.md and the usage constant have parted.
+        page:
+        usage:
+          xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
+          xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
+
+Restored:
+ok  	github.com/triplem/xeno/cmd/xeno	0.002s

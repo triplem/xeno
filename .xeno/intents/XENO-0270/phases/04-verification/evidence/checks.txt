@@ -1,0 +1,12 @@
+=== build, format, vet, verify ===
+build ok
+gofmt: nothing
+vet ok
+verified 499 verdicts
+
+=== every file this intent changes or adds ===
+ M README.md
+ M cmd/xeno/main_test.go
+?? docs/README.md
+?? docs/commands.md
+?? docs/the-trail-in-this-repository.md

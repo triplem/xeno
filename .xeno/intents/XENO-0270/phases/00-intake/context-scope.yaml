@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#231
+phase: 00-intake
+created: "2026-10-07T09:36:54Z"
+schema_version: "1.0"
+runner_version: dev+0768c44
+plugin_version: 0.0.0-dev
+include:
+    - README.md
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - cmd/xeno/main.go
+    - cmd/xeno/main_test.go
+    - CONTRIBUTING.md
+    - CLAUDE.md
+links:
+    - component: cmd/xeno
+      docs: docs/implementation-plan.md
+budget:
+    files: 7
+    bytes: 400000
