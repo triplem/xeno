@@ -3,6 +3,7 @@
 package runner
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -99,6 +100,15 @@ func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 		return model.Issue{}, "", refuse("%v", err)
 	}
 	token, err := host.Credentials(t.Auth)
+	// A machine with no token reads no issue and starts the phase all the same. The issue's
+	// content is what the intake is saved from writing by hand, not what makes a phase
+	// legitimate, and a clone without a token is the ordinary case for anybody reading the
+	// trail or running the tests. A block that names no variable, or names a scheme neither
+	// adapter implements, is the other case and still refuses: that is a configuration
+	// somebody has to finish rather than a credential somebody has not got.
+	if errors.Is(err, host.ErrNoToken) {
+		return model.Issue{}, fmt.Sprintf("no issue was read: %v", err), nil
+	}
 	if err != nil {
 		return model.Issue{}, "", err
 	}

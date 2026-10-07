@@ -22,6 +22,7 @@
 package host
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -156,6 +157,11 @@ func For(t model.Tracker, c *http.Client) (Host, error) {
 // An empty variable is an error and not an absence. The plan's table says what expiry
 // costs, "P0 and every comment fail with exit code 2", which is the staircase separating a
 // credential nobody renewed from a tracker nobody configured.
+// ErrNoToken is what Credentials wraps where the variable naming the token is empty. The
+// configuration is right and the machine simply holds no token, which is a different thing
+// from a block that names no variable at all, and the two have different answers.
+var ErrNoToken = errors.New("no token in the environment")
+
 func Credentials(a model.Auth) (string, error) {
 	name := strings.TrimSpace(a.SecretEnv)
 	if name == "" {
@@ -168,8 +174,13 @@ func Credentials(a model.Auth) (string, error) {
 	}
 	v := os.Getenv(name)
 	if v == "" {
-		return "", fmt.Errorf("%s is empty, and it is the variable tracker.auth.secret_env "+
-			"names; set it to a token that may read an issue and write a note", name)
+		// Wrapped in ErrNoToken, because an empty variable is not a misconfiguration: a
+		// machine with no token is the ordinary state of a clone somebody is reading, and
+		// what a caller does about it depends on what it wanted the token for. Reading an
+		// issue carries on without one; writing a comment cannot.
+		return "", fmt.Errorf("%w: %s is empty, and it is the variable "+
+			"tracker.auth.secret_env names; set it to a token that may read an issue and "+
+			"write a note", ErrNoToken, name)
 	}
 	return v, nil
 }
