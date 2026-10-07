@@ -302,11 +302,14 @@ jobs:
     if: always() && github.event_name == 'push'
     permissions:
       contents: read
-      # The protected branch settings, which is what `enforcement check` asks the host
-      # about and what an ordinary job token may not read. Read only, and the least scope
-      # the plan's credential table gives that row: "read on repository settings".
-      administration: read
       issues: write
+      # And nothing for the protected branch settings, which is what `enforcement check`
+      # asks the host about: a workflow's permissions block has no key for them, and a
+      # job that names one GitHub does not know fails before any job runs rather than
+      # with an error about the name. So this job's token reads what an ordinary token
+      # reads, the adapter answers not-available with its reason, and the comment carries
+      # that reason instead of a report. A41's token is what would answer it, and giving
+      # this job one is a decision about secrets rather than a line here.
     steps:
       # The history, because the intents to report on are the ones this push touched and a
       # shallow clone does not hold the commit it is measured against.
