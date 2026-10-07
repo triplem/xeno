@@ -654,6 +654,17 @@ type Project struct {
 		Path        string `yaml:"path"`
 		MaxAgeHours int    `yaml:"max_age_hours"`
 	} `yaml:"index"`
+	// Section 13's lens block. Appendix A's row says what an absent one means — none run —
+	// and section 13 says why that is the default rather than an oversight: a lens is a skill
+	// working inside the phase's context window, so each enabled one travels in every request
+	// of every phase it applies to, and enablement is therefore a cost decision a project
+	// takes rather than a thing it inherits.
+	//
+	// The names are the lens ids, as Appendix A writes them: `enabled: [security, privacy]`,
+	// not the skill names the plugin tree uses. internal/plugin resolves the two.
+	Lenses struct {
+		Enabled []string `yaml:"enabled"`
+	} `yaml:"lenses"`
 	// Section 14's external gates. Every other field in this file changes what the runner
 	// reads; this one changes what it runs, and the default is that none is declared and
 	// none runs, which is what keeps the chain of trust closed for a project that wants it.

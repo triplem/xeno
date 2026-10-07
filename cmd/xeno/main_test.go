@@ -735,3 +735,42 @@ func TestEvidenceIsDeclaredFromTheCommandLine(t *testing.T) {
 		t.Errorf("an unknown phase exits %d, want 2", code)
 	}
 }
+
+// The lenses a phase works under are printed and recorded nowhere, which is the shape section 5
+// forces: its field list has no entry for them, and a lens is a cost decision rather than part of
+// the trail. The surface is therefore where enablement becomes visible at all, and a project that
+// enabled one and sees nothing has no way to tell that from a project that enabled none.
+func TestPhaseStartSaysWhichLensesTheProjectEnabled(t *testing.T) {
+	root := repo(t)
+	lens := filepath.Join(root, ".xeno/plugin/skills/xeno-lens-security/SKILL.md")
+	if err := os.MkdirAll(filepath.Dir(lens), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(lens, []byte("---\nname: xeno-lens-security\n"+
+		"description: the security lens, for the fixture\nphases: [00-intake]\n---\n\n# Security lens\n"),
+		0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg := filepath.Join(root, ".xeno/config/project.yaml")
+	if err := os.MkdirAll(filepath.Dir(cfg), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfg, []byte("runner_version: "+model.RunnerVersion+
+		"\nlenses:\n  enabled: [security, cryptography]\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, out, errw := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--no-next")
+	if code != 0 {
+		t.Fatalf("exit %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "lens security applies to 00-intake") {
+		t.Errorf("the enabled lens was not reported: %q", out)
+	}
+	// And the name nothing answers to, because the alternative is a misspelling that reads exactly
+	// like a project which enabled nothing.
+	if !strings.Contains(out, "cryptography") {
+		t.Errorf("a lens name the plugin has no skill for passed in silence: %q", out)
+	}
+}

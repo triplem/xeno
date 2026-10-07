@@ -428,6 +428,18 @@ func cmdPhaseStart(o *opts) int {
 		fmt.Fprint(o.out, env)
 		return 0
 	}
+	// Which lenses this phase works under, from project.yaml and the vendored plugin. Printed
+	// for the same reason the changed set is: section 5's field list has no entry for it, and a
+	// lens is a cost decision rather than part of the trail. Silent where none applies, which
+	// is every project that enabled none — Appendix A's default. A name nobody answers to is
+	// said out loud, because a misspelled one is otherwise indistinguishable from an empty list.
+	applying, unknown := o.r.Lenses(o.phase)
+	for _, l := range applying {
+		fmt.Fprintf(o.out, "lens %s applies to %s: %s\n", l.ID, o.phase, l.Skill)
+	}
+	for _, name := range unknown {
+		fmt.Fprintf(o.out, "lenses.enabled names %s, and the vendored plugin has no such lens\n", name)
+	}
 	// What a repeated phase has to read again, from the predecessor's lock and the tree. Printed
 	// rather than recorded: section 5's field list has no entry for it, and the lock states what
 	// was declared rather than what was read. Silent where nothing moved, which is also what a

@@ -32,6 +32,19 @@ enforcement:                   # section 7, compared against the host by CI
     # the repository.
     required: 0
 
+lenses:                        # section 13
+  # None, decided rather than left absent. A lens is a skill working inside the phase's
+  # context window, so each enabled one travels in every request of every phase it applies
+  # to — four of them is four texts carried through work that may not need any of them, and
+  # section 13 makes enablement a project decision for that reason. The four exist in the
+  # vendored plugin and are named by their ids: security, privacy, operations, architecture.
+  # What this repository builds is the runner itself: it holds no personal data and nothing
+  # is deployed, and what the security and architecture lenses would ask is largely what the
+  # specification already states and the shipped rules already check. An intent that wants
+  # one enables it by adding the id and says in its design what the lens is expected to
+  # catch that nothing else does.
+  enabled: []
+
 evidence:                      # section 4
   source: ci                   # ci | local
 

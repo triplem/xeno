@@ -1005,6 +1005,29 @@ func (r *Runner) lockTools() []model.LockTool {
 	return []model.LockTool{{Name: i.Tool, Version: i.ToolVersion, SHA256: h}}
 }
 
+// Lenses are the lenses the phase works under, and the names the project enabled that no
+// lens answers to. Section 13's four cross cutting skills, enabled per project and each
+// declaring the phases it applies to.
+//
+// It returns them and records nothing, which is the whole of what the runner does about a
+// lens. A lens produces an open question, an assumption or a review checklist entry, and
+// every one of those is written by a command the phase already has, so an enabled lens
+// changes what a phase finds and changes no field, no hash and no verdict. Section 5's field
+// list has no entry for the selection either, and writing one would put a cost decision
+// inside artifacts_hash — where it would make two projects on the same work disagree about
+// the trail because one of them was paying for four lenses.
+//
+// Both halves are empty where project.yaml cannot be read, which is the same answer as a
+// project that enabled none: nothing is pulled in. An absent block means none run, which is
+// Appendix A's row.
+func (r *Runner) Lenses(phase string) (applying []plugin.Lens, unknown []string) {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
+		return nil, nil
+	}
+	return plugin.LensesFor(r.Root, p.Lenses.Enabled, phase), plugin.UnknownLenses(r.Root, p.Lenses.Enabled)
+}
+
 func (r *Runner) evidenceSource() string {
 	var p model.Project
 	if err := fm.ReadYAML(r.abs(projectConfig), &p); err == nil && p.Evidence.Source != "" {

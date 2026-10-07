@@ -22,8 +22,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/gates"
 	"github.com/triplem/xeno/internal/model"
+	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/template"
 )
 
@@ -47,6 +49,17 @@ var phaseSkills = map[string]string{
 
 const learningSkill = "xeno-learning"
 
+// And the four lenses of section 13, which are not phases and not roles: each is a skill a phase
+// pulls in, declaring the phases it applies to and enabled per project. The key is the id
+// `lenses.enabled` names and the value is the skill, because the two spellings are what a project
+// has to get right and the one place they are written down together is here.
+var lensSkills = map[string]string{
+	"security":     "xeno-lens-security",
+	"privacy":      "xeno-lens-privacy",
+	"operations":   "xeno-lens-operations",
+	"architecture": "xeno-lens-architecture",
+}
+
 func skillPath(name string) string {
 	return filepath.Join(repoRoot, pluginDir, "skills", name, "SKILL.md")
 }
@@ -60,9 +73,9 @@ func read(t *testing.T, path string) string {
 	return string(b)
 }
 
-// The seven of section 13, no more and no fewer: a client resolves a skill by name, and a set that
+// The eleven of section 13, no more and no fewer: a client resolves a skill by name, and a set that
 // drifted from the document would be a set nothing in the document describes.
-func TestTheSkillsAreTheSevenSectionThirteenNames(t *testing.T) {
+func TestTheSkillsAreTheElevenSectionThirteenNames(t *testing.T) {
 	entries, err := os.ReadDir(filepath.Join(repoRoot, pluginDir, "skills"))
 	if err != nil {
 		t.Fatal(err)
@@ -75,12 +88,7 @@ func TestTheSkillsAreTheSevenSectionThirteenNames(t *testing.T) {
 	}
 	sort.Strings(found)
 
-	want := []string{learningSkill}
-	for name := range phaseSkills {
-		want = append(want, name)
-	}
-	sort.Strings(want)
-
+	want := allSkills()
 	if strings.Join(found, ",") != strings.Join(want, ",") {
 		t.Fatalf("skills are %v, want %v", found, want)
 	}
@@ -125,6 +133,9 @@ func TestEverySkillCarriesANameAndADescription(t *testing.T) {
 func allSkills() []string {
 	out := []string{learningSkill}
 	for name := range phaseSkills {
+		out = append(out, name)
+	}
+	for _, name := range lensSkills {
 		out = append(out, name)
 	}
 	sort.Strings(out)
@@ -234,16 +245,121 @@ func TestNoSkillNamesThisProjectsOwnWorld(t *testing.T) {
 	}
 }
 
+// operationWord is section 13's word for what the absent server exposes, matched on a word
+// boundary so that "operator" and "operational" are prose and not a promise.
+var operationWord = regexp.MustCompile(`\boperations?\b`)
+
 // There is no MCP server, so a skill describing an operation describes something absent. WP11's
 // done-when requires the command path to work alone, and these are the skills for that path.
 func TestNoSkillPromisesTheServerThatDoesNotExist(t *testing.T) {
 	for _, name := range allSkills() {
 		body := strings.ToLower(read(t, skillPath(name)))
-		for _, f := range []string{"mcp", "tool call", "operation"} {
+		for _, f := range []string{"mcp", "tool call", "server"} {
 			if strings.Contains(body, f) {
 				t.Errorf("%s mentions %q, and no server exists", name, f)
 			}
 		}
+		// "operation" is section 13's word for what the absent server exposes, and it is also the
+		// operations lens's subject, so it is matched on a word boundary and not at all in the one
+		// skill whose name is the word. What carries the property there is the pair above: the
+		// promise worth preventing is an operation of a server, and neither word may appear.
+		if name == lensSkills["operations"] {
+			continue
+		}
+		if operationWord.MatchString(body) {
+			t.Errorf("%s mentions an operation, and no server exists to expose one", name)
+		}
+	}
+}
+
+// Section 13: a lens "declares which phases it applies to". The declaration is read by the runner
+// and by a person deciding whether to pay for the lens, so a phase id that is not one is a lens
+// that silently applies nowhere, and no declaration at all is the same thing by omission.
+func TestEveryLensDeclaresThePhasesItAppliesTo(t *testing.T) {
+	for id, skill := range lensSkills {
+		var front struct {
+			Phases []string `yaml:"phases"`
+		}
+		if _, err := fm.ReadFront(skillPath(skill), &front); err != nil {
+			t.Errorf("%s: %v", skill, err)
+			continue
+		}
+		if len(front.Phases) == 0 {
+			t.Errorf("%s declares no phases, so it applies nowhere", skill)
+		}
+		for _, phase := range front.Phases {
+			if model.PhaseIndex(phase) < 0 {
+				t.Errorf("%s declares phase %q, which is no phase of the process: %s",
+					skill, phase, strings.Join(model.Phases, ", "))
+			}
+		}
+		// The id is what project.yaml enables, and the skill name is what the client loads. A lens
+		// whose directory does not carry its id would be enabled by a name nothing resolves.
+		if skill != plugin.LensPrefix+id {
+			t.Errorf("lens %s is the skill %s, which does not carry the id a project enables", id, skill)
+		}
+	}
+}
+
+// The reader of the four, against the tree they actually live in. Section 13's set is the one the
+// resolution is checked against, so a lens added to the plugin and not to the document fails here
+// rather than arriving in every project's context window unannounced.
+func TestTheLensesTheVendoredPluginCarriesAreTheFourOfSectionThirteen(t *testing.T) {
+	var ids []string
+	for _, l := range plugin.Lenses(repoRoot) {
+		ids = append(ids, l.ID)
+		if len(l.Phases) == 0 {
+			t.Errorf("lens %s is read with no phases", l.ID)
+		}
+	}
+	var want []string
+	for id := range lensSkills {
+		want = append(want, id)
+	}
+	sort.Strings(want)
+	if strings.Join(ids, ",") != strings.Join(want, ",") {
+		t.Errorf("the plugin carries lenses %v, want %v", ids, want)
+	}
+}
+
+// Enablement is the whole of what a project decides, and a name nobody answers to is the failure
+// that looks exactly like success: every phase runs, every gate is green, and the lens the project
+// asked for was never loaded.
+func TestOnlyAnEnabledLensThatDeclaredThePhaseApplies(t *testing.T) {
+	security := plugin.Lenses(repoRoot)
+	var phase string
+	for _, l := range security {
+		if l.ID == "security" {
+			phase = l.Phases[0]
+		}
+	}
+	if phase == "" {
+		t.Fatal("the security lens is not in the plugin, so there is nothing to select")
+	}
+	if got := plugin.LensesFor(repoRoot, nil, phase); len(got) != 0 {
+		t.Errorf("%d lenses apply with none enabled, want none: Appendix A's default", len(got))
+	}
+	got := plugin.LensesFor(repoRoot, []string{"security"}, phase)
+	if len(got) != 1 || got[0].ID != "security" {
+		t.Fatalf("enabling security at %s selected %v", phase, got)
+	}
+	// A phase the lens did not declare is a phase it does not work in, which is what the
+	// declaration is for: four lenses enabled is not four lenses in every request.
+	var undeclared string
+	for _, p := range model.Phases {
+		if !got[0].AppliesTo(p) {
+			undeclared = p
+			break
+		}
+	}
+	if undeclared == "" {
+		t.Fatal("the security lens declares every phase, so the declaration decides nothing")
+	}
+	if sel := plugin.LensesFor(repoRoot, []string{"security"}, undeclared); len(sel) != 0 {
+		t.Errorf("the security lens applies at %s, which it does not declare", undeclared)
+	}
+	if un := plugin.UnknownLenses(repoRoot, []string{"security", "cryptography"}); len(un) != 1 || un[0] != "cryptography" {
+		t.Errorf("unknown lenses are %v, want the misspelled one named", un)
 	}
 }
 
