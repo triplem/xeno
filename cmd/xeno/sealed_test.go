@@ -149,6 +149,18 @@ var aimedAtTheSealedPhase = map[string]walk{
 	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"},
 		moves: "the declaration is a frontmatter block of output.md, so a declaration after " +
 			"the verdict leaves the phase stale rather than rewriting it (#216)"},
+	// Two reads with no argument to fill: the dispatch supplies --phase for the one that
+	// takes it, and the other is given a name. Neither opens an intent directory at all — a
+	// template comes from the plugin or the project and the index from .xeno/local/ — so
+	// what the walk asserts for them is that answering a question about a judged phase is
+	// not a way of writing into it.
+	"template show": {},
+	// The fixture configures no index, so this prints the sentence saying there was none and
+	// exits 0. That is the case worth having in the walk: an absent index is the ordinary
+	// state, and a command that treated it as "could not run at all" would exit 2, which the
+	// walk reads as arguments it could not use and which would leave this entry asserting
+	// nothing about sealing.
+	"symbol show": {args: []string{"Requirements"}},
 }
 
 // seal is a repository whose P0 has been judged, with the values a command needs to be aimed

@@ -40,6 +40,8 @@ usage:
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno scope set      --intent KEY [--file PATH]   P0's context scope, read from stdin
+  xeno template show  --phase NN                the sections a phase owes, in order
+  xeno symbol show    NAME                      where a name is defined, from the project's index
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
   xeno mcp            [--root DIR]              the six process operations over stdio

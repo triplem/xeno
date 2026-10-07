@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/learning"
@@ -852,5 +853,88 @@ func TestTheWriteBackRefusesWhereThereIsNoVerdict(t *testing.T) {
 	}
 	if out != "" {
 		t.Errorf("a refusal composed a comment: %q", out)
+	}
+}
+
+// ---- WP11: the two reads the MCP server also serves
+
+// What `template show` is for: somebody about to write a phase asks what the sections are and
+// gets them from the resolver that will render them, rather than from a document that could have
+// drifted. The ref and the source are asserted with the list, because they are what makes the
+// list traceable to a file.
+func TestTemplateShowNamesTheTemplateAndItsSections(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "template", "show", "--root", root, "--phase", "00")
+	if code != 0 {
+		t.Fatalf("exit %d, want 0: %s", code, errw)
+	}
+	for _, want := range []string{"00-intake", "(plugin)", "SECTION", "problem"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the listing does not carry %q:\n%s", want, out)
+		}
+	}
+}
+
+// A phase that does not resolve is "could not run at all", because the dispatch resolves it
+// before the command sees it and an unresolvable one is an argument it cannot use.
+func TestTemplateShowWithoutAPhaseIsTwo(t *testing.T) {
+	root := repo(t)
+	code, _, errw := invoke(t, "template", "show", "--root", root)
+	if code != 2 {
+		t.Errorf("exit %d, want 2", code)
+	}
+	if errw == "" {
+		t.Error("a phase that cannot be resolved was refused silently")
+	}
+}
+
+// `symbol show` answers from the index with the provenance beside the locations, because an
+// index is allowed to be stale and a location that cannot be dated cannot be weighed against
+// the source the reader also has.
+func TestSymbolShowAnswersFromTheIndexWithItsProvenance(t *testing.T) {
+	root := repo(t)
+	writeUnder(t, root, ".xeno/config/project.yaml",
+		"index:\n  path: .xeno/local/index/symbols.yaml\n  max_age_hours: 24\n")
+	writeUnder(t, root, ".xeno/local/index/symbols.yaml",
+		"tool: go-symbols\ntool_version: 0.1.0\nproduced_at: \""+
+			time.Now().UTC().Format(time.RFC3339)+"\"\nsymbols:\n"+
+			"  - name: Requirements\n    kind: method\n    file: internal/host/gitlab/gitlab.go\n"+
+			"    line: 93\n    container: Adapter\n")
+
+	code, out, errw := invoke(t, "symbol", "show", "Requirements", "--root", root)
+	if code != 0 {
+		t.Fatalf("exit %d, want 0: %s", code, errw)
+	}
+	for _, want := range []string{"go-symbols 0.1.0", "internal/host/gitlab/gitlab.go:93", "Adapter"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the answer does not carry %q:\n%s", want, out)
+		}
+	}
+}
+
+// A repository that has produced no index is the ordinary state and not a failure, so the
+// command exits 0 and says which of the two silences this is: no index at all, rather than a
+// name an index holds nothing for.
+func TestSymbolShowWithoutAnIndexExitsZeroAndSaysWhy(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "symbol", "show", "Requirements", "--root", root)
+	if code != 0 {
+		t.Fatalf("exit %d, want 0: %s", code, errw)
+	}
+	if !strings.Contains(out, "no index was read") {
+		t.Errorf("the absence was not explained:\n%s", out)
+	}
+}
+
+// Without a name there is nothing to look up, and the command says so rather than printing the
+// whole index or an empty table.
+func TestSymbolShowWithoutANameIsTwo(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "symbol", "show", "--root", root)
+	if code != 2 {
+		t.Errorf("exit %d, want 2:\n%s", code, out)
+	}
+	if !strings.Contains(errw, "a name is required") {
+		t.Errorf("the reason did not reach standard error: %q", errw)
 	}
 }
