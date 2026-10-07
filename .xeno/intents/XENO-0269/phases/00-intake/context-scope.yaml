@@ -1,0 +1,20 @@
+intent: github.com/triplem/xeno#207
+phase: 00-intake
+created: "2026-10-07T09:02:46Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+include:
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+    - docs/clause-readers.md
+    - internal/gates/gates.go
+    - internal/runner/runner.go
+    - CLAUDE.md
+links:
+    - component: internal/gates
+      docs: docs/process-definition.md
+budget:
+    files: 7
+    bytes: 600000

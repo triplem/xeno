@@ -1,0 +1,65 @@
+=== one gate does act on a self-reported value: hashes(), internal/gates/gates.go ===
+
+func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
+	// Nothing produced a manual artifact, so none of its hashes had a writer.
+	byHand := raw["tool"] == "manual"
+	var fs []model.Finding
+	for _, f := range model.HashFields {
+		v, ok := raw[f].(string)
+		if !ok || v == "" {
+			continue // absence is the missing field finding, not this one
+		}
+		honest := byHand || model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
+		switch {
+		case hashShape.MatchString(v):
+			fs = append(fs, recomputed(c, file, f, v, goneBundle, raw)...)
+		case v == model.HashPlaceholder && honest:
+		case v == model.HashPlaceholder:
+			fs = append(fs, finding(file, f+" says "+model.HashPlaceholder+" where a writer exists",
+				"write the hash Appendix B defines; the placeholder is for a field nothing writes yet"))
+
+So tool: manual makes every hash placeholder honest, and tool is self-reported.
+It is not corroboration: it is a check relaxed on a declaration. Found while
+collecting this evidence, beyond #207's done-when, and raised rather than absorbed.
+
+=== the paragraph, read in the file ===
+**The triple is a declaration, not a measurement.** `tool_version` is what the caller
+passed on `--tool-version`, or what the session exported as `XENO_HARNESS_VERSION`;
+`model` is the default `project.yaml` declares; `tool` is what `project.yaml` names,
+unless `XENO_HARNESS` says otherwise, which is the harness naming itself. G-Schema
+checks that each is present and well shaped, and nothing corroborates any of them. Nor
+can the runner: section 7 keeps it from branching on the harness, and the only other
+copy of the three inside the repository is the one the same harness reported, so a check
+comparing a field against that would hide the gap rather than close it. The one record
+from another hand is the gateway's, and the plan says what it is worth: it names the
+deployment a request was routed to rather than what a provider attests. It lies outside
+the repository and outside the gate path by design. A register built on the triple
+therefore says what an agent declared, and is read in that light.
+
+=== the paragraph it follows ===
+Model, tool and version in every artifact are the raw material a project needs where
+it has to keep a register of its ICT service providers. Xeno keeps no such register
+and makes no claim about one. A project that maintains one links it from its own
+README, and that is the whole extent of the connection.
+
+=== clause-readers: the count and the two paragraphs ===
+39:| explanation | 130 |
+**One clause added by #207 is not in the table either, for the same reason.** Section 12
+now says the model, tool and version triple is a declaration and not a measurement,
+where each of the three values comes from, and that a register built on them says what
+an agent declared. What it states is an absence: nothing corroborates the three, and
+nothing can without the runner branching on the harness, which section 7 forbids. A
+reader of the code cannot violate an absence by writing the wrong thing, so it is an
+explanation, counted and not enumerated, and the count above moves from 129 to 130.
+
+It is reader-shaped in one direction only, and that direction is already taken. If
+somebody builds the check the paragraph refuses, comparing an artifact's `tool` against
+`project.yaml`, the clause does not become false and no gate notices: the comparison
+would pass and the gap it was built to close would stop being visible, which is what
+#207 warns against and what the paragraph says in the document rather than in the issue.
+The thing that would make the clause false is a gateway and a figure read against it,
+and both are outside v1.
+=== the register row, first and last cell ===
+cells: 5
+[1] | A100
+[5] approved (#207) by the maintainer on 2026-10-07, who was put three options with their consequences and chose the statement over the gateway comparison and over leaving the issue open; the paragraph's drafted wording said `model` comes from `project.yaml` or the harness, which the issue says too and the code does not, and the correction is named in the specification commit |

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#207
+phase: 00-intake
+created: "2026-10-07T09:05:14Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The wording approved for section 12 said model comes from project.yaml or the harness, which the issue says too, and agent() reads model from project.yaml alone: XENO_HARNESS overrides tool and nothing else. The error survived the drafting and the approval and was caught by reading the function while writing the intake, after the paragraph was already committed. An approved draft about what the code does carries the approver''s authority and not the code''s.'
+      proposal: 'Where drafted specification wording states what the code does, the function is read before the draft is put to a person and the draft cites it, so that what is approved is a sentence already checked against the tree. A phrase inherited from the issue is the likeliest place for this: the issue is a description of a problem and not a reading of the code, and agreeing with it is not verification.'
+      target: .xeno/config/rules/learned/project/drafted-wording-cites-the-code-it-describes.yaml

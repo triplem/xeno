@@ -1722,6 +1722,19 @@ it has to keep a register of its ICT service providers. Xeno keeps no such regis
 and makes no claim about one. A project that maintains one links it from its own
 README, and that is the whole extent of the connection.
 
+**The triple is a declaration, not a measurement.** `tool_version` is what the caller
+passed on `--tool-version`, or what the session exported as `XENO_HARNESS_VERSION`;
+`model` is the default `project.yaml` declares; `tool` is what `project.yaml` names,
+unless `XENO_HARNESS` says otherwise, which is the harness naming itself. G-Schema
+checks that each is present and well shaped, and nothing corroborates any of them. Nor
+can the runner: section 7 keeps it from branching on the harness, and the only other
+copy of the three inside the repository is the one the same harness reported, so a check
+comparing a field against that would hide the gap rather than close it. The one record
+from another hand is the gateway's, and the plan says what it is worth: it names the
+deployment a request was routed to rather than what a provider attests. It lies outside
+the repository and outside the gate path by design. A register built on the triple
+therefore says what an agent declared, and is read in that light.
+
 **Full text.** Prompts, contexts and responses stay local in v1 under
 `.xeno/local/`, excluded via `.gitignore`, together with the symbol index and anything
 else derived rather than recorded. Retention is a project setting with a

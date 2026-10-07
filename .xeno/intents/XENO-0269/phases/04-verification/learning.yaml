@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#207
+phase: 04-verification
+created: "2026-10-07T09:11:42Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A gate acts on a self-reported field and nothing in the documents says so. hashes() in internal/gates/gates.go reads raw["tool"] == "manual" and accepts the by-hand placeholder in every hash field on the strength of it, so an artifact that claimed tool: manual would have its placeholders accepted and nothing distinguishes it from one produced by nothing. It was found by running the grep for the three fields over the gates with a positive control, while verifying a claim that G-Schema does presence and shape and nothing more; without the control the second hit would have been read as noise.'
+      proposal: 'Where a gate relaxes a check on the strength of a field the artifact itself declares, the clause describing that field says so, and the relaxation is the first thing a reader of the field''s provenance is told. Section 12''s new paragraph says nothing corroborates the triple and does not say that one gate acts on it, which is the sharper fact. Raised as an issue of its own rather than written in here, because it is outside #207''s done-when and outside the wording that was approved.'
+      target: .xeno/config/rules/learned/project/a-relaxation-on-a-declared-field-is-stated.yaml

@@ -1,0 +1,8 @@
+=== build, format, vet, verify ===
+build ok
+gofmt: nothing
+vet ok
+verified 481 verdicts
+
+=== the diff against main ===
+docs/process-definition.md
