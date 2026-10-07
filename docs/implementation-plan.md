@@ -1961,7 +1961,28 @@ statement checkable for those who need it to be.
 ## 9. Open
 
 To verify rather than assume, each before the code that relies on it: whether the client
-accepts the instance URL for the marketplace --> unsure right now
+accepts the instance URL for the marketplace --> both do, read 2026-10-07. Claude Code
+takes the full clone URL, `/plugin marketplace add
+https://gitlab.example.com/team/plugins.git`, and its own documentation says to send the
+full URL for GitLab, Bitbucket, GitHub Enterprise Server or another git host, because
+`owner/repo` shorthand always means github.com. The catalogue is
+`.claude-plugin/marketplace.json`, a branch or tag is pinned by appending `#<ref>`, and
+the clone runs with interactive prompts off under whatever credentials the machine
+already holds: SSH for a `git@host:path.git` form, HTTPS for an `https://` one. So a
+private instance needs a key loaded in `ssh-agent` or a credential the helper already
+stores, and nothing the catalogue carries, since no field of it holds a token. Codex's
+own `plugin marketplace add` describes its source as "a local path, owner/repo[@ref],
+HTTPS Git URL, or SSH Git URL", with `--ref` and a repeatable `--sparse`, and
+`codex-rs/core-plugins/src/marketplace.rs` looks for the manifest at
+`.agents/plugins/marketplace.json`, `.agents/plugins/api_marketplace.json`,
+`.claude-plugin/marketplace.json` or `.cursor-plugin/marketplace.json`. It therefore
+reads the layout section 13's wrapper already writes, and one file serves both clients
+rather than two files saying the same thing. What neither takes from an instance is the
+catalogue on its own: Codex clones whatever it is given, so a raw `marketplace.json`
+endpoint fails as a repository, which is openai/codex#32829, open since 2026-07-13, and
+Claude Code accepts such a URL but cannot then resolve an entry whose source is a
+relative path. Section 13's sentence therefore stands as written, and the wrapper stays
+a repository rather than a published file.
 
 whether the gateway reports the model that
 actually served a request; whether it accepts and records request metadata --> both yes,
