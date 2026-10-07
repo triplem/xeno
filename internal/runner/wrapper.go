@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/scaffold"
 )
 
@@ -91,7 +92,8 @@ func Wrapper(root, host, runnerVersion string) (WrapperHost, string, error) {
 		return h, "", fmt.Errorf("no wrapper for host %q; there is %s", host, strings.Join(WrapperHosts(), ", "))
 	}
 	body, _, err := scaffold.RenderWrapper(root, host, scaffold.Wrapper{
-		RunnerVersion: runnerVersion, BaseRef: h.BaseRef, HeadRef: h.HeadRef,
+		RunnerVersion: runnerVersion, RunnerImage: model.RunnerImage(runnerVersion),
+		BaseRef: h.BaseRef, HeadRef: h.HeadRef,
 	})
 	return h, body, err
 }

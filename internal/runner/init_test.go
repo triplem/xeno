@@ -347,6 +347,32 @@ func TestEveryWrapperPassesBothEndsOfTheRange(t *testing.T) {
 	}
 }
 
+// Section 13 gives CI the image and the developer machine the binaries, and the wrapper is
+// where that reaches a project: a job that names the image declares its runner version,
+// where one that downloads a release binary resolves whichever version the download
+// returns. The reference is asserted whole, repository and version together, because a
+// wrapper naming the right repository at the wrong version compares the phase against a
+// runner that computed it differently and reports that as a divergence in the trail.
+func TestEveryWrapperNamesTheRunnerImage(t *testing.T) {
+	const version = "1.2.3"
+	for _, id := range WrapperHosts() {
+		_, body, err := Wrapper("", id, version)
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		if want := model.RunnerImage(version); !strings.Contains(body, want) {
+			t.Errorf("%s: the wrapper does not name the image %q:\n%s", id, want, body)
+		}
+		// The image is what the runner comes from, so an install step is not a step that
+		// is merely redundant: two routes to a runner is two versions it could be.
+		for _, unwanted := range []string{"install xeno", "alpine"} {
+			if strings.Contains(body, unwanted) {
+				t.Errorf("%s: the wrapper still carries %q, beside the image it names", id, unwanted)
+			}
+		}
+	}
+}
+
 // CI_MERGE_REQUEST_DIFF_BASE_SHA is populated only in a merge request pipeline, so a
 // GitLab wrapper that ran on a branch pipeline would pass an empty base. The scoping is
 // what makes the range reachable, which is why it is asserted and not left to the reader.

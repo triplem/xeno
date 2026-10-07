@@ -212,8 +212,10 @@ bill of materials per target and `SHA256SUMS`. Signing waits for publication, as
 Foundation rather than transcribed. SBOM, checksums and signing wait for a release.
 Where the sign-off is enforced is open question Q-1 of intent XENO-2, now recorded in
 that intent's `output.md` rather than only here. Release automation, SBOM and checksums are
-built (A21). What WP0 still owes is the container image, which nothing has needed yet:
-the binaries go to the release and the registry is for the image.
+built (A21). The container image is built too: a release pushes the binary it has
+already stamped to the host's registry under the version the release carries, for one
+architecture and under no moving tag, and the wrapper `xeno init` generates names it
+instead of installing a runner (#282).
 
 ## Not built
 

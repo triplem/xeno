@@ -19,16 +19,22 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    # The runner arrives as an image and not as a download, which is what makes the
+    # version this job uses something the job declares rather than something it fetches.
+    # Section 13's distribution table gives CI the image and the developer machine the
+    # per platform binaries, for that reason.
+    #
+    # This line is a setting and not a constant. The version after the colon is the one
+    # project.yaml pins, and the two move together or CI compares against a different
+    # runner than the local run; and a pipeline with no route to the registry below reads
+    # the same image from a mirror in one it can reach, which is the air gapped case WP0
+    # keeps open. Edit it here, where the job that depends on it is.
+    container:
+      image: {{.RunnerImage}}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0   # both ends of the range have to be reachable
-
-      - name: install the pinned runner
-        run: |
-          # The version is pinned because a different runner produces a different hash
-          # or a different verdict than the local run it is comparing against.
-          echo "install xeno {{.RunnerVersion}} here"
 
       - name: verify
         run: |

@@ -46,9 +46,14 @@ const (
 // ends of the commit range, which WP10 asks the generator to take as parameters.
 type Wrapper struct {
 	RunnerVersion string
-	BaseRef       string
-	HeadRef       string
-	Source        Source
+	// RunnerImage is the image the job runs in, repository and version. It is passed in
+	// rather than composed in the template because the registry is what the release knows
+	// about itself: internal/model carries it, and a template that joined a repository to
+	// a version would be a second place that had to agree about both.
+	RunnerImage string
+	BaseRef     string
+	HeadRef     string
+	Source      Source
 }
 
 // Project is what the initial project.yaml needs, which is the three answers xeno init

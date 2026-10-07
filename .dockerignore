@@ -1,0 +1,5 @@
+# The image copies one file out of dist/ and nothing else, so everything else is context
+# the daemon receives and discards. .git is the expensive one: the release checks out the
+# full history, because the version is derived from it.
+*
+!dist

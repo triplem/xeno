@@ -3,6 +3,8 @@
 package model
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -72,5 +74,57 @@ func TestATestBinaryCarriesNoVCSSettings(t *testing.T) {
 	}
 	if RunnerVersion != devVersion {
 		t.Fatalf("RunnerVersion is %q in a test binary, want the unstamped %q", RunnerVersion, devVersion)
+	}
+}
+
+// The release stamps what this package declares through -ldflags, and a renamed variable
+// goes on compiling: -X names a path and a symbol as a string, and the linker is silent
+// about one that matches nothing. So the names are read back out of the workflow that sets
+// them. ImageRepository is the one that would fail most quietly, because what it feeds is a
+// wrapper generated into somebody else's repository, where a default pointing at the wrong
+// registry looks exactly like one pointing at the right one.
+func TestTheReleaseStampsTheVariablesThisPackageDeclares(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "release.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"-X $m.RunnerVersion=", "-X $m.ImageRepository="} {
+		if !strings.Contains(string(b), want) {
+			t.Errorf("release.yml no longer stamps %q", want)
+		}
+	}
+}
+
+// The image is built from the binary the release has already produced, so two files have
+// to agree about what that binary is called: the build loop of release.yml writes
+// dist/xeno-$VERSION-$os-$arch and the Dockerfile copies one of those paths. Nothing else
+// compares them, and a drift is a release that publishes every asset and then fails on the
+// image, by which point the tag exists.
+func TestTheDockerfileCopiesTheBinaryTheReleaseBuilds(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "Dockerfile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The release loop's $VERSION-$os-$arch for the one target the image is built for,
+	// written with the names a Dockerfile argument has. Compared as the rendered path
+	// rather than as two templates, because the two are written in different syntaxes and
+	// the path is the fact they share.
+	const want = "dist/xeno-${VERSION}-linux-${TARGETARCH}"
+	if !strings.Contains(string(b), want) {
+		t.Fatalf("the Dockerfile does not copy %q, which is the name the release build loop writes", want)
+	}
+	if !strings.Contains(string(b), "ARG TARGETARCH=amd64") {
+		t.Error("the Dockerfile does not default TARGETARCH, so a builder told no platform copies nothing")
+	}
+}
+
+// The reference is joined in one place. Two call sites joining a repository to a version
+// are two chances to put the colon somewhere a registry does not accept.
+func TestTheRunnerImageIsTheRepositoryAndTheVersion(t *testing.T) {
+	if got, want := RunnerImage("1.2.3"), ImageRepository+":1.2.3"; got != want {
+		t.Fatalf("RunnerImage = %q, want %q", got, want)
+	}
+	if !strings.Contains(ImageRepository, "/") {
+		t.Fatalf("the default image repository %q names no registry", ImageRepository)
 	}
 }
