@@ -79,6 +79,16 @@ func (r *Runner) next(key string, i int, s PhaseState) *Suggestion {
 			"written, so the verdict is about something else. Judge it again",
 			Command: "xeno phase finish" + at}
 	case "finished":
+		// A redo under way comes before the verdict's own suggestion, whatever that verdict
+		// says: a green phase with staged content is not a phase to move on from, and the
+		// staged files are not in the repository, so this sentence is the only thing that
+		// says they are waiting (section 6).
+		if len(s.Staged) > 0 {
+			return &Suggestion{Phase: s.Phase, Text: s.Phase + " has a redo staged, written " +
+				"after its verdict and not yet applied. Apply it and judge it again, which " +
+				"moves the artifact and the verdict together",
+				Command: "xeno phase finish" + at}
+		}
 		switch s.Status {
 		case "red":
 			return r.red(key, s)

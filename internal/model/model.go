@@ -170,6 +170,18 @@ const PhasesDir = "phases"
 
 const ContextScope = "context-scope.yaml" // P0 only
 
+// StagedDir is where content written for a phase that already holds a verdict waits until
+// the next `xeno phase finish` applies it, which section 6 fixes under section 4's
+// `local/staged/`. It is derived in the sense that matters here: not the record, not
+// committed, and what the next finish seals is.
+//
+// Under LocalDir and so under XENO_PLUGIN_DATA, because it describes a machine somebody is
+// working on and not the trail. A redo carried out on one machine is not continued on
+// another, which is the same property the run marker has.
+func StagedDir(root, key, phase string) string {
+	return LocalPath(root, "staged", key, phase)
+}
+
 // TemplateID is the phase without its ordering prefix: 02-design is rendered from the
 // template design. The prefix orders the phases and says nothing a template needs.
 func TemplateID(phase string) string {

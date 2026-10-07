@@ -265,9 +265,11 @@ func TestDeclaringIntoAPhaseWithNoArtifactIsRefused(t *testing.T) {
 	}
 }
 
-// A write after a verdict leaves #216's state: the phase changed after it was judged, the
-// next finish says so, and nothing here rewrites the verdict or refuses the phase.
-func TestADeclarationAfterAVerdictLeavesItStale(t *testing.T) {
+// A write after a verdict is staged, which is #304's answer to the state #216 described: the
+// declaration is not lost, it does not rewrite the verdict, and it leaves the judged phase
+// exactly as the verdict found it. The next finish applies it and judges once, so the stale
+// window #216 was about never opens.
+func TestADeclarationAfterAVerdictIsStagedAndLeavesTheSealAlone(t *testing.T) {
 	f := newFixture(t)
 	for _, p := range model.Phases[:4] {
 		f.run(p, "")
@@ -279,10 +281,27 @@ func TestADeclarationAfterAVerdictLeavesItStale(t *testing.T) {
 	after, err := f.r.readGate(key, "04-verification")
 	f.must(err)
 	if after.ArtifactsHash != sealed {
-		t.Fatal("the declaration rewrote the verdict instead of making it stale")
+		t.Fatal("the declaration rewrote the verdict")
 	}
-	if f.hash("04-verification") == sealed {
-		t.Fatal("the declaration did not change the artifact it was written into")
+	if f.hash("04-verification") != sealed {
+		t.Fatal("the declaration changed the artifact the verdict covers")
+	}
+	if staged := f.r.staged(key, "04-verification"); len(staged) != 1 || staged[0] != "output.md" {
+		t.Fatalf("the declaration was not staged: %v", staged)
+	}
+	// And the next finish is what moves both together. Finish directly, not through the
+	// fixture's run: a second phase start is refused on a judged phase, which is #215, and the
+	// refusal names these two commands as the way to redo one.
+	g2, err := f.r.Finish(key, "04-verification", "")
+	f.must(err)
+	if g2.ArtifactsHash == sealed {
+		t.Fatal("the finish did not apply the staged declaration")
+	}
+	if f.hash("04-verification") != g2.ArtifactsHash {
+		t.Fatal("the finish sealed something other than what it judged")
+	}
+	if staged := f.r.staged(key, "04-verification"); staged != nil {
+		t.Fatalf("the staged copy outlived the finish that applied it: %v", staged)
 	}
 }
 
