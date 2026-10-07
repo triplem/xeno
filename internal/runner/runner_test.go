@@ -1076,6 +1076,16 @@ func TestTheSuggestionMovesOnAndBackWithTheVerdict(t *testing.T) {
 	if !strings.Contains(s.Command, "xeno phase start") || !strings.Contains(s.Command, "--phase 01") {
 		t.Fatalf("a decided phase did not point at its successor: %+v", s)
 	}
+	// The reason is asserted with the phrase. A hint whose reason has been edited away is
+	// followed once, and nothing else in the tree says a phase starts in a session of its own.
+	for _, want := range []string{"fresh session", "context.lock.yaml", "was given"} {
+		if !strings.Contains(s.Text, want) {
+			t.Errorf("the successor is not sent to a fresh session with its reason, no %q: %q", want, s.Text)
+		}
+	}
+	if strings.Contains(s.Text, "/clear") {
+		t.Errorf("a harness command reached the suggestion: %q", s.Text)
+	}
 
 	f.write(model.PhaseDir(key, "00-intake")+"/output.md", "edited\n")
 	if s := f.r.Next(key); !strings.Contains(s.Command, "xeno phase finish") ||
@@ -1185,6 +1195,13 @@ func TestAfterP5TheNextStepIsNotACommand(t *testing.T) {
 	}
 	if !strings.Contains(s.Text, "merge") {
 		t.Fatalf("the merge is not named: %q", s.Text)
+	}
+	// The end of an intent is the second place a session is worth clearing, and the reason is
+	// its own: nothing of a finished intent's context is read by the next one.
+	for _, want := range []string{"fresh session", "read again"} {
+		if !strings.Contains(s.Text, want) {
+			t.Errorf("the ending session is not mentioned, no %q: %q", want, s.Text)
+		}
 	}
 }
 

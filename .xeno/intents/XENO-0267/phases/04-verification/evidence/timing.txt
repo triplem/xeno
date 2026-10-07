@@ -1,0 +1,6 @@
+gate run (one phase): 23 ms
+gate run (one phase): 8 ms
+gate run (one phase): 5 ms
+gate verify (whole trail): 1832 ms
+gate verify (whole trail): 1654 ms
+gate verify (whole trail): 1863 ms

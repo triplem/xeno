@@ -1,0 +1,21 @@
+intent: github.com/triplem/xeno#228
+phase: 00-intake
+created: "2026-10-06T20:26:04Z"
+schema_version: "1.0"
+runner_version: dev+3f1fab3.dirty
+plugin_version: 0.0.0-dev
+include:
+    - internal/runner/next.go
+    - cmd/xeno/main.go
+    - internal/cost/cost.go
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+    - .xeno/plugin/skills/xeno-intake/SKILL.md
+    - CLAUDE.md
+links:
+    - component: internal/runner
+      docs: docs/process-definition.md
+budget:
+    files: 8
+    bytes: 450000

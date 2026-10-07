@@ -1,0 +1,13 @@
+=== on a throwaway copy of the tree: the suggestion after a decided P5 ===
+$ xeno gate run --intent XENO-0266 --phase 05
+  G-Policy       pass
+  G-Complete     pass
+
+next: P5 is decided, so the merge is next. That is not a xeno command: commit, push, and let the review and the pipeline run. Nothing of this intent's context is read again, so the next one begins best in a fresh session
+
+=== and the suggestion a not-started phase gets ===
+$ xeno phase start --intent XENO-0267 --phase 04   (seen live, P3 finish above)
+next: start 04-verification in a fresh session, so that its context is what context.lock.yaml says it was given
+  xeno phase start --intent XENO-0267 --phase 04
+
+(printed live by `xeno phase finish --intent XENO-0267 --phase 03`, this intent's own P3.)

@@ -1,0 +1,16 @@
+=== both assertions checked the other way round ===
+Each new string was reverted in internal/runner/next.go and the two tests run again.
+
+$ go test ./internal/runner/ -run 'TestTheSuggestionMovesOnAndBackWithTheVerdict|TestAfterP5TheNextStepIsNotACommand'
+--- FAIL: TestTheSuggestionMovesOnAndBackWithTheVerdict (0.00s)
+    runner_test.go:1083: the successor is not sent to a fresh session with its reason, no "fresh session": "start 01-requirements"
+    runner_test.go:1083: the successor is not sent to a fresh session with its reason, no "context.lock.yaml": "start 01-requirements"
+    runner_test.go:1083: the successor is not sent to a fresh session with its reason, no "was given": "start 01-requirements"
+--- FAIL: TestAfterP5TheNextStepIsNotACommand (0.02s)
+    runner_test.go:1203: the ending session is not mentioned, no "fresh session": "P5 is decided, so the merge is next. That is not a xeno command: commit, push, and let the review and the pipeline run"
+    runner_test.go:1203: the ending session is not mentioned, no "read again": "P5 is decided, so the merge is next. That is not a xeno command: commit, push, and let the review and the pipeline run"
+FAIL
+FAIL	github.com/triplem/xeno/internal/runner	0.028s
+
+Restored, and the same two tests:
+ok  	github.com/triplem/xeno/internal/runner	(cached)

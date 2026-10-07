@@ -64,7 +64,13 @@ func (r *Runner) next(key string, i int, s PhaseState) *Suggestion {
 	at := " --intent " + key + " --phase " + phaseNumber(s.Phase)
 	switch s.State {
 	case "not-started":
-		return &Suggestion{Phase: s.Phase, Text: "start " + s.Phase,
+		// The fresh session is the one part of the context economy nothing checks. Section 6 has
+		// a phase work from its predecessor's digest and section 5 has context.lock.yaml state
+		// what it was given; a session carrying four earlier phases gives this one a context
+		// neither describes. No harness is named: section 7 records XENO_HARNESS and never
+		// branches on it, and a person working with commands alone has no such command at all.
+		return &Suggestion{Phase: s.Phase, Text: "start " + s.Phase + " in a fresh session, so " +
+			"that its context is what context.lock.yaml says it was given",
 			Command: "xeno phase start" + at}
 	case "running":
 		return r.running(key, s, at)
@@ -82,9 +88,14 @@ func (r *Runner) next(key string, i int, s PhaseState) *Suggestion {
 				"attaches whatever has arrived"}
 		case "green", "approved", "overridden":
 			if i == len(model.Phases)-1 {
+				// And the session that is ending has nothing left to carry: the next intent
+				// starts from the tree and from the scope its own intake declares, so none of
+				// this one's context is read again. A hint rather than a step, which is what
+				// this suggestion already is for the merge.
 				return &Suggestion{Phase: s.Phase, Text: "P5 is decided, so the merge is next. " +
 					"That is not a xeno command: commit, push, and let the review and the " +
-					"pipeline run"}
+					"pipeline run. Nothing of this intent's context is read again, so the next " +
+					"one begins best in a fresh session"}
 			}
 			return nil
 		default:

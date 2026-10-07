@@ -1,0 +1,29 @@
+=== no harness command in the runner or the plugin ===
+--- grep -rn '/clear' over internal/ cmd/ .xeno/plugin/ ---
+internal/runner/runner_test.go:1086:	if strings.Contains(s.Text, "/clear") {
+
+--- positive control: the same grep for a string that is there ---
+grep -rn 'fresh session' internal/ cmd/ .xeno/plugin/
+internal/runner/next.go:67:		// The fresh session is the one part of the context economy nothing checks. Section 6 has
+internal/runner/next.go:72:		return &Suggestion{Phase: s.Phase, Text: "start " + s.Phase + " in a fresh session, so " +
+internal/runner/next.go:98:					"one begins best in a fresh session"}
+internal/runner/runner_test.go:1081:	for _, want := range []string{"fresh session", "context.lock.yaml", "was given"} {
+internal/runner/runner_test.go:1083:			t.Errorf("the successor is not sent to a fresh session with its reason, no %q: %q", want, s.Text)
+internal/runner/runner_test.go:1201:	for _, want := range []string{"fresh session", "read again"} {
+
+--- section 7's constant: one declaration, no condition ---
+internal/runner/next.go:70:		// neither describes. No harness is named: section 7 records XENO_HARNESS and never
+internal/runner/runner.go:60:	// Set from --tool-version, or from XENO_HARNESS_VERSION where the flag is not given.
+internal/runner/runner.go:78:const HarnessVersionEnv = "XENO_HARNESS_VERSION"
+internal/runner/runner.go:83:const HarnessEnv = "XENO_HARNESS"
+internal/runner/runner.go:768:	// Section 7 lists XENO_HARNESS and calls it recorded only, which is this field. It beats
+cmd/xeno/main.go:59:        XENO_HARNESS_VERSION says the same thing for a whole session`
+
+--- the CI check that asserts it ---
+121:      # Section 7: "XENO_HARNESS is recorded, never branched on. The moment the runner
+130:          uses=$(grep -rn 'XENO_HARNESS"' --include='*.go' internal cmd | grep -v '_test.go' || true)
+132:            echo "XENO_HARNESS is named more than once outside the tests:"
+=== the runner does not branch on which harness it is (xeno.yml) ===
+internal/runner/runner.go:83:const HarnessEnv = "XENO_HARNESS"
+count: 1
+no comparison against a harness name
