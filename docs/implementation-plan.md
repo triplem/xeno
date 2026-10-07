@@ -2032,8 +2032,36 @@ changelog implements `prompts/list` or `prompts/get` as commands. And no: the me
 arrive at `prompts/get` on invocation, so the text is not a standing per request cost,
 while what the client shows from `prompts/list` is the client's own choice (#238).
 
-Decided later on purpose: which of content, packaging and wiring WP11 builds per harness,
-settled in dogfooding rather than in advance.
+Decided later on purpose: which of content, packaging and wiring WP11 builds per
+harness, settled in dogfooding rather than in advance. Of the three the wiring is
+answered: it is built once, read in `openai/codex` on 2026-10-07. A Codex plugin's
+lifecycle configuration is a Claude Code plugin's. `codex-rs/core-plugins/src/loader.rs`
+reads a plugin's hooks from the `hooks` entry of its manifest and, where none is
+declared, from `hooks/hooks.json` under the plugin root. `codex-
+rs/config/src/hook_config.rs` defines that file as an optional `description` and a
+`hooks` table keyed by event in the other client's spelling, each a list of matcher
+groups of handlers, with a command handler written as a type and a command. `codex-
+rs/exec-server-protocol/src/protocol.rs` discovers a plugin by one of three manifests,
+and the one this project already ships is among them. And `codex-
+rs/hooks/src/engine/discovery.rs` sets `CLAUDE_PLUGIN_ROOT` beside its own
+`PLUGIN_ROOT`, for compatibility with plugins that use it, substituting either into the
+command. So the two wiring formats section 7 names are two formats for a project's own
+settings and one for a plugin's, and `.xeno/plugin/hooks/hooks.json` is the whole of it.
+Two things keep it that way and would be easy to undo without noticing: the manifest
+must declare no `hooks` entry, because one replaces the default path rather than adding
+to it, and the command must name `${CLAUDE_PLUGIN_ROOT}` rather than `${PLUGIN_ROOT}`,
+because only the first is set by both.
+
+What the one wiring does not carry is the reader behind it. Codex's stop input names a
+transcript path, and that file is its session rollout, whose records are the type and
+payload lines of `codex-rs/history/src/rollout_payload.rs`, with the token counts in a
+usage record rather than where `internal/cost` reads them. So `xeno cost turn` fires
+under Codex and writes nothing, which is measured and is not a wrong answer: a
+transcript that totals nothing produces no line, and the ledger records a turn with no
+phase as `none` rather than guessing. A second reader is a change to the runner and not
+to the plugin, which is why it stays a question here rather than becoming a step:
+section 7 forbids the runner branching on `XENO_HARNESS`, so the only form of it that is
+allowed is a reader chosen by the transcript's own shape.
 
 The namespace and repository name are chosen and deliberately not recorded here. The core
 built by hand before M0 uses a placeholder module path, and its other choices are recorded

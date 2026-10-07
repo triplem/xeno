@@ -154,14 +154,35 @@ func TestTheLivePhaseIsReadFromTheRunnersOwnMarker(t *testing.T) {
 		[]byte("export XENO_INTENT=\"git.example/p#1\"\nexport XENO_PHASE=\"02-design\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	intent, phase := LivePhase(root, rel)
+	intent, phase := LivePhase(filepath.Join(root, rel))
 	if intent != "git.example/p#1" || phase != "02-design" {
 		t.Fatalf("read %q and %q", intent, phase)
 	}
 	// No marker is no phase, which is the ordinary state between phases.
-	i2, p2 := LivePhase(root, "absent.env")
+	i2, p2 := LivePhase(filepath.Join(root, "absent.env"))
 	if i2 != "" || p2 != "" {
 		t.Errorf("an absent marker produced %q and %q", i2, p2)
+	}
+}
+
+// The marker the hook path resolves is absolute, because the entry point exports
+// XENO_PLUGIN_DATA as an absolute path and model.LocalDir returns such a value as it stands.
+// This was two arguments that were joined, so the absolute path became a relative one, the
+// read failed, and every hooked turn recorded `none` while looking exactly like the ordinary
+// state between phases (#287).
+func TestAnAbsoluteMarkerPathIsReadWhereItPoints(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "phase.env")
+	if !filepath.IsAbs(path) {
+		t.Fatalf("the temporary directory is not absolute, so this proves nothing: %q", path)
+	}
+	if err := os.WriteFile(path,
+		[]byte("export XENO_INTENT=\"git.example/p#2\"\nexport XENO_PHASE=\"03-implementation\"\n"),
+		0o644); err != nil {
+		t.Fatal(err)
+	}
+	intent, phase := LivePhase(path)
+	if intent != "git.example/p#2" || phase != "03-implementation" {
+		t.Fatalf("read %q and %q from %s", intent, phase, path)
 	}
 }
 
