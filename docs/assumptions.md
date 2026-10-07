@@ -219,14 +219,26 @@ instead of installing a runner (#282).
 
 ## Not built
 
-Everything that needs a harness: the MCP server and the hooks. The plugin is vendored and
-G-Supply compares it against the digest the release compiles in (A86), so what waits on a
-harness there is only the entry point's behaviour under a real client. G-Secret still does,
-because the plan puts it on the hook that runs on every write. The documentation site. Of WP12 the tracker half: the branch
-rules port and both its adapters are built, and what is open is carrying issue content
-into P0 and reporting a verdict back onto a merge request.
+What needed a harness has one. The hooks are wired, and it is one file both clients load
+rather than one per client (#287); the MCP server is a subcommand of the binary the
+client starts over stdin and stdout (#285). What waits on a real client is therefore the
+entry point's behaviour under one, and whether a client reaches the server through the
+vendored plugin. The plugin is vendored and G-Supply compares it against the digest the
+release compiles in (A86). G-Secret waits on nothing: section 7 makes the runner the
+check and a hook only its trigger, so the gate reads the phase's own artifacts (#284)
+and a hook would add the speed of the feedback and not the judgement.
 
-Of the plan's verification points the marketplace URL is the one still open. Whether
-each harness forwards the headers the gateway reads is answered per harness and
-`phase start --export` sends them (#58), and the gateway's own two are answered against
-LiteLLM 1.102.1 (#56).
+Not built: the documentation site; the hook that fires on any write, because no command
+yet answers G-Secret about one file; and a writer for the review checklist entry a lens
+produces, which has a shape in section 5 and no command behind it (#286). Of WP12 both
+halves are built (#288), and what is open there is A13's pipeline artifact fetch, whose
+"accepted until WP12" has expired without the work being done.
+
+None of the plan's verification points is open. The marketplace URL is answered for both
+clients and so is the MCP protocol revision each of them speaks (#291, #285), whether
+each harness forwards the headers the gateway reads is answered per harness and the
+export of `phase start` sends them (#58), and the gateway's own two are answered against
+LiteLLM 1.102.1 (#56). Of the one decision section 9 defers on purpose, the wiring half
+is taken: it is built once (#287). What is not decided is the reader behind a Codex
+hook, which is a change to the runner that section 7's rule about `XENO_HARNESS`
+constrains, and it stays a question rather than becoming a step.
