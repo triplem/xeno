@@ -54,6 +54,8 @@ const usage = `usage:
   xeno intent close   --intent KEY --reason TEXT
   xeno section set    SECTION --intent KEY --phase NN [--file PATH]   reads stdin without --file
   xeno scope set      --intent KEY [--file PATH]   P0's context scope, read from stdin
+  xeno template show  --phase NN                the sections a phase owes, in order
+  xeno symbol show    NAME                      where a name is defined, from the project's index
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
   xeno mcp            [--root DIR]              the six process operations over stdio
@@ -150,6 +152,12 @@ var commands = map[string]command{
 	"obligation close": {needsKey: true, needsPhase: true, run: cmdObligationClose},
 	"evidence attach":  {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
 	"evidence declare": {needsKey: true, needsPhase: true, run: cmdEvidenceDeclare},
+	// The two reads behind fetch_template and query_symbol_index. A phase and no intent is
+	// this pair alone: a template is resolved from the plugin or the project and the index
+	// from .xeno/local/, so neither answer differs by which intent is open, and asking for a
+	// key would be asking for one that decides nothing.
+	"template show": {needsPhase: true, run: cmdTemplateShow},
+	"symbol show":   {run: cmdSymbolShow},
 }
 
 func run(args []string, out, errw io.Writer) int {
@@ -883,6 +891,15 @@ const listDefault = 10
 // verdict is a judgement, which is the pair a heading is worth most for.
 const phaseRow = "%-18s %-22s %s"
 
+// templateRow is one section of a template: the id `section set` takes, whether the phase owes
+// it, and the heading it renders under. The id is first because it is the cell somebody types.
+const templateRow = "%-22s %-8s %s"
+
+// symbolRow is one definition: the name, what the indexer called it, the file and line, and
+// what encloses it. The container is last and often empty, which is a value and not a gap: a
+// symbol at the top level has nothing enclosing it.
+const symbolRow = "%-24s %-10s %-44s %s"
+
 // tail says how many of n intents a listing shows and how many it leaves out. Separated from the
 // printing so that the arithmetic can be asserted without capturing output.
 func tail(n int, all bool) (shown, hidden int) {
@@ -978,6 +995,79 @@ func cmdCostTurn(o *opts) int {
 		At: time.Now().UTC().Format(time.RFC3339), Session: hook.Session,
 		Intent: intent, Phase: phase, Totals: totals,
 	})
+	return 0
+}
+
+// The two commands behind fetch_template and query_symbol_index, which WP11 asks for: every
+// MCP operation has a command behind it, because the server is one way in and never the only
+// one. An operation with no command is something an agent driven through MCP can do that a
+// person at a terminal cannot, and section 13's arrangement is MCP instead of free text and
+// never only MCP. Both call the runner method the server's tool calls, so there is one path
+// to the answer and no second one to reconcile; what differs is the rendering, columns for a
+// person here and JSON for a model there.
+
+// cmdTemplateShow prints the sections a phase owes, in the order they are rendered in.
+//
+// The template ref and where it was resolved from are on the first line because they are what
+// makes the list falsifiable: a project that replaced one template shows `project` here and the
+// same sections everywhere else, and a list with nothing saying which template it came from
+// cannot be held against the file that was rendered.
+func cmdTemplateShow(o *opts) int {
+	t, err := o.r.Template(o.phase)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%s renders from %s (%s) in %s\n", o.phase, t.Ref(), t.Source, t.Bundle.Language)
+	if t.Bundle.Title != "" {
+		fmt.Fprintln(o.out, t.Bundle.Title)
+	}
+	fmt.Fprintln(o.out, sprintRow(templateRow, "SECTION", "REQUIRED", "HEADING"))
+	for _, s := range t.Template.Sections {
+		required := "no"
+		if s.Required {
+			required = "yes"
+		}
+		fmt.Fprintln(o.out, strings.TrimRight(
+			sprintRow(templateRow, s.ID, required, t.Bundle.Headings[s.ID]), " "))
+	}
+	return 0
+}
+
+// cmdSymbolShow prints where a name is defined, from the index the project produced.
+//
+// It exits zero whether anything was found and whether there was an index to look in at all,
+// for Runner.Symbols' reason: absent, unreadable, malformed and stale are four causes with one
+// outcome, no gate reads the index, and a repository that has not produced one is the state
+// every repository starts in. Exit 1 is a refusal with a reason, and the ordinary state of the
+// thing is not one.
+//
+// What it does instead is say why there was nothing, because no index at all and a name the
+// index does not hold would otherwise print the same silence, and only one of the two is a
+// reason to go and look at the configuration.
+//
+// The provenance is printed beside the locations rather than asked for. An index is allowed to
+// be stale or wrong, so a location with nothing saying what produced it and how old that is
+// cannot be weighed against the source the reader also has.
+func cmdSymbolShow(o *opts) int {
+	if o.finding == "" {
+		fmt.Fprintln(o.errw, "a name is required: xeno symbol show NAME")
+		return 2
+	}
+	a := o.r.Symbols(o.finding)
+	if a.Why != "" {
+		fmt.Fprintf(o.out, "no index was read: %s\n", a.Why)
+		return 0
+	}
+	fmt.Fprintf(o.out, "%s %s, %s old\n", a.Tool, a.ToolVersion, a.Age.Round(time.Minute))
+	if len(a.Found) == 0 {
+		fmt.Fprintf(o.out, "%s is not in it, and an index is allowed to be incomplete\n", a.Name)
+		return 0
+	}
+	fmt.Fprintln(o.out, sprintRow(symbolRow, "NAME", "KIND", "WHERE", "IN"))
+	for _, s := range a.Found {
+		fmt.Fprintln(o.out, strings.TrimRight(sprintRow(symbolRow, s.Name, s.Kind,
+			fmt.Sprintf("%s:%d", s.File, s.Line), s.Container), " "))
+	}
 	return 0
 }
 
