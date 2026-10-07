@@ -1787,6 +1787,18 @@ Six of the skills are the phases. `xeno-learning` is not a seventh phase: learni
 happens at the end of each of the six and once more when an intent closes, so it is
 cross cutting and carries its own skill for that reason.
 
+**The phases are model invoked, and that is deliberate.** A skill is loaded because the
+client judged its description to fit; a command is typed. For a lens that is the right
+way round, since whether a security lens applies is a judgement about the change. For a
+phase it is not: the person knows which phase they are in, and `xeno phase start` tells
+them which one comes next, so what they want to say is "do the intake". MCP's prompts
+primitive is the form that would carry it, and what it lacks is a second client. Claude
+Code surfaces a prompt as a command, `/mcp__server__prompt`, discovered from the
+connected server; Codex, as of October 2026, does not. A mechanism one client supports
+is the `commands/` problem under another name, which is the thing skills exist here to
+avoid, so the phases stay skills until both clients can take them. This paragraph is
+what a change to that deletes.
+
 | Artifact                   | Channel                                    | Recipient           |
 |----------------------------|--------------------------------------------|---------------------|
 | Plugin (skills, mcp.json)  | Agent Plugins 1.0.0, vendored from the repository | developer machine |
@@ -1881,6 +1893,12 @@ budget rather than a list: every definition is sent with every request of every 
 whether it is called or not, so a seventh needs an argument of the kind the index has.
 The agent then works with process operations rather than file paths, and the skill text
 stays short.
+
+A prompt is not a tool for this purpose, and the budget's reason does not reach one:
+`prompts/list` carries a name, a title, a description and the arguments, and the
+messages arrive at `prompts/get` when the prompt is invoked, so its text is fetched
+rather than sent with every request. What a client puts in front of the model from the
+listing is the client's own choice and is not fixed by the protocol.
 
 **Vendoring instead of remote fetch.** `xeno init --vendor` places the plugin
 pinned under `.xeno/plugin/`. It works without outbound connections, stays

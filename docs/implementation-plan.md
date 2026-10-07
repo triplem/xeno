@@ -2001,6 +2001,16 @@ harness forwards custom headers to it, and under which variable --> claude-code:
 whether the job token CI
 provides can read protected branch settings --> github via api/ cli or ui; gitlab https://docs.gitlab.com/ci/pipelines/merge_request_pipelines/#control-access-to-protected-variables-and-runners
 
+whether Claude Code surfaces MCP prompts as commands, and under what name; whether Codex
+does; whether a prompt is charged per request the way a tool definition is --> Claude
+Code yes, as `/mcp__<server>__<prompt>`, discovered from the connected server and
+resolved alongside skills and `.claude/commands/` files. Codex no, as of October 2026:
+`/mcp` inspects tools and resources, the request to expose prompts as slash commands
+(openai/codex#8342, opened 2025-12-19) is closed as duplicate, and nothing in the
+changelog implements `prompts/list` or `prompts/get` as commands. And no: the messages
+arrive at `prompts/get` on invocation, so the text is not a standing per request cost,
+while what the client shows from `prompts/list` is the client's own choice (#238).
+
 Decided later on purpose: which of content, packaging and wiring WP11 builds per harness,
 settled in dogfooding rather than in advance.
 
