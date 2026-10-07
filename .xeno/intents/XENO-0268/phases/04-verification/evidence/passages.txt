@@ -1,0 +1,49 @@
+=== the three passages, read in the files ===
+
+--- docs/process-definition.md, section 13, paragraph one ---
+**The phases are model invoked, and that is deliberate.** A skill is loaded because the
+client judged its description to fit; a command is typed. For a lens that is the right
+way round, since whether a security lens applies is a judgement about the change. For a
+phase it is not: the person knows which phase they are in, and `xeno phase start` tells
+them which one comes next, so what they want to say is "do the intake". MCP's prompts
+primitive is the form that would carry it, and what it lacks is a second client. Claude
+Code surfaces a prompt as a command, `/mcp__server__prompt`, discovered from the
+connected server; Codex, as of October 2026, does not. A mechanism one client supports
+is the `commands/` problem under another name, which is the thing skills exist here to
+avoid, so the phases stay skills until both clients can take them. This paragraph is
+what a change to that deletes.
+
+--- docs/process-definition.md, section 13, beside the budget clause ---
+A prompt is not a tool for this purpose, and the budget's reason does not reach one:
+`prompts/list` carries a name, a title, a description and the arguments, and the
+messages arrive at `prompts/get` when the prompt is invoked, so its text is fetched
+rather than sent with every request. What a client puts in front of the model from the
+listing is the client's own choice and is not fixed by the protocol.
+
+--- docs/implementation-plan.md, section 9 ---
+whether Claude Code surfaces MCP prompts as commands, and under what name; whether Codex
+does; whether a prompt is charged per request the way a tool definition is --> Claude
+Code yes, as `/mcp__<server>__<prompt>`, discovered from the connected server and
+resolved alongside skills and `.claude/commands/` files. Codex no, as of October 2026:
+`/mcp` inspects tools and resources, the request to expose prompts as slash commands
+(openai/codex#8342, opened 2025-12-19) is closed as duplicate, and nothing in the
+changelog implements `prompts/list` or `prompts/get` as commands. And no: the messages
+arrive at `prompts/get` on invocation, so the text is not a standing per request cost,
+while what the client shows from `prompts/list` is the client's own choice (#238).
+
+--- docs/assumptions.md, A99, first and last cell ---
+  cells: 5
+  [1] | A99
+  [5] approved (#238) by the maintainer on 2026-10-07, who was put the three options with their consequences and chose this one; the section 13 paragraph is worded as a fact a change deletes, so Codex shipping prompts reopens the question by making the sentence false rather than by anybody remembering this row |
+
+=== the MCP surface is unchanged: six operations ===
+The server exposes exactly the operations that may be performed on the process: read
+intent, record assumption, write artifact, fetch template, run gates locally, and query
+the symbol index. Six, and the surface is a
+budget rather than a list: every definition is sent with every request of every phase
+whether it is called or not, so a seventh needs an argument of the kind the index has.
+The agent then works with process operations rather than file paths, and the skill text
+stays short.
+
+=== wrapping: no added prose line over 88 characters ===
+(nothing above means every added prose line is within 88; table rows are exempt)

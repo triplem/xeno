@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#238
+phase: 00-intake
+created: "2026-10-07T08:46:31Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+include:
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - docs/assumptions.md
+    - .xeno/plugin/skills/xeno-intake/SKILL.md
+    - .xeno/plugin/.claude-plugin/plugin.json
+    - CLAUDE.md
+links:
+    - component: .xeno/plugin/skills
+      docs: docs/process-definition.md
+budget:
+    files: 6
+    bytes: 400000

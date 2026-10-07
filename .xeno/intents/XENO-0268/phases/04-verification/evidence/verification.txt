@@ -1,0 +1,31 @@
+=== the three verification answers, with what was read ===
+
+1. Claude Code surfaces MCP prompts as commands.
+   code.claude.com/docs/en/slash-commands lists, among the things a short name can
+   resolve to: "An MCP prompt", linking /docs/en/mcp#use-mcp-prompts-as-commands.
+   The name is /mcp__<server>__<prompt>, discovered from the connected server.
+   modelcontextprotocol.io/specification/2025-06-18/server/prompts: prompts "are
+   designed to be **user-controlled**" and "would be triggered through user-initiated
+   commands in the user interface", illustrated with a slash command.
+
+2. Codex does not, as of 2026-10-07.
+   developers.openai.com/codex/cli/slash-commands and the Codex changelog: /mcp
+   inspects MCP tools and resources; /mcp verbose expands them. No prompts.
+   github.com/openai/codex/issues/8342, "Expose MCP Server Prompts as Slash Commands
+   Like Claude Code", opened 2025-12-19 - state: closed as duplicate.
+   The changelog's MCP work through 2026: opt-in 2026-07-28 protocol revision in
+   v0.147.0 (2026-08-07) with paginated tool discovery, deprecation and removal of
+   codex mcp-server (August-September 2026), MCP request verification in v0.155.0.
+   Nothing implements prompts/list or prompts/get as commands.
+
+   The positive control for this negative: the same question asked of the other
+   client returns a documented mechanism and a naming pattern, so the method finds
+   the feature where it exists.
+
+3. A prompt is not charged per request the way a tool definition is.
+   The protocol's prompts page, verbatim shapes:
+     prompts/list -> result.prompts[] = { name, title?, description?, arguments? }
+     prompts/get  -> result = { description?, messages[] }
+   The messages are the prompt's text and arrive only at prompts/get, which the
+   client sends when the prompt is invoked. The listing carries no message.
+   What a client keeps in context from the listing is not fixed by the protocol.

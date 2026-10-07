@@ -1,0 +1,9 @@
+=== go build / gofmt / go vet / gate verify ===
+build ok
+gofmt: nothing
+vet ok
+verified 481 verdicts
+
+=== no Go file in the diff against main ===
+docs/implementation-plan.md
+docs/process-definition.md

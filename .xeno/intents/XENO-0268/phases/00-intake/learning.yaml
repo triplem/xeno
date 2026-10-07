@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#238
+phase: 00-intake
+created: "2026-10-07T08:47:31Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'xeno intent start without --intent derived XENO-0267 on this branch, which is the key XENO-0267 already holds on the unmerged branch for #228. The sequence is the next number of what the repository tree holds, and a branch cut from main cannot see an intent that has not merged, so two branches open at once both claim the same key. The key sits inside artifacts_hash and inside the merge commit that names it, so a collision discovered after both merge is not renameable.'
+      proposal: Where a branch is cut while another intent is open and unmerged, pass --intent explicitly with the next key counted across the open branches, not across the tree. The lasting form is for xeno intent start to refuse or warn when the derived key exists on any other branch the host knows about, which is a runner change and a finding about the plan rather than a step in this intent.
+      target: .xeno/config/rules/learned/project/an-intent-key-is-derived-from-one-branch.yaml

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#238
+phase: 04-verification
+created: "2026-10-07T08:54:11Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The load bearing evidence here is a negative about another project''s software — Codex not surfacing MCP prompts as commands — and the convention for negatives in CLAUDE.md is about recreating the thing in this tree, which does not apply: there is nothing here to recreate. What stood in for it was a positive control in a second system, asking the same question of Claude Code and getting a documented mechanism and a naming pattern, plus reading the Codex issue''s own state rather than inferring it from a search result.'
+      proposal: Where a finding is a negative about software outside this repository, the positive control is the same question asked of a system that has the feature, and the primary source is read for its state rather than a search summary. The finding then carries the date it was checked, and the clause it reaches is worded so that the feature arriving makes the sentence false. The existing rule about recreating the thing and checking again covers negatives inside the tree and should say that it does, so a reader does not take its silence for permission to assert an external negative from one search.
+      target: .xeno/config/rules/learned/project/an-external-negative-has-a-positive-control.yaml
