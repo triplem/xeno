@@ -53,6 +53,7 @@ const usage = `usage:
   xeno scope set      --intent KEY [--file PATH]   P0's context scope, read from stdin
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
+  xeno mcp            [--root DIR]              the six process operations over stdio
   xeno version
 common: --root DIR (default .), --no-next to leave out the next step
         --tool-version V on section set and phase finish, which record what wrote a phase;
