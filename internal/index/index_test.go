@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -176,6 +177,31 @@ func TestTheWorkedExampleIsWhatTheReaderAccepts(t *testing.T) {
 	}
 	if !top {
 		t.Error("the example does not show a top level symbol")
+	}
+}
+
+// The published page carries the worked example and not a description of it. #153 asked for
+// the format to be documented somewhere a project would look, and warned that a second copy of
+// a format description is wrong within a release while the first copy has a test; this is that
+// test for the second location. The comparison is over the page's first fenced block rather
+// than the whole file, because the page needs its own paragraphs saying where the format is
+// fixed and that a phase runs without an index.
+func TestThePublishedPageCarriesTheWorkedExample(t *testing.T) {
+	const page = "../../docs/symbol-index.md"
+	md, err := os.ReadFile(page)
+	if err != nil {
+		t.Fatalf("the published format is not there to compare: %v", err)
+	}
+	fenced := regexp.MustCompile("(?s)\n```yaml\n(.*?)\n```").FindSubmatch(md)
+	if fenced == nil {
+		t.Fatalf("%s carries no yaml block, so there is nothing to hold against the example", page)
+	}
+	want, err := os.ReadFile("testdata/example-symbols.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, w := string(fenced[1]), strings.TrimRight(string(want), "\n"); got != w {
+		t.Errorf("%s and testdata/example-symbols.yaml have parted.\npage:\n%s\nfile:\n%s", page, got, w)
 	}
 }
 

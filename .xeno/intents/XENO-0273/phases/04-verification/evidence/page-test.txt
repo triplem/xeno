@@ -1,0 +1,17 @@
+=== the test holds the page against the example, checked both ways ===
+$ go test ./internal/index/ -run TestThePublishedPageCarriesTheWorkedExample
+ok  	github.com/triplem/xeno/internal/index	0.002s
+
+Then one line of the page's block was changed, and the same test run again:
+--- FAIL: TestThePublishedPageCarriesTheWorkedExample (0.00s)
+    index_test.go:204: ../../docs/symbol-index.md and testdata/example-symbols.yaml have parted.
+        page:
+        # A symbol index, in the format section 5 of the process definition fixes. This file is the
+
+And with the yaml tag dropped from the fence:
+--- FAIL: TestThePublishedPageCarriesTheWorkedExample (0.00s)
+    index_test.go:197: ../../docs/symbol-index.md carries no yaml block, so there is nothing to hold against the example
+FAIL
+
+Restored:
+ok  	github.com/triplem/xeno/internal/index	0.001s

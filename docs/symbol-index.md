@@ -1,0 +1,73 @@
+# The symbol index format
+
+Xeno reads a symbol index while a phase runs, to answer "where is X" without searching
+the repository. A project produces it and Xeno ships no indexer: tree-sitter, ctags, a
+build system or a language server all serve, and what Xeno fixes is the shape of the
+answer rather than how you arrive at it. Section 5 of the process definition fixes the
+format, under "A symbol index, not a graph"; `index.path` and `index.max_age_hours` are
+in Appendix A's `project.yaml` rather than in section 5.
+
+Nothing depends on the index being there. Absent, unreadable, malformed and stale are
+four causes with one outcome: no index is read and the phase runs without one. No gate
+reads it, so a verdict never depends on it, and that is why it may be missing or wrong
+without the trail suffering.
+
+What follows is `internal/index/testdata/example-symbols.yaml`, the annotated worked
+example, reproduced here in full. It is not a copy maintained by hand: a test in
+`internal/index` reads that file, and another fails if this block and the file stop
+being identical, so the format described here is the format the reader accepts.
+
+```yaml
+# A symbol index, in the format section 5 of the process definition fixes. This file is the
+# worked example: a project writing an index writes this shape, and a test in this package
+# reads it, so it cannot drift from what the reader accepts.
+#
+# Xeno ships no indexer. Produce this with tree-sitter, ctags, your build system, your
+# language server, or anything else you already trust. What Xeno fixes is the shape of the
+# answer, not how you arrive at it.
+#
+# Where it goes: index.path in .xeno/config/project.yaml, conventionally
+# .xeno/local/index/symbols.yaml, which is gitignored. Derived data does not belong in the
+# trail.
+
+# Provenance. All three are required: an index that cannot say how old it is cannot be
+# judged, and a stale index is worse than none. Xeno treats one older than
+# index.max_age_hours, default 24, as absent.
+tool: go-symbols              # what produced this; any name you like
+tool_version: 0.1.0           # that tool's version, so a bad index can be traced to it
+produced_at: "2026-10-01T11:00:00Z"   # RFC 3339, UTC
+
+# The symbols. Five fields each, and no more: the index answers "where is X" and nothing
+# else. Call relationships and type resolution are deliberately absent — that is the
+# semantic graph v1 leaves out, and an agent that needs them has the source.
+symbols:
+  # A top level function. container is omitted where there is nothing enclosing it.
+  - name: Compare
+    kind: func
+    file: internal/enforcement/enforcement.go
+    line: 144
+
+  # A method. container names the type, which is what makes a common method name findable.
+  - name: Requirements
+    kind: method
+    file: internal/host/gitlab/gitlab.go
+    line: 93
+    container: Adapter
+
+  # The same name, a different kind, a different container. This is the case the index earns
+  # its keep on: a repository search for "Requirements" returns every mention, and this
+  # returns the three places it is defined.
+  - name: Requirements
+    kind: field
+    file: internal/enforcement/enforcement.go
+    line: 49
+    container: Report
+
+  # kind is a free string and Xeno compares it against nothing. Write what your tool calls
+  # things: class, interface, trait, object, record, impl, module. A closed set would be
+  # Xeno's idea of what a symbol is imposed on the tool you chose.
+  - name: BranchRules
+    kind: interface
+    file: internal/host/host.go
+    line: 42
+```
