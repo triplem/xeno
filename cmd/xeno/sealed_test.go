@@ -134,7 +134,12 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// aimed at an earlier sealed phase at all. What the walk asserts about it is that an answer
 	// given while P0 is sealed does not reach P0; #242's three refusals are what keep it off a
 	// sealed P5, which this fixture does not reach.
-	"review answer":    {args: []string{"deviations-are-traceable", "--result", "met"}},
+	"review answer": {args: []string{"deviations-are-traceable", "--result", "met"}},
+	// The lens entry resolves P5 the same way and takes no rule at all, so there is nothing
+	// in its arguments that could name an earlier phase; what the walk asserts is that an
+	// entry written while P0 is sealed leaves P0 alone.
+	"review lens": {args: []string{"--result", "deviation", "--note",
+		"the security lens read the diff and has something to say"}},
 	"obligation close": {args: []string{"{overridden}"}, verdict: writesTheVerdict},
 	"evidence attach":  {args: []string{"--from", "{pipeline}"}},
 	// The route writes the rule files, the patch and the description into --out and nothing

@@ -255,3 +255,183 @@ func TestAnAnswerAgainstARuleSetWithNoReviewRuleIsRefused(t *testing.T) {
 		t.Fatalf("the refusal does not say the set is empty: %v", err)
 	}
 }
+
+// ---- the lens entry section 12 allows, and the command that writes it
+
+// The entry the four lens skills describe. Section 12 fixes what it carries: source: lens and
+// no rule id, which is what keeps it out of the set G-Policy counts for completeness.
+func TestALensEntryIsWrittenWithItsSourceAndNoRule(t *testing.T) {
+	f := newFixture(t)
+	f.reviewRules()
+	f.output(review, "")
+
+	n, err := f.r.ReviewLens(key, "deviation",
+		"the security lens: the error path reports more than its caller may know")
+	f.must(err)
+	if n.Lens != 1 {
+		t.Fatalf("the count of lens entries is %d after the first: %+v", n.Lens, n)
+	}
+
+	var o model.Output
+	f.readFront(review, &o)
+	if len(o.ReviewChecklist) != 1 {
+		t.Fatalf("the entry was not written: %+v", o.ReviewChecklist)
+	}
+	e := o.ReviewChecklist[0]
+	if e.Rule != "" {
+		t.Errorf("the entry answers a rule, which is what keeps it out of the counted set: %+v", e)
+	}
+	if e.Source != model.ChecklistSourceLens {
+		t.Errorf("the entry does not carry section 12's source: %+v", e)
+	}
+	if e.Result != "deviation" || !strings.Contains(e.Note, "security lens") {
+		t.Errorf("the entry was not written as given: %+v", e)
+	}
+}
+
+// An answer replaces the entry for its rule and a lens entry cannot: a rule id is what makes
+// two answers to one thing recognisable as such. So four lenses leave four entries, and neither
+// writer disturbs the other's.
+func TestLensEntriesSitBesideEachOtherAndBesideTheAnswers(t *testing.T) {
+	f := newFixture(t)
+	f.reviewRules()
+	f.output(review, "")
+
+	f.answer(model.ChecklistEntry{Rule: "deviations-are-traceable", Result: "met"})
+	for _, lens := range []string{"security", "privacy", "operations", "architecture"} {
+		n, err := f.r.ReviewLens(key, "deviation", "the "+lens+" lens had something to say")
+		f.must(err)
+		if n.Entry.Note != "the "+lens+" lens had something to say" {
+			t.Fatalf("the entry reported is not the one given: %+v", n.Entry)
+		}
+	}
+	a := f.answer(model.ChecklistEntry{Rule: "interface-change-needs-a-migration-note",
+		Result: "not-applicable", Note: "no interface changed"})
+	if len(a.Unanswered) != 0 {
+		t.Fatalf("the lens entries were counted as answers or as debts: %+v", a.Unanswered)
+	}
+
+	var o model.Output
+	f.readFront(review, &o)
+	if len(o.ReviewChecklist) != 6 {
+		t.Fatalf("four lenses and two rules are six entries: %+v", o.ReviewChecklist)
+	}
+	// The two answers keep the places they were written in, which is what says the lens
+	// entries were appended rather than written over one of them.
+	if o.ReviewChecklist[0].Rule != "deviations-are-traceable" ||
+		o.ReviewChecklist[5].Rule != "interface-change-needs-a-migration-note" {
+		t.Fatalf("the answers moved: %+v", o.ReviewChecklist)
+	}
+}
+
+// Section 9's result is required of a lens entry as it is of an answer, because G-Policy's one
+// check on the list is that every entry carries one, lens entries included. The note is required
+// of every result and not only of the two: the entry has no rule id, so without a note nothing
+// in it says which lens wrote it or what it found.
+func TestALensEntryThatSaysNothingIsRefused(t *testing.T) {
+	cases := []struct {
+		name         string
+		result, note string
+		says         string
+	}{
+		{"no result, which is the one thing G-Policy checks", "", "the lens found something",
+			"--result is required"},
+		{"a result outside section 9's three", "partly", "the lens found something",
+			"no checklist result"},
+		{"a deviation with no note", "deviation", "", "--note is required"},
+		{"met with no note, which an answer may give and this may not", "met", "",
+			"--note is required for a lens entry"},
+		{"met with a blank note", "met", "  ", "--note is required for a lens entry"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.reviewRules()
+			f.output(review, "")
+
+			_, err := f.r.ReviewLens(key, c.result, c.note)
+			if !isRefusal(err) {
+				t.Fatalf("want a refusal, got %v", err)
+			}
+			if !strings.Contains(err.Error(), c.says) {
+				t.Fatalf("the refusal does not say why: %v", err)
+			}
+			var o model.Output
+			f.readFront(review, &o)
+			if len(o.ReviewChecklist) != 0 {
+				t.Fatalf("a refused entry was written anyway: %+v", o.ReviewChecklist)
+			}
+		})
+	}
+}
+
+// A lens entry answers no rule, so it is writable where the rule tree holds no review rule at
+// all. That is the other half of its being outside the counted set, and it is the case an answer
+// is refused for.
+func TestALensEntryNeedsNoReviewRuleInTheSet(t *testing.T) {
+	f := newFixture(t)
+	f.output(review, "")
+
+	_, err := f.r.ReviewLens(key, "deviation", "the operations lens: nothing sets the new variable")
+	f.must(err)
+
+	var o model.Output
+	f.readFront(review, &o)
+	if len(o.ReviewChecklist) != 1 {
+		t.Fatalf("the entry was not written: %+v", o.ReviewChecklist)
+	}
+}
+
+// The refusal the other frontmatter writers give, for the same reason: section set creates the
+// artifact and there is nothing to amend before then. Held to the standard #242 set for the
+// answer, since both writers amend the same field of the same file.
+func TestALensEntryBeforeTheArtifactIsRefused(t *testing.T) {
+	f := newFixture(t)
+
+	_, err := f.r.ReviewLens(key, "deviation", "the privacy lens: the log carries an address")
+	if !isRefusal(err) {
+		t.Fatalf("want a refusal, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "xeno section set") {
+		t.Fatalf("the refusal does not say what writes it: %v", err)
+	}
+}
+
+// The body is not this writer's business either, which is TestTheBodySurvivesAnAnswer's reason:
+// the prose of the review-checklist section is what section set wrote, and a structured entry
+// amends one frontmatter field beside it.
+func TestTheBodySurvivesALensEntry(t *testing.T) {
+	f := newFixture(t)
+	f.reviewRules()
+	f.output(review, "")
+	before := f.artifactText(review)
+	_, body, ok := strings.Cut(before, "---\n\n")
+	if !ok {
+		t.Fatalf("the fixture's artifact has no body to keep: %q", before)
+	}
+
+	_, err := f.r.ReviewLens(key, "met", "the architecture lens read the structure and it held")
+	f.must(err)
+
+	if after := f.artifactText(review); !strings.HasSuffix(after, body) {
+		t.Fatalf("the body did not survive: want suffix %q, got %q", body, after)
+	}
+}
+
+// The refusal of a source on an answer now names the command that writes one. It named "the
+// lens" before, which resolved to nothing: there was no writer, and the four lens skills wrote
+// their findings as prose because of it.
+func TestTheAnswersRefusalOfASourceNamesTheWriterThatExists(t *testing.T) {
+	f := newFixture(t)
+	f.reviewRules()
+	f.output(review, "")
+
+	_, err := f.r.ReviewAnswer(key, model.ChecklistEntry{
+		Rule: "deviations-are-traceable", Result: "met", Source: model.ChecklistSourceLens})
+	if !isRefusal(err) {
+		t.Fatalf("want a refusal, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "xeno review lens") {
+		t.Fatalf("the refusal does not name the command that writes one: %v", err)
+	}
+}

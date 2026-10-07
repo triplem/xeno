@@ -62,17 +62,10 @@ func (r *Runner) ReviewAnswer(key string, e model.ChecklistEntry) (*ReviewAnswer
 	}
 	if e.Source != "" {
 		return nil, refuse("a review answer carries no source: section 12 gives source to a lens entry, " +
-			"which answers no rule and is written by the lens")
+			"which answers no rule and is written by xeno review lens")
 	}
-	switch {
-	case e.Result == "":
-		return nil, refuse("--result is required: %s", strings.Join(model.ChecklistResults, ", "))
-	case !model.OneOf(e.Result, model.ChecklistResults):
-		return nil, refuse("%q is no checklist result; section 9 fixes the three: %s",
-			e.Result, strings.Join(model.ChecklistResults, ", "))
-	case model.OneOf(e.Result, model.ChecklistNeedsNote) && strings.TrimSpace(e.Note) == "":
-		return nil, refuse("--note is required for %s: write why the rule was passed over; "+
-			"met is the only result that needs none", e.Result)
+	if err := checklistResult(e.Result, e.Note); err != nil {
+		return nil, err
 	}
 	// The set the gate counts against. Shared with it rather than restated, so that a refusal
 	// on the way in and a finding after the fact cannot disagree about what a rule is.
@@ -108,6 +101,78 @@ func (r *Runner) ReviewAnswer(key string, e model.ChecklistEntry) (*ReviewAnswer
 		return nil, err
 	}
 	return &ReviewAnswered{Entry: e, Replaced: replaced, Unanswered: unanswered(review, list)}, nil
+}
+
+// ReviewNoted is what one lens entry did. There is no set it completes, which is why it reports
+// how many entries the checklist now carries from lenses instead of what is still owed: a lens
+// owes nothing, and a count is what tells a reader that a second lens's entry sits beside the
+// first rather than over it.
+type ReviewNoted struct {
+	Entry model.ChecklistEntry
+	Lens  int // entries of the checklist carrying source: lens, this one included
+}
+
+// ReviewLens writes a lens's checklist entry: section 12's entry with source: lens and no rule
+// id, which G-Policy does not count because it keys on the missing rule.
+//
+// A command of its own rather than a flag on ReviewAnswer, because what keeps a lens harmless is
+// that its entry answers no rule, and a flag that can be passed beside a rule id is one somebody
+// will pass beside a rule id. Here there is no parameter for a rule and none for the source: the
+// signature is the guarantee, so nothing has to be kept right as the two writers change.
+//
+// The entry is appended and never replaces one. A rule id is what makes two answers to the same
+// thing recognisable as such, and a lens entry has none, so the two entries of two lenses are two
+// findings rather than a correction; which of them is which is a judgement about their notes.
+//
+// A note is required for every result and not only for the two of section 9 that need one
+// elsewhere. The rule id is what says what an entry is about, and this entry has none, so the
+// note is the only thing in it that can name the lens and what it found. `met` with no note would
+// be an entry saying nothing at all.
+func (r *Runner) ReviewLens(key, result, note string) (*ReviewNoted, error) {
+	if err := checklistResult(result, note); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(note) == "" {
+		return nil, refuse("--note is required for a lens entry: it carries no rule id, so the " +
+			"note is the only thing in it that says which lens wrote it and what it found")
+	}
+	// No rule set is read, because there is no rule to resolve. A lens entry is writable in a
+	// repository whose rule tree holds no review rule at all, which is the other half of its
+	// being outside the counted set.
+	e := model.ChecklistEntry{Result: result, Note: note, Source: model.ChecklistSourceLens}
+	phase := model.Phases[len(model.Phases)-1]
+	front, o, body, err := r.artifact(key, phase)
+	if err != nil {
+		return nil, err
+	}
+	list := append(o.ReviewChecklist, e)
+	if err := r.amendFront(key, phase, front, "review_checklist", list, body); err != nil {
+		return nil, err
+	}
+	lens := 0
+	for _, x := range list {
+		if x.Source == model.ChecklistSourceLens {
+			lens++
+		}
+	}
+	return &ReviewNoted{Entry: e, Lens: lens}, nil
+}
+
+// checklistResult is section 9's result and the note it does or does not require, shared by the
+// two writers of the list so that an entry refused by one cannot be accepted by the other. The
+// wording names the flags, because both are reached from the command line and nowhere else.
+func checklistResult(result, note string) error {
+	switch {
+	case result == "":
+		return refuse("--result is required: %s", strings.Join(model.ChecklistResults, ", "))
+	case !model.OneOf(result, model.ChecklistResults):
+		return refuse("%q is no checklist result; section 9 fixes the three: %s",
+			result, strings.Join(model.ChecklistResults, ", "))
+	case model.OneOf(result, model.ChecklistNeedsNote) && strings.TrimSpace(note) == "":
+		return refuse("--note is required for %s: write why the rule was passed over; "+
+			"met is the only result that needs none", result)
+	}
+	return nil
 }
 
 // upsertChecklist replaces the entry answering the same rule, or appends. The index is kept

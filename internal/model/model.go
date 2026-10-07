@@ -408,8 +408,13 @@ var (
 	// needs none; the note exists to record why a rule was passed over.
 	ChecklistResults   = []string{"met", "deviation", "not-applicable"}
 	ChecklistNeedsNote = []string{"deviation", "not-applicable"}
-	EvidenceKinds      = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
-	EvidenceResults    = []string{"pass", "fail"}
+	// Section 12: the one value source carries. It is named here rather than written as a
+	// literal where the entry is built, because this is the word a reader of an artifact uses
+	// to tell a lens's entry from an answer; G-Policy does not read it at all, keying on the
+	// missing rule id instead, and echoes whatever the entry happens to carry.
+	ChecklistSourceLens = "lens"
+	EvidenceKinds       = []string{"test-report", "coverage", "build-log", "scan", "sbom", "other"}
+	EvidenceResults     = []string{"pass", "fail"}
 	// Section 4's five shapes of a report. The set is closed there and judged here for the
 	// reason BuildKind records: a value nobody compares against is a spelling that survives
 	// for as long as nothing reads it, which `kind: build` did until #198.
