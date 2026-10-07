@@ -1,0 +1,36 @@
+=== no gate reads any of the triple to decide anything ===
+$ grep -n 'tool\|model' internal/gates/*.go | grep -v _test | grep -v 'tool_version\" \|sessionFields'
+internal/gates/gates.go:341:	sessionFields  = []string{"language", "secrets_hash", "context_hash", "model", "tool", "tool_version"}
+
+The one remaining mention is the required-field list, which asserts presence and reads
+no value:
+341:	sessionFields  = []string{"language", "secrets_hash", "context_hash", "model", "tool", "tool_version"}
+
+positive control: the same grep before the change returned the byHand line as well
+$ git show HEAD~0:internal/gates/gates.go | grep -n 'raw\["tool"\]'  -- after
+(nothing, which is the change)
+$ git show main:internal/gates/gates.go | grep -n 'raw\["tool"\]'  -- before
+386:	byHand := raw["tool"] == "manual"
+
+=== honest now, and before ===
+after:
+409:		honest := model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
+before:
+402:		honest := byHand || model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
+
+=== build, format, vet, verify ===
+build ok
+gofmt: nothing
+vet ok
+verified 499 verdicts
+
+=== the test case, checked the other way round ===
+With the case left as 'by-hand passes a manual artifact', wantFinding false, after the term
+was removed, go test ./internal/gates/ reported:
+--- FAIL: TestHashFieldShape (0.00s)
+    schema_test.go:210: by-hand passes a manual artifact: wanted finding=false; causes: .xeno/intents/PROJ-1/phases/00-intake/output.md: context_hash says by-hand where a writer exists
+        .xeno/intents/PROJ-1/phases/00-intake/digest.md: context_hash says by-hand where a writer exists
+FAIL	github.com/triplem/xeno/internal/gates	0.358s
+That is what established the change is a change and not a refactor: the case was the
+specification of the removed behaviour. Inverted, the package passes:
+ok  	github.com/triplem/xeno/internal/gates	(cached)

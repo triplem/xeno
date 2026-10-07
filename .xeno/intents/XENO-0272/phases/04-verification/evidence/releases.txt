@@ -1,0 +1,33 @@
+=== the four releases, as the gate files record them ===
+--- XENO-1/00-intake/gate.yaml
+  status: approved
+          - id: F-0c8115
+            file: .xeno/intents/XENO-1/phases/00-intake/output.md
+              type: approved
+              by: Markus M. May
+          - id: F-6ec27f
+            file: .xeno/intents/XENO-1/phases/00-intake/digest.md
+              type: approved
+              by: Markus M. May
+--- XENO-2/00-intake/gate.yaml
+  status: approved
+          - id: F-187a0e
+            file: .xeno/intents/XENO-2/phases/00-intake/output.md
+              type: approved
+              by: Markus M. May
+          - id: F-e0c34d
+            file: .xeno/intents/XENO-2/phases/00-intake/digest.md
+              type: approved
+              by: Markus M. May
+
+Four findings, four decisions, all type approved, none carrying an obligation.
+grep -c 'type: approved' over both files:
+2
+2
+grep -c 'obligation' over both files:
+0
+0
+
+=== the gate exits zero again; between the code change and the releases it exited 1 ===
+verified 499 verdicts
+exit: 0

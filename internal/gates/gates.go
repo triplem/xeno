@@ -365,11 +365,13 @@ func schemaVersion(file string, raw map[string]any) []model.Finding {
 // Appendix B, and where it carries a hash the hash is recomputed and compared. Both
 // belong here rather than in G-Freshness: what is checked is a field against the file it
 // names, inside one phase, where G-Freshness compares a phase against its predecessor.
-// The placeholder is honest in two cases and wrong in a third, which is why
-// this cannot be one regexp: `secrets_hash` and `rules_hash` have no writer yet, and an
-// artifact with `tool: manual` was produced by nothing at all, so both may say `by-hand`.
-// In `context_hash` or `strings_hash` of an artifact a session produced, a writer exists
-// and the value was skipped.
+// The placeholder is honest in two cases and wrong otherwise, which is why this cannot be
+// one regexp: `secrets_hash` and `rules_hash` have no writer yet, and a strings bundle the
+// repository no longer carries cannot be hashed by anybody. Both are facts about the tree.
+// In `context_hash`, or in `strings_hash` where the bundle is still here, a writer exists
+// and the value was skipped. What the artifact says about the tool that produced it does
+// not enter into it: that field is a declaration, as section 12 says, and a check that
+// relaxed itself on one would be reading the thing it is meant to be independent of (#277).
 var hashShape = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 // language is the artifact's own, because the bundle a phase rendered from is the one in
@@ -382,8 +384,6 @@ func language(raw map[string]any) string {
 }
 
 func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
-	// Nothing produced a manual artifact, so none of its hashes had a writer.
-	byHand := raw["tool"] == "manual"
 	// A bundle the repository no longer carries cannot be hashed by anybody. The
 	// artifact names the version it rendered from, and where that is not the version
 	// here, the value is unrecoverable rather than skipped.
@@ -399,7 +399,14 @@ func hashes(c Ctx, file string, raw map[string]any) []model.Finding {
 		if !ok || v == "" {
 			continue // absence is the missing field finding, not this one
 		}
-		honest := byHand || model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
+		// What makes a placeholder honest is a fact about the tree and never a field the
+		// artifact declares. This used to begin with `tool == "manual"`, on the reason that
+		// nothing produced a manual artifact so none of its hashes had a writer; the reason
+		// is sound and the field is self-reported, so the one gate that acted on the triple
+		// section 12 calls a declaration was relaxing itself on one (#277). The two terms
+		// that remain are checkable: a field nothing writes yet, and a bundle the repository
+		// no longer carries.
+		honest := model.OneOf(f, model.WriterlessHash) || (f == "strings_hash" && goneBundle)
 		switch {
 		case hashShape.MatchString(v):
 			fs = append(fs, recomputed(c, file, f, v, goneBundle, raw)...)
