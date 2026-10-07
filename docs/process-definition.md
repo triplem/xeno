@@ -564,7 +564,11 @@ judged against what the artifact recorded.
 
 `tools` names every context tool a phase used, with its version and the hash of its
 answer: in v1 the symbol index, in v2 a code graph or a comparable tool without a
-schema break. It is empty where a phase ran without any, which is allowed.
+schema break. It is absent where a phase ran without any, which is allowed and is the
+distinction `rules_applied` makes for the same reason: an empty list says a set was
+resolved and came out empty, where an absent key says there was nothing to resolve. A
+phase that used no index is the state every repository is in until somebody produces
+one, and it is worth telling apart from one whose index was there and said nothing.
 
 **It records the context that was declared, not everything that was read.** The file is
 written before the agent starts, from the context scope, and nothing stops an agent

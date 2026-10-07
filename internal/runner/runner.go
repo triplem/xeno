@@ -458,6 +458,12 @@ func (r *Runner) Start(key, phase string) error {
 	// in force, since an empty list says a set was resolved and came out empty (A74).
 	lock.RepoCommit = r.headCommit()
 	lock.RulesApplied = r.rulesApplied()
+	// The tools entry section 5 defines, written here because this is where the rest of the
+	// lock is written and because the index is resolved for the phase and not per question.
+	// It is written and read back by nothing, like the plugin block beside it: what it leaves
+	// is the trail's only record that a phase answered questions from an index, which is the
+	// difference a baseline is read against.
+	lock.Tools = r.lockTools()
 	// The plugin block section 5 enumerates, and the other half of the sentence that explains
 	// plugin_version: the frontmatter names what was used and the lock proves it with a hash.
 	// Absent together where there is no vendored plugin, because a block naming a version with
@@ -937,19 +943,66 @@ func frontmatter(front map[string]any) string {
 // context.lock.yaml records and because somebody asking why a phase ran without an index
 // deserves the sentence rather than silence. Nothing here fails: an absent index is ordinary.
 func (r *Runner) symbolIndex(now time.Time) (*index.Index, string) {
+	path, maxAge, why := r.indexConfig()
+	if why != "" {
+		return nil, why
+	}
+	return index.Load(path, maxAge, now)
+}
+
+// indexConfig resolves where the index is and how old it may be, which both the reader and the
+// lock's tools entry need: one of them would otherwise resolve the path a second time, and two
+// resolutions of one configured path is how they come to disagree about which file was read.
+//
+// The path is returned absolute, because a project writes the relative path it writes everywhere
+// else in project.yaml and the hash has to be taken over the same file the reader opened.
+func (r *Runner) indexConfig() (path string, maxAge time.Duration, why string) {
 	var p model.Project
 	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
-		return nil, "project.yaml cannot be read, so no index is configured"
+		return "", 0, "project.yaml cannot be read, so no index is configured"
 	}
-	path := p.Index.Path
+	path = p.Index.Path
 	if path != "" && !filepath.IsAbs(path) {
 		path = r.abs(path)
 	}
-	maxAge := index.DefaultMaxAge
+	maxAge = index.DefaultMaxAge
 	if p.Index.MaxAgeHours > 0 {
 		maxAge = time.Duration(p.Index.MaxAgeHours) * time.Hour
 	}
-	return index.Load(path, maxAge, now)
+	return path, maxAge, ""
+}
+
+// lockTools is the tools entry of context.lock.yaml: what section 5 asks a phase to record of
+// the context tools it used, which in v1 is the symbol index and nothing else.
+//
+// Nothing here fails. Absent, unreadable, malformed and stale are one outcome in
+// internal/index, and they are one outcome here too: no entry at all rather than an entry
+// saying a tool was used with nothing to say which. An intent that ran without an index is the
+// state every repository is in until somebody produces one, and the absent key is what
+// distinguishes it from one that used a tool, the way an absent rules_applied does (A74).
+//
+// The hash is taken after the load rather than from the bytes the load read, which leaves a
+// window in which the file could change between the two. A changed file reads as a hash that
+// matches nothing, which is the honest outcome: the alternative is a hash the runner computed
+// over bytes it no longer has any way to name.
+func (r *Runner) lockTools() []model.LockTool {
+	path, maxAge, why := r.indexConfig()
+	if why != "" {
+		return nil
+	}
+	i, _ := index.Load(path, maxAge, r.Now())
+	if i == nil {
+		return nil
+	}
+	h, err := hashing.FileHash(path)
+	// The version the index declares of its producer is required of it by section 5, so that a
+	// bad index can be traced to the tool that made it; an index that does not declare one
+	// cannot carry that trace into the lock, and a tools entry without it would claim the trace
+	// exists. Same for a hash that could not be taken.
+	if err != nil || i.Tool == "" || i.ToolVersion == "" || h == "" {
+		return nil
+	}
+	return []model.LockTool{{Name: i.Tool, Version: i.ToolVersion, SHA256: h}}
 }
 
 func (r *Runner) evidenceSource() string {

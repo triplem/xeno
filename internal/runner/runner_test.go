@@ -2225,6 +2225,101 @@ func TestTheIndexPathIsRelativeToTheRepository(t *testing.T) {
 	}
 }
 
+// indexBlock is the project.yaml index block pointing at a fixture index, with the agent block
+// every started phase needs beside it.
+const indexBlock = agentBlock + "index:\n  path: .xeno/local/index/symbols.yaml\n  max_age_hours: 48\n"
+
+// symbolIndexFile writes a well formed index produced at the given time, which is what the
+// staleness boundary is moved with: the fixture clock is fixed, so the index's own age is the
+// only thing a test varies.
+func (f *fixture) symbolIndexFile(producedAt time.Time, version string) {
+	f.t.Helper()
+	f.write(".xeno/local/index/symbols.yaml", "tool: go-symbols\ntool_version: "+version+"\n"+
+		"produced_at: \""+producedAt.Format(time.RFC3339)+"\"\n"+
+		"symbols:\n  - name: Compare\n    kind: func\n    file: a.go\n    line: 1\n")
+}
+
+// The tools entry section 5 defines: the one record entering the repository that says an index
+// informed a phase, since the index itself lives under .xeno/local/ and is never committed.
+// The hash is over the index as the phase resolved it, which is what ties a phase's output to
+// the index it answered questions from.
+func TestTheLockRecordsTheIndexThePhaseResolved(t *testing.T) {
+	f := newFixture(t)
+	f.project(indexBlock)
+	f.templated()
+	f.symbolIndexFile(f.r.Now().Add(-time.Hour), "0.1.0")
+	f.must(f.r.Start(key, "00-intake"))
+
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+	if len(lock.Tools) != 1 {
+		t.Fatalf("tools is %v, want the one index the phase resolved", lock.Tools)
+	}
+	want, err := hashing.FileHash(filepath.Join(f.root, ".xeno/local/index/symbols.yaml"))
+	f.must(err)
+	got := lock.Tools[0]
+	if got.Name != "go-symbols" || got.Version != "0.1.0" || got.SHA256 != want {
+		t.Errorf("tools carries %+v, want go-symbols 0.1.0 and the hash %s of the index read", got, want)
+	}
+}
+
+// An intent that used no index records no entry rather than an empty list, which is the
+// distinction rules_applied already makes (A74): an empty list says a set was resolved and came
+// out empty, where the absent key says there was nothing to resolve.
+func TestAPhaseThatResolvedNoIndexRecordsNoTools(t *testing.T) {
+	f := newFixture(t)
+	f.project(agentBlock)
+	f.templated()
+	f.must(f.r.Start(key, "00-intake"))
+
+	path := filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml")
+	var lock model.ContextLock
+	f.must(fm.ReadYAML(path, &lock))
+	if lock.Tools != nil {
+		t.Errorf("tools is %v where no index was configured, want absent", lock.Tools)
+	}
+	// Read as text as well, because a decoded nil says nothing about whether the key was
+	// written: `tools: []` decodes to an empty slice and the difference is in the file.
+	b, err := os.ReadFile(path)
+	f.must(err)
+	if strings.Contains(string(b), "tools:") {
+		t.Errorf("the lock carries a tools key where no index was resolved:\n%s", b)
+	}
+}
+
+// The four causes internal/index collapses into one outcome stay one outcome here. An index that
+// was not read is one the phase did not use, so the lock says nothing rather than naming a tool
+// whose answer the phase never saw.
+func TestAnIndexThatWasNotReadLeavesNoToolsEntry(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		write   func(f *fixture)
+		because string
+	}{
+		{"stale", func(f *fixture) { f.symbolIndexFile(f.r.Now().Add(-72*time.Hour), "0.1.0") },
+			"past max_age_hours, and a stale index is worse than none"},
+		{"absent", func(f *fixture) {}, "configured and never produced"},
+		{"unreadable", func(f *fixture) { f.write(".xeno/local/index/symbols.yaml", "\tnot: yaml\n  at: all\n") },
+			"that is not a symbol index"},
+		{"no version", func(f *fixture) { f.symbolIndexFile(f.r.Now().Add(-time.Hour), "") },
+			"declaring no version of its producer, so it carries no trace to put in the lock"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.project(indexBlock)
+			f.templated()
+			tc.write(f)
+			f.must(f.r.Start(key, "00-intake"))
+
+			var lock model.ContextLock
+			f.must(fm.ReadYAML(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "context.lock.yaml"), &lock))
+			if lock.Tools != nil {
+				t.Errorf("tools is %v for an index %s, want no entry at all", lock.Tools, tc.because)
+			}
+		})
+	}
+}
+
 // A phase written after internal/rules existed carries a hash over the rule set it was judged
 // against, where every artifact before it carries the placeholder the harness wrote. The two
 // meanings of the field are divided by that commit and recorded in A66.

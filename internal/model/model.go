@@ -462,6 +462,17 @@ type ContextLock struct {
 	// nothing yet — a field with a writer and no reader, which is the way round that leaves
 	// the trail able to answer the question later.
 	Plugin *LockPlugin `yaml:"plugin,omitempty"`
+	// Tools is the context tools the phase resolved, which section 5 enumerates as the
+	// `tools` entry and which in v1 means the symbol index. It is the only thing entering
+	// the repository that says an index informed a phase at all: the index itself lives
+	// under .xeno/local/ and is never committed, so without this nobody can tell a phase
+	// that used one from a phase that did not.
+	//
+	// Absent rather than empty where no tool was resolved, for the reason rules_applied is
+	// (A74): an empty list says a set was resolved and came out empty, where absence says
+	// there was nothing to resolve. Section 5 calls the field empty where a phase ran
+	// without any, and an absent key is how this project writes that.
+	Tools []LockTool `yaml:"tools,omitempty"`
 }
 
 // LockPlugin is the lock's plugin block: the version the vendored plugin declares and the
@@ -469,6 +480,24 @@ type ContextLock struct {
 type LockPlugin struct {
 	Version string `yaml:"version,omitempty"`
 	SHA256  string `yaml:"sha256,omitempty"`
+}
+
+// LockTool is one entry of tools, as section 5 writes it: the name of the tool, its version,
+// and the hash of its answer.
+//
+// For the symbol index the answer is the index as the phase resolved it, so SHA256 is the hash
+// over that file's content. The lock is written before the agent starts and records what the
+// phase was given rather than what it asked, so there is no single query response to hash; the
+// file is the whole of what any answer could come from, and hashing it is what lets a phase's
+// output be traced back to the index that informed it, which is the same provenance the index
+// records of its own producer.
+//
+// All three are written together or the entry is not written, the way LockPlugin's version and
+// hash are (#177): a name with no hash, or a hash with no name, is half a claim.
+type LockTool struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+	SHA256  string `yaml:"sha256"`
 }
 
 // AppliedRule is one entry of rules_applied, as section 5 writes it: the path the rule was read
