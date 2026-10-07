@@ -28,6 +28,16 @@ enforcement:                   # section 7, compared against the host by CI
     required: 1
     not_by_author: true
 
+lenses:                        # section 13
+  # None to begin with, written out rather than left absent so that the decision is visible
+  # the first time somebody reads this file. The four lenses — security, privacy, operations,
+  # architecture — are skills working inside the phase's context window, so each enabled one
+  # travels in every request of every phase it applies to. That is why section 13 makes
+  # enablement a project decision and not a default: the cost is paid on all the work the
+  # project ever does, and a lens is worth it where the kind of mistake it catches is a kind
+  # this project actually makes. Add the ids of the ones that are.
+  enabled: []
+
 evidence:                      # section 4
   source: ci                   # ci | local
 

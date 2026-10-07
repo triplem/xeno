@@ -493,13 +493,16 @@ func TestVendorPutsThePluginsOwnArtifactsInTheRepository(t *testing.T) {
 			t.Errorf("%s was not vendored", rel)
 		}
 	}
-	// Seven skills, as section 13 names them.
+	// Eleven skills, as section 13 names them: the six phases, the cross cutting learning record
+	// and the four lenses. The lenses travel whether or not a project enables any, because
+	// enablement is a line in project.yaml and a lens that is not vendored could not be enabled
+	// at all.
 	entries, err := os.ReadDir(filepath.Join(r.Root, ".xeno/plugin/skills"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 7 {
-		t.Errorf("%d skills vendored, want the seven of section 13", len(entries))
+	if len(entries) != 11 {
+		t.Errorf("%d skills vendored, want the eleven of section 13", len(entries))
 	}
 
 	// And a second run changes nothing, which is WP9's own criterion and now has a third tree and
