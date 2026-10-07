@@ -14,7 +14,17 @@ stages:
 
 xeno gate:
   stage: gate
-  image: alpine:latest
+  # The runner arrives as an image and not as a download, which is what makes the version
+  # this job uses something the job declares rather than something it fetches. Section
+  # 13's distribution table gives CI the image and the developer machine the per platform
+  # binaries, for that reason.
+  #
+  # This line is a setting and not a constant. The version after the colon is the one
+  # project.yaml pins, and the two move together or CI compares against a different runner
+  # than the local run; and a pipeline with no route to the registry below reads the same
+  # image from a mirror in one it can reach, which is the air gapped case WP0 keeps open.
+  # Edit it here, where the job that depends on it is.
+  image: {{.RunnerImage}}
   # Merge request pipelines only, and not for symmetry with the other host's trigger:
   # CI_MERGE_REQUEST_DIFF_BASE_SHA is populated in no other kind of pipeline, so a job
   # that ran on a branch pipeline would pass an empty base and judge the wrong range.
@@ -24,9 +34,6 @@ xeno gate:
     # Both ends of the range have to be reachable, which a shallow clone does not give.
     GIT_DEPTH: 0
   script:
-    # The version is pinned because a different runner produces a different hash or a
-    # different verdict than the local run it is comparing against.
-    - echo "install xeno {{.RunnerVersion}} here"
     - xeno gate verify
     # Section 7 puts G-Complete at P5 and at intent close. An intent that reaches neither
     # has no phase for the gate to run in, so a branch whose trail stops in the middle

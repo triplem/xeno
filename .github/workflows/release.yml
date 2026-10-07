@@ -33,7 +33,11 @@ on:
   push:
     branches: [main]
 
-# contents: write and nothing else. The other two were here because
+# Two scopes, because section 13's distribution table gives the release two channels and
+# this host counts them separately: contents: write attaches the per platform binaries to
+# the release, packages: write publishes the image into the registry.
+#
+# Two others were here and are not. They were removed because
 # @semantic-release/github can comment on and label the issues and pull requests a
 # release contains, and open an issue when one fails. Both routines are off in
 # .releaserc.json, and the run that published 0.14.0 shows the plugin touching neither
@@ -43,6 +47,7 @@ on:
 # watched.
 permissions:
   contents: write
+  packages: write
 
 concurrency:
   group: release
@@ -166,6 +171,18 @@ jobs:
           m=github.com/triplem/xeno/internal/model
           g=github.com/triplem/xeno/internal/plugin
           ldflags="$ldflags -X $m.RunnerVersion=$VERSION -X $g.ExpectedDigest=$DIGEST"
+
+          # Where the image goes, named once and from the host rather than written down.
+          # The runner compiles it in because the CI wrapper it generates into somebody
+          # else's repository has to name the image, and a repository that had moved
+          # would leave that wrapper pointing at nothing with nothing to notice it. The
+          # step that pushes reads the same value out of the environment, so the registry
+          # the binaries claim and the registry the image is in cannot disagree.
+          # Lowercased: a registry rejects an upper case repository name and an owner is
+          # free to have one.
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+          ldflags="$ldflags -X $m.ImageRepository=$image"
           for target in $TARGETS; do
             os=${target%/*}; arch=${target#*/}
             ext=""
@@ -206,3 +223,46 @@ jobs:
           ( cd dist && sha256sum * > ../SHA256SUMS ) && mv SHA256SUMS dist/
           cat dist/SHA256SUMS
           gh release upload "v$VERSION" dist/*
+
+      # The other channel of section 13's distribution table: the image CI runs the gate
+      # in. It comes last, after the release has its assets, because the two are published
+      # independently and a registry that refuses a push is then a release missing its
+      # image rather than a release missing everything.
+      #
+      # It builds the binary that is already in dist rather than compiling again. The
+      # Dockerfile only copies, so the image carries the bytes SHA256SUMS covers and the
+      # digest of the embedded plugin inside it is the one this release computed.
+      #
+      # One tag, the version, and no moving one. `latest` is what a pipeline would resolve
+      # instead of declaring, which is the whole of what the image is for, and
+      # docs/supply-chain.md says why a tag somebody can repoint is not a pin.
+      #
+      # linux/amd64 only. The hosted runners of both hosts are amd64, and a second
+      # architecture is not a flag: the Dockerfile installs packages, so it has to execute
+      # under the architecture it is building for, which needs either an emulator
+      # registered in this job — three more actions to pin, each of them running the
+      # package manager under QEMU — or a native arm64 runner and a manifest list over two
+      # builds. Cross installing from this platform without an emulator was tried and
+      # fails in the package scripts, which run as target architecture binaries. Which of
+      # the two routes to take is a decision about this pipeline rather than about the
+      # image, so the image ships for the architecture CI is on and the question is
+      # written down (#282).
+      - name: image
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.new_release_version }}
+          # Through the environment and not interpolated into the script, which is how the
+          # upload step above passes the same token: an expression substituted into a shell
+          # is a shell that reads whatever the expression expanded to.
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          printf '%s' "$REGISTRY_TOKEN" |
+            docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+          docker build --build-arg "VERSION=$VERSION" -t "$IMAGE:$VERSION" .
+          docker push "$IMAGE:$VERSION"
+          # The digest, so that the run log says what was published and not only where.
+          # An image is referenced by digest wherever the reference has to be immutable,
+          # and the tag above cannot answer that question later.
+          docker image inspect "$IMAGE:$VERSION" --format '{{index .RepoDigests 0}}'
