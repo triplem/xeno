@@ -117,6 +117,8 @@ All paths in this document are relative to the repository root.
           evidence/
         05-review/
   local/                  excluded via .gitignore
+    staged/<KEY>/<nn>/    content written for a phase that already has a verdict, until
+                          `xeno phase finish` applies it
 ```
 
 Every phase directory contains:
@@ -820,6 +822,20 @@ regardless. No extra commit, no loop, no second writing identity. The attachment
 `evidence/attached.yaml`, outside the `artifacts_hash`, which yields the invariant the
 whole arrangement rests on: **only the run of a person writes inside the
 `artifacts_hash`, and every later writer touches only what lies outside it.**
+
+**Redoing a phase that has a verdict.** A phase is redone by writing its content again
+and running `xeno phase finish` again. The writes do not land in the phase directory: a
+phase that holds a `gate.yaml` takes them under `.xeno/local/staged/`, and the finish
+applies them and judges in one step. So the sealed artifact and the verdict that covers
+it move together, and no command leaves the repository holding an artifact its own
+verdict does not cover.
+
+That is what makes the rule in section 11 true of the commands as well as of the
+figures: once a finish has computed `artifacts_hash`, nothing but another finish writes
+inside that phase again. Staged content is not the record and is not committed — the
+record is what the next finish seals — so a redo somebody abandons leaves the trail
+exactly as it was, and `xeno intent status` says which phases hold staged content, so
+that an abandoned redo is visible rather than forgotten.
 
 `xeno gate run` attaches as well, before it computes, because P5 has no successor whose
 start could do it. Without that, anything P5 declares itself would stay open for good and
