@@ -26,6 +26,7 @@ import (
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
+	"github.com/triplem/xeno/internal/secrets"
 	"github.com/triplem/xeno/internal/template"
 )
 
@@ -63,7 +64,7 @@ var table = []spec{
 	{"G-Supply", 0, supply},
 	{"G-Schema", 0, schema},
 	{"G-Trace", 0, trace},
-	{"G-Secret", 0, notImplemented},
+	{"G-Secret", 0, secret},
 	{"G-Assumptions", 0, assumptions},
 	{"G-Questions", 5, questions},
 	{"G-Learning", 0, learning},
@@ -1067,6 +1068,86 @@ func trace(c Ctx) model.Check {
 		}
 	}
 	return result(fs)
+}
+
+// ---- G-Secret, from P0
+//
+// Section 7's table gives the gate one job: "filtering against the effective secret filter, the
+// same file the digest uses". Two readings of it existed and section 7 settles which: "Hooks
+// trigger the local stage, they do not perform the checks. The check is always the runner", a
+// hook "only invokes checks the runner already implements", and a hook's result is advisory
+// because "the binding result is the CI run". A gate that existed only inside a hook could not
+// be recomputed by CI, so it could not be binding, so it would not be a gate. This is therefore
+// the runner reading files, and the hook of WP11 is early feedback for a check already here.
+//
+// What it reads is the phase's own directory, without descending, minus the two names
+// artifacts_hash excludes. `xeno gate ...` reads nothing else, and the sealed set is the right
+// one for a second reason: a finding is about the artifacts the verdict is about, so a reader
+// comparing a verdict against a hash is looking at exactly the files this scanned.
+//
+// `paths_never_digested` is acted on by neither this nor the digest writer, and the difference is
+// worth stating because the key looks like an exclusion list and is not one. It names files
+// whose content may never be quoted into a digest, which is a rule for whatever comes to quote
+// a file into one. Read here as a skip list it would invert into its opposite: the files most
+// likely to hold a key would become the only ones a gate does not open. Read here as a check it
+// would duplicate G-Schema, which already reports an unknown file in a phase directory. So it
+// stays in the effective set, and so in `secrets_hash`, and the gate scans every artifact
+// whatever its name.
+//
+// An empty filter is not-implemented rather than pass. A repository before its plugin is
+// vendored has no patterns, and a check over no patterns that reported pass would claim a
+// judgement nobody made — the sentence section 5 gives that state for.
+func secret(c Ctx) model.Check {
+	filter, err := secrets.Load(c.Root)
+	if err != nil || filter.Empty() {
+		return notImplemented(c)
+	}
+	dir := c.phaseRel(c.Phase)
+	entries, _ := os.ReadDir(c.abs(dir))
+	var fs []model.Finding
+	for _, e := range entries {
+		if e.IsDir() || hashing.PhaseExcluded[e.Name()] {
+			continue
+		}
+		rel := dir + "/" + e.Name()
+		b, readErr := os.ReadFile(c.abs(rel))
+		if readErr != nil {
+			continue
+		}
+		// Normalised as the hash normalises, so a file with CRLF endings is counted in the lines
+		// a reader of the sealed content sees rather than in the bytes on this machine.
+		for _, h := range filter.Matches(string(hashing.Normalise(b))) {
+			fs = append(fs, finding(rel,
+				"the secret filter's "+h.PatternID+" pattern matches at line "+strconv.Itoa(h.Line),
+				"rotate the credential first, then take the value out of the artifact and run the "+
+					"gate again; the match itself is not recorded here, because gate.yaml is committed"))
+		}
+	}
+	return result(fs)
+}
+
+// Coverage is the bound of a gate's result in words, empty for every gate that has none to
+// state. It exists because a result is read by a person who was not there: `pass` on its own
+// says that what the gate looked at was clean and nothing about what it looked at, and for
+// G-Secret the difference is the whole of the issue this answers, where one `not-implemented`
+// had been standing for two different claims.
+//
+// It is not a field of a check. Section 5 enumerates what a check carries — gate, result,
+// provenance, findings — and adding a fifth key would be a change to the specification rather
+// than to the runner. So the bound lives beside the gate and is printed where a reader meets
+// the result, which is the command that prints the verdict.
+func Coverage(gate string) string { return coverage[gate] }
+
+var coverage = map[string]string{
+	// Three absences, each of which somebody would otherwise read a pass as covering. The
+	// session text is covered, by the digest filter, which redacts it on its way into digest.md,
+	// and that is the half this gate does not repeat. The other two are covered by nothing:
+	// `evidence/` lies outside artifacts_hash and is not descended into, and a value written and
+	// removed between two runs was never in a file either run opened.
+	"G-Secret": "the artifacts in this phase's directory, the set artifacts_hash seals. " +
+		"Not the session text, which the digest filter redacts on its way into digest.md; " +
+		"not evidence/, which lies outside that set; " +
+		"not a value written and removed between two gate runs.",
 }
 
 // ---- G-Assumptions
