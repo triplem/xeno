@@ -144,6 +144,9 @@ func run(args []string, out, errw io.Writer) int {
 		fmt.Fprintln(out, "xeno", model.RunnerVersion)
 		return 0
 	}
+	if len(args) >= 1 && args[0] == "mcp" {
+		return cmdMCP(args[1:], out, errw)
+	}
 	if len(args) < 2 && (len(args) == 0 || args[0] != "init") {
 		fmt.Fprintln(errw, usage)
 		return 2
