@@ -188,7 +188,10 @@ func TestHashFieldShape(t *testing.T) {
 		{name: "an invented value is a finding", field: "context_hash", value: "todo", tool: "claude-code", wantFinding: true},
 		{name: "an uppercase hash is a finding", field: "context_hash", value: strings.Repeat("A", 64), tool: "claude-code", wantFinding: true},
 		{name: "by-hand is a finding where a session wrote", field: "context_hash", value: "by-hand", tool: "claude-code", wantFinding: true},
-		{name: "by-hand passes a manual artifact", field: "context_hash", value: "by-hand", tool: "manual"},
+		// The tool field is self-reported, so it is not evidence that nothing could have written
+		// the value, and #277 took it out of the exemption. What a manual artifact declares about
+		// itself no longer decides a hash check.
+		{name: "by-hand is a finding even where the artifact says it was manual", field: "context_hash", value: "by-hand", tool: "manual", wantFinding: true},
 		{name: "by-hand passes where no writer exists", field: "secrets_hash", value: "by-hand", tool: "claude-code"},
 		{name: "by-hand passes where the bundle is gone", field: "strings_hash", value: "by-hand", tool: "claude-code", pluginVersion: "2.0.0"},
 		{name: "by-hand is a finding where the bundle is here", field: "strings_hash", value: "by-hand", tool: "claude-code", pluginVersion: "1.0.0", wantFinding: true},

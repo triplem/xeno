@@ -1,6 +1,7 @@
 intent: github.com/triplem/xeno#1
 key: XENO-1
-status: in-progress
-created: 2026-09-21T09:00:00Z
+status: abandoned
+reason: 'Complete for what it set out to record, and closed rather than carried further. m0-gate-job.md runs one intake per work package and goes no further, so this intent''s P1 to P5 were never meant to start; docs/assumptions.md has it as A20 and docs/the-trail-in-this-repository.md describes the shape. The schema''s word for an ending that is not a decided P5 is abandoned, and section 8 gives those two endings only, so this is the ending available rather than the one that fits: nothing was dropped. Closed on 2026-10-07 because #277 made a gate stricter, which raised a finding against this intake, and resolving it put the intent in a commit range where xeno intent verify requires one of the two endings.'
+created: "2026-09-21T09:00:00Z"
 runner_version: 0.1.0-dev
 plugin_version: 0.1.0-dev

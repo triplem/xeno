@@ -1,0 +1,35 @@
+=== what the tool term did, measured before it was removed ===
+
+$ grep -h '^tool: ' .xeno/intents/*/phases/*/output.md .xeno/intents/*/phases/*/digest.md | sort | uniq -c
+    994 tool: claude-code
+      1 tool: go-symbols          # what produced it
+      4 tool: manual
+
+The four that say manual, and which placeholder fields they carry:
+  .xeno/intents/XENO-1/phases/00-intake/output.md
+    output.md:secrets_hash: by-hand
+    output.md:context_hash: by-hand
+    output.md:strings_hash: by-hand
+    output.md:rules_hash: by-hand
+  .xeno/intents/XENO-2/phases/00-intake/output.md
+    output.md:secrets_hash: by-hand
+    output.md:context_hash: by-hand
+    output.md:strings_hash: by-hand
+    output.md:rules_hash: by-hand
+  .xeno/intents/XENO-1/phases/00-intake/digest.md
+    digest.md:secrets_hash: by-hand
+    digest.md:context_hash: by-hand
+  .xeno/intents/XENO-2/phases/00-intake/digest.md
+    digest.md:secrets_hash: by-hand
+    digest.md:context_hash: by-hand
+
+Their template refs, which is why goneBundle already covers their strings_hash:
+template: intake@0.1.0
+template: intake@0.1.0
+and the shipped set answers:
+id: intake
+version: 1.0.0
+
+=== the replacement that was rejected: how many phases have no lock to hash ===
+phases: 499   without a context.lock.yaml: 0
+So an exemption keyed on a missing lock exempts nobody, including the two pre-M0 intakes.

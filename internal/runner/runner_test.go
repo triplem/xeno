@@ -1350,7 +1350,10 @@ func TestHashFieldShape(t *testing.T) {
 	}{
 		{"the lock's own hash passes", "claude-code", ofTheLock, hex64('b'), "green"},
 		{"by-hand passes where no writer exists", "claude-code", ofTheLock, "by-hand", "green"},
-		{"by-hand passes a manual artifact", "manual", "by-hand", "by-hand", "green"},
+		// What an artifact says about the tool that produced it decides nothing: the field is a
+		// declaration section 12 says nothing corroborates, and #277 took it out of the
+		// exemption. The secrets hash still passes, because nothing writes that one yet.
+		{"a manual artifact does not excuse its context hash", "manual", "by-hand", "by-hand", "red"},
 		{"by-hand fails where a session wrote", "claude-code", "by-hand", hex64('b'), "red"},
 		{"a hash of the wrong content fails", "claude-code", hex64('a'), hex64('b'), "red"},
 		{"a truncated hash fails", "claude-code", "abc123", hex64('b'), "red"},

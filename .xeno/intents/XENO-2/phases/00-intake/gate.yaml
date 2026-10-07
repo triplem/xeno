@@ -1,18 +1,40 @@
 intent: github.com/triplem/xeno#2
 phase: 00-intake
 created: "2026-09-22T06:00:28Z"
-runner_version: 0.1.0-dev
-plugin_version: 0.1.0-dev
-status: green
-run_at: "2026-09-22T06:43:17Z"
+schema_version: "1.0"
+runner_version: dev+0768c44.dirty
+plugin_version: 0.0.0-dev
+status: approved
+run_at: "2026-10-07T13:22:28Z"
 artifacts_hash: bc677750c2131ec54dae400f620505a371fe24fa72dd834cbe3c000e24ed2876
 checks:
     - gate: G-Supply
       result: not-implemented
       provenance: xeno
     - gate: G-Schema
-      result: pass
+      result: fail
       provenance: xeno
+      findings:
+        - id: F-187a0e
+          file: .xeno/intents/XENO-2/phases/00-intake/output.md
+          cause: context_hash says by-hand where a writer exists
+          next: write the hash Appendix B defines; the placeholder is for a field nothing writes yet
+          decision:
+            type: approved
+            by: Markus M. May
+            at: "2026-10-07T13:26:07Z"
+            against: bc677750c2131ec54dae400f620505a371fe24fa72dd834cbe3c000e24ed2876
+            reason: 'The artifact was written by hand on 2026-09-22, before any writer for context_hash existed, so the placeholder states what was true when it was sealed. The lock beside it is hashable today, which is why the finding is correct rather than spurious, and section 11 forbids rewriting a sealed artifact to satisfy it. Accepted permanently: these are the only two pre-M0 intakes and no later phase can reach this state, because the runner has written context_hash since.'
+        - id: F-e0c34d
+          file: .xeno/intents/XENO-2/phases/00-intake/digest.md
+          cause: context_hash says by-hand where a writer exists
+          next: write the hash Appendix B defines; the placeholder is for a field nothing writes yet
+          decision:
+            type: approved
+            by: Markus M. May
+            at: "2026-10-07T13:26:07Z"
+            against: bc677750c2131ec54dae400f620505a371fe24fa72dd834cbe3c000e24ed2876
+            reason: 'The artifact was written by hand on 2026-09-22, before any writer for context_hash existed, so the placeholder states what was true when it was sealed. The lock beside it is hashable today, which is why the finding is correct rather than spurious, and section 11 forbids rewriting a sealed artifact to satisfy it. Accepted permanently: these are the only two pre-M0 intakes and no later phase can reach this state, because the runner has written context_hash since.'
     - gate: G-Trace
       result: pass
       provenance: xeno
@@ -29,8 +51,8 @@ checks:
       result: pass
       provenance: xeno
     - gate: G-Rules
-      result: not-implemented
+      result: pass
       provenance: xeno
     - gate: G-Policy
-      result: not-implemented
+      result: pass
       provenance: xeno
