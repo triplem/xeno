@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#228
+phase: 05-review
+created: "2026-10-07T06:41:44Z"
+schema_version: "1.0"
+runner_version: dev+9fd3647.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A suggestion's text is held by substring assertions and by nothing else, so the reason inside a hint can be edited away while the test still passes. Both sentences here carry a step and a reason, and the reason is the part that makes them followed more than once. This intent asserted the reason's own words as well as the step's, and then reverted each string to watch the test fail; the assertion that was not checked that way would have proved only that some words were present.
+      proposal: Where a suggestion carries a reason as well as a step, the test asserts words from the reason and not only from the step, and the assertion is checked by reverting the string once before it is trusted. A hint whose reason has been edited away is followed once, so an assertion that covers only the step protects the half that needs it least.
+      target: .xeno/config/rules/learned/project/a-hint-is-asserted-by-its-reason.yaml

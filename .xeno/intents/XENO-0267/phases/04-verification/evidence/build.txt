@@ -1,0 +1,11 @@
+=== go build -o xeno ./cmd/xeno ===
+ok
+
+=== gofmt -l . | grep -v '^vendor/' ===
+(nothing)
+
+=== go vet ./... ===
+ok
+
+=== xeno gate verify ===
+verified 481 verdicts
