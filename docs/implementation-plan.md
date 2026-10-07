@@ -2032,6 +2032,24 @@ changelog implements `prompts/list` or `prompts/get` as commands. And no: the me
 arrive at `prompts/get` on invocation, so the text is not a standing per request cost,
 while what the client shows from `prompts/list` is the client's own choice (#238).
 
+which protocol revision each client speaks, before the server that has to pick one is
+written --> both negotiate, and `xeno mcp` speaks the legacy era alone. Read 2026-10-07.
+The specification's versioning page divides the revisions in two: legacy, 2025-11-25 and
+earlier, which open with an `initialize` handshake, and modern, 2026-07-28 and later,
+where there is no handshake at all, every request carries its version in `_meta`, and a
+server must implement `server/discover`. A client that speaks both detects a stdio
+server's era by probing `server/discover` and falling back on any error that is not a
+recognised modern one. Claude Code's own MCP page says its first runtime speaks the
+handshake revision and its second adds 2026-07-28, asking HTTP servers whether they
+support it and, from v2.1.285, stdio servers as that change is rolled out, with
+`MCP_PROTOCOL_NEGOTIATION` steering it between `auto` and `legacy`. Codex takes
+2026-07-28 only where a project opts in, so its default is the handshake too. A server
+implementing the legacy era is therefore served by both clients today, which is what
+`xeno mcp` does: one revision, and the probe answered with method-not-found naming it,
+which a dual-era client reads as a legacy server and then reaches through `initialize`.
+The modern era is additive, and adding it is the work a client changing its default asks
+for.
+
 Decided later on purpose: which of content, packaging and wiring WP11 builds per
 harness, settled in dogfooding rather than in advance. Of the three the wiring is
 answered: it is built once, read in `openai/codex` on 2026-10-07. A Codex plugin's

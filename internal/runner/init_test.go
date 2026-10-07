@@ -511,6 +511,10 @@ func TestVendorPutsThePluginsOwnArtifactsInTheRepository(t *testing.T) {
 	for _, rel := range []string{
 		".xeno/plugin/.claude-plugin/plugin.json",
 		".xeno/plugin/hooks/hooks.json",
+		// Section 13 puts mcp.json at the distribution root and in the --vendor set. A
+		// project that vendored everything but this one file has a server on the machine
+		// and no client that knows to start it (#285).
+		".xeno/plugin/mcp.json",
 		".xeno/plugin/skills/xeno-intake/SKILL.md",
 		".xeno/plugin/skills/xeno-learning/SKILL.md",
 		".xeno/plugin/skills/xeno-review/SKILL.md",

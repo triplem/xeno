@@ -206,13 +206,17 @@ func TestTheDispatchTableAndTheUsageAgree(t *testing.T) {
 	if len(named) < 15 {
 		t.Fatalf("read %d command names out of the usage, which cannot be right: %v", len(named), named)
 	}
-	// version is the one name the usage carries and the table does not. run answers it before
-	// the dispatch, and before the usage check, so that it works in a directory holding nothing:
-	// a version is what somebody asks for when nothing else works.
-	if _, ok := commands["version"]; ok {
-		t.Error("version is in the table, so run answers it twice")
+	// version and mcp are the two names the usage carries and the table does not. run answers
+	// both before the dispatch, and before the usage check, so that a version works in a
+	// directory holding nothing: a version is what somebody asks for when nothing else works.
+	// mcp is answered there because it does not take the two word form the table is keyed on
+	// and because it serves a client over stdin and stdout rather than returning a result.
+	for _, name := range []string{"version", "mcp"} {
+		if _, ok := commands[name]; ok {
+			t.Errorf("%s is in the table, so run answers it twice", name)
+		}
+		delete(named, name)
 	}
-	delete(named, "version")
 	for name := range named {
 		if _, ok := commands[name]; !ok {
 			t.Errorf("the usage names %q and the table has no such command", name)

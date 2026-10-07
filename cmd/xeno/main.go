@@ -53,6 +53,7 @@ const usage = `usage:
   xeno scope set      --intent KEY [--file PATH]   P0's context scope, read from stdin
   xeno check commit-message [--pattern NAME] [--file PATH]   reads stdin without --file
   xeno cost turn                                reads a hook's JSON on stdin
+  xeno mcp            [--root DIR]              the six process operations over stdio
   xeno version
 common: --root DIR (default .), --no-next to leave out the next step
         --tool-version V on section set and phase finish, which record what wrote a phase;
@@ -143,6 +144,9 @@ func run(args []string, out, errw io.Writer) int {
 	if len(args) >= 1 && args[0] == "version" {
 		fmt.Fprintln(out, "xeno", model.RunnerVersion)
 		return 0
+	}
+	if len(args) >= 1 && args[0] == "mcp" {
+		return cmdMCP(args[1:], out, errw)
 	}
 	if len(args) < 2 && (len(args) == 0 || args[0] != "init") {
 		fmt.Fprintln(errw, usage)
