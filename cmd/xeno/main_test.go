@@ -807,5 +807,48 @@ func TestPhaseStartSaysWhichLensesTheProjectEnabled(t *testing.T) {
 	// like a project which enabled nothing.
 	if !strings.Contains(out, "cryptography") {
 		t.Errorf("a lens name the plugin has no skill for passed in silence: %q", out)
+
+// The write-back's dry run composes the comment, writes nothing and exits 0, which is the
+// staircase's first step: the command did what was asked. It is also how a wording is read
+// before anybody receives it.
+func TestTheWriteBackDryRunPrintsTheCommentAndExitsZero(t *testing.T) {
+	root := repo(t)
+	if code, _, e := invoke(t, "phase", "start", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--no-next"); code != 0 {
+		t.Fatalf("could not start the phase: %s", e)
+	}
+	// Finished with no output.md at all, so the verdict is red and there is something to
+	// report. A write-back that worked only on a green phase would be the wrong way round:
+	// the run worth reading is the one that failed.
+	if code, _, _ := invoke(t, "phase", "finish", "--root", root, "--intent", "PROJ-1",
+		"--phase", "00", "--no-next"); code != 1 {
+		t.Fatal("this fixture is meant to be red")
+	}
+	code, out, errw := invoke(t, "report", "verdict", "--root", root, "--intent", "PROJ-1",
+		"--dry-run")
+	if code != 0 {
+		t.Fatalf("exit %d: %s", code, errw)
+	}
+	for _, want := range []string{"00-intake is red", "--dry-run"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the comment does not carry %q:\n%s", want, out)
+		}
+	}
+}
+
+// Without a verdict there is nothing to report, which is a refusal with a reason rather
+// than an empty comment.
+func TestTheWriteBackRefusesWhereThereIsNoVerdict(t *testing.T) {
+	root := repo(t)
+	code, out, errw := invoke(t, "report", "verdict", "--root", root, "--intent", "PROJ-1",
+		"--dry-run")
+	if code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errw, "refused:") {
+		t.Errorf("the refusal does not say so: %q", errw)
+	}
+	if out != "" {
+		t.Errorf("a refusal composed a comment: %q", out)
 	}
 }

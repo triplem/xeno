@@ -1,8 +1,13 @@
-# Xeno checks its own repository. CI recomputes and compares; it writes nothing and runs
-# no agent. Read only permissions, no secrets, and pull_request rather than
-# pull_request_target, so a pull request from a fork never runs with write access.
-# Every action is pinned to a commit sha and every tool to an exact version;
-# docs/supply-chain.md says which and why.
+# Xeno checks its own repository. CI recomputes and compares; it writes nothing into the
+# repository and runs no agent. Every action is pinned to a commit sha and every tool to an
+# exact version; docs/supply-chain.md says which and why.
+#
+# Two jobs, and the split is about who may write. `verify` runs on every pull request,
+# including from a fork, and holds read only permissions and no secrets, with pull_request
+# rather than pull_request_target so that such a run never has write access. `report` is
+# section 12's write-back, runs only on a push to the default branch, and may write to the
+# issues; it changes nothing in the repository and judges nothing, it copies a verdict the
+# repository already holds to where somebody without a clone can read it.
 name: xeno
 
 on:
@@ -270,3 +275,94 @@ jobs:
       - name: fail if the suite did
         if: steps.test.outcome == 'failure'
         run: exit 1
+
+  # Section 12's write-back: "After a gate run, CI writes the result to the issue the intent
+  # came from: phase, verdict, and the findings with their decisions. It is the only
+  # visibility for everyone who does not work from a command line, and it costs one call
+  # from a job that already runs." The verdict is read out of the repository and judged
+  # nowhere here, so nothing in this job can change one.
+  #
+  # A job of its own and not a step of verify, for one reason only: this one needs write
+  # access to the issues and that one must not have it. The job above runs on every pull
+  # request, including from a fork, which is why it holds read only permissions and no
+  # secrets; a step added to it would either widen that or be dead weight.
+  #
+  # push to the default branch and not pull_request. Three things follow from it, all
+  # wanted. The comment lands once per merge rather than once per push to a branch, which
+  # matters because the write-back is one call and never a read-then-edit of a comment it
+  # wrote before. The token is writable, which on a fork's pull request it is not whatever
+  # permissions a job asks for. And the issue the comment goes to is the issue the intent
+  # came from, which section 12 names and which exists whether or not the change arrived
+  # through a merge request.
+  report:
+    runs-on: ubuntu-latest
+    needs: verify
+    # always(), because the run worth reporting is the one that failed: a red verdict is
+    # exactly what somebody who does not work from a command line has no other way to see.
+    if: always() && github.event_name == 'push'
+    permissions:
+      contents: read
+      # The protected branch settings, which is what `enforcement check` asks the host
+      # about and what an ordinary job token may not read. Read only, and the least scope
+      # the plan's credential table gives that row: "read on repository settings".
+      administration: read
+      issues: write
+    steps:
+      # The history, because the intents to report on are the ones this push touched and a
+      # shallow clone does not hold the commit it is measured against.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: build
+        run: go build -o xeno ./cmd/xeno
+
+      # The enforcement report, so that it lies beside the verdict in the comment rather
+      # than being read by the job that made it and nobody else. It needs the network and a
+      # token that may read the protected branch settings; GITHUB_TOKEN is what A40's
+      # fallback reaches for and it may not be enough, in which case the adapter answers
+      # not-available with a reason and that reason is what the comment carries.
+      #
+      # continue-on-error, because exit 1 here is a divergence between what the project
+      # declares and what the host does. That is the finding worth reporting, and a step
+      # that ended the job on it would suppress the report of the very thing it found.
+      - name: what the host enforces
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./xeno enforcement check
+
+      # One call per intent this push touched, and only for intents that hold a verdict: a
+      # push touching an intent's scope alone has nothing to report, and the command refuses
+      # rather than composing an empty comment.
+      #
+      # The variable is the one tracker.auth.secret_env names, and it holds the job's own
+      # token: credentials come from the environment and never from project.yaml, so what
+      # the file carries is the name and what this carries is the value. No secret of the
+      # repository's own is needed for it, which is A40's reasoning applied to the other
+      # token in the table.
+      - name: the verdict onto the issue
+        env:
+          BEFORE: ${{ github.event.before }}
+          XENO_TRACKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          # A first push to a branch carries no usable `before`, and the merge this
+          # repository makes is one commit, so HEAD^ is the range when it is unusable.
+          base="$BEFORE"
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then base=HEAD^; fi
+          keys=$(git diff --name-only "$base" HEAD -- .xeno/intents/ |
+                   cut -d/ -f3 | sort -u)
+          if [ -z "$keys" ]; then
+            echo "this push touches no intent, so there is no verdict to report"
+            exit 0
+          fi
+          for key in $keys; do
+            if ! ls .xeno/intents/"$key"/phases/*/gate.yaml >/dev/null 2>&1; then
+              echo "$key holds no verdict yet, so nothing is reported for it"
+              continue
+            fi
+            ./xeno report verdict --intent "$key"
+          done

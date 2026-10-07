@@ -16,6 +16,57 @@ type Tracker struct {
 	Adapter string `yaml:"adapter"`
 	Project string `yaml:"project"`
 	BaseURL string `yaml:"base_url"`
+	Auth    Auth   `yaml:"auth"`
+}
+
+// Auth is the `tracker.auth` of Appendix A: the scheme, and the name of the environment
+// variable the token lives in. The token itself is never here, which Appendix A says in
+// as many words — "Credentials never appear in this file. secret_env names the variable,
+// the environment holds the value" — and which is why this struct has no field for one.
+//
+// The scheme is read and not acted on yet, because `token` is the only one either adapter
+// implements and a value nothing reads is better carried than silently dropped: a project
+// that writes something else learns it from the refusal rather than from a request that
+// went out with the wrong header.
+type Auth struct {
+	Scheme    string `yaml:"scheme"`
+	SecretEnv string `yaml:"secret_env"`
+}
+
+// Issue is an issue's content as the person who raised it wrote it. Title and Body are
+// the host's own two fields and there is no third, because what P0 records is the problem
+// as stated and not a summary of it.
+//
+// Reason says why there is no content, where the host refused or there is no such issue.
+// Section 12 makes the whole tracker block optional and Appendix A says an absent one
+// means "no issue is read", so neither case is a failure of the command that asked: it is
+// an answer, the same shape the branch rules port already gives a requirement it could not
+// read, and the reason is what reaches the person who has to go looking.
+//
+// It lives here, beside the tracker block, because it is the vocabulary an adapter and the
+// port it sits behind both need, and the port package selects the adapters: anything they
+// share has to be somewhere neither of them is.
+type Issue struct {
+	Title  string
+	Body   string
+	Reason string
+}
+
+// Found says whether there is content to carry. A title with no body counts, since an
+// issue may legitimately have none; the zero value does not, which is what a caller that
+// never asked a host holds, and an empty section written from it would say that the problem
+// was stated nowhere rather than that nobody was asked.
+func (i Issue) Found() bool { return i.Reason == "" && (i.Title != "" || i.Body != "") }
+
+// Written is where a comment landed, or why it did not. Same shape and same reason as
+// Issue above: a host that refuses the write and an issue that is not there are answers a
+// pipeline step reports, not errors that fail the job that reported the verdict.
+//
+// URL is empty where the host's answer carries none. GitLab's note payload has no web
+// address in it, so the field is one host's answer and not the contract's promise.
+type Written struct {
+	URL    string
+	Reason string
 }
 
 // Qualified builds the canonical intent id of section 3, which is the tracker host, the
@@ -58,6 +109,42 @@ func (t Tracker) Qualified(issue string) (string, error) {
 			"back cut off where it sits beside a comment", id)
 	}
 	return id, nil
+}
+
+// Locate is Qualified read backwards: the project and the key an adapter has to be given
+// in order to reach the issue a qualified intent id names. Section 12's first operation is
+// resolving an intent, and this is the half of it the other three need, because the adapter
+// "knows no relationship between issue key and repository" and takes both as parameters.
+//
+// The project comes from the id and not from `tracker.project`, because `--for` takes a
+// whole qualified id and an intent may therefore belong to an issue in another repository.
+// Reading the configured project instead would send the read, or worse the comment, to
+// whichever repository this one is configured for.
+//
+// The id's host is checked against the configured address rather than ignored. An adapter
+// pointed at one deployment cannot answer about an issue on another, and the id it would
+// otherwise ask about reads as a repository path with a hostname as its first segment,
+// which that host answers 404 to: a wrong question asked of the wrong host, reported as a
+// missing issue. The error names both hosts instead, and what the caller does with it is
+// the caller's: the runner reports it as an issue that was not read, because an intent
+// legitimately may belong to one.
+func (t Tracker) Locate(qualified string) (project, key string, err error) {
+	i := strings.LastIndex(qualified, "#")
+	if i <= 0 || i == len(qualified)-1 {
+		return "", "", fmt.Errorf("%q is not a qualified intent id, which is the tracker "+
+			"host, the project and the key, as github.com/triplem/xeno#176", qualified)
+	}
+	path, key := qualified[:i], qualified[i+1:]
+	h, err := t.host()
+	if err != nil {
+		return "", "", err
+	}
+	rest, ok := strings.CutPrefix(path, h+"/")
+	if !ok || rest == "" {
+		return "", "", fmt.Errorf("the intent belongs to an issue on %s and "+
+			"tracker.base_url names %s, so this adapter cannot reach it", path, h)
+	}
+	return rest, key, nil
 }
 
 // host is the tracker host of the id, taken from the API address the project configured
