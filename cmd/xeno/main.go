@@ -19,6 +19,7 @@ import (
 	"github.com/triplem/xeno/internal/enforcement"
 	"github.com/triplem/xeno/internal/evidence"
 	"github.com/triplem/xeno/internal/gates"
+	"github.com/triplem/xeno/internal/learning"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/runner"
 )
@@ -34,6 +35,7 @@ const usage = `usage:
   xeno obligation close FINDING --intent KEY --phase NN
   xeno learning record --intent KEY [--phase NN] --category C --observation T --proposal T --target P
   xeno learning record --intent KEY [--phase NN] --no-finding
+  xeno learning propose --out DIR [--intent KEY]   generates the merge request against the rule set
   xeno question record --intent KEY --phase NN [--file PATH]   reads the entry on stdin
   xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
   xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
@@ -87,6 +89,7 @@ type opts struct {
 	category, observation          string
 	proposal, target               string
 	noFinding                      bool
+	dest                           string
 	text, origin, confidence       string
 	resolves, chosen, proposedBy   string
 	kind, job, result              string
@@ -119,7 +122,10 @@ var commands = map[string]command{
 	// The phase is optional alone among the commands that take one: section 10 owes a
 	// record at the end of every phase and once more when an intent closes, and the
 	// intent level record is the one G-Complete reads from `intent close`.
-	"learning record":    {needsKey: true, run: cmdLearningRecord},
+	"learning record": {needsKey: true, run: cmdLearningRecord},
+	// No key either, and for the opposite reason: the route reads what a whole trail
+	// proposed, and one intent is a narrowing of that rather than the case.
+	"learning propose":   {run: cmdLearningPropose},
 	"assumption confirm": {needsKey: true, run: cmdAssumptionDecide},
 	"assumption reject":  {needsKey: true, run: cmdAssumptionDecide},
 	"section set":        {needsKey: true, needsPhase: true, run: cmdSectionSet},
@@ -252,6 +258,10 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.observation, "observation", "", "what was observed")
 	fs.StringVar(&o.proposal, "proposal", "", "what should change because of it")
 	fs.StringVar(&o.target, "target", "", "what the proposal applies to")
+	// Where the merge request is written. A destination is the one thing the route cannot
+	// derive: the trail it reads is the one place it may not write, so there is no default
+	// that would be right.
+	fs.StringVar(&o.dest, "out", "", "where the generated merge request is written, outside the trail it was read from")
 	fs.BoolVar(&o.noFinding, "no-finding", false, "there was nothing to record, said rather than left out")
 	// The suggestion is off by default nowhere and on by default nowhere either: the
 	// commands that change state say it, the ones a pipeline or a hook runs do not, and
@@ -543,6 +553,35 @@ func cmdLearningRecord(o *opts) int {
 			where, len(rec.Learnings), rec.Learnings[len(rec.Learnings)-1].Category)
 	}
 	return o.next(0)
+}
+
+// cmdLearningPropose carries what the records proposed to the rule set. It prints the figures
+// and where the bundle is, and claims to have opened nothing, because it has not: what follows
+// is a person reading the description and pushing the branch.
+//
+// A generated file the rules package will not have is a red exit. The route's claim is that a
+// reviewer is handed something the rule set accepts, so a bundle that fails to load as a rule
+// tree is a defect in the route rather than a finding about the records.
+func cmdLearningPropose(o *opts) int {
+	b, problems, err := o.r.ProposeLearning(o.key, o.dest)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%d learning records read, %d stating no finding, %d proposals between the rest\n",
+		b.Records, b.NoFinding, len(b.Items))
+	fmt.Fprintf(o.out, "  carried     %4d into %d rule file(s)\n", b.Count(learning.Carried), len(b.Files))
+	fmt.Fprintf(o.out, "  for wording %4d project-convention(s) naming a file the project reads\n",
+		b.Count(learning.ForWording))
+	fmt.Fprintf(o.out, "  unresolved  %4d naming no file this route can change\n", b.Count(learning.Unresolved))
+	fmt.Fprintf(o.out, "%s holds the rule files, %s and %s; every proposal is listed in the description\n",
+		o.dest, learning.PatchFile, learning.DescriptionFile)
+	for _, p := range problems {
+		fmt.Fprintf(o.errw, "the generated %s %s\n  next: %s\n", p.Path, p.Cause, p.Next)
+	}
+	if len(problems) > 0 {
+		return 1
+	}
+	return 0
 }
 
 // cmdReviewAnswer answers one review rule of the effective set. The rule is the positional

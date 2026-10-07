@@ -24,6 +24,7 @@ import (
 	"github.com/triplem/xeno/internal/git"
 	"github.com/triplem/xeno/internal/hashing"
 	"github.com/triplem/xeno/internal/index"
+	"github.com/triplem/xeno/internal/learning"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/plugin"
 	"github.com/triplem/xeno/internal/rules"
@@ -1612,6 +1613,42 @@ func (r *Runner) checkLearningArgs(noFinding bool, e model.LearningEntry) error 
 		}
 	}
 	return nil
+}
+
+// ProposeLearning carries what the records proposed to the rule set, as the merge request
+// section 10 asks for and nothing produced: the rule files, a patch creating them, and a
+// description saying which proposals were carried and which were not.
+//
+// It generates and does not open. The tracker adapter of WP12 has four operations and opening
+// a merge request is not one of them, so the bundle is what a person pushes, reviewable as text
+// before it exists on a remote.
+//
+// Without a key it reads every intent, in the order they were created, because the figure the
+// route is for is what a whole trail proposed and the creation order is the order the records
+// were written in. The ordering is read here rather than in the learning package because
+// Intents already answers it.
+func (r *Runner) ProposeLearning(key, out string) (*learning.Bundle, []rules.Problem, error) {
+	var keys []string
+	if key != "" {
+		if !fm.Exists(r.abs(model.IntentDir(key))) {
+			return nil, nil, refuse("%s has no directory under %s", key, IntentsRoot)
+		}
+		keys = []string{key}
+	} else {
+		all, err := r.Intents()
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, in := range all {
+			keys = append(keys, in.Key)
+		}
+	}
+	b := learning.Plan(r.Root, keys)
+	problems, err := b.Write(out)
+	if err != nil {
+		return nil, nil, refuse("%v", err)
+	}
+	return b, problems, nil
 }
 
 // ---- The assumption register
