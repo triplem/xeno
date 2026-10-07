@@ -8,3 +8,9 @@
 # is tracked because go:embed needs it to exist at compile time, and this is the part a
 # release writes (#199).
 internal/plugin/embedded/plugin/
+
+# The git worktrees an agent session creates, each a repository of its own. Generated,
+# never committed: unignored, `git add -A` stages one as a gitlink, which records
+# somebody else's commit sha, carries none of the content and resolves to nothing in a
+# fresh clone. It reached a commit's index once (#309) and was caught in the diffstat.
+/.claude/worktrees/
