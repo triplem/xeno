@@ -861,7 +861,7 @@ func cmdCostTurn(o *opts) int {
 	if err != nil || totals.Zero() {
 		return 0
 	}
-	intent, phase := cost.LivePhase(o.root, model.LocalPath(o.root, runner.PhaseEnvFile))
+	intent, phase := cost.LivePhase(model.LocalPath(o.root, runner.PhaseEnvFile))
 	if phase == "" {
 		phase = cost.NoPhase
 	}

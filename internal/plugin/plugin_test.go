@@ -398,6 +398,93 @@ func TestThePluginCarriesTheHookWiring(t *testing.T) {
 	}
 }
 
+// codexHookEvents is the lifecycle events a Codex plugin's hooks file may name, from
+// codex-rs/config/src/hook_config.rs read on 2026-10-07. Claude Code has every one of these
+// under the same name, so the set is also the set both clients dispatch, and an event outside
+// it is one client's alone.
+var codexHookEvents = map[string]bool{
+	"PreToolUse": true, "PermissionRequest": true, "PostToolUse": true,
+	"PreCompact": true, "PostCompact": true, "SessionStart": true, "SessionEnd": true,
+	"UserPromptSubmit": true, "SubagentStart": true, "SubagentStop": true,
+	"Stop": true, "Interrupt": true,
+}
+
+// Section 12 supports both clients, so the one hooks file has to be the one both of them load.
+// Codex reads a plugin's hooks from the `hooks` entry of its manifest and, where there is none,
+// from hooks/hooks.json under the plugin root, parsed as the same object with the same event
+// names and the same command handler — so the file this plugin already ships is the wiring both
+// formats allow, and what this test holds is the three properties that make it so (#287).
+func TestTheHookWiringIsWhatBothClientsLoad(t *testing.T) {
+	// One: the default path. A manifest entry replaces it rather than adding to it, so a
+	// `hooks` field in the manifest would take Codex off this file without taking Claude Code
+	// off it, and the two clients would run different wiring from one tree.
+	var manifest map[string]any
+	if err := json.Unmarshal([]byte(read(t,
+		filepath.Join(repoRoot, pluginDir, ".claude-plugin/plugin.json"))), &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := manifest["hooks"]; ok {
+		t.Error("the manifest declares a hooks path, which replaces the default both clients " +
+			"read hooks/hooks.json from")
+	}
+
+	var hooks map[string]map[string][]struct {
+		Matcher string `json:"matcher"`
+		Hooks   []struct {
+			Type    string `json:"type"`
+			Command string `json:"command"`
+		} `json:"hooks"`
+	}
+	if err := json.Unmarshal([]byte(read(t,
+		filepath.Join(repoRoot, pluginDir, "hooks/hooks.json"))), &hooks); err != nil {
+		t.Fatal(err)
+	}
+	// Two: only the events both clients have, and only the command handler. Codex's other
+	// handler kinds are an MCP tool, a prompt and an agent, and the first needs a server that
+	// does not exist while the other two are the hook carrying logic of its own, which section
+	// 7's first constraint forbids.
+	handlers := 0
+	for event, groups := range hooks["hooks"] {
+		if !codexHookEvents[event] {
+			t.Errorf("the plugin wires %q, which is not an event both clients dispatch", event)
+		}
+		for _, g := range groups {
+			for _, h := range g.Hooks {
+				handlers++
+				if h.Type != "command" {
+					t.Errorf("%s wires a %q handler, want command", event, h.Type)
+				}
+				// Three: the placeholder both clients resolve. Codex sets PLUGIN_ROOT and
+				// CLAUDE_PLUGIN_ROOT and substitutes either into the command string; Claude
+				// Code sets only the second, so the second is the one that works in both.
+				if !strings.Contains(h.Command, "${CLAUDE_PLUGIN_ROOT}") {
+					t.Errorf("%s runs %q, which names no root both clients set", event, h.Command)
+				}
+			}
+		}
+	}
+	// Counted, because a loop over an empty map says nothing and a hooks file whose top level
+	// stopped being `hooks` would read as an empty one rather than as a broken one.
+	if handlers == 0 {
+		t.Error("the hooks file carries no handler, so the three properties above were not " +
+			"checked against anything")
+	}
+}
+
+// The hooks README is what a reader meets, and the two things they would otherwise have to
+// find out by listing this directory are which clients are wired and what each one of them
+// cannot see. Prose cannot be checked for being right, but it can be checked for naming the
+// subject at all, and a README that stopped naming Codex would be the shape of the defect
+// #287 reported (#287).
+func TestTheHooksReadmeNamesBothClientsAndWhatNeitherGets(t *testing.T) {
+	body := read(t, filepath.Join(repoRoot, pluginDir, "hooks/README.md"))
+	for _, s := range []string{"Claude Code", "Codex", "G-Secret", "PostToolUse", "rollout"} {
+		if !strings.Contains(body, s) {
+			t.Errorf("the hooks README says nothing about %q", s)
+		}
+	}
+}
+
 // entryPoint is the script section 7 calls a thin entry point. Named once so that the two tests
 // about it cannot disagree on the file they are checking.
 const entryPoint = "xeno-env.sh"

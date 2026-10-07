@@ -176,8 +176,15 @@ func ForPhase(root, intent, phase string) (Totals, []string, error) {
 
 // LivePhase reads the intent and phase the runner said were open, from the file phase start
 // writes and phase finish removes. Empty where none is.
-func LivePhase(root, envPath string) (intent, phase string) {
-	b, err := os.ReadFile(filepath.Join(root, envPath))
+//
+// The path is complete and is not joined to anything here. It used to be a root and a path
+// relative to it, and the caller resolved the second with model.LocalPath, which returns the
+// absolute value of XENO_PLUGIN_DATA as it stands — so the join turned an absolute marker into
+// a relative one and every turn of every hooked session recorded `none`. A resolver this
+// function calls and a resolver its caller calls are one resolver too many, so there is one
+// argument and nothing to disagree about (#287).
+func LivePhase(path string) (intent, phase string) {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return "", ""
 	}
