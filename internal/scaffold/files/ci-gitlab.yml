@@ -33,6 +33,21 @@ xeno gate:
   variables:
     # Both ends of the range have to be reachable, which a shallow clone does not give.
     GIT_DEPTH: 0
+  # The runner does not fetch the pipeline's results itself. `xeno gate ...` never touches
+  # the network, which is what makes a verdict reproducible on any machine, so a fetch
+  # inside it is not something it can do; and the tracker adapter has four operations and
+  # an artifact fetch would be a fifth. The directory with its manifest.yaml is therefore
+  # the interface between a pipeline and the runner: this host unpacks a needed job's
+  # artifacts into the working directory at the paths they were saved under, and the gate
+  # reads what is there. So the project's own job publishes its results, manifest.yaml
+  # among them, under {{.EvidenceDir}}/, and its name is filled in here per repository.
+  # It is optional, because a phase that declares no evidence produces no
+  # artifact, and an item a pipeline has yet to produce leaves the verdict provisional,
+  # which is the gate's answer and not this job's.
+  needs:
+    - job: evidence                  # the job that publishes {{.EvidenceDir}}/
+      artifacts: true
+      optional: true
   script:
     - xeno gate verify
     # Section 7 puts G-Complete at P5 and at intent close. An intent that reaches neither
@@ -45,3 +60,4 @@ xeno gate:
     - xeno gate run --intent "$XENO_INTENT" --phase "$XENO_PHASE"
         --base {{.BaseRef}}
         --head {{.HeadRef}}
+        --evidence-from {{.EvidenceDir}}

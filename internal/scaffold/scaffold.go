@@ -53,8 +53,19 @@ type Wrapper struct {
 	RunnerImage string
 	BaseRef     string
 	HeadRef     string
+	// EvidenceDir is the directory the job's artifact download leaves behind and the gate
+	// then reads. It is filled in by RenderWrapper rather than by the caller, for the
+	// reason Source is: one fact reaching two templates, where the download step and the
+	// `--evidence-from` beside it have to name the same directory or the gate reads an
+	// empty one.
+	EvidenceDir string
 	Source      Source
 }
+
+// EvidenceDir is where a wrapper puts the pipeline's results for the gate to read. It is
+// one name in one place because both halves of the arrangement are generated: the host's
+// download step writes here and the `xeno gate run` below it is pointed here.
+const EvidenceDir = "xeno-evidence"
 
 // Project is what the initial project.yaml needs, which is the three answers xeno init
 // asks for plus the version it pins.
@@ -73,6 +84,7 @@ type Project struct {
 
 // RenderWrapper renders the CI wrapper of one host.
 func RenderWrapper(root, host string, d Wrapper) (string, Source, error) {
+	d.EvidenceDir = EvidenceDir
 	return render(root, "ci-"+host+".yml", &d, func(s Source) { d.Source = s })
 }
 

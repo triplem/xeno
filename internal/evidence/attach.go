@@ -15,9 +15,11 @@ import (
 	"github.com/triplem/xeno/internal/model"
 )
 
-// ManifestEntry describes one result a pipeline published. In a real setup the fetch
-// adapter reads the CI artifact store; offline, a directory with manifest.yaml stands
-// in for it, which keeps the attach logic testable without a host.
+// ManifestEntry describes one result a pipeline published. The directory holding the
+// manifest is the interface between a pipeline and the runner rather than a stand-in for
+// a fetch: the pipeline fetches and the runner reads. Section 12 keeps `xeno gate ...`
+// off the network, so a fetch could only ever be a job step leaving a directory behind,
+// and the tracker adapter's four operations do not include one (#308).
 type ManifestEntry struct {
 	Kind     string `yaml:"kind"`
 	Job      string `yaml:"job"`

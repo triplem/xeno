@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.yaml.in/yaml/v3"
+
 	"github.com/triplem/xeno/internal/fm"
 	"github.com/triplem/xeno/internal/model"
 	"github.com/triplem/xeno/internal/plugin"
@@ -646,5 +648,41 @@ func TestInitSaysWhereThePluginCameFrom(t *testing.T) {
 	}
 	if res.PluginFrom == "" {
 		t.Error("init does not say where the plugin came from")
+	}
+}
+
+// A pipeline's results reach the gate as a directory, and the generated wrapper is where
+// an adopter meets that. The runner does not fetch them: `xeno gate ...` never touches
+// the network, so the fetch is a step of the job and the directory it leaves behind is
+// what the gate reads. A wrapper that named no directory, or named one it then did not
+// pass, would leave that step to be guessed at.
+func TestEveryWrapperFillsTheEvidenceDirectoryAndPassesIt(t *testing.T) {
+	for _, id := range WrapperHosts() {
+		_, body, err := Wrapper("", id, "1.2.3")
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		if !strings.Contains(body, scaffold.EvidenceDir) {
+			t.Errorf("%s: the wrapper names no evidence directory:\n%s", id, body)
+		}
+		if want := "--evidence-from " + scaffold.EvidenceDir; !strings.Contains(body, want) {
+			t.Errorf("%s: the wrapper does not pass %q to the runner:\n%s", id, want, body)
+		}
+	}
+}
+
+// Both wrappers are generated into somebody else's repository, where a syntax error is
+// found by their CI and not here. Each template is prose and YAML in one file, so an
+// added comment or step is exactly the edit that can indent a key wrongly.
+func TestEveryRenderedWrapperParsesAsYAML(t *testing.T) {
+	for _, id := range WrapperHosts() {
+		_, body, err := Wrapper("", id, "1.2.3")
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		var doc any
+		if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
+			t.Errorf("%s: the rendered wrapper is not YAML: %v\n%s", id, err, body)
+		}
 	}
 }

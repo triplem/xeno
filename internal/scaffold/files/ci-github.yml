@@ -48,10 +48,31 @@ jobs:
         run: |
           xeno intent verify --base {{.BaseRef}} --head {{.HeadRef}}
 
+      # The runner does not fetch the pipeline's results itself. `xeno gate ...` never
+      # touches the network, which is what makes a verdict reproducible on any machine,
+      # so a fetch inside it is not something it can do; and the tracker adapter has four
+      # operations and an artifact fetch would be a fifth. The directory with its
+      # manifest.yaml is therefore the interface between a pipeline and the runner: a
+      # step before the gate fills it with this host's own download, and the gate reads
+      # what is there. The artifact it downloads is uploaded by the project's own
+      # pipeline, which is where that build lives and not here, and the name below is
+      # what the two have to agree on.
+      #
+      # It does not fail the job when there is nothing to download: a phase that declares
+      # no evidence publishes no artifact, and an item a pipeline has yet to produce
+      # leaves the verdict provisional, which is the gate's answer and not this step's.
+      - name: the results this phase declared
+        uses: actions/download-artifact@v5
+        continue-on-error: true
+        with:
+          name: {{.EvidenceDir}}
+          path: {{.EvidenceDir}}
+
       # One call per phase the change touches. --phase is filled in per repository;
       # what is fixed here is that both ends of the range are passed.
       - name: gate
         run: |
           xeno gate run --intent "$XENO_INTENT" --phase "$XENO_PHASE" \
             --base {{.BaseRef}} \
-            --head {{.HeadRef}}
+            --head {{.HeadRef}} \
+            --evidence-from {{.EvidenceDir}}

@@ -40,9 +40,12 @@ func (r *Refusal) Error() string { return r.Reason }
 func refuse(format string, a ...any) error { return &Refusal{fmt.Sprintf(format, a...)} }
 
 type Runner struct {
-	Root         string
-	Now          func() time.Time
-	EvidenceFrom string // stand-in for the CI artifact fetch, see evidence.ManifestEntry
+	Root string
+	Now  func() time.Time
+	// EvidenceFrom is the directory a job left the pipeline's results in, which the
+	// runner reads rather than fetches: see evidence.ManifestEntry for why that division
+	// is the design and not a stage of it.
+	EvidenceFrom string
 	// PluginSource is where xeno init copies the shipped plugin from. A released
 	// runner carries it; here it is the repository being developed.
 	PluginSource string

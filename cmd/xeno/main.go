@@ -220,8 +220,10 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.root, "root", ".", "repository root")
 	fs.StringVar(&o.key, "intent", "", "intent key")
 	fs.StringVar(&o.phaseArg, "phase", "", "phase id or number")
-	fs.StringVar(&o.from, "evidence-from", "", "directory standing in for the pipeline artifact store")
-	fs.StringVar(&o.src, "from", "", "directory standing in for the pipeline artifact store")
+	// The directory a job left the pipeline's results in. The runner reads it and does not
+	// fetch: a gate never touches the network, so the fetch is a step of the job.
+	fs.StringVar(&o.from, "evidence-from", "", "directory a job left the pipeline's results in")
+	fs.StringVar(&o.src, "from", "", "directory a job left the pipeline's results in")
 	fs.StringVar(&o.by, "by", "", "the person deciding")
 	fs.StringVar(&o.pattern, "pattern", "conventional-commits", "a shipped pattern name")
 	fs.StringVar(&o.file, "file", "", "the message to read, or stdin when absent")
