@@ -1,0 +1,43 @@
+=== nothing lost: every old README paragraph accounted for ===
+old paragraphs: 19   carried verbatim: 14   accounted for below: 5
+
+(1) The Xeno runner: hashing, gates, the phase sequence, evidence attachment, the digest and its secret filter, the cost record, the branch rules port and the symbol index reader. Buil
+
+(2) xeno init [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG] xeno intent start --for ISSUE [--intent KEY] xeno phase start --intent KEY --phase NN [--evidence-from DIR
+
+(3) `xeno learning record` writes the record section 10 owes at the end of every phase, and without `--phase` the one an intent owes when it closes. The four keys are the agent's and t
+
+(4) ## The trail in this repository
+
+(5) `.xeno/intents/` holds Xeno's own process artifacts, in two shapes. The intents up to `XENO-0106` run P0 and stop there, which was deliberate rather than abandoned: `docs/m0-gate-j
+
+=== the command list is now a superset: usage against the old README ===
+usage: 27  old README: 21
+in usage, absent from the old README: ['decision record', 'evidence declare', 'intent verify', 'question record', 'review answer', 'scope set']
+in the old README, absent from usage: []
+
+=== every relative link in the four files resolves ===
+OK    README.md -> docs
+OK    README.md -> docs/process-definition.md
+OK    README.md -> docs/commands.md
+OK    README.md -> docs/the-trail-in-this-repository.md
+OK    README.md -> docs/assumptions.md
+OK    docs/README.md -> docs/process-definition.md
+OK    docs/README.md -> docs/implementation-plan.md
+OK    docs/README.md -> docs/commands.md
+OK    docs/README.md -> docs/the-trail-in-this-repository.md
+OK    docs/README.md -> docs/m0-gate-job.md
+OK    docs/README.md -> docs/assumptions.md
+OK    docs/README.md -> docs/clause-readers.md
+OK    docs/README.md -> docs/supply-chain.md
+OK    docs/README.md -> docs/orchestrator-evaluation.md
+OK    docs/README.md -> docs/v2-delta.md
+OK    docs/README.md -> CONTRIBUTING.md
+OK    docs/README.md -> SECURITY.md
+OK    docs/README.md -> CLAUDE.md
+
+=== the development-build paragraph appears once ===
+docs/README.md:0
+docs/the-trail-in-this-repository.md:1
+README.md:0
+docs/commands.md:0

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#231
+phase: 03-implementation
+created: "2026-10-07T09:46:06Z"
+schema_version: "1.0"
+runner_version: dev+0768c44.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Moving prose between files silently breaks two things that a diff does not show: a heading that now repeats its new page''s title, and a relative path that was written from the old file''s directory. Both happened here, and both were found by a paragraph-level comparison of the old file against the new set rather than by reading the result. The same comparison found a third: two paragraphs in the source had no blank line between them, so an extraction by paragraph boundary carried one into the wrong file.'
+      proposal: Where prose moves between files, check it by comparing the source's paragraphs against the union of the destinations and accounting for every one that is not carried verbatim, rather than by reading the destinations. Then resolve every relative link in the moved text against the tree, and check that no heading repeats its new document's title. A94 already records that a move leaves references stale; what this adds is that the check is mechanical and cheap, and that reading the new file is what misses it.
+      target: .xeno/config/rules/learned/project/a-move-is-checked-paragraph-by-paragraph.yaml

@@ -1,0 +1,21 @@
+=== go test ./... ===
+ok  	github.com/triplem/xeno/cmd/xeno	1.621s
+ok  	github.com/triplem/xeno/internal/cost	(cached)
+ok  	github.com/triplem/xeno/internal/enforcement	(cached)
+ok  	github.com/triplem/xeno/internal/evidence	(cached)
+ok  	github.com/triplem/xeno/internal/external	(cached)
+?   	github.com/triplem/xeno/internal/fm	[no test files]
+ok  	github.com/triplem/xeno/internal/gates	(cached)
+ok  	github.com/triplem/xeno/internal/git	(cached)
+ok  	github.com/triplem/xeno/internal/hashing	(cached)
+ok  	github.com/triplem/xeno/internal/host	(cached)
+ok  	github.com/triplem/xeno/internal/host/github	(cached)
+ok  	github.com/triplem/xeno/internal/host/gitlab	(cached)
+ok  	github.com/triplem/xeno/internal/index	0.066s
+ok  	github.com/triplem/xeno/internal/model	(cached)
+ok  	github.com/triplem/xeno/internal/plugin	(cached)
+ok  	github.com/triplem/xeno/internal/rules	(cached)
+ok  	github.com/triplem/xeno/internal/runner	(cached)
+?   	github.com/triplem/xeno/internal/scaffold	[no test files]
+ok  	github.com/triplem/xeno/internal/secrets	138.001s
+ok  	github.com/triplem/xeno/internal/template	(cached)
