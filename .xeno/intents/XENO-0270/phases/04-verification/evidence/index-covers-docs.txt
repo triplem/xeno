@@ -1,0 +1,17 @@
+=== the index covers every file under docs/ ===
+OK    assumptions.md
+OK    clause-readers.md
+OK    commands.md
+OK    implementation-plan.md
+OK    m0-gate-job.md
+OK    orchestrator-evaluation.md
+OK    process-definition.md
+OK    supply-chain.md
+OK    the-trail-in-this-repository.md
+OK    v2-delta.md
+
+process-definition.md -> marked normative: True
+implementation-plan.md -> marked normative: True
+
+=== and the index names nothing that is not there ===
+(no MISS above means every entry resolves)

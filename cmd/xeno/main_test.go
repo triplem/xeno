@@ -225,6 +225,26 @@ func TestTheDispatchTableAndTheUsageAgree(t *testing.T) {
 	}
 }
 
+// The published reference carries this constant and not a copy of it. The README used to keep its
+// own list and had drifted by six commands when #231 was filed, so docs/commands.md holds the
+// usage text itself and this asserts the two have not parted. The comparison is over the page's
+// first fenced block rather than the whole file, because the page needs a sentence saying where
+// its text comes from and a page with no explanation is one somebody deletes as redundant.
+func TestThePublishedReferenceIsTheUsage(t *testing.T) {
+	const page = "../../docs/commands.md"
+	b, err := os.ReadFile(page)
+	if err != nil {
+		t.Fatalf("the reference is not there to compare: %v", err)
+	}
+	fenced := regexp.MustCompile("(?s)\n```\n(.*?)\n```").FindSubmatch(b)
+	if fenced == nil {
+		t.Fatalf("%s carries no fenced block, so there is nothing to hold against the usage", page)
+	}
+	if got, want := string(fenced[1]), strings.TrimRight(usage, "\n"); got != want {
+		t.Errorf("%s and the usage constant have parted.\npage:\n%s\nusage:\n%s", page, got, want)
+	}
+}
+
 // init is one word and everything else is two, which is a property of the dispatch rather than of
 // any name.
 func TestInitIsOneWordAndTheRestAreTwo(t *testing.T) {
