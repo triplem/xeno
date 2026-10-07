@@ -1,0 +1,122 @@
+=== the three writers, read in the code ===
+
+--- tool_version: internal/runner/runner.go ---
+	// that no longer exist. Section 9's commit predicates read them through gates.Ctx.
+	Base, Head string
+	// ToolVersion is the harness reporting its own version, for the one field of section 5
+	// the runner cannot know (A35, #181). Reported rather than worked out, because working
+	// it out means asking which harness this is, which section 7 forbids: the moment the
+	// runner behaves differently per harness, the tools stop being interchangeable.
+	//
+	// Empty means absent, as before. A35's reason is that a plausible value in a field
+	// nobody produced is worse than an absent one, and nothing here produces one.
+	//
+	// Set from --tool-version, or from XENO_HARNESS_VERSION where the flag is not given.
+	// Section 7 lists the variable and calls it recorded only, which is what this is: the
+	// value reaches two frontmatter fields and nothing reads it back.
+	ToolVersion string
+}
+
+func New(root string) *Runner {
+	return &Runner{Root: root, Now: func() time.Time { return time.Now().UTC() },
+		ToolVersion: os.Getenv(HarnessVersionEnv)}
+}
+
+	// The digest is the same phase produced in the same session, `output.md` already records
+	// which harness wrote it, and this function is rerun by every `phase finish` — an input
+	// would have to be supplied again on each one, which is the hand edit this replaces
+	// (#181). A reported version wins, for a digest written before any section was.
+	if v := r.ToolVersion; v != "" {
+		front["tool_version"] = v
+	} else if v := r.recordedToolVersion(key, phase); v != "" {
+		front["tool_version"] = v
+	}
+	// Section 16: the agent writes the summary text, the runner filters it against the
+	// effective filter, hashes it and writes the file, so the filtering is deterministic and
+	// outside the model's reach. An empty filter, which is a repository before its plugin is
+	// vendored, redacts nothing and writes no field rather than a hash of nothing.
+	filter, err := secrets.Load(r.Root)
+	if err != nil {
+		return err
+	}
+	summary = filter.Redact(summary)
+	if h := filter.Hash(); h != "" {
+		front["secrets_hash"] = h
+	}
+	body := strings.TrimRight(summary, "\n") + "\n"
+	out := "---\n" + frontmatter(front) + "---\n" + body
+	path := r.abs(model.PhaseDir(key, phase) + "/digest.md")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(out), 0o644)
+}
+
+// recordedToolVersion reads what the phase's output.md says wrote it. A phase with no artifact,
+// no frontmatter or no such field answers empty, which is the field absent and is the state of
+// every phase written before there was a way to report it.
+func (r *Runner) recordedToolVersion(key, phase string) string {
+	var front struct {
+		ToolVersion string `yaml:"tool_version"`
+	}
+	if _, err := fm.ReadFront(r.abs(model.PhaseDir(key, phase)+"/output.md"), &front); err != nil {
+		return ""
+	}
+	return front.ToolVersion
+}
+
+
+--- tool and model: agent() ---
+	}
+	return r.evaluate(key, phase)
+}
+
+// agent returns the tool and the model a project records, and empty strings where the file,
+// the block or a field is absent. Section 12 puts both in project.yaml, so they are not among
+// the fields that come from the harness: A35 listed five and the reason covers three, which is
+// what this reads (#120).
+//
+// Absent rather than defaulted, because the row being amended says why: a plausible value in a
+// field nobody produced is worse than an absent one, and the only tool this repository has ever
+// used would be exactly such a plausible value.
+func (r *Runner) agent() (tool, mdl string) {
+	var p model.Project
+	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil {
+		return os.Getenv(HarnessEnv), ""
+	}
+	tool = p.Agent.Tool
+	// Section 7 lists XENO_HARNESS and calls it recorded only, which is this field. It beats
+	// the project's declaration where both are there: `agent.tool` is what a project says it
+	// uses and the variable is what is actually running, and a session under a harness the
+	// project did not name is the case the pair exists to make visible rather than hide.
+	//
+	// Read and never branched on, which section 7 says in as many words and the `verify`
+	// workflow now checks: the moment the runner behaves differently per harness, the tools
+	// stop being interchangeable. This is A35's second amendment amended (#183).
+	if h := os.Getenv(HarnessEnv); h != "" {
+		tool = h
+	}
+	return tool, p.Agent.Model.Default
+}
+
+--- G-Schema's whole involvement with the three: sessionFields ---
+341:	sessionFields  = []string{"language", "secrets_hash", "context_hash", "model", "tool", "tool_version"}
+596:	for _, f := range missing(raw, commonFields, sessionFields, renderedFields) {
+672:	for _, f := range missing(r, commonFields, sessionFields) {
+var (
+	commonFields   = []string{"intent", "created", "runner_version", "plugin_version", "phase"}
+	sessionFields  = []string{"language", "secrets_hash", "context_hash", "model", "tool", "tool_version"}
+	renderedFields = []string{"template", "strings_hash", "rules_hash"}
+)
+
+--- and nothing else in the gates names them ---
+$ grep -n 'tool_version\|"model"\|"tool"' internal/gates/gates.go
+341:	sessionFields  = []string{"language", "secrets_hash", "context_hash", "model", "tool", "tool_version"}
+386:	byHand := raw["tool"] == "manual"
+
+    positive control for that negative: the same grep finds the fields where they are
+$ grep -n 'tool_version' internal/model/model.go internal/runner/runner.go | head -4
+internal/model/model.go:240:	ToolVersion   string         `yaml:"tool_version"`
+internal/runner/runner.go:681:		front["tool_version"] = v
+internal/runner/runner.go:683:		front["tool_version"] = v
+internal/runner/runner.go:711:		ToolVersion string `yaml:"tool_version"`

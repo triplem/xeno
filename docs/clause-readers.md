@@ -36,7 +36,7 @@ kinds, and for the first kind the reader was looked up in the code rather than r
 | tool requirement | 39 |
 | architectural property | 11 |
 | addressed to a person | 48 |
-| explanation | 129 |
+| explanation | 130 |
 
 ## Tool requirements, and what reads each
 
@@ -184,6 +184,22 @@ and nothing in the repository would notice. That is the intended way round: the 
 candidates are written down in #267 with what each costs, and the sentence is phrased so
 that adopting one means deleting it rather than editing around it, which makes the
 specification commit that opens the change visible as a deletion.
+
+**One clause added by #207 is not in the table either, for the same reason.** Section 12
+now says the model, tool and version triple is a declaration and not a measurement,
+where each of the three values comes from, and that a register built on them says what
+an agent declared. What it states is an absence: nothing corroborates the three, and
+nothing can without the runner branching on the harness, which section 7 forbids. A
+reader of the code cannot violate an absence by writing the wrong thing, so it is an
+explanation, counted and not enumerated, and the count above moves from 129 to 130.
+
+It is reader-shaped in one direction only, and that direction is already taken. If
+somebody builds the check the paragraph refuses, comparing an artifact's `tool` against
+`project.yaml`, the clause does not become false and no gate notices: the comparison
+would pass and the gap it was built to close would stop being visible, which is what
+#207 warns against and what the paragraph says in the document rather than in the issue.
+The thing that would make the clause false is a gateway and a figure read against it,
+and both are outside v1.
 
 | § | clause | reader |
 |---|---|---|
