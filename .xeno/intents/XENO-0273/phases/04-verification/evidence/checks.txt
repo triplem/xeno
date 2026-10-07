@@ -1,0 +1,28 @@
+=== build, format, vet, verify, and the files touched ===
+build ok
+gofmt: nothing
+vet ok
+verified 517 verdicts
+
+ M docs/README.md
+ M internal/index/index_test.go
+?? docs/symbol-index.md
+
+example-symbols.yaml unchanged:
+(no diff line above means untouched)
+
+=== every relative link in the two touched pages ===
+OK    docs/README.md -> docs/process-definition.md
+OK    docs/README.md -> docs/implementation-plan.md
+OK    docs/README.md -> docs/commands.md
+OK    docs/README.md -> docs/symbol-index.md
+OK    docs/README.md -> docs/the-trail-in-this-repository.md
+OK    docs/README.md -> docs/m0-gate-job.md
+OK    docs/README.md -> docs/assumptions.md
+OK    docs/README.md -> docs/clause-readers.md
+OK    docs/README.md -> docs/supply-chain.md
+OK    docs/README.md -> docs/orchestrator-evaluation.md
+OK    docs/README.md -> docs/v2-delta.md
+OK    docs/README.md -> CONTRIBUTING.md
+OK    docs/README.md -> SECURITY.md
+OK    docs/README.md -> CLAUDE.md

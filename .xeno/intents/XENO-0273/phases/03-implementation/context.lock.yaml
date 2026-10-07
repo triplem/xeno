@@ -1,0 +1,50 @@
+intent: github.com/triplem/xeno#153
+phase: 03-implementation
+created: "2026-10-07T14:24:54Z"
+schema_version: "1.0"
+runner_version: dev+6b48c17.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 35e5e48645c9dd9a205236a8c5d597ba326b331a4177ff6efbb6931625a4d153
+evidence_source: ci
+template_source: plugin
+repo_commit: 6b48c17fe9408c6c0d33167ab2a7f148c2a3621f
+files:
+    - path: internal/index/testdata/example-symbols.yaml
+      sha256: aa815e5ea00fd6e4d77e3d10454d6f31984e258e50c8a51ec8d1204f01f10292
+      bytes: 2386
+    - path: internal/index/index.go
+      sha256: 982583dfa075832dd1f49a2c2932a6cea15119ff53c5ce0e32adfab03f0a29fb
+      bytes: 4977
+    - path: internal/index/index_test.go
+      sha256: 0be715bb7f84a9950fe189690e756e27d6cffcc94ee97d96e1507e220fb2685e
+      bytes: 7257
+    - path: docs/README.md
+      sha256: 88b9c396a97b0a0bdc89159e319ccb7e0330759eaed548d997334eff447e2ca1
+      bytes: 3292
+    - path: docs/commands.md
+      sha256: 0afd3361d12a820338b4728c191d2a0c07675641c29e7bd7ce32267112a3b0fd
+      bytes: 4932
+    - path: docs/process-definition.md
+      sha256: 13ecd36fca1e9be07eb2cc35d545b1deb26359457113a0446b2cdced31632f31
+      bytes: 134657
+    - path: docs/implementation-plan.md
+      sha256: b21b8fbeb884ffb8f5c38aadbb191ae2ee5eece2505eaf05e0cb07e9cf6440b3
+      bytes: 123176
+    - path: cmd/xeno/main_test.go
+      sha256: 8d7ebb23b50362ba02ba8c52cf8237b334a94bfb0b8b35cf49aae7d1434fd857
+      bytes: 30309
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: fb1eab28ecdb813ecedbd2a60437be132b1f9c62d53c5375a2eeb781172715ab

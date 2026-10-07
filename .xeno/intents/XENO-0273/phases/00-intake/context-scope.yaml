@@ -1,0 +1,22 @@
+intent: github.com/triplem/xeno#153
+phase: 00-intake
+created: "2026-10-07T14:09:34Z"
+schema_version: "1.0"
+runner_version: dev+c1f6405
+plugin_version: 0.0.0-dev
+include:
+    - internal/index/testdata/example-symbols.yaml
+    - internal/index/index.go
+    - internal/index/index_test.go
+    - docs/README.md
+    - docs/commands.md
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+    - cmd/xeno/main_test.go
+    - CLAUDE.md
+links:
+    - component: internal/index
+      docs: docs/process-definition.md
+budget:
+    files: 9
+    bytes: 450000

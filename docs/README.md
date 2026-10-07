@@ -21,6 +21,9 @@ before the code that follows from it.
 
 - [commands.md](commands.md) — every command with its flags, which is the text
   `xeno --help` prints.
+- [symbol-index.md](symbol-index.md) — the format of the symbol index a project produces
+  for Xeno to read, as the annotated worked example the reader is tested against. Xeno
+  ships no indexer, and a phase runs without one.
 
 ## What is being built, and what it has cost
 
