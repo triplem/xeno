@@ -46,6 +46,7 @@ const usage = `usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno intent verify  --base REF --head REF     every intent the range touches is finished or closed (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
+  xeno report verdict --intent KEY [--phase NN] [--dry-run]   the verdict onto the issue (CI, needs the network)
   xeno evidence declare --intent KEY --phase NN --kind K [--job J] [--result R]
                         [--file PATH | --uri URL --sha256 HEX] [--produced-by CMD] [--format F]
   xeno evidence attach --intent KEY --phase NN --from DIR
@@ -97,6 +98,7 @@ type opts struct {
 	uri, sha256                    string
 	producedBy, format             string
 	withdraw                       bool
+	dry                            bool
 	vendor, noNext, export, isJSON bool
 }
 
@@ -110,8 +112,12 @@ type command struct {
 }
 
 var commands = map[string]command{
-	"init":                 {run: cmdInit},
-	"enforcement check":    {run: cmdEnforcementCheck},
+	"init":              {run: cmdInit},
+	"enforcement check": {run: cmdEnforcementCheck},
+	// The phase is optional, alone among the commands that take an intent and a phase: a job
+	// reporting after a run has judged whatever it judged, and the trail knows which phase
+	// that was, so the pipeline does not have to.
+	"report verdict":       {needsKey: true, run: cmdReportVerdict},
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
 	"intent verify":        {run: cmdIntentVerify},
@@ -271,6 +277,10 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	// stream would make the eval swallow a sentence meant for a person.
 	fs.BoolVar(&o.export, "export", false, "print the phase's environment for a shell to eval")
 	fs.BoolVar(&o.all, "all", false, "list every intent, not the last ten")
+	// Compose the comment and print it, writing nothing. It is how a change to the wording is
+	// read before anybody receives it, and how a job logs what it would have said on a run
+	// that holds no credential to say it with.
+	fs.BoolVar(&o.dry, "dry-run", false, "print the comment the write-back would post, and post nothing")
 	if err := fs.Parse(args); err != nil {
 		return nil, 2
 	}
@@ -312,6 +322,48 @@ func cmdEnforcementCheck(o *opts) int {
 	printEnforcement(o.out, o.root, rep)
 	if rep.Unmet() > 0 {
 		return 1
+	}
+	return 0
+}
+
+// cmdReportVerdict is section 12's write-back: the phase, the verdict and the findings with
+// their decisions, on the issue the intent came from, with the enforcement report beside
+// them. It is the step a pipeline runs after the verdict and never a gate, because the gate
+// path reaches no network and every verdict rests on that.
+//
+// The comment is printed as well as posted. A pipeline log that holds what was said is what
+// makes the step readable on a run where the host declined the write, and the body is the
+// same string either way.
+func cmdReportVerdict(o *opts) int {
+	// The phase is resolved here rather than by the dispatch, because the dispatch resolves
+	// it for every command that declares one and this command's is optional: an empty value
+	// means the last phase holding a verdict, and ResolvePhase would refuse it.
+	phase := ""
+	if o.phaseArg != "" {
+		p, err := model.ResolvePhase(o.phaseArg)
+		if err != nil {
+			fmt.Fprintln(o.errw, err)
+			return 2
+		}
+		phase = p
+	}
+	w, err := o.r.ReportVerdict(o.key, phase, o.dry)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintln(o.out, w.Body)
+	switch {
+	case o.dry:
+		fmt.Fprintf(o.out, "nothing was posted, because --dry-run. It would go to %s\n", w.Intent)
+	case w.Posted && w.Written.URL != "":
+		fmt.Fprintf(o.out, "posted to %s at %s\n", w.Intent, w.Written.URL)
+	case w.Posted:
+		fmt.Fprintf(o.out, "posted to %s\n", w.Intent)
+	default:
+		// Not an error and deliberately not a failing exit code either. A host that refuses
+		// the write is the ordinary case on a run without the permission for it, and a job
+		// that failed here would report a red step over a verdict it had already carried.
+		fmt.Fprintln(o.errw, "nothing was posted:", w.Written.Reason)
 	}
 	return 0
 }
@@ -430,8 +482,22 @@ func cmdIntentStart(o *opts) int {
 func cmdIntentClose(o *opts) int { return o.next(o.report(o.r.IntentClose(o.key, o.reason))) }
 
 func cmdPhaseStart(o *opts) int {
-	if code := o.report(nil, o.r.Start(o.key, o.phase)); code != 0 {
+	started, err := o.r.StartPhase(o.key, o.phase)
+	if code := o.report(nil, err); code != 0 {
 		return code
+	}
+	// What the tracker had to say. The section written goes to stdout because it changed the
+	// artifact; the reason nothing was written goes to stderr, because a phase that was
+	// started with no issue content is working as Appendix A describes and the sentence is
+	// something to know rather than something that failed. Not under --export, which prints
+	// what a shell evals and must carry nothing else.
+	if !o.export {
+		if started.Section != "" {
+			fmt.Fprintf(o.out, "%s carries the issue's content in the %s section\n",
+				o.phase, started.Section)
+		} else if started.Note != "" {
+			fmt.Fprintln(o.errw, started.Note)
+		}
 	}
 	if o.export {
 		env, err := o.r.PhaseEnv(o.key, o.phase)

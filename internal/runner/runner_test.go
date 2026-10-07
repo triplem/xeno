@@ -2716,7 +2716,11 @@ func TestWithoutATrackerBlockTheWholeIdIsGivenByHand(t *testing.T) {
 // any other, and phase start reads its intent.yaml as it reads a hand written one.
 func TestANewIntentIsListedAndItsPhaseStarts(t *testing.T) {
 	f := newFixture(t)
-	f.project(trackerBlock)
+	// A complete tracker block, pointed at a host that answers here: starting P0 reads the
+	// issue, and Appendix A has `phase start` refuse a block that is there and missing the
+	// credential rather than guess at one.
+	h := &fakeHost{issue: map[string]string{"title": "t", "body": "b"}}
+	f.tracker(h.serve(t).URL)
 	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
 
 	got, err := f.r.Intents()

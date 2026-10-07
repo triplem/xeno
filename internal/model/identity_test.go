@@ -127,3 +127,60 @@ func TestASequenceThatCannotBeContinuedIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// Locate is Qualified read backwards, so the round trip is what asserts it: what the
+// configuration completed, the same configuration takes apart again.
+func TestLocateIsQualifiedReadBackwards(t *testing.T) {
+	for _, tc := range []struct {
+		tracker Tracker
+		issue   string
+		project string
+		key     string
+	}{
+		{Tracker{Project: "triplem/xeno", BaseURL: "https://api.github.com"},
+			"288", "triplem/xeno", "288"},
+		{Tracker{Project: "group/proj", BaseURL: "https://git.example.com/api/v4"},
+			"PROJ-7", "group/proj", "PROJ-7"},
+		// A nested namespace, which is the case the host's own path separator makes
+		// ambiguous if the split were on the first slash rather than on the host prefix.
+		{Tracker{Project: "group/sub/proj", BaseURL: "https://git.example.com/api/v4"},
+			"4", "group/sub/proj", "4"},
+	} {
+		id, err := tc.tracker.Qualified(tc.issue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		project, key, err := tc.tracker.Locate(id)
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		if project != tc.project || key != tc.key {
+			t.Errorf("%s locates %q %q, want %q %q", id, project, key, tc.project, tc.key)
+		}
+	}
+}
+
+// An issue on a host the configuration does not name cannot be reached by the adapter the
+// configuration selects, and the error names both so that whoever reads it can tell which
+// of the two is wrong.
+func TestAnIssueOnAnotherHostNamesBothHosts(t *testing.T) {
+	tr := Tracker{Project: "triplem/xeno", BaseURL: "https://api.github.com"}
+	_, _, err := tr.Locate("git.example/group/proj#1")
+	if err == nil {
+		t.Fatal("an issue on another host was located anyway")
+	}
+	for _, want := range []string{"git.example/group/proj", "github.com"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the error does not name %q: %v", want, err)
+		}
+	}
+}
+
+func TestSomethingThatIsNotAQualifiedIdIsRefused(t *testing.T) {
+	tr := Tracker{Project: "triplem/xeno", BaseURL: "https://api.github.com"}
+	for _, id := range []string{"", "288", "github.com/triplem/xeno", "github.com/triplem/xeno#"} {
+		if _, _, err := tr.Locate(id); err == nil {
+			t.Errorf("%q was read as a qualified id", id)
+		}
+	}
+}

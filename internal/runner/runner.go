@@ -395,16 +395,22 @@ func gateSet(committed *model.Gate, phase string) []string {
 	return out
 }
 
-// Start begins a phase. The sequence is a property of the tool: a phase whose
+// StartPhase begins a phase. The sequence is a property of the tool: a phase whose
 // predecessor holds no verdict over its current content, a red one or a provisional
 // one is refused, and so is a phase that is already running.
-func (r *Runner) Start(key, phase string) error {
+//
+// At P0 it also reads the issue the intent belongs to and writes its content into the
+// intake, which section 12 puts on the side of the CLI that may use the network and names
+// as the intended behaviour of starting a phase. What it has to say about that is the
+// return value, because neither a project without a tracker nor a host that declined the
+// read is a reason not to start the phase.
+func (r *Runner) StartPhase(key, phase string) (*Started, error) {
 	idx := model.PhaseIndex(phase)
 	if idx < 0 {
-		return fmt.Errorf("unknown phase %q", phase)
+		return nil, fmt.Errorf("unknown phase %q", phase)
 	}
 	if fm.Exists(r.marker(key, phase)) {
-		return refuse("%s is already running; if that run died, remove %s", phase, r.marker(key, phase))
+		return nil, refuse("%s is already running; if that run died, remove %s", phase, r.marker(key, phase))
 	}
 	// A phase that has been judged is not started again. Start writes context.lock.yaml
 	// unconditionally, and the lock is inside artifacts_hash, so a second start rewrites a
@@ -419,7 +425,7 @@ func (r *Runner) Start(key, phase string) error {
 	// the verdict alone is no longer enough, because from #225 the artifact left behind is
 	// itself a phase under way.
 	if fm.Exists(r.abs(model.PhaseDir(key, phase) + "/gate.yaml")) {
-		return refuse("%s has a verdict; redo the work with section set and phase finish, "+
+		return nil, refuse("%s has a verdict; redo the work with section set and phase finish, "+
 			"or remove %s to start it over", phase, model.PhaseDir(key, phase))
 	}
 	// And the state between the two guards above: sections written, no verdict yet, and the
@@ -438,18 +444,31 @@ func (r *Runner) Start(key, phase string) error {
 	// the two still agree — the staleness is what the start causes, not what it finds — so
 	// comparing them here would pass in exactly the case the damage is about to be done.
 	if fm.Exists(r.abs(model.PhaseDir(key, phase) + "/output.md")) {
-		return refuse("%s is already under way; carry on with section set and phase finish, "+
+		return nil, refuse("%s is already under way; carry on with section set and phase finish, "+
 			"which need no second start, or remove %s to start the phase over",
 			phase, model.PhaseDir(key, phase))
 	}
+	// The issue is read before anything is written, so that a tracker block which is there
+	// and incomplete refuses the start rather than leaving half of one behind. It is the one
+	// network call on this path and it is made only at P0: the issue states the problem, the
+	// intake is where the problem as stated belongs, and every later phase works from the
+	// intake rather than from the issue again.
+	var issue model.Issue
+	started := &Started{}
+	if idx == 0 {
+		var err error
+		if issue, started.Note, err = r.readIssue(key); err != nil {
+			return nil, err
+		}
+	}
 	common, err := r.common(key, phase)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	lock := model.ContextLock{Common: common, EvidenceSource: r.evidenceSource()}
 	files, err := r.informationBase(key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	lock.Files = files
 	// Section 5 writes both of these into the lock. repo_commit is absent where the repository
@@ -483,22 +502,34 @@ func (r *Runner) Start(key, phase string) error {
 	if idx > 0 {
 		h, err := r.predecessorAllowsStart(key, model.Phases[idx-1])
 		if err != nil {
-			return err
+			return nil, err
 		}
 		lock.PredecessorHash = h
 	}
 
 	dir := r.abs(model.PhaseDir(key, phase))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return nil, err
 	}
 	if err := fm.WriteYAML(filepath.Join(dir, "context.lock.yaml"), lock); err != nil {
-		return err
+		return nil, err
+	}
+	// After the lock and not before it: SectionSet hashes the lock into context_hash, and a
+	// section written first would carry the hash of a file that was not there.
+	if issue.Found() {
+		if _, err := r.SectionSet(key, phase, IntakeProblem, intake(common.Intent, issue, r.stamp())); err != nil {
+			started.Note = fmt.Sprintf("the issue was read and nothing was written with it: %v", err)
+		} else {
+			started.Section = IntakeProblem
+		}
+	} else if started.Note == "" {
+		started.Note = issue.Reason
 	}
 	if err := r.writePhaseEnv(key, phase); err != nil {
-		return err
+		return nil, err
 	}
-	return fm.WriteYAML(r.marker(key, phase), map[string]string{"phase": phase, "started": r.stamp()})
+	return started, fm.WriteYAML(r.marker(key, phase),
+		map[string]string{"phase": phase, "started": r.stamp()})
 }
 
 // predecessorAllowsStart is A12: the next phase starts only on a decided predecessor. It

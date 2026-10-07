@@ -32,6 +32,7 @@ usage:
   xeno gate verify    [--intent KEY]            recompute and compare, write nothing (CI)
   xeno intent verify  --base REF --head REF     every intent the range touches is finished or closed (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
+  xeno report verdict --intent KEY [--phase NN] [--dry-run]   the verdict onto the issue (CI, needs the network)
   xeno evidence declare --intent KEY --phase NN --kind K [--job J] [--result R]
                         [--file PATH | --uri URL --sha256 HEX] [--produced-by CMD] [--format F]
   xeno evidence attach --intent KEY --phase NN --from DIR

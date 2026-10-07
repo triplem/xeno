@@ -141,6 +141,11 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// anywhere else: it reads the learning records of a sealed phase and leaves that phase
 	// alone, which is the property worth asserting for a command that walks the whole trail.
 	"learning propose": {args: []string{"--out", "{proposals}"}},
+	// --dry-run, because the command's whole purpose is a call to the code host and the walk
+	// has neither a token nor a network. What it still proves is the half that matters here:
+	// composing a comment from a sealed phase's verdict reads that phase and writes nothing
+	// into it.
+	"report verdict": {args: []string{"--dry-run"}},
 	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"},
 		moves: "the declaration is a frontmatter block of output.md, so a declaration after " +
 			"the verdict leaves the phase stale rather than rewriting it (#216)"},
