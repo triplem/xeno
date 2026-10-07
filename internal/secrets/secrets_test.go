@@ -225,3 +225,71 @@ func TestTheShippedSetIsTheImportedOne(t *testing.T) {
 		t.Errorf("%d house patterns, want the three upstream does not cover", house)
 	}
 }
+
+// A match reports the pattern and the line and nothing of the value. The gate writes this into
+// `gate.yaml`, which is committed, so a value carried out here would be the secret published a
+// second time in the file nobody thinks of as holding it.
+func TestAMatchReportsThePatternAndTheLineAndNotTheValue(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, Shipped, shipped)
+
+	hits := load(t, root).Matches("one\ntwo\nthe run used AKIAIOSFODNN7EXAMPLE here\nfour\n")
+	if len(hits) != 1 {
+		t.Fatalf("want one hit, got %+v", hits)
+	}
+	if hits[0] != (Hit{PatternID: "aws-access-key", Line: 3}) {
+		t.Errorf("got %+v, want the aws pattern on line 3", hits[0])
+	}
+}
+
+// Two patterns on one line are two hits, and one pattern firing twice on one line is one: a
+// finding is a place to look, and one pattern naming one line twice would be two findings a
+// person has to decide separately about the same line.
+func TestOnePatternPerLineAndEveryPatternThatFires(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, Shipped, shipped)
+	text := "a AKIAIOSFODNN7EXAMPLE and AKIAIOSFODNN7EXAMPL2 and ghp_" + strings.Repeat("a", 36) + "\n"
+
+	hits := load(t, root).Matches(text)
+	if len(hits) != 2 {
+		t.Fatalf("want one hit per pattern on the line, got %+v", hits)
+	}
+	if hits[0].PatternID != "aws-access-key" || hits[1].PatternID != "github-token" {
+		t.Errorf("hits are not sorted by pattern within a line: %+v", hits)
+	}
+}
+
+// The matcher and the redaction are the same compiled set, which is section 4's "G-Secret and
+// the digest writer read the same file" seen one level further in. Anything the redaction
+// replaces the matcher finds, and the subject is this repository's own shipped filter rather
+// than a fixture, because the claim is about what ships.
+func TestTheMatcherAndTheRedactionAgreeOnTheShippedFilter(t *testing.T) {
+	f, err := Load("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range samples {
+		text := "before " + s + " after"
+		redacted := f.Redact(text) != text
+		matched := len(f.Matches(text)) > 0
+		if redacted != matched {
+			t.Errorf("%q: the redaction says %v and the matcher says %v", s, redacted, matched)
+		}
+	}
+}
+
+// A filter rewritten under one root is compiled again. The compiled sets are memoised, because a
+// verification loads the same two files once per verdict, and a memo keyed on anything but the
+// content would hand back the set the files used to have.
+func TestARewrittenFilterIsNotServedFromTheMemo(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, Shipped, shipped)
+	if hits := load(t, root).Matches("ticket HOUSE-1234"); len(hits) != 0 {
+		t.Fatalf("the fixture already matches: %+v", hits)
+	}
+	write(t, root, Shipped, "patterns:\n  - id: house-token\n    regex: '\\bHOUSE-[0-9]{4}\\b'\n")
+
+	if hits := load(t, root).Matches("ticket HOUSE-1234"); len(hits) != 1 {
+		t.Errorf("the rewritten filter did not take effect: %+v", hits)
+	}
+}

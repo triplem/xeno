@@ -902,6 +902,14 @@ func (o *opts) report(g *model.Gate, err error) int {
 	fmt.Fprintf(o.out, "%s %s: %s\n", g.Intent, g.Phase, g.Status)
 	for _, c := range g.Checks {
 		fmt.Fprintf(o.out, "  %-14s %s\n", c.Gate, c.Result)
+		// What the gate did not look at, where it has such a bound to state. Section 5
+		// enumerates the fields of a check, so this is not something gate.yaml can carry, and
+		// the run that prints the result is where a reader meets it. A pass says that what was
+		// read was clean and nothing about what was read, and for G-Secret that difference is
+		// the half of the check the digest filter does instead (#284).
+		if note := gates.Coverage(c.Gate); note != "" {
+			fmt.Fprintf(o.out, "      covers %s\n", note)
+		}
 		for _, f := range c.Findings {
 			d := ""
 			if f.Decision != nil {

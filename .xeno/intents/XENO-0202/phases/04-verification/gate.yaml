@@ -2,10 +2,10 @@ intent: github.com/triplem/xeno#120
 phase: 04-verification
 created: "2026-09-29T06:04:24Z"
 schema_version: "1.0"
-runner_version: 0.1.0-dev+ad0a764.dirty
-plugin_version: 0.1.0-dev
-status: green
-run_at: "2026-09-29T06:05:05Z"
+runner_version: dev+7cd4f9e.dirty
+plugin_version: 0.0.0-dev
+status: approved
+run_at: "2026-10-07T17:33:34Z"
 artifacts_hash: 0fb68dddc3368ebce6784d50c19286d14f8b2da861a945b145510ea2ed5093eb
 checks:
     - gate: G-Supply
@@ -18,8 +18,19 @@ checks:
       result: pass
       provenance: xeno
     - gate: G-Secret
-      result: not-implemented
+      result: fail
       provenance: xeno
+      findings:
+        - id: F-afdb79
+          file: .xeno/intents/XENO-0202/phases/04-verification/output.md
+          cause: the secret filter's aws-access-token pattern matches at line 50
+          next: rotate the credential first, then take the value out of the artifact and run the gate again; the match itself is not recorded here, because gate.yaml is committed
+          decision:
+            type: approved
+            by: Markus M. May
+            at: "2026-10-07T17:33:47Z"
+            against: 0fb68dddc3368ebce6784d50c19286d14f8b2da861a945b145510ea2ed5093eb
+            reason: AWS's published documentation key, quoted in prose about the filter probe itself, and a github token shape in the same sentence; section 4's filter has no allowlist and the artifact is sealed, so the finding is correct and the value is not a credential
     - gate: G-Assumptions
       result: pass
       provenance: xeno
@@ -36,11 +47,11 @@ checks:
       result: pass
       provenance: xeno
     - gate: G-Test
-      result: not-implemented
+      result: pass
       provenance: xeno
     - gate: G-Rules
-      result: not-implemented
+      result: pass
       provenance: xeno
     - gate: G-Policy
-      result: not-implemented
+      result: pass
       provenance: xeno

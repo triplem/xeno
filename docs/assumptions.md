@@ -183,7 +183,7 @@ verdicts. Decisions carried forward by finding id.
 
 Gates implemented: G-Schema, G-Trace, G-Assumptions, G-Questions, G-Learning,
 G-Freshness in both halves (A6), G-Evidence, G-Build, G-Complete in both modes (A32).
-Gates written as `not-implemented`: G-Secret and G-Test. G-Rules and G-Policy were in that
+Gates written as `not-implemented`: G-Test. G-Rules and G-Policy were in that
 list and are implemented. G-Supply is implemented and reports `not-implemented` in this
 repository for a different reason: its anchor is a digest the release compiles into the
 binary, and a development build carries none, so the gate runs and says it did not judge
