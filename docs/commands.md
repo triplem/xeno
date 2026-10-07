@@ -21,6 +21,7 @@ usage:
   xeno obligation close FINDING --intent KEY --phase NN
   xeno learning record --intent KEY [--phase NN] --category C --observation T --proposal T --target P
   xeno learning record --intent KEY [--phase NN] --no-finding
+  xeno learning propose --out DIR [--intent KEY]   generates the merge request against the rule set
   xeno question record --intent KEY --phase NN [--file PATH]   reads the entry on stdin
   xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
   xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
