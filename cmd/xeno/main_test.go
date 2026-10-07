@@ -807,6 +807,8 @@ func TestPhaseStartSaysWhichLensesTheProjectEnabled(t *testing.T) {
 	// like a project which enabled nothing.
 	if !strings.Contains(out, "cryptography") {
 		t.Errorf("a lens name the plugin has no skill for passed in silence: %q", out)
+	}
+}
 
 // The write-back's dry run composes the comment, writes nothing and exits 0, which is the
 // staircase's first step: the command did what was asked. It is also how a wording is read
