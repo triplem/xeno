@@ -1,0 +1,47 @@
+intent: github.com/triplem/xeno#228
+phase: 02-design
+created: "2026-10-06T20:28:48Z"
+schema_version: "1.0"
+runner_version: dev+3f1fab3.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 4dd634a68ca86e0fc7755e75e9a9f1639a3f49ead1262a2dd9c7589e8636785c
+evidence_source: ci
+template_source: plugin
+repo_commit: 9fd3647fbe57c71e312d526e3dbe397cc195553a
+files:
+    - path: internal/runner/next.go
+      sha256: 2a6bd4c612c9fc96ed728b057c5624093d9e3ae5836305e1ed2c12bfb5603529
+      bytes: 7343
+    - path: cmd/xeno/main.go
+      sha256: a3583322e6d4ecdf6d848e6c5746b4ff8dca48cdcac451427c1904e1899cf864
+      bytes: 39292
+    - path: internal/cost/cost.go
+      sha256: 8d094f91a97aae4fbc7b8f53d8d1997b7931db9cf65b0830562fb6424fc43d12
+      bytes: 6556
+    - path: docs/process-definition.md
+      sha256: 0ecd0d7d7cf2eba78218e56aa46677ca31585e8daf3d8f94b31d667dc8114544
+      bytes: 132344
+    - path: docs/implementation-plan.md
+      sha256: 0babcd9497640873db888c4bf54e696f7fb45e7e519730827fbca45f1303ae63
+      bytes: 122407
+    - path: docs/assumptions.md
+      sha256: 2d14ced99aa740f712c7ec536cdb1e462b30985ee18c118b8c451a49daedd147
+      bytes: 93844
+    - path: .xeno/plugin/skills/xeno-intake/SKILL.md
+      sha256: 0f574a9d69959849eb8bab5cdea0037b2f07f00a4868905a25174e6d43f26732
+      bytes: 3342
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: fb1eab28ecdb813ecedbd2a60437be132b1f9c62d53c5375a2eeb781172715ab
