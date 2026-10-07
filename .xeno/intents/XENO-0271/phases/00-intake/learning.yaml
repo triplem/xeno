@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#273
+phase: 00-intake
+created: "2026-10-07T09:53:38Z"
+schema_version: "1.0"
+runner_version: dev+0768c44
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The first attempt at this measurement corrupted a strings_hash to 64 zeros and read the resulting green as evidence that the check had died. It had not: YAML parses an all-digit scalar as a number, raw[f].(string) fails, and hashes() skips the field entirely, so the same green appears on the unmodified tree. The control was broken rather than the gate, and a second control on a different field, context_hash, reproduced the same false green before the cause was found.'
+      proposal: 'Where a measurement corrupts a field to see whether a check fires, the corrupted value has to be one the field''s own type accepts, and the control is run against the unmodified tree first: a green there means the method is wrong, not that the check is absent. For a hash field in this repository that means a hex value containing a letter, because an all-digit scalar is not a string to the YAML reader. The existing rule says to recreate the thing and check again; what this adds is that the fabricated input is as much a part of the thing as the file is.'
+      target: .xeno/config/rules/learned/project/a-corrupted-value-must-be-one-the-type-accepts.yaml

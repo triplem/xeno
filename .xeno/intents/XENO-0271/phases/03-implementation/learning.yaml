@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#273
+phase: 03-implementation
+created: "2026-10-07T09:56:51Z"
+schema_version: "1.0"
+runner_version: dev+0768c44
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A decisions section is read as checked. This intent drafted 'TemplateID's comment already cites A33' into P2's decisions and the grep returned one A33 in Go, in a different function's comment about a different prefix. XENO-0269 had the same shape in approved specification wording, where the phrase was inherited from the issue. Both were plausible claims about the tree written in a place a reader trusts, and both were found by running a command while writing the next paragraph rather than by any step that was owed.
+      proposal: A claim about the tree written into an artifact cites what was run to establish it, in the sentence or in the phase's evidence, and a claim with nothing behind it is written as the question it is. The existing proposal from XENO-0269 covers drafted specification wording; this extends it to the decisions and problem sections of a phase, which are sealed with the same authority and are read the same way.
+      target: .xeno/config/rules/learned/project/a-claim-about-the-tree-cites-what-was-run.yaml
