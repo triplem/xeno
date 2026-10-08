@@ -118,6 +118,30 @@ func TestTheDockerfileCopiesTheBinaryTheReleaseBuilds(t *testing.T) {
 	}
 }
 
+// Three lines of the Dockerfile are what make a container job work rather than only build,
+// and each of them fails somewhere a reader would not look for it. A root image is refused
+// by a host configured to reject one; a non-root user with a uid other than 1001 cannot
+// write the workspace GitHub mounts, so actions/checkout fails before the gate runs; and
+// without the ownership exemption git declines to read a clone made by another uid, which
+// reaches the gate as a failed verdict and not as a permission error. None of the three is
+// visible in a local run where the clone happens to belong to the container user, which is
+// why they are asserted here rather than left to the next person who builds the image.
+func TestTheImageRunsAsTheUidTheMountedWorkspaceBelongsTo(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "Dockerfile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"useradd --uid 1001",
+		"USER xeno",
+		"git config --system --add safe.directory '*'",
+	} {
+		if !strings.Contains(string(b), want) {
+			t.Errorf("the Dockerfile no longer carries %q, without which a container job cannot read the clone it is given", want)
+		}
+	}
+}
+
 // The reference is joined in one place. Two call sites joining a repository to a version
 // are two chances to put the colon somewhere a registry does not accept.
 func TestTheRunnerImageIsTheRepositoryAndTheVersion(t *testing.T) {

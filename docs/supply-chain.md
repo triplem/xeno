@@ -65,6 +65,9 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | semgrep's rules | vendored under `.semgrep/`, not fetched | — |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
 | `gitleaks` | 8.30.1, by release tarball and sha256 `551f6fc8…` | github.com |
+| the image's base, `debian` 13-slim | `sha256:a29215f6…`, the manifest index, by digest | docker.io |
+| `ca-certificates` and `git`, installed into the image | not pinned, and cannot be | deb.debian.org |
+| `docker`, which builds and pushes the image | the hosted runner's image, which this repository does not pin | — |
 
 **Where a version in this table comes from.** It is read off a run that produced a
 release, from that run's log and from the bill of materials it published, rather than
@@ -75,6 +78,28 @@ The evidence travels with each release rather than living here. The bill of mate
 records its own generator together with that generator's hashes, and the run log names
 the version of semantic-release that ran. This table is therefore a convenience and the
 release is the record; where the two disagree, the release is right.
+
+**What a published digest promises, and what it does not.** The image's base is pinned
+by the digest of a manifest index rather than by `13-slim`, and the image a release
+publishes is referred to by the digest the run prints, so neither the bytes the build
+starts from nor the bytes a pipeline pulls can be changed under anybody afterwards. What
+that leaves open is the two packages inside. `apt-get install ca-certificates git`
+resolves against Debian's suite on the day the release is cut, and the suite moves;
+pinning `git=1:2.47.3-1` would turn each of those moves into a failed release, which is
+why the row sits in the vulnerability database's class and carries no version. So a
+published image is fixed and two images a month apart are not the same image, and the
+`git` in either of them is read off the build log of the run that produced it. The bill
+of materials cannot answer it, because it describes the binary and not the image around
+it.
+
+**The `docker` CLI is pinned by the runner rather than by this repository.** The image
+step runs `docker login`, `docker build` and `docker push` instead of
+`docker/login-action`, `docker/setup-buildx-action` and `docker/build-push-action`. That
+is a trade taken on purpose — three action shas off this table against one tool whose
+version comes from the hosted runner image — and the honest form of it is a row saying
+the pin is somebody else's. The cost is the one the staleness paragraph below describes:
+the day that runner image moves the version, nothing here changes and nothing here
+notices.
 
 **The vulnerability database is the one row that cannot be pinned.** A scan answers
 what is known today, so a database fixed at a version would answer what was known when
@@ -138,9 +163,14 @@ it moves to a self hosted runner, which is why WP0 keeps the requirement:
 > toolchains from the public internet at build time and makes the dependency mirror part
 > of the bootstrap rather than an afterthought.
 
-**Every row of the second table above is such a fetch**, and each of them needs an
-answer for a machine without a route out: mirrored, pre-installed on the runner image,
-or dropped. None of those can be decided without such a machine in front of somebody.
+**Every row of the second table above is such a fetch**, bar the one the runner image
+already carries, and each of them needs an answer for a machine without a route out:
+mirrored, pre-installed on the runner image, or dropped. None of those can be decided
+without such a machine in front of somebody. Two of the rows belong to the image rather
+than to the build: its base, which this repository pulls when it builds, and the image
+itself, which an adopter's pipeline pulls before every job. The second is the one the
+generated wrapper already answers, on the image line whose comment says to point it at a
+registry the pipeline can reach; the first is a row like any other.
 
 The Go module question is narrower than it looks. A vendored build reads
 `vendor/modules.txt` and not `go.sum`, so nothing in the release path fetches a module
