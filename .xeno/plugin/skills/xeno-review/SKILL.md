@@ -25,6 +25,12 @@ rule set, each with `rule`, a `result` of `met`, `deviation` or `not-applicable`
 `note` where the result is not `met`. An entry from a lens carries `source: lens` and no
 rule id, and answers no rule.
 
+Two commands write those entries and not one. `xeno review answer` takes the rule it
+answers; `xeno review lens` takes none, because a lens entry answers no rule and there is
+no place in its arguments for one. That is why it is a second command rather than a flag on
+the first: a flag could be passed beside a rule id, and the entry that kept a lens out of
+G-Policy's counted set would then be the entry that answered a rule.
+
 Read the effective set before writing the entries; a rule with no entry is red.
 
 ## The commands
@@ -33,7 +39,12 @@ Read the effective set before writing the entries; a rule with no entry is red.
     xeno section set   review-checklist --intent KEY --phase 05 --file PATH
     xeno section set   release-notes    --intent KEY --phase 05 --file PATH
     xeno section set   residual-risk    --intent KEY --phase 05 --file PATH
+    xeno review answer RULE --intent KEY --result R [--note TEXT]
+    xeno review lens   --intent KEY --result R --note TEXT
     xeno phase finish  --intent KEY --phase 05 --summary PATH
+
+The answers before the lens, which is the order of the paragraph above: a rule is answered,
+then a lens adds what no rule covers. Both resolve P5 themselves and take no `--phase`.
 
 Where a finding is accepted rather than fixed, a second person releases it and the
 reason is recorded:
