@@ -48,6 +48,7 @@ const usage = `usage:
   xeno intent verify  --base REF --head REF     every intent the range touches is finished or closed (CI)
   xeno enforcement check [--branch NAME]        ask the host what it enforces (needs the network)
   xeno report verdict --intent KEY [--phase NN] [--dry-run]   the verdict onto the issue (CI, needs the network)
+  xeno report figures [--intent KEY] [--all]    cost, artifacts and reopens per intent, read from the trail
   xeno evidence declare --intent KEY --phase NN --kind K [--job J] [--result R]
                         [--file PATH | --uri URL --sha256 HEX] [--produced-by CMD] [--format F]
   xeno evidence attach --intent KEY --phase NN --from DIR
@@ -120,7 +121,11 @@ var commands = map[string]command{
 	// The phase is optional, alone among the commands that take an intent and a phase: a job
 	// reporting after a run has judged whatever it judged, and the trail knows which phase
 	// that was, so the pipeline does not have to.
-	"report verdict":       {needsKey: true, run: cmdReportVerdict},
+	"report verdict": {needsKey: true, run: cmdReportVerdict},
+	// No key at all, and for `learning propose`'s reason: the figures are a reading of the
+	// whole trail and one intent is a narrowing of it. The command writes nothing and no gate
+	// reads it, which is WP15's rule about the symbol index applied to a measurement.
+	"report figures":       {run: cmdReportFigures},
 	"check commit-message": {run: cmdCheckMessage},
 	"gate verify":          {run: cmdGateVerify},
 	"intent verify":        {run: cmdIntentVerify},
@@ -380,6 +385,187 @@ func cmdReportVerdict(o *opts) int {
 		fmt.Fprintln(o.errw, "nothing was posted:", w.Written.Reason)
 	}
 	return 0
+}
+
+// cmdReportFigures prints the three figures the plan names as deciding proportionality —
+// cost per intent, artifacts per intent and reopens per intent — derived from the trail,
+// together with the section count per template that WP3 names as the lever.
+//
+// It is the second half of `report`, and the opposite half: `report verdict` takes a verdict
+// to the host, this takes nothing anywhere. It writes no file, posts nothing and no gate
+// reads it, for the reason WP15 gives about the symbol index: a measurement a verdict could
+// turn on stops being a measurement, because the cheapest way to move it is then to change
+// what is counted.
+//
+// The figures were being counted by hand into comments on #117, which is the thing #117
+// objected to: a number written down once, against a tree that has since moved. Printed by a
+// command they are recomputable at any commit, and the comments become a record of what was
+// true rather than the only place the numbers live.
+func cmdReportFigures(o *opts) int {
+	var keys []string
+	if o.key != "" {
+		keys = []string{o.key}
+	}
+	f, err := o.r.Figures(keys)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	printPopulation(o.out, f)
+	printFigureRows(o.out, f, o.all)
+	printPerIntent(o.out, f)
+	printCost(o.out, f)
+	printTemplateBudget(o.out, f)
+	return 0
+}
+
+// figuresRow is one intent's row. The first two columns are the listing's, so that a reader
+// who has seen `xeno intent status` recognises the left edge; the rest are counts, and they
+// are left aligned as every other table in this tool sets its cells.
+const figuresRow = "%-10s  %-12s %-7s %-9s %-6s %-7s %-5s %s"
+
+// templateBudgetRow is one template against WP3's budget: where it renders from, how many
+// sections it requires, and how many of those are the phase's own rather than one of the two
+// common ones the budget excludes.
+const templateBudgetRow = "%-18s %-22s %-8s %-9s %-9s %s"
+
+// budgetSpecific is the upper end of WP3's budget: three to four phase specific required
+// sections per template, where adding a fifth means arguing another one away. A row over it
+// is marked and nothing refuses: the template set is the plan's to change, and a report that
+// failed on it would be a gate reading a measurement.
+const budgetSpecific = 4
+
+// printPopulation says what was counted before it says anything about it. A count over the
+// trail includes the intent doing the counting, and the intents that stopped at the intake
+// are a different measurement from the ones that went through, so both numbers are named and
+// neither is folded into the other.
+func printPopulation(out io.Writer, f *runner.Figures) {
+	fmt.Fprintln(out, "POPULATION")
+	fmt.Fprintf(out, "%d intents counted, %d with all six phases, %d that stopped earlier.\n",
+		f.Counted, f.SixPhase, f.Counted-f.SixPhase)
+	fmt.Fprintln(out, "Every figure per intent below is over the six-phase ones; the others are")
+	fmt.Fprintln(out, "counted and not averaged in. The count includes the intent this was run for.")
+}
+
+// printFigureRows prints the rows oldest first, truncated the way the listing truncates: ten
+// is a screen, and a hundred rows answer what has ever happened rather than what is
+// happening. --all is there for the other question.
+func printFigureRows(out io.Writer, f *runner.Figures, all bool) {
+	rows := f.Selected
+	shown, hidden := tail(len(rows), all)
+	rows = rows[len(rows)-shown:]
+	if len(rows) == 0 {
+		return
+	}
+	fmt.Fprintln(out, "")
+	fmt.Fprintln(out, sprintRow(figuresRow,
+		"CREATED", "INTENT", "PHASES", "SECTIONS", "FILES", "WORDS", "COST", "REOPENS"))
+	for _, r := range rows {
+		created := r.Created
+		if created == "" {
+			created = "?"
+		}
+		// The cost cell is a coverage and not a token count. A column of token sums over the
+		// few phases that attributed anything would read as the cost of the intent, which is
+		// the one thing #316 says this report may not print.
+		line := sprintRow(figuresRow, created, r.Key,
+			fmt.Sprintf("%d/%d", r.Phases, len(model.Phases)),
+			fmt.Sprint(r.Sections), fmt.Sprint(r.Files), fmt.Sprint(r.Words),
+			fmt.Sprintf("%d/%d", r.CostPhases, len(model.Phases)), fmt.Sprint(r.Reopens()))
+		if r.Obligations > 0 {
+			line += fmt.Sprintf("  (%d still owed)", r.Obligations)
+		}
+		if r.Moved > 0 {
+			line += fmt.Sprintf("  (%d phase(s) moved since their verdict)", r.Moved)
+		}
+		if r.Problem != "" {
+			line += "  (" + r.Problem + ")"
+		}
+		fmt.Fprintln(out, strings.TrimRight(line, " "))
+	}
+	if hidden > 0 {
+		fmt.Fprintf(out, "\n%d older, --all to see them\n", hidden)
+	}
+}
+
+// printPerIntent is the aggregate: the artifacts figure and the reopens figure, over the
+// six-phase intents alone. The two counts beside reopens are printed rather than added into
+// it, because they are different events and the figure the plan names is one number.
+func printPerIntent(out io.Writer, f *runner.Figures) {
+	fmt.Fprintf(out, "\nPER INTENT, over the %d with all six phases\n", f.SixPhase)
+	if f.SixPhase == 0 {
+		fmt.Fprintln(out, "nothing to average: no intent in the selection has all six phases.")
+		return
+	}
+	mean := func(total int) float64 { m, _ := f.Mean(total); return m }
+	fmt.Fprintf(out, "sections written   %8.1f\n", mean(f.Totals.Sections))
+	fmt.Fprintf(out, "files              %8.1f\n", mean(f.Totals.Files))
+	fmt.Fprintf(out, "words              %8.1f   across output.md, digest.md and learning.yaml\n",
+		mean(f.Totals.Words))
+	fmt.Fprintf(out, "reopens            %8.2f   released findings, approvals and overrides together\n",
+		mean(f.Totals.Released))
+	fmt.Fprintf(out, "%d obligation(s) still owed, %d phase(s) moved since their verdict.\n",
+		f.Totals.Obligations, f.Totals.Moved)
+	fmt.Fprintln(out, "The reopen figure is a proxy: a phase keeps one verdict, so the trail cannot")
+	fmt.Fprintln(out, "say how often one was judged again. What it can say is where a person had to")
+	fmt.Fprintln(out, "release a finding for a phase to pass.")
+}
+
+// printCost prints the cost figure with its coverage, or the coverage alone.
+//
+// The rule is the one #316 states: the figure travels with its coverage or it does not
+// travel. A mean over the phases that recorded nothing would be a cost per intent orders of
+// magnitude from the truth, so no mean is printed until every phase in the population has a
+// record, and what is printed instead is what was attributed and how much of the population
+// attributed it.
+func printCost(out io.Writer, f *runner.Figures) {
+	fmt.Fprintln(out, "\nCOST  self-reported, which section 11 requires of any cost figure shown")
+	fmt.Fprintf(out, "%d of %d phases attributed anything.\n", f.Totals.CostPhases, f.PhasesCounted)
+	t := f.Totals.Cost
+	fmt.Fprintf(out, "tokens_in %d  tokens_out %d  tokens_cached %d, over those phases.\n",
+		t.In, t.Out, t.Cached)
+	if f.CostCovered() {
+		in, _ := f.Mean(t.In)
+		spent, _ := f.Mean(t.Out)
+		cached, _ := f.Mean(t.Cached)
+		fmt.Fprintf(out, "per intent: tokens_in %.0f  tokens_out %.0f  tokens_cached %.0f\n",
+			in, spent, cached)
+		return
+	}
+	fmt.Fprintln(out, "No cost per intent is printed, because not every phase counted has a record")
+	fmt.Fprintln(out, "and a mean over the ones that do would be read as the cost of an intent.")
+	fmt.Fprintln(out, "Within a phase that did attribute something the ledger holds the turns after")
+	fmt.Fprintln(out, "`phase start` and no others, which internal/cost measured at about seven per")
+	fmt.Fprintln(out, "cent of a session, because the work is done before that command is called.")
+}
+
+// printTemplateBudget is the other half of the argument WP3 names, and both halves have to be
+// visible at once to be readable: every template is inside its budget of three to four phase
+// specific required sections, and seventeen required sections still come out of the six.
+func printTemplateBudget(out io.Writer, f *runner.Figures) {
+	fmt.Fprintln(out, "\nTEMPLATES  WP3 budgets three to four phase-specific required sections each")
+	fmt.Fprintln(out, sprintRow(templateBudgetRow,
+		"PHASE", "TEMPLATE", "SOURCE", "REQUIRED", "SPECIFIC", "OPTIONAL"))
+	required, over := 0, 0
+	for _, t := range f.Templates {
+		if t.Problem != "" {
+			fmt.Fprintln(out, strings.TrimRight(sprintRow(templateBudgetRow,
+				t.Phase, "?", "?", "?", "?", "?"), " ")+"  ("+t.Problem+")")
+			continue
+		}
+		required += t.Required
+		line := sprintRow(templateBudgetRow, t.Phase, t.Ref, string(t.Source),
+			fmt.Sprint(t.Required), fmt.Sprint(t.Specific), fmt.Sprint(t.Optional))
+		if t.Specific > budgetSpecific {
+			over++
+			line += fmt.Sprintf("  (over the budget of %d)", budgetSpecific)
+		}
+		fmt.Fprintln(out, strings.TrimRight(line, " "))
+	}
+	fmt.Fprintf(out, "%d required sections across the six, which is what one intent owes.\n", required)
+	if over == 0 {
+		fmt.Fprintln(out, "Every template is inside the budget, which is the argument: the budget is met")
+		fmt.Fprintln(out, "per phase and the total is what a one-line fix pays.")
+	}
 }
 
 func cmdCheckMessage(o *opts) int {

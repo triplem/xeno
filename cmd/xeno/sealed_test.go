@@ -140,7 +140,11 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// has neither a token nor a network. What it still proves is the half that matters here:
 	// composing a comment from a sealed phase's verdict reads that phase and writes nothing
 	// into it.
-	"report verdict":   {args: []string{"--dry-run"}},
+	"report verdict": {args: []string{"--dry-run"}},
+	// Nothing to fill and nothing it may touch. The figures are counted off the phase the
+	// walk has sealed, which is the property worth asserting for a reader over the whole
+	// trail: counting what a judged phase holds is not a way of writing into it.
+	"report figures":   {},
 	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"}},
 	// Two reads with no argument to fill: the dispatch supplies --phase for the one that
 	// takes it, and the other is given a name. Neither opens an intent directory at all — a

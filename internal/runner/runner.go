@@ -1396,8 +1396,13 @@ func (r *Runner) Status(key string) ([]PhaseState, error) {
 		s := PhaseState{Phase: p, State: "not-started"}
 		dir := r.abs(model.PhaseDir(key, p))
 		switch {
-		case fm.Exists(r.marker(key, p)):
-			s.State = "running"
+		// The verdict first, and the run marker after it. A phase that holds a gate.yaml has
+		// been judged, and `phase start` refuses it, so no run of it can be under way: a
+		// marker left behind by a start that was never finished through this machine is a
+		// stale local file and not a state of the trail. Measured on this repository, where
+		// one from 2026-10-03 made a six-phase intent read as five phases and dropped it out
+		// of the population report figures counts. The marker is machine-local by A9 and
+		// expires at thirty days, which is why it cannot be the stronger signal.
 		case fm.Exists(filepath.Join(dir, "gate.yaml")):
 			g, err := r.readGate(key, p)
 			if err != nil {
@@ -1412,6 +1417,8 @@ func (r *Runner) Status(key string) ([]PhaseState, error) {
 			if g.ArtifactsHash != h {
 				s.State = "changed-after-verdict"
 			}
+		case fm.Exists(r.marker(key, p)):
+			s.State = "running"
 		// An artifact with no verdict is a phase under way, whether or not this machine holds
 		// the marker. The marker is machine-local (A9) and expires at thirty days, so keying the
 		// state on it alone reported a phase begun elsewhere as not-started — the first of the
