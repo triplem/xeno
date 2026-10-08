@@ -25,6 +25,14 @@ func answering(t *testing.T, status int, body any) (*Adapter, *seen) {
 	t.Helper()
 	got := &seen{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// From #330 a read of the issue is followed by a read of what was said under it,
+		// which is a list; a fake that serves one body to every call answers that read
+		// with an empty one, and records nothing about it, so that the tests about the issue
+		// stay about the issue.
+		if r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/comments") {
+			_ = json.NewEncoder(w).Encode([]any{})
+			return
+		}
 		got.method, got.path = r.Method, r.URL.Path
 		got.accept, got.authorization = r.Header.Get("Accept"), r.Header.Get("Authorization")
 		got.body, _ = io.ReadAll(r.Body)
@@ -154,5 +162,118 @@ func TestACreatedCommentWithNoAddressIsStillWritten(t *testing.T) {
 	}
 	if w.URL != "" {
 		t.Errorf("an address appeared from nowhere: %q", w.URL)
+	}
+}
+
+// routing answers each path from a map, and records every path asked in order. The one
+// read of section 12 is up to three calls from #330, so a transport that serves one body
+// to every request cannot assert it.
+func routing(t *testing.T, bodies map[string]any) (*Adapter, *[]string) {
+	t.Helper()
+	asked := &[]string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*asked = append(*asked, r.URL.Path+"?"+r.URL.RawQuery)
+		body, ok := bodies[r.URL.Path]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	t.Cleanup(srv.Close)
+	return New(srv.Client(), srv.URL), asked
+}
+
+// Section 12's "Starting an intent" reads five things through the one operation: the
+// labels, the milestone and the comments of the issue, and the repository's open
+// milestones where the issue carries one, in this host's own field names.
+func TestAnIssueIsReadWithWhatTheHostSaysAroundIt(t *testing.T) {
+	a, asked := routing(t, map[string]any{
+		"/repos/triplem/xeno/issues/330": map[string]any{
+			"title": "t", "body": "b",
+			"labels":    []map[string]string{{"name": "wp12"}, {"name": "approved"}},
+			"milestone": map[string]any{"title": "1.1", "due_on": "2026-12-31T00:00:00Z", "number": 2, "state": "open"},
+		},
+		"/repos/triplem/xeno/issues/330/comments": []map[string]any{
+			{"user": map[string]string{"login": "someone"}, "created_at": "2026-10-08T10:00:00Z", "body": "a question"},
+			{"user": map[string]string{"login": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "approved\n\nbecause"},
+		},
+		"/repos/triplem/xeno/milestones": []map[string]any{
+			{"title": "1.0", "due_on": "2026-11-30T00:00:00Z", "number": 1, "state": "open"},
+			{"title": "1.1", "due_on": "2026-12-31T00:00:00Z", "number": 2, "state": "open"},
+			{"title": "later", "due_on": nil, "number": 3, "state": "open"},
+		},
+	})
+	issue, err := a.Issue("triplem/xeno", "330", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(issue.Labels, ",") != "wp12,approved" {
+		t.Errorf("labels %v", issue.Labels)
+	}
+	if issue.Milestone == nil || issue.Milestone.Title != "1.1" || issue.Milestone.Due != "2026-12-31T00:00:00Z" ||
+		issue.Milestone.Number != 2 || issue.Milestone.Closed {
+		t.Errorf("milestone %+v", issue.Milestone)
+	}
+	if len(issue.Comments) != 2 || issue.Comments[1].Author != "triplem" ||
+		issue.Comments[1].At != "2026-10-08T15:10:28Z" || issue.Comments[1].Body != "approved\n\nbecause" {
+		t.Errorf("comments %+v", issue.Comments)
+	}
+	if len(issue.OpenMilestones) != 3 || issue.OpenMilestones[2].Due != "" || issue.OpenMilestones[0].Number != 1 {
+		t.Errorf("open milestones %+v", issue.OpenMilestones)
+	}
+	want := []string{
+		"/repos/triplem/xeno/issues/330?",
+		"/repos/triplem/xeno/issues/330/comments?per_page=100&page=1",
+		"/repos/triplem/xeno/milestones?state=open&per_page=100",
+	}
+	if strings.Join(*asked, " ") != strings.Join(want, " ") {
+		t.Errorf("asked %v\nwant  %v", *asked, want)
+	}
+}
+
+// An issue with no milestone costs two calls and not three, and reads as carrying none.
+func TestAnIssueWithoutAMilestoneListsNone(t *testing.T) {
+	a, asked := routing(t, map[string]any{
+		"/repos/triplem/xeno/issues/330":          map[string]any{"title": "t", "milestone": nil},
+		"/repos/triplem/xeno/issues/330/comments": []map[string]any{},
+	})
+	issue, err := a.Issue("triplem/xeno", "330", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if issue.Milestone != nil || issue.OpenMilestones != nil || len(*asked) != 2 {
+		t.Errorf("read %+v after %v", issue, *asked)
+	}
+}
+
+// Comments are paged at a hundred and the approval is usually the last one, so the read
+// follows pages until a short one.
+func TestCommentsBeyondTheFirstPageAreFollowed(t *testing.T) {
+	full := make([]map[string]any, pageSize)
+	for i := range full {
+		full[i] = map[string]any{"user": map[string]string{"login": "x"}, "body": "noise"}
+	}
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/comments") {
+			_ = json.NewEncoder(w).Encode(map[string]any{"title": "t"})
+			return
+		}
+		calls++
+		if r.URL.Query().Get("page") == "1" {
+			_ = json.NewEncoder(w).Encode(full)
+			return
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{
+			{"user": map[string]string{"login": "triplem"}, "body": "approved"}})
+	}))
+	t.Cleanup(srv.Close)
+	issue, err := New(srv.Client(), srv.URL).Issue("triplem/xeno", "330", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 || len(issue.Comments) != pageSize+1 || issue.Comments[pageSize].Body != "approved" {
+		t.Errorf("%d calls read %d comments", calls, len(issue.Comments))
 	}
 }

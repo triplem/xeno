@@ -185,10 +185,8 @@ func sealedP0(t *testing.T) *seal {
 	aimed := append(at, "--phase", walked)
 
 	// A project configuration, so that `intent start` has a tracker to qualify an issue
-	// against and refuses for nothing else.
-	writeUnder(t, root, ".xeno/config/project.yaml",
-		"tracker:\n  adapter: github\n  project: triplem/xeno\n"+
-			"  base_url: https://api.github.com\n")
+	// against and a host that approves it, and refuses for nothing else.
+	writeUnder(t, root, ".xeno/config/project.yaml", approvedTracker(t))
 	// One review rule, so that `review answer` is refused for where the checklist belongs
 	// rather than for an empty rule set, which is a refusal about the fixture.
 	writeUnder(t, root, ".xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml",

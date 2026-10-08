@@ -59,14 +59,9 @@ func (r *Runner) Start(key, phase string) error {
 	return err
 }
 
-// readIssue asks the host for the issue the intent belongs to.
-//
-// The three answers are an issue, a sentence saying why there is none, and an error. The
-// middle one is the common case and is deliberately not an error: no tracker configured, a
-// host that refuses the read, an issue that is not there. The last is a credential that
-// does not work and a host that answered something nobody can read, which the plan's
-// credential table puts at exit code 2 — a token nobody renewed is a different failure
-// from a tracker nobody configured, and the staircase is what separates them.
+// readIssue asks the host for the issue the intent belongs to. It is issueOf for a caller
+// that holds the key of an intent that exists; `intent start` holds the id of one that does
+// not yet, and calls issueOf itself.
 func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 	var p struct {
 		Tracker model.Tracker `yaml:"tracker"`
@@ -74,8 +69,7 @@ func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 	if err := fm.ReadYAML(r.abs(projectConfig), &p); err != nil && !os.IsNotExist(err) {
 		return model.Issue{}, "", refuse("%s cannot be read: %v", projectConfig, err)
 	}
-	t := p.Tracker
-	if t == (model.Tracker{}) {
+	if p.Tracker == (model.Tracker{}) {
 		return model.Issue{}, "no tracker is configured, so no issue was read; the block " +
 			"is optional and the intake is then written from what somebody knows", nil
 	}
@@ -83,6 +77,22 @@ func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 	if err != nil {
 		return model.Issue{}, "", err
 	}
+	return r.issueOf(p.Tracker, qualified)
+}
+
+// issueOf asks the host for the issue a qualified id names, through the tracker block
+// given, which the caller has already found to be there.
+//
+// The three answers are an issue, a sentence saying why there is none, and an error. The
+// middle one is the common case and is deliberately not an error here: a host that refuses
+// the read, an issue that is not there, a machine with no token. What a caller does with
+// it is the caller's — `phase start` prints it and starts the phase, as Appendix A says,
+// and `intent start` refuses on it, as section 12 says, because a start that could not
+// read the approval has nothing to stand on. The last is a credential that does not work
+// and a host that answered something nobody can read, which the plan's credential table
+// puts at exit code 2 — a token nobody renewed is a different failure from a tracker
+// nobody configured, and the staircase is what separates them.
+func (r *Runner) issueOf(t model.Tracker, qualified string) (model.Issue, string, error) {
 	// An intent whose issue lies on a host this project is not configured for is an absence
 	// and not a misconfiguration: `--for` takes a whole qualified id, so an intent may
 	// legitimately belong to an issue the configured adapter cannot reach, and the one
@@ -119,11 +129,20 @@ func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 	return issue, "", nil
 }
 
-// intake is the issue's content as the phase records it: the qualified id, the title and
-// the body, quoted rather than retold. Section 12 asks a phase start to read the issue,
-// and what makes that worth more than the agent's summary of it is precisely that it is
-// not a summary — the words the problem was raised in are the ones a reviewer later
-// compares the requirements against.
+// intake is the issue's content as the phase records it: by what the intent was
+// authorised, then the qualified id, the title and the body, quoted rather than retold.
+// Section 12 asks a phase start to read the issue, and what makes that worth more than the
+// agent's summary of it is precisely that it is not a summary — the words the problem was
+// raised in are the ones a reviewer later compares the requirements against.
+//
+// The sentence above the quote is the one section 12's "Starting an intent" has the intake
+// record: who approved, when and why, and that the intent was started ahead of its
+// milestone where that is so. It says what the issue carries at the moment P0 starts and
+// not what it carried when the intent was started, because intent.yaml has no field for
+// either and section 5 enumerates its fields; the two moments are usually minutes apart,
+// and where they differ the intake says what is true when it is written. Where no
+// approval is found, the sentence says so rather than saying nothing, since an intake
+// silent on the point reads as one written before the clause.
 //
 // Every line of the issue is quoted with a Markdown blockquote marker, which is also what
 // keeps a section anchor inside an issue body from becoming one. An anchor is recognised
@@ -132,7 +151,22 @@ func (r *Runner) readIssue(key string) (model.Issue, string, error) {
 // a character in front of it and the line is text again.
 func intake(qualified string, issue model.Issue, at string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "> **%s** — %s\n>\n", qualified, strings.TrimSpace(issue.Title))
+	if a, missing := issue.Approval(); len(missing) == 0 {
+		if a.Reason == "" {
+			fmt.Fprintf(&b, "Approved by @%s on %s, with no reason beside the word.\n", a.By, a.At)
+		} else {
+			fmt.Fprintf(&b, "Approved by @%s on %s: %s\n", a.By, a.At,
+				strings.Join(strings.Fields(a.Reason), " "))
+		}
+	} else {
+		fmt.Fprintf(&b, "No approval was found on the issue when this phase started: it is "+
+			"missing %s.\n", strings.Join(missing, " and "))
+	}
+	if m := issue.Ahead(); m != nil {
+		fmt.Fprintf(&b, "Started ahead of its milestone, %q, while %q is open.\n",
+			issue.Milestone.Title, m.Title)
+	}
+	fmt.Fprintf(&b, "\n> **%s** — %s\n>\n", qualified, strings.TrimSpace(issue.Title))
 	for _, line := range strings.Split(strings.ReplaceAll(issue.Body, "\r\n", "\n"), "\n") {
 		if line = strings.TrimRight(line, " \t"); line == "" {
 			b.WriteString(">\n")

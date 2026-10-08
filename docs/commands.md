@@ -12,7 +12,7 @@ what with which command and in which order. This page says only what the shapes 
 ```
 usage:
   xeno init           --host HOST [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
-  xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
+  xeno intent start   --for ISSUE [--intent KEY] [--now]   writes intent.yaml
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md
   xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
@@ -67,6 +67,17 @@ belongs to: a key, `176`, or as much of the qualified id as the configuration do
 already hold, up to the whole `github.com/triplem/xeno#176`. The key continues the
 sequence the intents directory holds, and `--intent` names it instead where there is no
 sequence to continue or the key is not the next one.
+
+Where a tracker block is configured, `xeno intent start` reads the issue and refuses one
+nobody approved: the issue has to carry the label `approved` and a comment whose first
+line is the word `approved`, the rest of which is the reason, and the refusal names which
+of the two is missing. An issue with a milestone is held while an earlier open milestone
+exists — by due date, undated ones last — and `--now` starts it anyway. A read that
+cannot happen refuses too: no token in the environment, no such issue, an issue on a host
+the block does not reach. The intake's problem section then records who approved, when
+and why, and that the intent was started ahead of its milestone where it was. A project
+without a tracker block reads nothing and starts the intent as before. Section 12 of the
+process definition says why none of this is a gate.
 
 `xeno learning record` writes the record section 10 owes at the end of every phase, and
 without `--phase` the one an intent owes when it closes. The four keys are the agent's

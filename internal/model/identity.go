@@ -33,9 +33,21 @@ type Auth struct {
 	SecretEnv string `yaml:"secret_env"`
 }
 
-// Issue is an issue's content as the person who raised it wrote it. Title and Body are
-// the host's own two fields and there is no third, because what P0 records is the problem
-// as stated and not a summary of it.
+// Issue is an issue's content as the person who raised it wrote it, and what the host
+// says around it. Title and Body are the host's own two fields and what P0 quotes, as the
+// problem as stated and not a summary of it. The rest is what section 12's "Starting an
+// intent" reads: the labels, the milestone, the comments, and the project's open
+// milestones where the issue carries one. Reading an issue stays one operation of the
+// adapter contract and is up to three calls, which is why they arrive together.
+//
+// The fields past the body are the words both hosts share — a label is a name on either, a
+// milestone a title and a due date, a comment an author, a time and a body — and nothing
+// in them is judged by the adapter. What approval means is Approval below, in the domain,
+// so that two adapters cannot answer it differently (A65).
+//
+// Milestone is a pointer because an issue with none and an answer that carried none are
+// different things, and OpenMilestones is read only where the issue carries a milestone,
+// which is the one case the ordering is asked about.
 //
 // Reason says why there is no content, where the host refused or there is no such issue.
 // Section 12 makes the whole tracker block optional and Appendix A says an absent one
@@ -47,9 +59,120 @@ type Auth struct {
 // port it sits behind both need, and the port package selects the adapters: anything they
 // share has to be somewhere neither of them is.
 type Issue struct {
+	Title          string
+	Body           string
+	Reason         string
+	Labels         []string
+	Milestone      *Milestone
+	Comments       []Comment
+	OpenMilestones []Milestone
+}
+
+// Milestone is what both hosts call one: a title, a due date as the host wrote it, and
+// the number the host orders them by where two share a date. Due is a string and not a
+// time, because one host writes `2026-11-30T00:00:00Z` and the other `2026-11-30`, and
+// both sort as text within one host, which is the only comparison made; empty means the
+// milestone has no date. Closed is true for a milestone whose turn has passed.
+type Milestone struct {
 	Title  string
+	Due    string
+	Number int
+	Closed bool
+}
+
+// Comment is one comment on the issue: who wrote it, when, in the host's own stamp, and
+// what. Nothing about the author's standing is carried, by the decision on #330: the
+// label's right is the check of standing, and the comment is quoted rather than vetted.
+type Comment struct {
+	Author string
+	At     string
 	Body   string
+}
+
+// ApprovedLabel and ApprovedWord are the two halves of approval section 12 fixes: the
+// label an issue carries, and the first line of the comment that carries the reason. They
+// are constants and not configuration, so that a reader of any trail knows what the
+// intake's sentence meant without a project file that may have changed since.
+const (
+	ApprovedLabel = "approved"
+	ApprovedWord  = "approved"
+)
+
+// Approval is who approved an issue, when, and why, read off the last comment whose first
+// line is ApprovedWord. By and At are the host's own author and stamp.
+type Approval struct {
+	By     string
+	At     string
 	Reason string
+}
+
+// Approval answers whether the issue carries both halves. The second return names what is
+// missing, in the words a refusal prints, and is empty where nothing is.
+//
+// The last qualifying comment wins and not the first, because an approval is withdrawn
+// and given again by writing another, and the latest is the one that stands. The first
+// line is compared trimmed, with case ignored and trailing punctuation dropped, so that
+// `Approved.` and `approved:` are not two different words; the reason is everything after
+// that line, trimmed, and may be empty.
+func (i Issue) Approval() (Approval, []string) {
+	var missing []string
+	labelled := false
+	for _, l := range i.Labels {
+		if strings.EqualFold(strings.TrimSpace(l), ApprovedLabel) {
+			labelled = true
+		}
+	}
+	if !labelled {
+		missing = append(missing, "the label "+ApprovedLabel)
+	}
+	var found *Approval
+	for _, c := range i.Comments {
+		first, rest, _ := strings.Cut(strings.TrimSpace(c.Body), "\n")
+		if strings.EqualFold(strings.TrimRight(strings.TrimSpace(first), ".:-"), ApprovedWord) {
+			found = &Approval{By: c.Author, At: c.At, Reason: strings.TrimSpace(rest)}
+		}
+	}
+	if found == nil {
+		missing = append(missing, "a comment whose first line is "+ApprovedWord)
+		return Approval{}, missing
+	}
+	return *found, missing
+}
+
+// Ahead is the open milestone whose turn comes before the issue's, or nil where the issue
+// carries no milestone, its milestone is closed, or its milestone is the earliest open one.
+// The order is section 12's: by due date, a milestone without one last, and by number
+// between equals, so that the answer does not depend on the order the host listed them.
+func (i Issue) Ahead() *Milestone {
+	if i.Milestone == nil || i.Milestone.Closed {
+		return nil
+	}
+	var first *Milestone
+	for k := range i.OpenMilestones {
+		m := &i.OpenMilestones[k]
+		if m.Closed {
+			continue
+		}
+		if first == nil || m.before(*first) {
+			first = m
+		}
+	}
+	if first == nil || first.Title == i.Milestone.Title {
+		return nil
+	}
+	return first
+}
+
+// before orders two milestones: a dated one before an undated one, an earlier date before
+// a later one, and the lower number first between equals.
+func (m Milestone) before(o Milestone) bool {
+	switch {
+	case (m.Due == "") != (o.Due == ""):
+		return m.Due != ""
+	case m.Due != o.Due:
+		return m.Due < o.Due
+	}
+	return m.Number < o.Number
 }
 
 // Found says whether there is content to carry. A title with no body counts, since an

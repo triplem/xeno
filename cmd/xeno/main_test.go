@@ -4,6 +4,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -413,9 +416,7 @@ func TestIntentStartNeedsNoKeyAndSaysWhichOneItChose(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(cfg), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	body := "tracker:\n  adapter: github\n  project: triplem/xeno\n" +
-		"  base_url: https://api.github.com\n"
-	if err := os.WriteFile(cfg, []byte(body), 0o644); err != nil {
+	if err := os.WriteFile(cfg, []byte(approvedTracker(t)), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -423,7 +424,7 @@ func TestIntentStartNeedsNoKeyAndSaysWhichOneItChose(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d, want 0: %s", code, errw)
 	}
-	if !strings.Contains(out, "PROJ-2") || !strings.Contains(out, "github.com/triplem/xeno#176") {
+	if !strings.Contains(out, "PROJ-2") || !strings.Contains(out, "/triplem/xeno#176") {
 		t.Errorf("the output names neither the key nor the id it wrote: %q", out)
 	}
 
@@ -436,6 +437,29 @@ func TestIntentStartNeedsNoKeyAndSaysWhichOneItChose(t *testing.T) {
 	if out != "" {
 		t.Errorf("a refusal wrote to standard output: %q", out)
 	}
+}
+
+// approvedTracker is a tracker block pointed at a fake host answering an approved issue,
+// with the token it names set. From #330 a tracker block means `intent start` reads the
+// issue and starts only on an approval, so every fixture that starts one needs a host
+// behind the block — and one that is not api.github.com, which a test must never reach.
+func approvedTracker(t *testing.T) string {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/comments") {
+			_ = json.NewEncoder(w).Encode([]map[string]any{{
+				"user": map[string]string{"login": "m"}, "created_at": "2026-10-08T15:10:28Z",
+				"body": "approved\n\nwanted"}})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"title": "t", "body": "b",
+			"labels": []map[string]string{{"name": "approved"}}})
+	}))
+	t.Cleanup(srv.Close)
+	t.Setenv("XENO_TRACKER_TOKEN", "a-token")
+	return "tracker:\n  adapter: github\n  project: triplem/xeno\n" +
+		"  base_url: " + srv.URL + "\n" +
+		"  auth: { scheme: token, secret_env: XENO_TRACKER_TOKEN }\n"
 }
 
 // Without --for there is nothing to derive the id from, and the refusal names the flag.

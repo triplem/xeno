@@ -1557,7 +1557,17 @@ func (r *Runner) rewriteStatus(key, phase string, g *model.Gate) (*model.Gate, e
 // hand written intent.yaml is not touched by this and goes on working: seventy-nine of
 // them exist, they sit inside `artifacts_hash`, and rewriting one changes every verdict
 // that sealed it.
-func (r *Runner) IntentStart(key, issue string) (*model.Intent, error) {
+//
+// And it refuses an issue nobody approved, which is section 12's "Starting an intent" and
+// the one check of this process that cannot be a gate: whether the work was wanted is a
+// question only the host can answer, and a gate never asks the host. With a tracker block
+// the issue is read, and the intent starts only where it carries the label and the
+// comment, and where no open milestone is ahead of its own unless `now` says to start it
+// anyway. Every answer but an issue — no token, no such issue, a host the block does not
+// reach — is a refusal here where `phase start` carries on, because a start that could
+// not read the approval has nothing to stand on. A project with no block reads nothing
+// and starts the intent as it always has (#330).
+func (r *Runner) IntentStart(key, issue string, now bool) (*model.Intent, error) {
 	var p model.Project
 	// Read before the key is derived, so that a repository with no configuration is told
 	// about the field it is missing rather than about the sequence it has.
@@ -1578,12 +1588,50 @@ func (r *Runner) IntentStart(key, issue string) (*model.Intent, error) {
 		return nil, refuse("%s exists already; an intent is created once, and what it is "+
 			"for is in %s", rel, rel+"/intent.yaml")
 	}
+	// After the cheap refusals and before anything is written: the one network call of
+	// this command, made only where there is a block to make it through.
+	if p.Tracker != (model.Tracker{}) {
+		if err := r.approved(p.Tracker, id, now); err != nil {
+			return nil, err
+		}
+	}
 	in := &model.Intent{
 		Intent: id, Key: key, Status: "in-progress", Created: r.stamp(),
 		SchemaVersion: model.SchemaVersion,
 		RunnerVersion: model.RunnerVersion, PluginVersion: plugin.Version(r.Root),
 	}
 	return in, fm.WriteYAML(r.abs(rel+"/intent.yaml"), in)
+}
+
+// approved reads the issue and refuses unless a person approved it. The three refusals
+// name the thing: what the issue is missing, which milestone is ahead of its own, or why
+// the issue could not be read at all. The wording is the terminal's, since a refusal is
+// never re-run and the sentence on the screen is the whole of what the person gets.
+func (r *Runner) approved(t model.Tracker, id string, now bool) error {
+	issue, note, err := r.issueOf(t, id)
+	if err != nil {
+		return err
+	}
+	// A host that answered 404 or 403 is the third shape of nothing: the adapter puts its
+	// sentence on the issue rather than beside it, so that `phase start` can print one
+	// field, and here it is the same refusal as a read that never went out.
+	if note == "" && issue.Reason != "" {
+		note = issue.Reason
+	}
+	if note != "" {
+		return refuse("the intent is not started, because starting one reads the issue's "+
+			"approval and %s", note)
+	}
+	if _, missing := issue.Approval(); len(missing) > 0 {
+		return refuse("%s is not approved: it is missing %s. An issue becomes an intent "+
+			"only where a person approved it, with the label and a comment whose first "+
+			"line is the word %s", id, strings.Join(missing, " and "), model.ApprovedWord)
+	}
+	if m := issue.Ahead(); m != nil && !now {
+		return refuse("%s is for milestone %q, and %q is open ahead of it; --now starts "+
+			"it anyway, and the intake will say so", id, issue.Milestone.Title, m.Title)
+	}
+	return nil
 }
 
 // nextKey reads the sequence off the directory. A missing intents directory is the same

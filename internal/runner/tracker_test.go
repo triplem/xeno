@@ -4,6 +4,7 @@ package runner
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -25,13 +26,32 @@ type fakeHost struct {
 	status   int
 	asked    []string
 	comments []string
+	// What the host says around the issue, in this host's own JSON: the labels and the
+	// milestone on the issue, the comments under it, and the repository's open milestones.
+	// Nil is an issue with none of them, which is what every test before #330 served.
+	labels     []string
+	milestone  map[string]any
+	discussion []map[string]any
+	milestones []map[string]any
+}
+
+// approved is the fake host an intent can be started against: the label and a comment
+// whose first line is the word, which is the whole of what section 12 asks for.
+func approved(issue map[string]string) *fakeHost {
+	return &fakeHost{issue: issue, labels: []string{"approved"},
+		discussion: []map[string]any{{
+			"user":       map[string]string{"login": "maintainer"},
+			"created_at": "2026-10-08T15:10:28Z",
+			"body":       "approved\n\nbecause the shape was decided on the issue",
+		}}}
 }
 
 func (h *fakeHost) serve(t *testing.T) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.asked = append(h.asked, r.Method+" "+r.URL.Path)
-		if strings.HasSuffix(r.URL.Path, "/comments") {
+		switch {
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/comments"):
 			var in map[string]string
 			_ = json.NewDecoder(r.Body).Decode(&in)
 			h.comments = append(h.comments, in["body"])
@@ -39,15 +59,34 @@ func (h *fakeHost) serve(t *testing.T) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]string{
 				"html_url": "https://example.invalid/comment/1"})
 			return
-		}
-		if h.status != 0 {
+		case h.status != 0:
 			w.WriteHeader(h.status)
 			return
+		case strings.HasSuffix(r.URL.Path, "/comments"):
+			_ = json.NewEncoder(w).Encode(append([]map[string]any{}, h.discussion...))
+			return
+		case strings.HasSuffix(r.URL.Path, "/milestones"):
+			_ = json.NewEncoder(w).Encode(append([]map[string]any{}, h.milestones...))
+			return
 		}
-		_ = json.NewEncoder(w).Encode(h.issue)
+		out := map[string]any{"labels": []map[string]string{}, "milestone": h.milestone}
+		for k, v := range h.issue {
+			out[k] = v
+		}
+		for _, l := range h.labels {
+			out["labels"] = append(out["labels"].([]map[string]string), map[string]string{"name": l})
+		}
+		_ = json.NewEncoder(w).Encode(out)
 	}))
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+// hostOf is the tracker host a qualified id carries for a fake server's address, which
+// is the address without its scheme: the fixture's block points `base_url` there and A78
+// derives the host from it.
+func hostOf(baseURL string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(baseURL, "http://"), "https://")
 }
 
 // tracker writes a complete tracker block pointing at the given address, and sets the
@@ -88,7 +127,10 @@ func TestStartingTheIntakeCarriesTheIssueIntoTheProblemSection(t *testing.T) {
 	if started.Section != IntakeProblem {
 		t.Fatalf("nothing was written: section %q, note %q", started.Section, started.Note)
 	}
-	if len(h.asked) != 1 || h.asked[0] != "GET /repos/triplem/xeno/issues/288" {
+	// Two calls and not three: the issue and its comments, which section 12 makes one
+	// operation, and no milestones, since the issue carries none.
+	if len(h.asked) != 2 || h.asked[0] != "GET /repos/triplem/xeno/issues/288" ||
+		h.asked[1] != "GET /repos/triplem/xeno/issues/288/comments" {
 		t.Fatalf("the host was asked %v", h.asked)
 	}
 	// The section as it lies on disk, through the anchors, because what the artifact records
@@ -205,15 +247,218 @@ func TestOnlyTheIntakeReadsTheIssue(t *testing.T) {
 	f.intentOn(srv.URL, "288")
 
 	f.must(f.r.Start(key, "00-intake"))
-	if len(h.asked) != 1 {
+	// Two calls, the issue and its comments, which is the one read section 12 names.
+	if len(h.asked) != 2 {
 		t.Fatalf("the intake asked the host %d times: %v", len(h.asked), h.asked)
 	}
 	// What the later start does is beside the point and is not asserted: this fixture has no
 	// verdict on P0, so it is refused for that. What is asserted is that it refuses without
 	// having asked the host, because the read is the intake's and not every phase's.
 	_, _ = f.r.StartPhase(key, "01-requirements")
-	if len(h.asked) != 1 {
+	if len(h.asked) != 2 {
 		t.Fatalf("starting a later phase asked the host again: %v", h.asked)
+	}
+}
+
+// ---- section 12's "Starting an intent": an issue nobody approved does not become one
+
+// The label alone and the comment alone are each refused, and the refusal names the half
+// that is missing: a label carries no reason, and a comment can be written by anybody.
+func TestAnIssueNobodyApprovedDoesNotBecomeAnIntent(t *testing.T) {
+	cases := []struct {
+		name string
+		host *fakeHost
+		want string
+	}{
+		{"neither", &fakeHost{issue: map[string]string{"title": "t", "body": "b"}},
+			"the label approved and a comment whose first line is approved"},
+		{"the label alone", &fakeHost{issue: map[string]string{"title": "t"},
+			labels: []string{"approved"}}, "missing a comment whose first line is approved"},
+		{"the comment alone", &fakeHost{issue: map[string]string{"title": "t"},
+			discussion: approved(nil).discussion}, "missing the label approved"},
+		{"a comment that only contains the word", &fakeHost{issue: map[string]string{"title": "t"},
+			labels: []string{"approved"}, discussion: []map[string]any{{
+				"user": map[string]string{"login": "m"}, "body": "this could be approved later"}}},
+			"missing a comment whose first line is approved"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.tracker(c.host.serve(t).URL)
+			_, err := f.r.IntentStart("NEW-1", "330", false)
+			var ref *Refusal
+			if !errors.As(err, &ref) || !strings.Contains(ref.Reason, c.want) {
+				t.Fatalf("got %v, want a refusal saying %q", err, c.want)
+			}
+			if fm.Exists(filepath.Join(f.root, model.IntentDir("NEW-1"))) {
+				t.Error("a refused start left a directory behind")
+			}
+		})
+	}
+}
+
+// Both halves present, the intent starts exactly as it did before the clause.
+func TestAnApprovedIssueBecomesAnIntent(t *testing.T) {
+	f := newFixture(t)
+	h := approved(map[string]string{"title": "t", "body": "b"})
+	srv := h.serve(t)
+	f.tracker(srv.URL)
+	in, err := f.r.IntentStart("NEW-1", "330", false)
+	f.must(err)
+	if in.Intent != hostOf(srv.URL)+"/triplem/xeno#330" || in.Status != "in-progress" {
+		t.Errorf("wrote %+v", in)
+	}
+}
+
+// A milestone holds the issue while an earlier one is open, by due date with undated ones
+// last; --now starts it anyway; the earliest open milestone and a closed one hold nothing.
+func TestAMilestoneHoldsTheIssueUntilItsTurn(t *testing.T) {
+	open := []map[string]any{
+		{"title": "later", "number": 3, "state": "open"},
+		{"title": "1.1", "due_on": "2026-12-31T00:00:00Z", "number": 2, "state": "open"},
+		{"title": "1.0", "due_on": "2026-11-30T00:00:00Z", "number": 1, "state": "open"},
+	}
+	on := func(title string, number int, state string) map[string]any {
+		return map[string]any{"title": title, "number": number, "state": state}
+	}
+	cases := []struct {
+		name      string
+		milestone map[string]any
+		now       bool
+		held      string
+	}{
+		{"the second milestone", on("1.1", 2, "open"), false, `"1.0" is open ahead of it`},
+		{"the undated one", on("later", 3, "open"), false, `"1.0" is open ahead of it`},
+		{"the second, with --now", on("1.1", 2, "open"), true, ""},
+		{"the earliest", on("1.0", 1, "open"), false, ""},
+		{"a closed one", on("0.9", 0, "closed"), false, ""},
+		{"none", nil, false, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t)
+			h := approved(map[string]string{"title": "t"})
+			h.milestone, h.milestones = c.milestone, open
+			f.tracker(h.serve(t).URL)
+			_, err := f.r.IntentStart("NEW-1", "330", c.now)
+			var ref *Refusal
+			switch {
+			case c.held == "" && err != nil:
+				t.Fatalf("held: %v", err)
+			case c.held != "" && (!errors.As(err, &ref) || !strings.Contains(ref.Reason, c.held)):
+				t.Fatalf("got %v, want a refusal saying %s", err, c.held)
+			}
+			// The milestones are listed only where the issue carries one: a read nobody
+			// consults is a call for nothing.
+			listed := false
+			for _, a := range h.asked {
+				listed = listed || strings.HasSuffix(a, "/milestones")
+			}
+			if listed != (c.milestone != nil) {
+				t.Errorf("the milestones were listed: %v, for an issue with milestone %v", listed, c.milestone)
+			}
+		})
+	}
+}
+
+// Every answer but an issue is a refusal here, where phase start carries on: a start that
+// could not read the approval has nothing to stand on. The missing token is the one that
+// differs most from phase start, which has always started without one.
+func TestAReadThatCannotHappenDoesNotStartTheIntent(t *testing.T) {
+	t.Run("no token", func(t *testing.T) {
+		f := newFixture(t)
+		h := approved(map[string]string{"title": "t"})
+		f.tracker(h.serve(t).URL)
+		t.Setenv("XENO_TRACKER_TOKEN", "")
+		_, err := f.r.IntentStart("NEW-1", "330", false)
+		var ref *Refusal
+		if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "XENO_TRACKER_TOKEN") {
+			t.Fatalf("got %v, want a refusal naming the variable", err)
+		}
+		if len(h.asked) != 0 {
+			t.Errorf("a call went out without a token: %v", h.asked)
+		}
+	})
+	for _, status := range []int{http.StatusNotFound, http.StatusForbidden} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			f := newFixture(t)
+			f.tracker((&fakeHost{status: status}).serve(t).URL)
+			_, err := f.r.IntentStart("NEW-1", "330", false)
+			var ref *Refusal
+			if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "not started") {
+				t.Fatalf("%d: got %v, want a refusal", status, err)
+			}
+		})
+	}
+	t.Run("another host", func(t *testing.T) {
+		f := newFixture(t)
+		h := approved(map[string]string{"title": "t"})
+		f.tracker(h.serve(t).URL)
+		_, err := f.r.IntentStart("NEW-1", "git.example/group/proj#4", false)
+		var ref *Refusal
+		if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "cannot reach") {
+			t.Fatalf("got %v, want a refusal naming the host", err)
+		}
+		if len(h.asked) != 0 {
+			t.Errorf("a call went out for an issue this adapter cannot reach: %v", h.asked)
+		}
+	})
+	t.Run("a rejected token is an error and not a refusal", func(t *testing.T) {
+		f := newFixture(t)
+		f.tracker((&fakeHost{status: http.StatusUnauthorized}).serve(t).URL)
+		_, err := f.r.IntentStart("NEW-1", "330", false)
+		var ref *Refusal
+		if err == nil || errors.As(err, &ref) {
+			t.Fatalf("got %v, want an error: a token the host rejects is exit 2, not 1", err)
+		}
+	})
+}
+
+// The intake says by what it was authorised, above the quote: who, when and why, read at
+// the moment P0 starts, and that the intent is ahead of its milestone where it still is.
+func TestTheIntakeSaysByWhatItWasAuthorised(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	h := approved(map[string]string{"title": "t", "body": "b"})
+	h.milestone = map[string]any{"title": "1.1", "number": 2, "state": "open"}
+	h.milestones = []map[string]any{
+		{"title": "1.0", "due_on": "2026-11-30T00:00:00Z", "number": 1, "state": "open"},
+		{"title": "1.1", "due_on": "2026-12-31T00:00:00Z", "number": 2, "state": "open"},
+	}
+	srv := h.serve(t)
+	f.tracker(srv.URL)
+	f.intentOn(srv.URL, "330")
+
+	f.must(f.r.Start(key, "00-intake"))
+	got := f.section("00-intake", IntakeProblem)
+	for _, want := range []string{
+		"Approved by @maintainer on 2026-10-08T15:10:28Z: because the shape was decided on the issue",
+		`Started ahead of its milestone, "1.1", while "1.0" is open.`,
+		"> **" + hostOf(srv.URL) + "/triplem/xeno#330** — t",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the intake does not say %q:\n%s", want, got)
+		}
+	}
+	if !strings.Contains(got, "Approved by") || strings.Index(got, "Approved by") > strings.Index(got, "> **") {
+		t.Errorf("the sentence is not above the quote:\n%s", got)
+	}
+}
+
+// And where it finds none, it says so rather than nothing: an intake silent on the point
+// reads as one written before the clause.
+func TestTheIntakeSaysWhereNoApprovalWasFound(t *testing.T) {
+	f := newFixture(t)
+	f.templated()
+	h := &fakeHost{issue: map[string]string{"title": "t", "body": "b"}}
+	srv := h.serve(t)
+	f.tracker(srv.URL)
+	f.intentOn(srv.URL, "330")
+
+	f.must(f.r.Start(key, "00-intake"))
+	got := f.section("00-intake", IntakeProblem)
+	if !strings.Contains(got, "No approval was found on the issue when this phase started: it is missing the label approved and a comment whose first line is approved.") {
+		t.Errorf("the intake does not say what was missing:\n%s", got)
 	}
 }
 

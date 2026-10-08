@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#330
+phase: 00-intake
+created: "2026-10-08T17:37:47Z"
+schema_version: "1.0"
+runner_version: dev+e22a533.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The issue's answer, the decision this intent rests on, was a comment, and phase start quoted the body alone; the same shape as XENO-0277's P0 learning, one intent later, read by hand again.
+      proposal: Carry the comments into the intake beside the body now that the adapter reads them for the approval; one decision, filed as its own issue.
+      target: internal/runner/tracker.go

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#330
+phase: 04-verification
+created: "2026-10-08T18:04:48Z"
+schema_version: "1.0"
+runner_version: dev+8fb365d.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: gate verify over 547 verdicts takes 34-36 s on main's binary and on this one, over either tree; XENO-0266 measured 1.6-1.9 s over 477 verdicts two days earlier, so the per-verdict cost moved by an order of magnitude between 2026-10-06 and e22a533 and nothing noticed, because no check reads the figure.
+      proposal: 'Record the gate verify timing on #117 with every intent, as the memory already asks, and bisect the two days of merges for the one that moved it; a CI step that prints the timing beside the verdict count would have made the jump visible on the pull request that caused it.'
+      target: .github/workflows

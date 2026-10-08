@@ -5,9 +5,12 @@ package mcp
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -239,6 +242,23 @@ func TestAQueryWithNoIndexIsAnAnswerAndNotAFailure(t *testing.T) {
 
 const fixtureKey = "XENO-0001"
 
+// approvedHost is one fake host for every fixture of this package, answering an approved
+// issue. One and not one per fixture, because the qualified intent id carries the host it
+// was derived from, and two fixtures on two ports would leave two intents with different
+// ids — which the test comparing the routes by their artifacts would then read as the
+// routes differing. It is never closed; it lives as long as the test binary does.
+var approvedHost = sync.OnceValue(func() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/comments") {
+			_ = json.NewEncoder(w).Encode([]map[string]any{{
+				"user": map[string]string{"login": "m"}, "body": "approved\n\nwanted"}})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"title": "t", "body": "b",
+			"labels": []map[string]string{{"name": "approved"}}})
+	}))
+})
+
 // fixture is a repository with a vendored plugin, an intent and a started first phase, which
 // is the state a phase's writes happen in whichever way they are made.
 type fixture struct {
@@ -257,9 +277,25 @@ func drive(t *testing.T) *fixture {
 		TrackerKey: "triplem/xeno", Language: "en"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.IntentStart(fixtureKey, "285"); err != nil {
+	// From #330 a tracker block means `intent start` reads the issue and starts only on an
+	// approval, so the block init wrote is pointed at a host that answers one.
+	srv := approvedHost()
+	t.Setenv("XENO_TRACKER_TOKEN", "a-token")
+	cfg := filepath.Join(root, ".xeno", "config", "project.yaml")
+	b, err := os.ReadFile(cfg)
+	if err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(cfg, bytes.ReplaceAll(b, []byte("https://api.github.com"), []byte(srv.URL)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.IntentStart(fixtureKey, "285", false); err != nil {
+		t.Fatal(err)
+	}
+	// And no token from here on, so that the phase start reads nothing: the two routes are
+	// compared by the artifacts they leave, and an intake quoting an issue from a host whose
+	// port differs per fixture would differ for a reason that is not the route's.
+	t.Setenv("XENO_TRACKER_TOKEN", "")
 	// Written here because no command writes it: `xeno intent start` creates the intent and
 	// the suggestion it prints says the register is written by hand. An assumption recorded
 	// through either route needs it to exist, and the two routes need the same file.
