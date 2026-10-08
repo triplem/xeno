@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 02-design
+created: "2026-10-08T13:39:22Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc
+plugin_version: 0.0.0-dev
+learnings:
+    - category: template
+      observation: 'The reduced section set makes the design template require nothing, and a phase that wrote no section still could not finish: G-Schema requires output.md to exist, so the floor is one section per phase rather than zero.'
+      proposal: 'Say in the candidate''s README, and in whatever decides #117, that the lever''s floor is one section per phase: a template whose required set is empty still owes an artifact, and the phase then chooses which optional section carries it.'
+      target: examples/templates/README.md
