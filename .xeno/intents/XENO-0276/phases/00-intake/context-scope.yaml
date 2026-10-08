@@ -1,0 +1,15 @@
+intent: github.com/triplem/xeno#325
+phase: 00-intake
+created: "2026-10-08T13:50:47Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+include:
+    - .xeno/plugin/skills/xeno-review/SKILL.md
+    - internal/runner/review.go
+    - internal/gates/policy_test.go
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 3
+    bytes: 24853

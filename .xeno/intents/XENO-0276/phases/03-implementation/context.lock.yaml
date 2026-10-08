@@ -1,0 +1,32 @@
+intent: github.com/triplem/xeno#325
+phase: 03-implementation
+created: "2026-10-08T13:51:51Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 0103582c361c96f4a028f6f8810c915f1dbc549711aa57877a98c94477d8bfdd
+evidence_source: ci
+template_source: project
+repo_commit: 042c9bca5efd9824171f991f3ddae64293bc2c5b
+files:
+    - path: .xeno/plugin/skills/xeno-review/SKILL.md
+      sha256: 52d09bef4dc9a9432c5db900ba39cb7f65cc6bd1c65423cb73eac3d77e1f3fef
+      bytes: 4034
+    - path: internal/runner/review.go
+      sha256: 882676a37310c3d72975fb2e7707dc857f906e95c47d65a9e749fa4ef40e59b5
+      bytes: 9593
+    - path: internal/gates/policy_test.go
+      sha256: 0b12a8bff442371a1a790ec10bbba1ee214797c0d79349af694e4ae8ad7fde8c
+      bytes: 11959
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 396d5a10cfdd27caddc305737455a9de3bce393acb997ead7058b9d0d723bea7

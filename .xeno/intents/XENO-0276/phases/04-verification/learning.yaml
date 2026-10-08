@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#325
+phase: 04-verification
+created: "2026-10-08T13:53:09Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A negative result from a sabotage is only evidence if the sabotage is visible to the check: renaming a command to xeno review lensX left the surface test green, because its pattern reads [a-z-]+ and stopped at lens.'
+      proposal: Where a phase proves a test by breaking something, the verification section should say which part of the check saw the break, and the pattern that reads a skill's commands should be case-insensitive or report a mixed-case name as unknown.
+      target: internal/plugin/plugin_test.go
