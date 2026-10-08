@@ -1,0 +1,7 @@
+intent: github.com/triplem/xeno#324
+key: XENO-0275
+status: in-progress
+created: "2026-10-08T13:45:30Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev

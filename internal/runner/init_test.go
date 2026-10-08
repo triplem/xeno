@@ -375,6 +375,37 @@ func TestEveryWrapperNamesTheRunnerImage(t *testing.T) {
 	}
 }
 
+// The uid a container job runs as is the adopter's to set and nobody else's: the host mounts
+// its work directory in and chowns nothing, actions/checkout runs inside the container, and a
+// hosted runner happens to match the image at 1001 while a self-hosted one may not. So the
+// GitHub wrapper carries the knob commented, with its reason, and the GitLab wrapper carries
+// nothing: that executor leaves the build directory world writable, so a line about a uid
+// there would describe a problem the host does not have (#324).
+func TestOnlyTheGitHubWrapperOffersTheContainerUser(t *testing.T) {
+	const line = "# options: --user 1001"
+	for _, id := range WrapperHosts() {
+		_, body, err := Wrapper("", id, "1.2.3")
+		if err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		switch id {
+		case "github":
+			if !strings.Contains(body, line) {
+				t.Errorf("the github wrapper does not offer %q:\n%s", line, body)
+			}
+			// Commented, and the assertion says so: an uncommented --user would carry a uid
+			// this repository cannot know, right on one runner and wrong on every other.
+			if strings.Contains(body, "\n      options:") {
+				t.Error("the github wrapper sets a container user rather than offering one")
+			}
+		default:
+			if strings.Contains(body, "--user") {
+				t.Errorf("%s: the wrapper names a container user and that host needs none", id)
+			}
+		}
+	}
+}
+
 // CI_MERGE_REQUEST_DIFF_BASE_SHA is populated only in a merge request pipeline, so a
 // GitLab wrapper that ran on a branch pipeline would pass an empty base. The scoping is
 // what makes the range reachable, which is why it is asserted and not left to the reader.
