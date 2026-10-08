@@ -53,6 +53,8 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1`, v7.0.1 | github.com |
 | `actions/setup-go` | `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e`, v7.0.0 | github.com |
 | Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
+| `actions/setup-node` | `820762786026740c76f36085b0efc47a31fe5020`, v7.0.0 | github.com |
+| Node toolchain | 24, from `node-version` in `audit.yml` and `release.yml` via `setup-node`, which resolves it to the newest 24.x | github.com, nodejs.org |
 | `cycjimmy/semantic-release-action` | `b12c8f6015dc215fe37bc154d4ad456dd3833c90`, v6.0.0 | github.com |
 | semantic-release | 25.0.9 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
