@@ -1,0 +1,19 @@
+intent: github.com/triplem/xeno#95
+phase: 00-intake
+created: "2026-10-08T13:36:43Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc
+plugin_version: 0.0.0-dev
+include:
+    - .github/workflows/**
+    - docs/supply-chain.md
+    - internal/model/supply_chain_test.go
+    - go.mod
+exclude:
+    - .xeno/intents/**
+links:
+    - component: docs/supply-chain.md
+      docs: docs/supply-chain.md
+budget:
+    files: 9
+    bytes: 91044

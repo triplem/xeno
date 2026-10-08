@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 00-intake
+created: "2026-10-08T13:36:43Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The intake''s problem section was written by phase start from the issue, and the first thing the phase had to do was extend it rather than compose it: the quote is the problem as stated and the analysis goes under it.'
+      proposal: The intake skill should say that at P0 the problem section already exists where a tracker is configured, and that the phase appends its reading of the issue rather than replacing the quote.
+      target: .xeno/plugin/skills/xeno-intake/SKILL.md

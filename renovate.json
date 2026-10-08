@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "automerge": false,
+  "prCreation": "approval",
+  "enabledManagers": ["github-actions", "npm", "gomod"],
+  "packageRules": [
+    {
+      "description": "Every action in .github/workflows/ is pinned to a commit sha and every one of those shas is also a row of docs/supply-chain.md, which internal/model/supply_chain_test.go holds against the tree in both directions. Renovate has no reader for a Markdown table, so an update it opened on its own would fail verify on the page rather than on the bump, and whoever read that failure would be debugging the wrong file. These therefore reach the dashboard and wait for a person, who moves the row with the sha.",
+      "matchManagers": ["github-actions"],
+      "dependencyDashboardApproval": true,
+      "pinDigests": true
+    },
+    {
+      "description": "The npm tools the workflows install are pinned to exact versions and carry rows of the same page, for the same reason.",
+      "matchManagers": ["npm"],
+      "dependencyDashboardApproval": true,
+      "rangeStrategy": "pin"
+    },
+    {
+      "description": "One module dependency, go.yaml.in/yaml/v3, vendored. A bump has to be vendored again in the same commit, which is a person's act, and adding a second dependency is a decision rather than a step.",
+      "matchManagers": ["gomod"],
+      "dependencyDashboardApproval": true,
+      "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": false,
+    "description": "The one case that does not wait for the dashboard: an advisory arrives without anything in the repository moving, and CONTRIBUTING.md puts the work it names before the next merge rather than after the next feature."
+  }
+}

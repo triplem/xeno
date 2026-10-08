@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 03-implementation
+created: "2026-10-08T13:40:07Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A dependency bot cannot keep this repository green on its own: a bumped pin and its row in docs/supply-chain.md have to move together, and nothing but a person can move a Markdown row.'
+      proposal: Where the page is eventually derived from the tree rather than maintained beside it, the dashboard approval added here stops being necessary; until then the constraint belongs in renovate.json's own descriptions, which is where this intent put it.
+      target: docs/supply-chain.md
