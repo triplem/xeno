@@ -11,7 +11,7 @@ what with which command and in which order. This page says only what the shapes 
 
 ```
 usage:
-  xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
+  xeno init           --host HOST [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
   xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md

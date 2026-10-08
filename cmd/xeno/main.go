@@ -25,7 +25,7 @@ import (
 )
 
 const usage = `usage:
-  xeno init           [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
+  xeno init           --host HOST [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
   xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md
@@ -177,15 +177,21 @@ func run(args []string, out, errw io.Writer) int {
 	if len(args) >= 1 && args[0] == "mcp" {
 		return cmdMCP(args[1:], out, errw)
 	}
-	if len(args) < 2 && (len(args) == 0 || args[0] != "init") {
+	// Commands are two words except init, which is one. The split is where the flags
+	// begin, not a property of the name, and the one word case is decided here rather
+	// than corrected afterwards: the guard used to admit `init` with a single argument
+	// and the line that split the name then indexed args[1], so the first command
+	// anybody runs in an empty repository answered with a stack trace (#303).
+	var name string
+	var rest []string
+	switch {
+	case len(args) >= 1 && args[0] == "init":
+		name, rest = "init", args[1:]
+	case len(args) >= 2:
+		name, rest = args[0]+" "+args[1], args[2:]
+	default:
 		fmt.Fprintln(errw, usage)
 		return 2
-	}
-	// Commands are two words except init, which is one. The split is where the flags
-	// begin, not a property of the name.
-	name, rest := args[0]+" "+args[1], args[2:]
-	if args[0] == "init" {
-		name, rest = "init", args[1:]
 	}
 	c, ok := commands[name]
 	if !ok {
@@ -326,6 +332,13 @@ func cmdInit(o *opts) int {
 	})
 	if err != nil {
 		fmt.Fprintln(o.errw, err)
+		// A missing --host is where init could not run at all rather than refused to act:
+		// it is the one flag the command cannot default, so it belongs on the same step of
+		// the staircase as the --intent the dispatch asks for above. Init's own message
+		// names the two hosts it knows, so the reason is written in one place.
+		if strings.TrimSpace(o.host) == "" {
+			return 2
+		}
 		return 1
 	}
 	printInit(o.out, res)

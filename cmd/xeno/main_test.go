@@ -298,6 +298,59 @@ func TestInitIsOneWordAndTheRestAreTwo(t *testing.T) {
 	}
 }
 
+// completeWithoutArguments are the commands whose own words are a whole invocation, with
+// the reason each one is, because the test below otherwise reads every exit 0 as a command
+// that acted on arguments it was not given. A command missing from here is not excused by
+// being new: the test fails, and whoever added it either gives it a reason or has found
+// that it does something when asked nothing.
+var completeWithoutArguments = map[string]string{
+	"intent status": "lists the last ten intents by creation, and none is an empty list",
+	"gate verify":   "recomputes every verdict there is, which in a tree holding none is none",
+	"cost turn":     "reads a hook's JSON on standard input, so the arguments are not where its input comes from",
+}
+
+// Every command's own words with nothing after them. `xeno init` panicked this way for as
+// long as the command existed, because the dispatch admitted the one word form and then
+// indexed the second word, and no test invoked it bare: every fixture passes the --host it
+// needs (#303). The names come out of the dispatch table rather than a list written here,
+// so the next one word command is covered by having been added to the table.
+func TestEveryCommandNameAloneIsRefused(t *testing.T) {
+	for name := range completeWithoutArguments {
+		if _, ok := commands[name]; !ok {
+			t.Errorf("%q is excused from needing arguments and the dispatch table has no such command", name)
+		}
+	}
+	for name := range commands {
+		t.Run(name, func(t *testing.T) {
+			// A panic is caught and reported against the name that caused it, because a
+			// stack trace is the answer this test exists to forbid and an uncaught one
+			// ends the package's whole run rather than this subtest.
+			defer func() {
+				if r := recover(); r != nil {
+					t.Fatalf("xeno %s panicked: %v", name, r)
+				}
+			}()
+			code, out, errw := invoke(t, strings.Fields(name)...)
+			if why, ok := completeWithoutArguments[name]; ok {
+				if code != 0 {
+					t.Errorf("xeno %s exited %d and the list here says it needs nothing, because it %s:\n%s%s",
+						name, code, why, out, errw)
+				}
+				return
+			}
+			switch {
+			case code == 0:
+				t.Errorf("xeno %s did something with no arguments at all:\n%s%s", name, out, errw)
+			case code != 1 && code != 2:
+				t.Errorf("xeno %s exited %d, and the staircase has 1 and 2 for this:\n%s%s",
+					name, code, out, errw)
+			case strings.TrimSpace(out+errw) == "":
+				t.Errorf("xeno %s exited %d and said nothing, so there is no reason to read", name, code)
+			}
+		})
+	}
+}
+
 // The positional argument is taken off the front before the flag set sees it, because Go's flag
 // package stops at the first argument that is not a flag. Absent, it must not become a silent empty
 // string that something refuses two layers down without saying why.
