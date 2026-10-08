@@ -13,7 +13,28 @@ import (
 // than a fixture, so that the set itself is what is being checked.
 const repoRoot = "../.."
 
+// shippedOnly is a root holding this repository's plugin templates and no project ones, so
+// that Load resolves to the shipped copy whatever .xeno/config/templates happens to carry.
+// This repository now carries an override of its own, for #117's measurement, and the
+// subject of the test below is the shipped set rather than what this project resolves to.
+func shippedOnly(t *testing.T) string {
+	t.Helper()
+	abs, err := filepath.Abs(filepath.Join(repoRoot, pluginDir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, filepath.Dir(pluginDir)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(abs, filepath.Join(root, pluginDir)); err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
 func TestEveryShippedTemplateHasBothBundles(t *testing.T) {
+	root := shippedOnly(t)
 	entries, err := os.ReadDir(filepath.Join(repoRoot, pluginDir))
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +44,7 @@ func TestEveryShippedTemplateHasBothBundles(t *testing.T) {
 	}
 	for _, e := range entries {
 		for _, lang := range []string{"en", "de"} {
-			r, err := Load(repoRoot, e.Name(), lang)
+			r, err := Load(root, e.Name(), lang)
 			if err != nil {
 				t.Errorf("%s in %s: %v", e.Name(), lang, err)
 				continue
@@ -42,9 +63,10 @@ func TestEveryShippedTemplateHasBothBundles(t *testing.T) {
 // package is really about. A fifth means arguing another away, and a test is where that
 // argument has to happen.
 func TestTheRequiredSectionBudgetHolds(t *testing.T) {
+	root := shippedOnly(t)
 	entries, _ := os.ReadDir(filepath.Join(repoRoot, pluginDir))
 	for _, e := range entries {
-		r, err := Load(repoRoot, e.Name(), "en")
+		r, err := Load(root, e.Name(), "en")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,11 +90,11 @@ func TestReRenderingInAnotherLanguageChangesOnlyTheHeadings(t *testing.T) {
 		"alternatives": "The exciting one.",
 		"impact":       "Two packages.",
 	}
-	en, err := Load(repoRoot, "design", "en")
+	en, err := Load(shippedOnly(t), "design", "en")
 	if err != nil {
 		t.Fatal(err)
 	}
-	de, err := Load(repoRoot, "design", "de")
+	de, err := Load(shippedOnly(t), "design", "de")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +121,7 @@ func TestReRenderingInAnotherLanguageChangesOnlyTheHeadings(t *testing.T) {
 // WP2's second acceptance. Falling back would render in a language nobody asked for and
 // record that it was rendered in the one they did.
 func TestAMissingBundleFailsRatherThanFallingBack(t *testing.T) {
-	if _, err := Load(repoRoot, "design", "fr"); err == nil {
+	if _, err := Load(shippedOnly(t), "design", "fr"); err == nil {
 		t.Fatal("a missing bundle fell back instead of failing")
 	}
 }
@@ -139,7 +161,7 @@ func TestAProjectTemplateBeatsTheShippedOneForThatIdAlone(t *testing.T) {
 // an optional section only where there is something in it. Required ones are rendered
 // whether or not they carry anything, because a missing one is the finding.
 func TestOptionalSectionsAppearOnlyWhenFilled(t *testing.T) {
-	r, err := Load(repoRoot, "intake", "en")
+	r, err := Load(shippedOnly(t), "intake", "en")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +184,7 @@ func TestOptionalSectionsAppearOnlyWhenFilled(t *testing.T) {
 
 // The agent never writes an anchor, so a round trip has to survive one.
 func TestRenderAndParseRoundTrip(t *testing.T) {
-	r, _ := Load(repoRoot, "verification", "en")
+	r, _ := Load(shippedOnly(t), "verification", "en")
 	content := map[string]string{
 		"test-mapping": "AC-1 -> TestOne\nAC-2 -> TestTwo",
 		"results":      "pass",
