@@ -1,0 +1,26 @@
+# This project's own section set, which keeps required only what a reader or a gate
+# needs. It is the candidate #262 left under examples/, regenerated from the shipped
+# template of the same id so that the version, the headings and the strings are the
+# shipped ones and only the `required` flag differs: the candidate was written against
+# 1.0.0 and two of the six have moved to 1.1.0 since.
+#
+# Adopted for #117, to be measured rather than believed. The record is a fixed cost --
+# 17 required sections and about 1,400 lines whatever the change -- and the only lever the
+# plan allows is which of the seventeen a small change may omit, with the shape following
+# from measurement. Three intents under this set, compared with `xeno report figures`
+# against the 78 before them, is that measurement.
+#
+# `test-mapping` stays for #258's decision from the other side, and `results` because whether it worked is the phase.
+#
+# Every section the shipped template defines is still defined, with the same id, version
+# and phase, so `xeno section set` accepts all of them and an author who wants one writes
+# it. `Resolved.Missing` is the only reader of the flag.
+id: verification
+version: 1.1.0
+phase: 04-verification
+sections:
+  - { id: test-mapping, required: true }
+  - { id: results, required: true }
+  - { id: gaps, required: false }
+  - { id: open-questions, required: false }
+  - { id: decisions, required: false }
