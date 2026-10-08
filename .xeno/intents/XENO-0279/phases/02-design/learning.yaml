@@ -1,0 +1,15 @@
+intent: github.com/triplem/xeno#94
+phase: 02-design
+created: "2026-10-08T20:16:08Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The approved plan's step two, depguard for A42, was measured against the tool before it was designed and found to read direct imports where A42 is a property of the closure; a step approved in prose was a step whose instrument nobody had run.
+      proposal: Where a plan names a tool for a rule, the design runs the tool against the rule's own failing case before adopting it, and records the result beside the decision; a sentence in the design skill's decisions paragraph.
+      target: .xeno/plugin/skills/xeno-design/SKILL.md
+    - category: prompt
+      observation: The design quoted the secret filter's example key to explain why tests are outside gosec, and G-Secret reported the artifact red at phase finish; the value was removed and the phase judged again, with the gate's own finding as the reason the sentence now names the key without writing it.
+      proposal: Say in the design skill that an artifact is read by G-Secret like any other and that a pattern's own test input is a secret to the filter, so a design names such a value and never quotes it.
+      target: .xeno/plugin/skills/xeno-design/SKILL.md

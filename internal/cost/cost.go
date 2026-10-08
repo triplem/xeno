@@ -162,7 +162,7 @@ func ForPhase(root, intent, phase string) (Totals, []string, error) {
 			if list[i].Phase != phase || list[i].Intent != intent {
 				continue
 			}
-			total = total.add(list[i].Totals.sub(list[i-1].Totals))
+			total = total.add(list[i].sub(list[i-1].Totals))
 			seen[session] = true
 		}
 	}

@@ -224,10 +224,12 @@ func TestTheFormatRoundTripsThroughThisProjectsProducer(t *testing.T) {
 	cmd.Stdout = f
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		f.Close()
+		_ = f.Close()
 		t.Fatalf("the producer failed: %v", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	i, why := Load(out, DefaultMaxAge, time.Now())
 	if i == nil {

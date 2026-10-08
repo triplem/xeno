@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#94
+phase: 04-verification
+created: "2026-10-08T20:39:58Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: gate verify took 36.4 s over 552 verdicts on this tree, the same order as XENO-0278's 34 to 36 s over 547 the same day and twenty times XENO-0266's 1.6 to 1.9 s over 477 two days earlier; the jump sits in the tree between 2026-10-06 and e22a533 and is unbisected.
+      proposal: 'Bisect gate verify''s per-verdict cost between the two commits before the next intent adds six more verdicts to the figure; #117 holds the numbers.'
+      target: internal/gates

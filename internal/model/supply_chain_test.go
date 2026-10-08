@@ -67,8 +67,9 @@ var (
 	// trailing comment. Both are compared, because the sha is what runs and the tag is what
 	// the page's second column prints beside it.
 	usesPin = regexp.MustCompile(`uses:\s*([A-Za-z0-9][A-Za-z0-9._/-]*)@([0-9a-f]{40})[ \t]*(?:#[ \t]*(v?[0-9][0-9A-Za-z.+-]*))?`)
-	// An image pinned by digest, which is how semgrep's container and the image's base are
-	// written. Read from the Dockerfile too, where it arrives as the value of ARG BASE.
+	// An image pinned by digest, which is how the image's base is written. Read from the
+	// Dockerfile, where it arrives as the value of ARG BASE, and from any workflow that pins
+	// one the same way.
 	digestPin = regexp.MustCompile(`([A-Za-z0-9][A-Za-z0-9._/-]*)@sha256:([0-9a-f]{64})`)
 	// A sha256 with no reference in front of it: the gitleaks tarball's checksum, which is a
 	// pin of the same kind written without the algorithm prefix.
@@ -267,8 +268,9 @@ var exempt = map[string]string{
 	"trivy's vulnerability database": "not pinned, and cannot be: a scan answers what is known " +
 		"today, so the database is fetched on every run and there is no version in a workflow " +
 		"for the page to agree with",
-	"semgrep's rules": "vendored under .semgrep/ and never fetched, so there is no version " +
-		"anywhere to compare; what the row records is the absence of a fetch",
+	"govulncheck's vulnerability database": "not pinned, and cannot be, for the reason trivy's " +
+		"is not: it is fetched on every run so that the scan answers what is known today, and " +
+		"the report records the date it was built rather than a version a workflow could carry",
 	"`ca-certificates` and `git`, installed into the image": "not pinned, and cannot be: apt-get " +
 		"resolves both against Debian's suite on the day the release is cut, and the page's own " +
 		"paragraph says why pinning them would turn each move of that suite into a failed release",
@@ -331,7 +333,7 @@ func TestEveryPinInTheTreeIsOnTheSupplyChainPage(t *testing.T) {
 	}
 
 	// Digests and checksums are matched by value across the whole table rather than against the
-	// name beside them: a digest is unique, and two rows name semgrep.
+	// name beside them: a digest is unique, and a row's name is the page's and not the tree's.
 	for _, kind := range []struct {
 		label string
 		pins  map[string]string
@@ -418,8 +420,8 @@ func TestEveryRowOfTheSupplyChainPageIsAPinTheTreeCarries(t *testing.T) {
 			anchors++
 			// Against the raw text and not the stripped text, and this direction is the weaker
 			// of the two on purpose. A tag is written in the tree as the trailing comment of a
-			// `uses:` line and semgrep's version in the paragraph above its digest, so what can
-			// be asserted is that the number on the page is a number the tree says somewhere.
+			// `uses:` line or as a `version:` input beside one, so what can be asserted is that
+			// the number on the page is a number the tree says somewhere.
 			// The other direction is where a version that runs is held to being printed here.
 			if !strings.Contains(p.raw, strings.TrimPrefix(v, "v")) {
 				t.Errorf("line %d: %s is pinned to %s and that version appears nowhere in the "+

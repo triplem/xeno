@@ -1,0 +1,128 @@
+intent: github.com/triplem/xeno#94
+phase: 04-verification
+created: "2026-10-08T20:39:58Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 2715395a2fc8ff9415d1d93cfadf1f2f8d822d5a4958c690262c062dc163014c
+evidence_source: ci
+template_source: project
+repo_commit: 30b1dea07e97fcbef7fbfd6ccdb0bfe7106ab8a8
+files:
+    - path: .github/workflows/gitleaks.yml
+      sha256: b7502363b43c396fb3fbf741c2e615c5b9a10e93417ce89e7bed9035f6c1a441
+      bytes: 5362
+    - path: .github/workflows/trivy.yml
+      sha256: c9167af759378be230e7e50de090f5adcac056c4286bee20c5b2b3b11247dced
+      bytes: 6345
+    - path: .github/workflows/xeno.yml
+      sha256: 27c86f3c6048e07c73f03c5f0cdcf721e6d99a8dc69d42910436d75df883be32
+      bytes: 19378
+    - path: CONTRIBUTING.md
+      sha256: 0109f1119269938b45adbebd0ef1eaf3161bb5306f36ff158bdb94d2143c5570
+      bytes: 7644
+    - path: cmd/xeno/main.go
+      sha256: 9593d065d3b9ea4e1b972752a48e6a71c015e4adb63a5a29739c0310a2295c97
+      bytes: 63167
+    - path: cmd/xeno/main_test.go
+      sha256: 9c8a98420d2285293a280074d989d4346601eee0a27a78182d3d34bdc624171d
+      bytes: 44608
+    - path: cmd/xeno/sealed_test.go
+      sha256: 92bdfb7487cd9d0d7ba1a88040ce112467ab60d30900bdd88ee5249ef1302d63
+      bytes: 22839
+    - path: docs/assumptions.md
+      sha256: 09532edbd0dd7f7f50e54c4bb0b7f9b6d5ea9310f8402351d31167d6ad34e81f
+      bytes: 113879
+    - path: docs/commands.md
+      sha256: 06188503ffacee45ef31b5294afa068b22aff90e0fa7a51d953ec30450609638
+      bytes: 6484
+    - path: docs/supply-chain.md
+      sha256: ef64bcc274b848e5ad94949d2a6b1b59b1f4d2819fb52d99d74a16a641e52d7b
+      bytes: 13708
+    - path: internal/cost/cost.go
+      sha256: 82231b847ee87f6d3f2149cd1af6ab6c271a1f5f2568b4f328ce9e4ef46c7509
+      bytes: 7036
+    - path: internal/external/external_test.go
+      sha256: 6a671ea710118ee90458a3fbff25dfd7218d5a2c6c76c7c93b32453382f91933
+      bytes: 11324
+    - path: internal/gates/predicates_test.go
+      sha256: 82d58482570d7e6e6fc65659f38e9b7d5a645d15e671425d63ab5e5810ffe99b
+      bytes: 22061
+    - path: internal/gates/secret_test.go
+      sha256: e76dd19ae559a08b323bb12ad7ed15d911b56f5efd0d42517273692604ed484d
+      bytes: 8920
+    - path: internal/gates/staleness_test.go
+      sha256: 3c4d2ffc10dd68adf6bb5ed698135b24db34fe7636d3a6ca999466b70ef98237
+      bytes: 11381
+    - path: internal/git/git.go
+      sha256: 0ee4fe942a5c7b6c51246931ef8c0948fd790fa48f07765700657add72a2de8d
+      bytes: 7891
+    - path: internal/host/github/github.go
+      sha256: bc0352c9bc96619c7c28d886751c20abd36b2e718e1fa754c9f0e75dddfff86e
+      bytes: 9754
+    - path: internal/host/gitlab/gitlab.go
+      sha256: 7a1a3ee1b1dc82643002baf8ac860298b51b908a1f2d61b6c771456ac01fddb1
+      bytes: 13832
+    - path: internal/host/gitlab/tracker.go
+      sha256: 58e53f0b4567cfdd1a48a8a27be2672dde6cb6355d7055d118abf2178942658d
+      bytes: 8009
+    - path: internal/host/host_test.go
+      sha256: 79256d6618c81da5a6ce15050fd0d736d3f2f99cb3617d3940a8d777311fe84f
+      bytes: 4836
+    - path: internal/index/index_test.go
+      sha256: 45f0fea1e2968ed79d82dd461e69f99c3f21b6baf4084b74bd123f0146e72a32
+      bytes: 8535
+    - path: internal/learning/propose.go
+      sha256: e87107f7340f8f980b362962072c960f92aee02a5fccf23009fa47aafa75869e
+      bytes: 24885
+    - path: internal/mcp/mcp.go
+      sha256: 713e0903efd0ed6f660fda25bb038395770c7d9103c10e80114df29a23b7e752
+      bytes: 9015
+    - path: internal/model/supply_chain_test.go
+      sha256: bff836511282a3b5ee81ae61f1cd9696cb2c334f8b02b7c301035abb1e81b152
+      bytes: 19639
+    - path: internal/plugin/hash_test.go
+      sha256: fb3f7667e022a238dc57f6bf5d07c2dce503f9a06eebd33064e91c7fd746afe7
+      bytes: 5954
+    - path: internal/plugin/plugin_test.go
+      sha256: 26cde3434856d7d34772c393d44ad92769b578aa20c9cdcec1da2e9132870f33
+      bytes: 22613
+    - path: internal/rules/rules.go
+      sha256: a27c5d01092f607c7f7aca899ab7092db5ee03063e78ed11721634e175cc576f
+      bytes: 14513
+    - path: internal/rules/rules_test.go
+      sha256: 8a3592265827f4294bee97b69bf52d0e683fbbb989beb8f5b38715e659b5fa72
+      bytes: 12477
+    - path: internal/rules/shipped_test.go
+      sha256: 0b226cb4ba14c9b0390f6ac59bc4d20406fa5986102f5092bb64f6f296ab65a0
+      bytes: 6159
+    - path: internal/runner/init_test.go
+      sha256: 4ffbf5765318c050416945980dab29b8ac145e7b7ad7f95f8bf0c6740ef28012
+      bytes: 26517
+    - path: internal/runner/runner_test.go
+      sha256: 05a33a51c8e6c97de5f78dbc11813ac11e0893aa8d0b828c2ee7bd3e6580c011
+      bytes: 133428
+    - path: internal/secrets/secrets_test.go
+      sha256: cec35781ec716744bd0132ce49e13d4ad6ede536b3817af00a6a1072ffa19fba
+      bytes: 11070
+    - path: renovate.json
+      sha256: ee631c70179e90d4cdcaa2b3e91a15b07c9efeece9c4c1ea9f09ef0a3f986b03
+      bytes: 6474
+    - path: scripts/github-settings.sh
+      sha256: 864ccd306d9e5f98dfae7e5730fbe2913182f7cc32272bb751bd33c41050241a
+      bytes: 6922
+    - path: trivy.yaml
+      sha256: cd64ab5903cf692c015224f255a028062930a9a04806c936b6dac86e5c16379a
+      bytes: 595
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 396d5a10cfdd27caddc305737455a9de3bce393acb997ead7058b9d0d723bea7

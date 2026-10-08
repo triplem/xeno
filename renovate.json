@@ -14,9 +14,9 @@
     "submit a change and it stays with a person. An unsigned renovate pull request is therefore",
     "the expected state, and amending it with your own sign-off is the step before merging.",
     "Nothing automerges. Every proposal waits for somebody.",
-    "semgrep is pinned by image digest rather than by version, and the docker manager would",
-    "propose a digest with no version to read, so it is left to the scheduled trivy and audit",
-    "jobs to report and to a person to move. There is no npm manifest in this repository, so",
+    "golangci-lint's version is a with: input of its action, and gosec's and govulncheck's are the",
+    "@version of a go install line, so each is reached by a regex manager below, as",
+    "semantic-release and trivy are. There is no npm manifest in this repository, so",
     "the npm manager is off and semantic-release is reached by a regex instead."
   ],
   "dependencyDashboard": true,
@@ -77,6 +77,44 @@
       ],
       "depNameTemplate": "aquasecurity/trivy",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "golangci-lint's version is a with: input of the golangci-lint action, matched through the action's own name so that another version: key in the same file is not mistaken for it; the action's sha is the github-actions manager's.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/lint\\.ya?ml$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "uses: golangci/golangci-lint-action@[^\\n]+\\n(?:[^\\n]*\\n)*?\\s+version: (?<currentValue>\\S+)",
+        "version: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "golangci/golangci-lint",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "govulncheck is installed by go install at a named version of golang.org/x/vuln, which no manifest records; the line is the pin and the Go datasource answers for the module.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/govulncheck\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "go install golang.org/x/vuln/cmd/govulncheck@(?<currentValue>v[0-9][^\\s]*)"
+      ],
+      "depNameTemplate": "golang.org/x/vuln",
+      "datasourceTemplate": "go"
+    },
+    {
+      "description": "gosec is installed by go install at a named version of github.com/securego/gosec/v2, which no manifest records; the line is the pin and the Go datasource answers for the module.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/gosec\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "go install github.com/securego/gosec/v2/cmd/gosec@(?<currentValue>v[0-9][^\\s]*)"
+      ],
+      "depNameTemplate": "github.com/securego/gosec/v2",
+      "datasourceTemplate": "go"
     }
   ],
   "packageRules": [

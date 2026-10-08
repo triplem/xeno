@@ -279,7 +279,7 @@ func (b *Bundle) rule(root, target, id string, idx []int) string {
 	s.WriteString("# and was never written where it was noticed.\n#\n")
 	for _, i := range idx {
 		it := b.Items[i]
-		s.WriteString(fmt.Sprintf("# %s entry %d, category %s\n", it.Path, it.Index, it.Entry.Category))
+		fmt.Fprintf(&s, "# %s entry %d, category %s\n", it.Path, it.Index, it.Entry.Category)
 	}
 	fmt.Fprintf(&s, "id: %s\n", id)
 	fmt.Fprintf(&s, "version: %d\n", version(root, target))

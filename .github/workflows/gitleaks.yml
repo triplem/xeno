@@ -15,8 +15,8 @@
 # keyword prefilters and the allowlists that section 4's file has no room for. Running
 # the narrower copy here would only repeat what the runner already did.
 #
-# Unlike semgrep, gitleaks needs no flag to fail on a finding: it exits 1 with leaks and
-# 0 without. It also exits 1 when it could not run at all, and the two look identical
+# gitleaks needs no flag and no configured exit code to fail on a finding, where trivy
+# sets one in trivy.yaml: it exits 1 with leaks and 0 without. It also exits 1 when it could not run at all, and the two look identical
 # from the outside, so the report is checked for existence before the failure is raised
 # again. A run that wrote no report failed for a reason nobody has read yet.
 #

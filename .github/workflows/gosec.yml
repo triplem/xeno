@@ -1,0 +1,115 @@
+# The security audit of this project's own code, which is the half of the semgrep pack
+# that could fire here: crypto, net, filepath and injection rules. It is a scanner like
+# the vulnerability scan, so the same three things hold: no gate reads the report, the
+# threshold lives in .gosec.json and in the two exclusions below, and what stops a merge
+# is this job failing. The reasoning the scan workflows share, why the scan carries
+# continue-on-error and the failure is raised last, is in trivy.yml and not repeated.
+#
+# gosec runs as its own binary and not through golangci-lint, which runs the other three
+# linters in lint.yml. Measured on 2026-10-08: under golangci-lint 2.14.0 gosec's findings
+# on one commit of this tree differed between three runs, with and without a cache and
+# at a concurrency of one, and it reported eleven where the binary reported fifty-eight,
+# the same fifty-eight twice. A check that moves between two runs of one tree cannot be
+# required, and this one is.
+#
+# Two rules are excluded, here rather than in the configuration because gosec takes them
+# on the command line, and the reason is the same for both: G304 and G703 fire on a file
+# read at a path that came from a variable, and every file this runner reads is at a
+# path computed from the repository tree or given on the command line, which is what a
+# runner over a repository is. Nothing here takes a path from the network. The file
+# modes are not excluded but configured, in .gosec.json, to the ones a git checkout has.
+# What remains is accepted where it stands, with #nosec naming the rule and the reason,
+# and the two -nosec-require flags make both mandatory.
+#
+# Every action is pinned to a commit sha and every tool to an exact version;
+# docs/supply-chain.md says which and why.
+name: gosec
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# The job id is the name of the check GitHub reports and the string the branch
+# protection requires (#186).
+jobs:
+  gosec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # Pinned to a version and checksummed by the module sum database on the way in,
+      # which is what go install does for a named version.
+      - name: install the scanner
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, for the
+      # reason A39 gives: it is a job status and never a commit.
+      - name: make room for the report
+        run: mkdir -p .xeno/local/scan
+
+      # -tests=false: a test writes its fixtures with the modes the code under test
+      # expects, launches the thing it tests, and carries the secret filter's own example
+      # input; every finding there is a property of being a test. The JSON goes to the
+      # file the manifest names and the text to the log, so the run reads like one.
+      - name: scan
+        id: scan
+        continue-on-error: true
+        run: |
+          gosec -conf .gosec.json \
+            -exclude=G304,G703 \
+            -tests=false \
+            -exclude-dir=vendor \
+            -nosec-require-rules -nosec-require-justification \
+            -fmt json -out .xeno/local/scan/gosec.json -stdout -verbose text \
+            ./...
+
+      - name: what it found
+        if: always()
+        run: |
+          if [ ! -f .xeno/local/scan/gosec.json ]; then
+            echo "no report was written" >&2
+            exit 0
+          fi
+          jq -r '
+            .Issues[]?
+            | [.rule_id, .severity, .confidence, .file, .line, .details]
+            | @tsv' .xeno/local/scan/gosec.json
+          jq -r '"\(.Stats.found) findings over \(.Stats.files) files, \(.Stats.nosec) accepted inline"' \
+            .xeno/local/scan/gosec.json
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a scan that wrote no report fails here instead.
+          test -f "$out/gosec.json"
+          result=pass
+          if [ "${{ steps.scan.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: scan"
+            echo "  job: gosec"
+            echo "  result: $result"
+            echo "  file: gosec.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-gosec
+          path: .xeno/local/scan/
+
+      - name: fail if the scan did
+        if: steps.scan.outcome == 'failure'
+        run: exit 1

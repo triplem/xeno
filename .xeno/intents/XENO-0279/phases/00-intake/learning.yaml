@@ -1,0 +1,15 @@
+intent: github.com/triplem/xeno#94
+phase: 00-intake
+created: "2026-10-08T20:12:24Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The intake recorded model: claude-opus-5 from project.yaml''s agent.model.default while the session ran under claude-fable-5-1; the field is a declaration and not a measurement, as A100 says, and nothing in this phase could say otherwise.'
+      proposal: Let the harness report the model the way it reports its version, through a recorded-only variable beside XENO_HARNESS_VERSION, so that the triple records what ran rather than what the project declared; a specification change to section 12 first.
+      target: docs/process-definition.md
+    - category: prompt
+      observation: The issue's body named three tools and the work was decided in three comments; phase start quotes the body and the comments had to be restated by hand in the problem section.
+      proposal: Quote the comments beside the body in the intake, which XENO-0277 and XENO-0278 each recorded as the same learning and nobody's issue holds yet.
+      target: internal/runner/tracker.go

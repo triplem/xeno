@@ -1,0 +1,49 @@
+intent: github.com/triplem/xeno#94
+phase: 00-intake
+created: "2026-10-08T20:11:26Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea
+plugin_version: 0.0.0-dev
+include:
+    - .github/workflows/gitleaks.yml
+    - .github/workflows/semgrep.yml
+    - .github/workflows/trivy.yml
+    - .github/workflows/xeno.yml
+    - .semgrep/golang.yaml
+    - CONTRIBUTING.md
+    - cmd/xeno/main.go
+    - cmd/xeno/main_test.go
+    - cmd/xeno/sealed_test.go
+    - docs/assumptions.md
+    - docs/commands.md
+    - docs/supply-chain.md
+    - internal/cost/cost.go
+    - internal/external/external_test.go
+    - internal/gates/predicates_test.go
+    - internal/gates/secret_test.go
+    - internal/gates/staleness_test.go
+    - internal/git/git.go
+    - internal/host/github/github.go
+    - internal/host/gitlab/gitlab.go
+    - internal/host/gitlab/tracker.go
+    - internal/host/host_test.go
+    - internal/index/index_test.go
+    - internal/learning/propose.go
+    - internal/mcp/mcp.go
+    - internal/model/supply_chain_test.go
+    - internal/plugin/hash_test.go
+    - internal/plugin/plugin_test.go
+    - internal/rules/rules.go
+    - internal/rules/rules_test.go
+    - internal/rules/shipped_test.go
+    - internal/runner/init_test.go
+    - internal/runner/runner_test.go
+    - internal/secrets/secrets_test.go
+    - renovate.json
+    - scripts/github-settings.sh
+    - trivy.yaml
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 37
+    bytes: 800570
