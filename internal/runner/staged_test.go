@@ -137,3 +137,24 @@ func mustAsk(f *fixture, text string) {
 		f.t.Fatal(err)
 	}
 }
+
+// A judged phase reads as judged even where this machine still holds the marker of a run
+// that was never finished through it. The marker is local and expires at thirty days (A9),
+// and `phase start` refuses a phase that holds a verdict, so there is no run it could be
+// describing. Found on this repository, where one marker from 2026-10-03 made a six-phase
+// intent read as five and took it out of the population `report figures` counts.
+func TestALeftoverRunMarkerDoesNotHideAVerdict(t *testing.T) {
+	f := newFixture(t)
+	g := f.run("00-intake", "")
+	if err := os.MkdirAll(filepath.Dir(f.r.marker(key, "00-intake")), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(f.r.marker(key, "00-intake"), []byte("stale\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	states, err := f.r.Status(key)
+	f.must(err)
+	if states[0].State != "finished" || states[0].Status != g.Status {
+		t.Fatalf("a leftover marker hid the verdict: %+v", states[0])
+	}
+}
