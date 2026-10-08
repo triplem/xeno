@@ -1,0 +1,24 @@
+intent: github.com/triplem/xeno#330
+phase: 00-intake
+created: "2026-10-08T17:38:08Z"
+schema_version: "1.0"
+runner_version: dev+e22a533.dirty
+plugin_version: 0.0.0-dev
+include:
+    - internal/runner/runner.go
+    - internal/runner/tracker.go
+    - internal/runner/tracker_test.go
+    - internal/host/host.go
+    - internal/host/github/tracker.go
+    - internal/host/github/tracker_test.go
+    - internal/host/gitlab/tracker.go
+    - internal/host/gitlab/tracker_test.go
+    - internal/model/identity.go
+    - cmd/xeno/main.go
+    - docs/commands.md
+    - docs/assumptions.md
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 12
+    bytes: 329337

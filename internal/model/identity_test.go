@@ -184,3 +184,93 @@ func TestSomethingThatIsNotAQualifiedIdIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// ---- section 12's "Starting an intent": what approval means, judged here and not by an
+// adapter, so that two hosts cannot answer it differently.
+
+func TestApprovalNeedsTheLabelAndTheWord(t *testing.T) {
+	word := Comment{Author: "m", At: "2026-10-08T15:10:28Z", Body: "Approved.\n\nbecause it was decided\non the issue"}
+	cases := []struct {
+		name    string
+		issue   Issue
+		missing int
+		reason  string
+	}{
+		{"neither", Issue{}, 2, ""},
+		{"the label alone", Issue{Labels: []string{"approved"}}, 1, ""},
+		{"the word alone", Issue{Comments: []Comment{word}}, 1, ""},
+		{"both, with case and punctuation ignored", Issue{Labels: []string{"wp12", "Approved"},
+			Comments: []Comment{word}}, 0, "because it was decided\non the issue"},
+		{"a comment that merely contains the word", Issue{Labels: []string{"approved"},
+			Comments: []Comment{{Body: "this could be approved later"}}}, 1, ""},
+		{"the word with nothing after it", Issue{Labels: []string{"approved"},
+			Comments: []Comment{{Author: "m", Body: "approved"}}}, 0, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a, missing := c.issue.Approval()
+			if len(missing) != c.missing {
+				t.Fatalf("missing %v, want %d things", missing, c.missing)
+			}
+			if c.missing == 0 && (a.By != "m" || a.Reason != c.reason) {
+				t.Errorf("read %+v", a)
+			}
+		})
+	}
+}
+
+// The last approving comment stands, because an approval is withdrawn and given again by
+// writing another, and the one that stands is the latest.
+func TestTheLastApprovingCommentStands(t *testing.T) {
+	i := Issue{Labels: []string{"approved"}, Comments: []Comment{
+		{Author: "first", Body: "approved\nfor the wrong reason"},
+		{Author: "second", Body: "approved\nfor the right one"},
+	}}
+	a, _ := i.Approval()
+	if a.By != "second" || a.Reason != "for the right one" {
+		t.Errorf("read %+v", a)
+	}
+}
+
+// Ahead orders the open milestones by due date, undated ones last, then by number, and
+// answers independently of the order the host listed them in.
+func TestAheadIsTheEarliestOpenMilestoneThatIsNotTheIssues(t *testing.T) {
+	open := []Milestone{
+		{Title: "later", Number: 3},
+		{Title: "1.1", Due: "2026-12-31", Number: 2},
+		{Title: "1.0", Due: "2026-11-30", Number: 1},
+		{Title: "done", Due: "2026-01-01", Number: 0, Closed: true},
+	}
+	cases := []struct {
+		name string
+		on   *Milestone
+		want string
+	}{
+		{"none", nil, ""},
+		{"the earliest", &Milestone{Title: "1.0"}, ""},
+		{"the second", &Milestone{Title: "1.1"}, "1.0"},
+		{"the undated one", &Milestone{Title: "later"}, "1.0"},
+		{"a closed one", &Milestone{Title: "0.9", Closed: true}, ""},
+		{"with no open milestones at all", &Milestone{Title: "1.1"}, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			i := Issue{Milestone: c.on, OpenMilestones: open}
+			if c.name == "with no open milestones at all" {
+				i.OpenMilestones = nil
+			}
+			got := i.Ahead()
+			switch {
+			case c.want == "" && got != nil:
+				t.Errorf("held by %+v", got)
+			case c.want != "" && (got == nil || got.Title != c.want):
+				t.Errorf("got %+v, want %s", got, c.want)
+			}
+		})
+	}
+	// Two undated milestones: the lower number first.
+	i := Issue{Milestone: &Milestone{Title: "b"}, OpenMilestones: []Milestone{{Title: "b", Number: 2}, {Title: "a", Number: 1}}}
+	if got := i.Ahead(); got == nil || got.Title != "a" {
+		t.Errorf("between two undated milestones got %+v, want a", got)
+	}
+}

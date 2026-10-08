@@ -2605,9 +2605,12 @@ const trackerBlock = "tracker:\n  adapter: github\n  project: triplem/xeno\n" +
 // from somebody's memory of them.
 func TestStartingAnIntentDerivesEverythingButTheIssue(t *testing.T) {
 	f := newFixture(t)
-	f.project(trackerBlock)
+	// A host that answers an approved issue, because from #330 a tracker block means the
+	// issue is read and the intent starts only on an approval.
+	srv := approved(map[string]string{"title": "t"}).serve(t)
+	f.tracker(srv.URL)
 
-	in, err := f.r.IntentStart("", "176")
+	in, err := f.r.IntentStart("", "176", false)
 	f.must(err)
 	if in.Key != "PROJ-2" {
 		t.Errorf("key %q, want PROJ-2: the sequence has PROJ-1 in it", in.Key)
@@ -2615,7 +2618,7 @@ func TestStartingAnIntentDerivesEverythingButTheIssue(t *testing.T) {
 	var on model.Intent
 	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir(in.Key), "intent.yaml"), &on))
 	want := model.Intent{
-		Intent: "github.com/triplem/xeno#176", Key: "PROJ-2", Status: "in-progress",
+		Intent: hostOf(srv.URL) + "/triplem/xeno#176", Key: "PROJ-2", Status: "in-progress",
 		Created: "2026-09-20T10:00:00Z", SchemaVersion: model.SchemaVersion,
 		// From the vendored plugin's manifest, not a constant: the field names the plugin
 		// an artifact was rendered from, and a number that cannot disagree with the runner
@@ -2632,8 +2635,8 @@ func TestStartingAnIntentDerivesEverythingButTheIssue(t *testing.T) {
 // commit as well, and two strings for one build in one directory say nothing.
 func TestANewIntentRecordsTheVersionTheArtifactsRecord(t *testing.T) {
 	f := newFixture(t)
-	f.project(trackerBlock)
-	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+	f.tracker(approved(map[string]string{"title": "t"}).serve(t).URL)
+	f.mustIntent(f.r.IntentStart("NEW-1", "176", false))
 
 	f.run("00-intake", "")
 	var in model.Intent
@@ -2650,9 +2653,9 @@ func TestANewIntentRecordsTheVersionTheArtifactsRecord(t *testing.T) {
 // there is no sequence to continue, and it is how the older naming scheme stays reachable.
 func TestAGivenKeyIsUsedAsGiven(t *testing.T) {
 	f := newFixture(t)
-	f.project(trackerBlock)
+	f.tracker(approved(map[string]string{"title": "t"}).serve(t).URL)
 
-	in, err := f.r.IntentStart("XENO-0300", "176")
+	in, err := f.r.IntentStart("XENO-0300", "176", false)
 	f.must(err)
 	if in.Key != "XENO-0300" {
 		t.Fatalf("key %q, want XENO-0300", in.Key)
@@ -2666,17 +2669,18 @@ func TestAGivenKeyIsUsedAsGiven(t *testing.T) {
 // level hash, so a second write would change a verdict that named the first one.
 func TestStartingAnIntentTwiceIsRefused(t *testing.T) {
 	f := newFixture(t)
-	f.project(trackerBlock)
-	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+	srv := approved(map[string]string{"title": "t"}).serve(t)
+	f.tracker(srv.URL)
+	f.mustIntent(f.r.IntentStart("NEW-1", "176", false))
 
-	_, err := f.r.IntentStart("NEW-1", "177")
+	_, err := f.r.IntentStart("NEW-1", "177", false)
 	var ref *Refusal
 	if !errors.As(err, &ref) {
 		t.Fatalf("second start: %v, want a refusal", err)
 	}
 	var in model.Intent
 	f.must(fm.ReadYAML(filepath.Join(f.root, model.IntentDir("NEW-1"), "intent.yaml"), &in))
-	if in.Intent != "github.com/triplem/xeno#176" {
+	if in.Intent != hostOf(srv.URL)+"/triplem/xeno#176" {
 		t.Errorf("the first id was overwritten: %q", in.Intent)
 	}
 }
@@ -2687,7 +2691,7 @@ func TestStartingAnIntentNeedsTheIssue(t *testing.T) {
 	f := newFixture(t)
 	f.project(trackerBlock)
 
-	_, err := f.r.IntentStart("NEW-1", "")
+	_, err := f.r.IntentStart("NEW-1", "", false)
 	var ref *Refusal
 	if !errors.As(err, &ref) || !strings.Contains(ref.Reason, "--for") {
 		t.Fatalf("start without an issue: %v, want a refusal naming --for", err)
@@ -2702,12 +2706,12 @@ func TestStartingAnIntentNeedsTheIssue(t *testing.T) {
 func TestWithoutATrackerBlockTheWholeIdIsGivenByHand(t *testing.T) {
 	f := newFixture(t)
 
-	in, err := f.r.IntentStart("NEW-1", "git.example/group/proj#4")
+	in, err := f.r.IntentStart("NEW-1", "git.example/group/proj#4", false)
 	f.must(err)
 	if in.Intent != "git.example/group/proj#4" {
 		t.Errorf("id %q, want it as given", in.Intent)
 	}
-	if _, err := f.r.IntentStart("NEW-2", "4"); err == nil {
+	if _, err := f.r.IntentStart("NEW-2", "4", false); err == nil {
 		t.Error("a bare key with no configuration behind it was accepted")
 	}
 }
@@ -2719,9 +2723,9 @@ func TestANewIntentIsListedAndItsPhaseStarts(t *testing.T) {
 	// A complete tracker block, pointed at a host that answers here: starting P0 reads the
 	// issue, and Appendix A has `phase start` refuse a block that is there and missing the
 	// credential rather than guess at one.
-	h := &fakeHost{issue: map[string]string{"title": "t", "body": "b"}}
+	h := approved(map[string]string{"title": "t", "body": "b"})
 	f.tracker(h.serve(t).URL)
-	f.mustIntent(f.r.IntentStart("NEW-1", "176"))
+	f.mustIntent(f.r.IntentStart("NEW-1", "176", false))
 
 	got, err := f.r.Intents()
 	f.must(err)
@@ -3071,7 +3075,7 @@ func TestWithoutAVendoredPluginTheVersionIsAbsentAndReported(t *testing.T) {
 	f.must(os.RemoveAll(filepath.Join(f.root, plugin.Dir)))
 	f.project(agentBlock)
 
-	in, err := f.r.IntentStart("NEW-1", "git.example/g/p#4")
+	in, err := f.r.IntentStart("NEW-1", "git.example/g/p#4", false)
 	f.must(err)
 	if in.PluginVersion != "" {
 		t.Errorf("plugin_version is %q, want absent", in.PluginVersion)

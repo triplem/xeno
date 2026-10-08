@@ -26,7 +26,7 @@ import (
 
 const usage = `usage:
   xeno init           --host HOST [--vendor] [--project OWNER/REPO] [--model ID] [--language TAG]
-  xeno intent start   --for ISSUE [--intent KEY]        writes intent.yaml
+  xeno intent start   --for ISSUE [--intent KEY] [--now]   writes intent.yaml
   xeno phase start    --intent KEY --phase NN [--evidence-from DIR] [--export]
   xeno phase finish   --intent KEY --phase NN [--summary PATH|-]   writes digest.md
   xeno gate run       --intent KEY --phase NN [--base REF --head REF] [--evidence-from DIR]
@@ -102,7 +102,7 @@ type opts struct {
 	uri, sha256                    string
 	producedBy, format             string
 	withdraw                       bool
-	dry                            bool
+	dry, now                       bool
 	vendor, noNext, export, isJSON bool
 }
 
@@ -254,6 +254,9 @@ func parse(name string, args []string, out, errw io.Writer) (*opts, int) {
 	fs.StringVar(&o.head, "head", "", "the head of the commit range under review")
 	fs.StringVar(&o.reason, "reason", "", "why")
 	fs.StringVar(&o.issue, "for", "", "the issue an intent belongs to, as a key or as the whole qualified id")
+	// Section 12's one exception to the milestone: the person starting the intent says
+	// the work is wanted ahead of its turn, and the intake records that they did.
+	fs.BoolVar(&o.now, "now", false, "start the intent although an earlier milestone is open")
 	// The one field of section 5 the runner cannot know, so the harness says it. Absent
 	// where it is not given, which is what every artifact written before this carries.
 	fs.StringVar(&o.toolVersion, "tool-version", "",
@@ -683,7 +686,7 @@ func cmdDecisionRecord(o *opts) int {
 // the sequence the repository already holds. Given, it is used as given, which is what the
 // first intent of a repository needs and what the older naming scheme is kept readable by.
 func cmdIntentStart(o *opts) int {
-	in, err := o.r.IntentStart(o.key, o.issue)
+	in, err := o.r.IntentStart(o.key, o.issue, o.now)
 	if code := o.report(nil, err); code != 0 {
 		return code
 	}

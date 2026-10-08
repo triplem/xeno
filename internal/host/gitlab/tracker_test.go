@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -23,6 +24,14 @@ func answering(t *testing.T, status int, body any) (*Adapter, *seen) {
 	t.Helper()
 	got := &seen{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// From #330 a read of the issue is followed by a read of what was said under it,
+		// which is a list; a fake that serves one body to every call answers that read
+		// with an empty one, and records nothing about it, so that the tests about the issue
+		// stay about the issue.
+		if r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/notes") {
+			_ = json.NewEncoder(w).Encode([]any{})
+			return
+		}
 		got.method, got.path = r.Method, r.URL.EscapedPath()
 		got.token = r.Header.Get("PRIVATE-TOKEN")
 		got.body, _ = io.ReadAll(r.Body)
@@ -114,5 +123,65 @@ func TestARefusedNoteIsAnAnswerAndARejectedTokenIsNot(t *testing.T) {
 	}
 	if _, err := a.Issue("group/proj", "288", "tok"); err == nil {
 		t.Error("a rejected token read as an answer about the issue")
+	}
+}
+
+// routing answers each path from a map and records the paths asked, since from #330 the
+// one read is up to three calls and a transport serving one body cannot assert it.
+func routing(t *testing.T, bodies map[string]any) (*Adapter, *[]string) {
+	t.Helper()
+	asked := &[]string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*asked = append(*asked, r.URL.EscapedPath()+"?"+r.URL.RawQuery)
+		body, ok := bodies[r.URL.EscapedPath()]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(body)
+	}))
+	t.Cleanup(srv.Close)
+	return New(srv.Client(), srv.URL), asked
+}
+
+// The same five things as on the other host, in this host's words: labels as plain
+// strings, a milestone with a due_date and an iid, notes with an author's username, and
+// the project's milestones that are active rather than open. A system note — this host
+// records a label change as a note — is left out, because what the domain reads is what
+// people wrote.
+func TestAnIssueIsReadWithWhatThisHostSaysAroundIt(t *testing.T) {
+	a, asked := routing(t, map[string]any{
+		"/projects/group%2Fproj/issues/330": map[string]any{
+			"title": "t", "description": "d",
+			"labels":    []string{"wp12", "approved"},
+			"milestone": map[string]any{"title": "1.1", "due_date": "2026-12-31", "iid": 2, "state": "active"},
+		},
+		"/projects/group%2Fproj/issues/330/notes": []map[string]any{
+			{"author": map[string]string{"username": "bot"}, "created_at": "2026-10-08T10:00:00Z", "body": "added ~approved label", "system": true},
+			{"author": map[string]string{"username": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "approved\n\nbecause", "system": false},
+		},
+		"/projects/group%2Fproj/milestones": []map[string]any{
+			{"title": "1.0", "due_date": "2026-11-30", "iid": 1, "state": "active"},
+			{"title": "1.1", "due_date": "2026-12-31", "iid": 2, "state": "active"},
+		},
+	})
+	issue, err := a.Issue("group/proj", "330", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(issue.Labels) != 2 || issue.Labels[1] != "approved" {
+		t.Errorf("labels %v", issue.Labels)
+	}
+	if issue.Milestone == nil || issue.Milestone.Due != "2026-12-31" || issue.Milestone.Number != 2 || issue.Milestone.Closed {
+		t.Errorf("milestone %+v", issue.Milestone)
+	}
+	if len(issue.Comments) != 1 || issue.Comments[0].Author != "triplem" || issue.Comments[0].Body != "approved\n\nbecause" {
+		t.Errorf("the system note was read as a comment, or the note was not: %+v", issue.Comments)
+	}
+	if len(issue.OpenMilestones) != 2 || issue.OpenMilestones[0].Title != "1.0" {
+		t.Errorf("open milestones %+v", issue.OpenMilestones)
+	}
+	if len(*asked) != 3 || !strings.Contains((*asked)[2], "state=active") || !strings.Contains((*asked)[1], "/notes?") {
+		t.Errorf("asked %v", *asked)
 	}
 }

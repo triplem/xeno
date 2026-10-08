@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#330
+phase: 03-implementation
+created: "2026-10-08T17:53:24Z"
+schema_version: "1.0"
+runner_version: dev+8fb365d.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: Three fixtures started intents against a tracker block naming api.github.com with nothing behind it, in runner_test.go, main_test.go and the MCP fixture, and nothing noticed for as long as intent start read nothing; the first read added to that command would have reached the network from the tests, and the MCP comparison of two routes broke on the port of a per-fixture host.
+      proposal: A transport in the test fixtures that fails any request to a host that is not loopback, so that a command which starts reading the host is caught by the suite rather than by the first run against the network; and one shared fake host per package where artifacts are compared across fixtures.
+      target: internal/runner/runner_test.go
