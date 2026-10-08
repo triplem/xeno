@@ -97,20 +97,12 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// --phase by hand, because the dispatch table has needsPhase off here: the record is
 	// owed per phase and once more when an intent closes, and without the flag this would
 	// write at intent level and never reach the phase the walk is about.
-	"learning record": {args: []string{"--phase", walked, "--no-finding"},
-		moves: "the record lies in the phase directory and inside artifacts_hash, and " +
-			"RecordLearning deliberately does not refuse a sealed phase: a command that " +
-			"refused would be refusing the first half of a re-judgement"},
-	"scope set": {args: []string{"--file", "{scope}"},
-		moves: "the context scope is P0's own artifact, so writing it after P0 is judged " +
-			"changes P0; cmdScopeSet prints that caveat where somebody types the command"},
+	"learning record":    {args: []string{"--phase", walked, "--no-finding"}},
+	"scope set":          {args: []string{"--file", "{scope}"}},
 	"assumption confirm": {args: []string{"A-001", "--by", "a.person"}},
 	"assumption reject":  {args: []string{"A-001", "--by", "a.person"}},
-	"section set": {args: []string{"problem", "--file", "{text}"},
-		moves: "the section is written into output.md, which is inside artifacts_hash; " +
-			"SectionSet does not refuse a sealed phase because rewriting the sections and " +
-			"running phase finish again is how a phase is redone"},
-	"phase start": {},
+	"section set":        {args: []string{"problem", "--file", "{text}"}},
+	"phase start":        {},
 	"phase finish": {args: []string{"--summary", "{text}"}, verdict: rejudges,
 		moves: "this is the command that computes artifacts_hash, and the digest it writes " +
 			"is inside it; WP1 names it as the only command expected to move one"},
@@ -125,11 +117,9 @@ var aimedAtTheSealedPhase = map[string]walk{
 		verdict: writesTheVerdict},
 	"assumption record": {args: []string{"--text", "the host reflows to 72",
 		"--origin", "repo-convention", "--confidence", "low"}},
-	"question record": {args: []string{"--file", "{question}"},
-		moves: "the entry is a frontmatter block of output.md, which is inside artifacts_hash"},
+	"question record": {args: []string{"--file", "{question}"}},
 	"decision record": {args: []string{"--chosen", "fail fast", "--reason", "the caller retries",
-		"--by", "a.person"},
-		moves: "the decision is a frontmatter block of output.md, which is inside artifacts_hash"},
+		"--by", "a.person"}},
 	// review answer resolves the review phase itself rather than taking one, so it cannot be
 	// aimed at an earlier sealed phase at all. What the walk asserts about it is that an answer
 	// given while P0 is sealed does not reach P0; #242's three refusals are what keep it off a
@@ -150,10 +140,8 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// has neither a token nor a network. What it still proves is the half that matters here:
 	// composing a comment from a sealed phase's verdict reads that phase and writes nothing
 	// into it.
-	"report verdict": {args: []string{"--dry-run"}},
-	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"},
-		moves: "the declaration is a frontmatter block of output.md, so a declaration after " +
-			"the verdict leaves the phase stale rather than rewriting it (#216)"},
+	"report verdict":   {args: []string{"--dry-run"}},
+	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"}},
 	// Two reads with no argument to fill: the dispatch supplies --phase for the one that
 	// takes it, and the other is given a name. Neither opens an intent directory at all — a
 	// template comes from the plugin or the project and the index from .xeno/local/ — so

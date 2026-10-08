@@ -72,7 +72,7 @@ func (r *Runner) ScopeSet(key string, entry []byte) (*ScopeResolved, error) {
 		return nil, err
 	}
 	s.Common = common
-	if err := fm.WriteYAML(r.abs(dir+"/"+model.ContextScope), s); err != nil {
+	if err := fm.WriteYAML(r.contentPath(key, model.Phases[0], model.ContextScope), s); err != nil {
 		return nil, err
 	}
 	files, err := r.resolveScope(&s)
@@ -92,7 +92,7 @@ func (r *Runner) ScopeSet(key string, entry []byte) (*ScopeResolved, error) {
 // refuses at P0, and the three gate readers each say what its absence means for them.
 func (r *Runner) readScope(key string) (*model.Scope, error) {
 	var s model.Scope
-	path := r.abs(model.PhaseDir(key, model.Phases[0]) + "/" + model.ContextScope)
+	path := r.contentSource(key, model.Phases[0], model.ContextScope)
 	if err := fm.ReadYAML(path, &s); err != nil {
 		return nil, nil
 	}

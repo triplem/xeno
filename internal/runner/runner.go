@@ -93,6 +93,87 @@ func (r *Runner) marker(key, phase string) string {
 	return model.LocalPath(r.Root, "runs", key, phase+".lock")
 }
 
+// judged says whether a phase already holds a verdict, which is the one thing that decides
+// where a write to its content goes. The condition is the file and not its contents: a
+// verdict that cannot be parsed is still a verdict somebody has to re-judge, and a redo that
+// quietly wrote in place because the YAML was broken would be the worse of the two answers.
+func (r *Runner) judged(key, phase string) bool {
+	return fm.Exists(r.abs(model.PhaseDir(key, phase) + "/gate.yaml"))
+}
+
+// contentPath is where a command writes one of a phase's content files: the phase directory
+// while the phase is open, and the staging directory once it holds a verdict. Section 6: a
+// redo is staged and `phase finish` applies it, so that a sealed artifact and the verdict
+// covering it move together instead of the artifact moving first.
+//
+// It returns an absolute path, because the staging directory lies outside the repository's
+// own tree and nothing above it can go on treating these as repository relative.
+func (r *Runner) contentPath(key, phase, name string) string {
+	if !r.judged(key, phase) {
+		return r.abs(model.PhaseDir(key, phase) + "/" + name)
+	}
+	dir := model.StagedDir(r.Root, key, phase)
+	// Made here rather than by each writer. Two of the three write through os.WriteFile,
+	// which does not make a directory, and a resolver that returns a path nothing can be
+	// written to would push the same MkdirAll into every caller instead.
+	_ = os.MkdirAll(dir, 0o755)
+	return filepath.Join(dir, name)
+}
+
+// contentSource is where a command reads the same file from. A staged copy wins where there
+// is one, because the second write of a redo amends the first rather than the seal: without
+// this, two `section set` calls on a judged phase would each start from the sealed artifact
+// and the second would drop the first.
+func (r *Runner) contentSource(key, phase, name string) string {
+	if staged := filepath.Join(model.StagedDir(r.Root, key, phase), name); fm.Exists(staged) {
+		return staged
+	}
+	return r.abs(model.PhaseDir(key, phase) + "/" + name)
+}
+
+// staged names the content files waiting for a phase's next finish, in the order section 4
+// lists them, or nothing where there is no redo under way.
+func (r *Runner) staged(key, phase string) []string {
+	entries, err := os.ReadDir(model.StagedDir(r.Root, key, phase))
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			names = append(names, e.Name())
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+// applyStaged moves a redo's content into the phase directory. It runs inside `phase finish`
+// and nowhere else, which is what makes the rule in section 11 true of the commands: the
+// files land and the verdict is computed over them in one command, so no state exists in
+// which the repository holds content its own verdict does not cover.
+//
+// The staging directory is removed only after every file has landed. A finish that fails
+// half way through leaves the redo where it was rather than losing it, and the phase keeps
+// the verdict it had.
+func (r *Runner) applyStaged(key, phase string) error {
+	names := r.staged(key, phase)
+	if len(names) == 0 {
+		return nil
+	}
+	dir := model.StagedDir(r.Root, key, phase)
+	for _, name := range names {
+		b, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			return refuse("the staged %s of %s cannot be read: %v", name, phase, err)
+		}
+		if err := os.WriteFile(r.abs(model.PhaseDir(key, phase)+"/"+name), b, 0o644); err != nil {
+			return err
+		}
+	}
+	return os.RemoveAll(dir)
+}
+
 // phaseEnv is where the running phase is written for whatever makes model requests. It
 // lives beside the run marker, under the gitignored local directory (A9), because it
 // describes a machine's current state and not the trail.
@@ -659,6 +740,12 @@ func (r *Runner) Finish(key, phase, summary string) (*model.Gate, error) {
 			"own and the phases after it read; write it with xeno scope set --intent %s",
 			phase, model.ContextScope, key)
 	}
+	// A redo lands before anything else is written or read: the digest's frontmatter and the
+	// verdict are both taken from the content, so applying it afterwards would seal the old
+	// artifact and judge the new one. Section 6 puts the application here and only here.
+	if err := r.applyStaged(key, phase); err != nil {
+		return nil, err
+	}
 	if strings.TrimSpace(summary) != "" {
 		if err := r.writeDigest(key, phase, summary); err != nil {
 			return nil, err
@@ -860,9 +947,9 @@ func (r *Runner) SectionSet(key, phase, section, content string) (*template.Reso
 		return nil, refuse("template %s has no section %q; it has %s",
 			t.Ref(), section, strings.Join(t.Known(), ", "))
 	}
-	path := r.abs(model.PhaseDir(key, phase) + "/output.md")
+	path := r.contentPath(key, phase, "output.md")
 	front, sections := map[string]any{}, map[string]string{}
-	if b, err := os.ReadFile(path); err == nil {
+	if b, err := os.ReadFile(r.contentSource(key, phase, "output.md")); err == nil {
 		f, body, ferr := fm.Split(b)
 		if ferr == nil {
 			_ = yaml.Unmarshal(f, &front)
@@ -1293,6 +1380,11 @@ type PhaseState struct {
 	State  string // not-started | running | finished | changed-after-verdict
 	Status string // the verdict, where there is one
 	Stale  bool   // its predecessor changed after it started
+	// Staged is the content files a redo has written and no finish has applied, which
+	// section 6 requires this listing to report: a redo nobody finished is invisible in the
+	// repository by design, since staged content is not committed, and the one place it can
+	// be seen is here.
+	Staged []string
 }
 
 func (r *Runner) Status(key string) ([]PhaseState, error) {
@@ -1328,6 +1420,7 @@ func (r *Runner) Status(key string) ([]PhaseState, error) {
 		case fm.Exists(filepath.Join(dir, "output.md")):
 			s.State = "running"
 		}
+		s.Staged = r.staged(key, p)
 		if i > 0 && fm.Exists(filepath.Join(dir, "context.lock.yaml")) {
 			var lock model.ContextLock
 			if err := fm.ReadYAML(filepath.Join(dir, "context.lock.yaml"), &lock); err == nil {
@@ -1572,6 +1665,16 @@ func (r *Runner) learningPath(key, phase string) string {
 	return model.PhaseDir(key, phase) + "/learning.yaml"
 }
 
+// learningFile is where the record is written and read, which is learningPath for an intent
+// level record and the content resolution for a phase's own: the closing record of an
+// abandoned intent belongs to no phase and so to no redo.
+func (r *Runner) learningFile(key, phase string) (write, read string) {
+	if phase == "" {
+		return r.abs(r.learningPath(key, "")), r.abs(r.learningPath(key, ""))
+	}
+	return r.contentPath(key, phase, "learning.yaml"), r.contentSource(key, phase, "learning.yaml")
+}
+
 // RecordLearning writes what a phase learned, which was the last artifact of this process
 // that no command wrote.
 //
@@ -1593,9 +1696,10 @@ func (r *Runner) RecordLearning(key, phase string, noFinding bool, e model.Learn
 		return nil, err
 	}
 	rel := r.learningPath(key, phase)
+	write, read := r.learningFile(key, phase)
 	rec := model.Learning{}
 	// A record that is not there is the ordinary case: this is usually what creates it.
-	if err := fm.ReadYAML(r.abs(rel), &rec); err != nil && !os.IsNotExist(err) {
+	if err := fm.ReadYAML(read, &rec); err != nil && !os.IsNotExist(err) {
 		return nil, refuse("%s cannot be read: %v", rel, err)
 	}
 	if rec.NoFinding && !noFinding {
@@ -1618,7 +1722,7 @@ func (r *Runner) RecordLearning(key, phase string, noFinding bool, e model.Learn
 	} else {
 		rec.Learnings = append(rec.Learnings, e)
 	}
-	return &rec, fm.WriteYAML(r.abs(rel), rec)
+	return &rec, fm.WriteYAML(write, rec)
 }
 
 // checkLearningArgs refuses before anything is read, so a wrong category never reaches the

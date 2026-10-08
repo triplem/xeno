@@ -188,7 +188,7 @@ func shapeRefusal(fs []model.Finding) error {
 func (r *Runner) artifact(key, phase string) (map[string]any, model.Output, []byte, error) {
 	var o model.Output
 	rel := model.PhaseDir(key, phase) + "/output.md"
-	b, err := os.ReadFile(r.abs(rel))
+	b, err := os.ReadFile(r.contentSource(key, phase, "output.md"))
 	if err != nil {
 		return nil, o, nil, refuse("%s has no %s yet; it is written by xeno section set, which creates the artifact", phase, rel)
 	}
@@ -212,5 +212,5 @@ func (r *Runner) artifact(key, phase string) (map[string]any, model.Output, []by
 func (r *Runner) amendFront(key, phase string, front map[string]any, field string, value any, body []byte) error {
 	front[field] = value
 	out := "---\n" + frontmatter(front) + "---\n" + string(body)
-	return os.WriteFile(r.abs(model.PhaseDir(key, phase)+"/output.md"), []byte(out), 0o644)
+	return os.WriteFile(r.contentPath(key, phase, "output.md"), []byte(out), 0o644)
 }

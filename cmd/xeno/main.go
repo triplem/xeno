@@ -893,6 +893,12 @@ func cmdIntentStatus(o *opts) int {
 		if s.Stale {
 			line += "  (predecessor changed since this phase started)"
 		}
+		// A redo that nobody finished leaves nothing in the repository, because staged
+		// content is not committed, so this line is the only place it is visible at all.
+		if len(s.Staged) > 0 {
+			line += fmt.Sprintf("  (%s staged, run xeno phase finish to apply)",
+				strings.Join(s.Staged, ", "))
+		}
 		fmt.Fprintln(o.out, line)
 	}
 	// After the table, where the truncation note goes in the other form: it is a figure
