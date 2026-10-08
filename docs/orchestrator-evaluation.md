@@ -1,9 +1,9 @@
 ---
 id: orchestrator-evaluation
 title: Xeno, Orchestrator Evaluation for v2
-revision: 2
+revision: 3
 status: draft, not ratified
-date: 2026-09-20
+date: 2026-10-08
 location: docs/orchestrator-evaluation.md
 ---
 
@@ -19,6 +19,14 @@ so that a reader who disagrees can see what the disagreement is about.
 
 It is an architecture decision record, not a plan. What follows from it is in
 the implementation plan.
+
+Section 9 records a second decision of the same kind, taken later and about a
+different kind of tool: a specification framework, evaluated and declined. It
+sits here because the form is the same one — a candidate pinned to a version,
+the rows it changes, the reason that decides it, and the conditions under which
+the answer is revisited — and because a tool declined is only useful to a reader
+who can find the reason. The page is the record of external tools this project
+evaluated, of which the orchestrator was the first.
 
 ## 2. What the platform has to do
 
@@ -299,6 +307,156 @@ leaked into it.
 - The direct model path proves unusable and ACP delegation becomes necessary,
   which reopens the decision recorded against `agent.tool`.
 
+## 9. A specification framework, declined
+
+### 9.1 What was evaluated
+
+OpenSpec, shipped on npm as `@fission-ai/openspec`, MIT licensed, binary `openspec`,
+**pinned at 1.14.1**, published 2026-10-05. Fifty-two versions lie between the first
+release on 2025-09-06 and that one, which is about one a week; the registry figures were
+read on 2026-10-08 and the behaviour described below from the repository at tag
+`v1.14.1` rather than from its documentation.
+
+It calls itself an AI-native system for spec-driven development. Its four stated
+principles are fluid not rigid, with no phase gates, iterative not waterfall, easy not
+complex, and brownfield-first. Its unit of work is a change directory carrying a
+proposal, a design, a task list and delta specifications; `openspec archive` folds the
+deltas into `openspec/specs/<capability>/spec.md` and moves the directory under
+`changes/archive/YYYY-MM-DD-<name>/`. The four commands that drive the workflow are
+typed into the agent rather than into a terminal.
+
+How the evaluation was carried out, candidate by candidate and source by source, is
+issue #223. This section is the decision and the reason for it.
+
+### 9.2 The four rows
+
+| What | Here | With OpenSpec 1.14.1 | Changed |
+|---|---|---|---|
+| the unit of work | an intent, six phases, one issue, one branch | a change directory, named rather than keyed, bound to no issue and with no phases, since "no phase gates" is a stated principle | replaced |
+| where the record lives | `.xeno/intents/KEY/`, sealed by `artifacts_hash` | `openspec/changes/<name>/`, then an archive directory; Markdown with no hash of any kind, editable after the fact by design | replaced, and unsealed |
+| who enforces it | fourteen gates, deterministic and model free | `openspec validate` for structure and `--archived` for ticked checkboxes; past that, skill text and a person, with the documentation saying that everything below is convention and not enforcement | replaced, and weaker |
+| who may edit the specification | a person, in a commit of its own | the agent, as the normal operation | **inverted** |
+
+All four change. The fourth does not merely change, it reverses.
+
+### 9.3 Decision
+
+No, and the fourth row decides it on its own.
+
+OpenSpec's `propose` step has the agent write the specification, and its FAQ instructs
+that where hand-written code and the specification disagree and the code is right, the
+delta specification is updated to match what shipped. That is the specification being
+corrected to the implementation, by the implementer, as the documented happy path. The
+first of this project's three standing rules is the opposite sentence: the documents are
+not editable by the agent, the specification wins until a person changes it, and a
+change to it is its own commit made before the code that follows from it. The rule
+exists because an agent that can edit the specification it is judged against has no
+specification, only a record of what it did. There is no setting that turns this off,
+because it is not a setting; it is what the product is for.
+
+Two coherent answers to one problem, and only one of them can hold in one repository.
+
+It is not declined for quality. Its agent contract — a JSON shape per command, a shared
+diagnostic envelope, an exit-code table — is better documented than most of what it
+competes with, and 9.6 takes the one mechanism in it this project had not thought of.
+
+### 9.4 What the measurement said
+
+The decision rests on 9.3. The measurement is the smaller half of the case, and it is
+recorded because it is what a later reader would otherwise have to redo.
+
+**It replaces one section of one template.** The six shipped templates declare 28
+section slots over 18 distinct ids. OpenSpec's fixed vocabulary is four Markdown markers
+and three filenames, and it speaks to exactly one of those ids, `acceptance-criteria`.
+It has nothing for the other seventeen, nothing for the frontmatter of section 5,
+nothing for `gate.yaml`, `context.lock.yaml`, `cost.yaml`, `learning.yaml`,
+`assumptions.yaml` or `evidence/attached.yaml`, and nothing for any of the five hashes.
+What it would contribute inside `acceptance-criteria` is RFC 2119 and Given/When/Then,
+both of which are adoptable by writing them there and installing nothing.
+
+**Interoperability is zero, and was re-measured.** The readers of `openspec/specs/` are
+its own CLI and its forks. A third-party product that advertises OpenSpec support was
+checked on 2026-10-08 and shells out to `openspec list` and `openspec validate` rather
+than parsing the format, which is the CLI again and not a second reader. Against that,
+the artifacts here are Markdown with YAML frontmatter and plain YAML, Appendix B defines
+every hash to the byte, and the schema is a published deliverable: a documented format
+with a stated hash construction is a stronger interoperability claim than conformance to
+a single-implementation one.
+
+**The surface gets larger, not smaller.** Nothing in the gate path, the hash chain or
+the rule engine has a counterpart in a tool whose own rules its documentation calls
+unenforceable. Acquired, in exchange for that one template section: a Node runtime on
+every machine that works a phase; a weekly-moving dependency in a project with one
+vendored dependency and a rule that a second is a decision rather than a step; an
+instruction surface under `.claude/`, rewritten by a globally installed CLI and
+therefore outside the plugin digest G-Supply checks; an outbound registry query and
+anonymous telemetry to switch off and write down, in a project whose gate path reaches
+no network at all; and a second object called a rule, which is prose injected into a
+prompt, in a project where a rule is a predicate G-Policy evaluates.
+
+### 9.5 Conditions for revisiting
+
+- OpenSpec grows a content hash over a change directory and a verdict record. The
+  sealing objection falls away, which leaves the first standing rule alone and makes a
+  narrower argument worth running again.
+- A second, independent implementation reads `openspec/specs/`: an auditor's tool, a
+  code host, a certification body. Zero and non-zero are different calculations.
+- The format passes to a body that maintains it rather than to the vendor that ships it.
+- `acceptance-criteria` proves too loose in practice. The remedy is then RFC 2119 and
+  Given/When/Then inside that section, written by a person in a commit of its own, and
+  not a framework.
+
+What would not change the answer is OpenSpec becoming better at what it does. The fourth
+row is a disagreement about who owns the specification, and a better tool does not
+settle it.
+
+### 9.6 The one mechanism worth taking
+
+`openspec validate --archived` is a sweep over finished work. It lists every directory
+under `changes/archive/`, counts the task checkboxes of each one, and exits 1 where a
+change has an unticked box or a task file it could not read. It checks nothing else: an
+archived change's delta specifications are not validated, because they were applied at
+archive time. That narrowness is what makes it cheap enough for the pre-commit hook its
+own help text names it for.
+
+The hole it covers is the interesting part. `openspec archive` does warn about
+incomplete tasks, but `--yes` turns that refusal into a line of output, and nothing
+looks at the archive again afterwards, because the ordinary discovery of changes
+excludes it. Stated without the tool, the mechanism is this: a deliberate bypass taken
+at the moment of finishing is re-asked later by something that sweeps what has already
+finished.
+
+This project has that mechanism, in a stricter form, spread over three places rather
+than one. The bypass is recorded instead of warned: `xeno gate override` writes a
+decision of type `overridden` carrying `obligation: open` onto the finding, inside a
+verdict `artifacts_hash` seals, where OpenSpec's `--yes` leaves nothing behind at all.
+The refusals sit before the ending rather than after it: G-Complete fails a P5 whose
+preceding phases are red or provisional, G-Questions fails an open question unresolved
+at P5, and `xeno intent verify --base --head` fails a merge range holding an intent that
+reached neither a decided P5 nor `xeno intent close`. Between them those three refuse
+what `--archived` refuses, which is a unit declared finished with work still open inside
+it. And the obligation an override leaves is read back: it is printed as owed in the
+next-step block of any command run for that intent, including after P5 is decided, until
+`xeno obligation close` closes it.
+
+What is deliberately absent is the refusal after the fact. `xeno intent verify` exits 0
+on a range whose intent carries an open obligation, and no gate reads the field. That is
+section 6 of [the process definition](process-definition.md) holding its position, not a
+gap: nothing forces the follow-up, because a gate that could compel it would have had to
+block the merge in the first place, which is the situation an override exists to
+resolve. The gate-shaped version of `--archived` is therefore not a gate this project
+can have. It would undo the override.
+
+What is left is a reader, and it is already owned. An open obligation is visible one
+intent at a time and nowhere across intents; the across-intents view is WP18 in [the
+implementation plan](implementation-plan.md), which names open overrides as a view of
+its own — which findings were merged over, by whom, for what reason, and whether the
+obligation has been closed since — and defers it to 1.1 because everything it shows can
+be read from the repository by hand. Nothing further is owed here, and the figure says
+why the wait costs nothing: on 2026-10-08 `xeno gate verify` counts 519 verdicts in
+this trail, and not one of them carries an override, so the view would have nothing to
+show.
+
 ## Sources
 
 - https://docs.openhands.dev/overview/introduction
@@ -310,3 +468,11 @@ leaked into it.
 - https://docs.openhands.dev/overview/skills
 - https://docs.langchain.com/oss/python/langgraph/persistence/
 - https://temporal.io/blog/temporal-langgraph-plugin-durable-execution
+
+For section 9, read on 2026-10-08: https://github.com/Fission-AI/OpenSpec at tag
+`v1.14.1` for the behaviour, in particular `src/commands/validate.ts`,
+`src/utils/task-progress.ts` and `src/core/archive.ts`, and the documentation beside
+them, `docs/cli.md`, `docs/agent-contract.md`, `docs/concepts.md` and `docs/faq.md`;
+https://registry.npmjs.org/@fission-ai/openspec for the version, the release dates and
+the licence. The evaluation itself, with the namesakes set aside and every source
+quoted, is issue #223.
