@@ -26,6 +26,7 @@ usage:
   xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
   xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
   xeno review answer  RULE --intent KEY --result R [--note TEXT]   answers one review rule
+  xeno review lens    --intent KEY --result R --note TEXT   a lens's entry, which answers no rule
   xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO

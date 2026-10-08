@@ -40,6 +40,7 @@ const usage = `usage:
   xeno decision record --intent KEY --phase NN --chosen TEXT --reason TEXT --by WHO [--resolves KEY] [--proposed-by WHO]
   xeno decision record --intent KEY --phase NN --withdraw --resolves KEY --reason TEXT --by WHO
   xeno review answer  RULE --intent KEY --result R [--note TEXT]   answers one review rule
+  xeno review lens    --intent KEY --result R --note TEXT   a lens's entry, which answers no rule
   xeno assumption record --intent KEY --phase NN --text TEXT --origin WHERE --confidence HOW [--resolves KEY]
   xeno assumption confirm ID --intent KEY --by WHO
   xeno assumption reject  ID --intent KEY --by WHO
@@ -148,7 +149,10 @@ var commands = map[string]command{
 	"decision record":    {needsKey: true, needsPhase: true, run: cmdDecisionRecord},
 	// No phase: G-Policy judges the checklist only on the last phase, so there is one
 	// phase it can mean and the writer resolves it, as scope set does for P0.
-	"review answer":    {needsKey: true, run: cmdReviewAnswer},
+	"review answer": {needsKey: true, run: cmdReviewAnswer},
+	// No phase either, and no positional: a lens entry answers no rule, so there is no
+	// argument for one and cmdReviewLens refuses the stray the parser would otherwise drop.
+	"review lens":      {needsKey: true, run: cmdReviewLens},
 	"obligation close": {needsKey: true, needsPhase: true, run: cmdObligationClose},
 	"evidence attach":  {needsKey: true, needsPhase: true, run: cmdEvidenceAttach},
 	"evidence declare": {needsKey: true, needsPhase: true, run: cmdEvidenceDeclare},
@@ -683,6 +687,35 @@ func cmdReviewAnswer(o *opts) int {
 	} else {
 		fmt.Fprintf(o.out, "still unanswered: %s\n", strings.Join(a.Unanswered, ", "))
 	}
+	return o.next(0)
+}
+
+// cmdReviewLens writes a lens's checklist entry. It is a command rather than a --source on
+// review answer because the property section 12 rests on is that a lens entry answers no rule,
+// and a flag can be given beside a rule id where an argument list with no place for one cannot.
+//
+// The stray positional is refused rather than ignored. parse takes a leading non-flag argument
+// off the front for every command, so `xeno review lens migration-note --result met` would
+// otherwise write an entry that does not answer the rule the person named, which is the mistake
+// this command's shape exists to prevent.
+//
+// What it prints is the count rather than what is still unanswered: a lens owes none of the
+// effective set, and naming what is outstanding would read as though it did.
+func cmdReviewLens(o *opts) int {
+	if o.finding != "" {
+		fmt.Fprintf(o.errw, "review lens takes no rule and was given %q: a lens entry answers "+
+			"none, and an entry for a rule of the effective set is written by xeno review answer\n",
+			o.finding)
+		return 2
+	}
+	n, err := o.r.ReviewLens(o.key, o.result, o.note)
+	if code := o.report(nil, err); code != 0 {
+		return code
+	}
+	fmt.Fprintf(o.out, "%s %s notes a lens entry: %s\n", o.key, model.Phases[len(model.Phases)-1],
+		n.Entry.Result)
+	fmt.Fprintf(o.out, "the checklist carries %d from lenses; none of them answers a rule, so "+
+		"what G-Policy counts is unchanged\n", n.Lens)
 	return o.next(0)
 }
 

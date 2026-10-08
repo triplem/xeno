@@ -938,3 +938,45 @@ func TestSymbolShowWithoutANameIsTwo(t *testing.T) {
 		t.Errorf("the reason did not reach standard error: %q", errw)
 	}
 }
+
+// The lens entry from the command line. The artifact is written here rather than reached
+// through the commands, because P5 cannot be started until the four phases before it are
+// green and the sequence is not what this is about.
+//
+// What it asserts beyond the writer's own tests is the shape of the command: there is no
+// place in its arguments for a rule, which is why it is a command rather than a --source on
+// `review answer`, and the stray positional `parse` takes off the front for every command is
+// refused rather than dropped. A dropped one would write an entry answering nothing while
+// the person who typed the rule id reads the line as an answer to it.
+func TestTheLensEntryIsWrittenFromTheCommandLineAndTakesNoRule(t *testing.T) {
+	root := repo(t)
+	writeUnder(t, root, model.PhaseDir("PROJ-1", "05-review")+"/output.md",
+		"---\nintent: \"git.example/group/proj#1\"\nphase: 05-review\n---\n\nthe review's prose\n")
+
+	code, out, errw := invoke(t, "review", "lens", "--root", root, "--intent", "PROJ-1",
+		"--result", "deviation", "--note", "the security lens: the new flag widens a permission",
+		"--no-next")
+	if code != 0 {
+		t.Fatalf("writing a lens entry exits %d: %s", code, errw)
+	}
+	if !strings.Contains(out, "notes a lens entry") || !strings.Contains(out, "unchanged") {
+		t.Errorf("the line does not say what was written or what it leaves alone: %q", out)
+	}
+
+	b, err := os.ReadFile(filepath.Join(root, model.PhaseDir("PROJ-1", "05-review"), "output.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(b); !strings.Contains(got, "source: lens") || strings.Contains(got, "rule:") {
+		t.Errorf("the entry is not section 12's shape:\n%s", got)
+	}
+
+	code, out, errw = invoke(t, "review", "lens", "deviations-are-traceable", "--root", root,
+		"--intent", "PROJ-1", "--result", "met", "--note", "the architecture lens agrees", "--no-next")
+	if code != 2 {
+		t.Errorf("a rule named beside a lens entry exits %d, want 2: %s%s", code, out, errw)
+	}
+	if !strings.Contains(errw, "takes no rule") {
+		t.Errorf("the refusal does not say the argument has no place: %q", errw)
+	}
+}

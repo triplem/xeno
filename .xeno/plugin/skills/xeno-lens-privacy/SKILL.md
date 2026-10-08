@@ -49,10 +49,17 @@ assumption register is the reading the lens worked from: that a field is not per
 data, that a log is not retained, that a store is inside the boundary. Each of those is
 checkable by somebody, which is what makes it an assumption rather than a question.
 
-At `05-review` the finding belongs in the `review-checklist` section's prose, named as
-the privacy lens's own. The structured entry section 5 allows — `source: lens`, no rule
-id, outside what G-Policy counts — has no command behind it yet: `xeno review answer`
-refuses `--source`, because every entry it writes answers a rule of the effective set.
+At `05-review` the finding goes into the review checklist as the structured entry
+section 12 gives a lens, which has a command of its own:
+
+    xeno review lens --intent KEY --result <met|deviation|not-applicable> --note TEXT
+
+The entry carries `source: lens` and no rule id, and that is what keeps it outside the
+set G-Policy counts: the gate checks the entries rendered from review rules, and this
+one answers none. The command therefore takes no rule and refuses one passed anyway.
+The note is required whatever the result, because with no rule id nothing else in the
+entry says which lens wrote it or what it found — name the privacy lens in it. The
+reasoning too long for a note still belongs in the `review-checklist` section's prose.
 
 ## What it never writes
 

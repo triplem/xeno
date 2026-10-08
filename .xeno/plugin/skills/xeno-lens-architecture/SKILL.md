@@ -52,11 +52,17 @@ Where the lens read the structure from the tree rather than from a document, tha
 reading is an assumption with `origin: repo-convention`. It is the one this lens owes
 most often: the convention it enforced may be three files that happen to agree.
 
-At `05-review` the finding belongs in the `review-checklist` section's prose, named as
-the architecture lens's own. The structured entry section 5 allows — `source: lens`, no
-rule id, outside what G-Policy counts — has no command behind it yet. The one command
-that writes that list refuses `--source`, because every entry it writes answers a rule
-of the effective set.
+At `05-review` the finding goes into the review checklist as the structured entry
+section 12 gives a lens, which has a command of its own:
+
+    xeno review lens --intent KEY --result <met|deviation|not-applicable> --note TEXT
+
+The entry carries `source: lens` and no rule id, and that is what keeps it outside the
+set G-Policy counts: the gate checks the entries rendered from review rules, and this
+one answers none. The command therefore takes no rule and refuses one passed anyway.
+The note is required whatever the result, because with no rule id nothing else in the
+entry says which lens wrote it or what it found — name the architecture lens in it. The
+reasoning too long for a note still belongs in the `review-checklist` section's prose.
 
 ## What it never writes
 
