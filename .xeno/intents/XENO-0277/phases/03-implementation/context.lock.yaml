@@ -1,0 +1,56 @@
+intent: github.com/triplem/xeno#95
+phase: 03-implementation
+created: "2026-10-08T14:47:32Z"
+schema_version: "1.0"
+runner_version: dev+5f12412
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 3212cd17e4d03724f2cff75327dcc6dac00a04a59e9a1b74db2a97c8ee14bf38
+evidence_source: ci
+template_source: project
+repo_commit: 5f12412e616ea46c2f3cea27b7c2ec6c6b13cead
+files:
+    - path: .github/workflows/audit.yml
+      sha256: 783c47202e7488818fc6615607453815cf105c16ed32ebeea5861d0501f357cc
+      bytes: 7816
+    - path: .github/workflows/gitleaks.yml
+      sha256: e41de797bb5f23a0a0187cc935dbf48d11487174258d637a9a1046523e2c5dcd
+      bytes: 5314
+    - path: .github/workflows/release.yml
+      sha256: 0acee4e3c8a9a6ab4305b8240a57f01e574a6b8c897a57163d6b521b0744d262
+      bytes: 15081
+    - path: .github/workflows/renovate.yml
+      sha256: 198bc4342904a205cb48db6350378586be6cb1ed5f93d3c7522f76483dd6b960
+      bytes: 2124
+    - path: .github/workflows/semgrep.yml
+      sha256: f89e3b81c7041755b10873496c5b34a3451fccf2b172e13a0b8046781b6f168b
+      bytes: 4740
+    - path: .github/workflows/trivy.yml
+      sha256: c9167af759378be230e7e50de090f5adcac056c4286bee20c5b2b3b11247dced
+      bytes: 6345
+    - path: .github/workflows/xeno.yml
+      sha256: ab63594c455c453d3892034931391b6e99df13c52a2f7b2f7e1d472ba12738db
+      bytes: 19380
+    - path: renovate.json
+      sha256: acf2653c614291fdddf7f7efd965cec152f7b19faf4399770514a20bb4a97808
+      bytes: 4705
+    - path: docs/supply-chain.md
+      sha256: 6c528f598c1a123956b467d0abc8300e7784d7afd8944b7daf0a55d779be46c7
+      bytes: 12896
+    - path: internal/model/supply_chain_test.go
+      sha256: 1708e52ce299a43aab519377430840c063d16b3b57be87eead3fd26e7caa7cda
+      bytes: 19496
+    - path: go.mod
+      sha256: 7cb058305fa8d7b57e18f01b14c5e1b0de28fb200a7777af4d69d9a0cc1aa4b7
+      bytes: 75
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 396d5a10cfdd27caddc305737455a9de3bce393acb997ead7058b9d0d723bea7

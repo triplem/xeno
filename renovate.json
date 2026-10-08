@@ -1,32 +1,112 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard"
+  ],
+  "description": [
+    "Renovate runs from .github/workflows/renovate.yml as this repository's own job, which is",
+    "the self-hosted shape decided on #95. The deciding detail is go mod vendor: only this shape",
+    "can run a command in the repository, and a go.mod bump that left vendor/ behind would fail",
+    "verify on a tree the bot had made inconsistent.",
+    "A proposal arrives WITHOUT a Signed-off-by, deliberately. The decision recorded against Q-1",
+    "of XENO-0277 is that a person re-signs each proposal: the DCO's claim is about the right to",
+    "submit a change and it stays with a person. An unsigned renovate pull request is therefore",
+    "the expected state, and amending it with your own sign-off is the step before merging.",
+    "Nothing automerges. Every proposal waits for somebody.",
+    "semgrep is pinned by image digest rather than by version, and the docker manager would",
+    "propose a digest with no version to read, so it is left to the scheduled trivy and audit",
+    "jobs to report and to a person to move. There is no npm manifest in this repository, so",
+    "the npm manager is off and semantic-release is reached by a regex instead."
+  ],
   "dependencyDashboard": true,
   "automerge": false,
-  "prCreation": "approval",
-  "enabledManagers": ["github-actions", "npm", "gomod"],
+  "prConcurrentLimit": 3,
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "semanticCommits": "enabled",
+  "commitBody": "Refs #95",
+  "pinDigests": true,
+  "enabledManagers": [
+    "github-actions",
+    "gomod",
+    "custom.regex"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "customManagers": [
+    {
+      "description": "semantic-release's version is a with: input of the release action and not a manifest entry, so no ordinary manager sees it.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/release\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "semantic_version: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "semantic-release",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "description": "cyclonedx-gomod's version is a with: input of the CycloneDX action, matched through the action's own name so that a second version: key in the same file is not mistaken for it.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/release\\.ya?ml$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "uses: CycloneDX/gh-gomod-generate-sbom@[^\\n]+\\n(?:[^\\n]*\\n)*?\\s+version: (?<currentValue>\\S+)",
+        "version: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "CycloneDX/cyclonedx-gomod",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "trivy's own version is a with: input of the trivy action, which is pinned separately: the action and the binary it installs move independently and both are rows of docs/supply-chain.md.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/trivy\\.ya?ml$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "uses: aquasecurity/trivy-action@[^\\n]+\\n(?:[^\\n]*\\n)*?\\s+version: (?<currentValue>\\S+)",
+        "version: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "aquasecurity/trivy",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
   "packageRules": [
     {
-      "description": "Every action in .github/workflows/ is pinned to a commit sha and every one of those shas is also a row of docs/supply-chain.md, which internal/model/supply_chain_test.go holds against the tree in both directions. Renovate has no reader for a Markdown table, so an update it opened on its own would fail verify on the page rather than on the bump, and whoever read that failure would be debugging the wrong file. These therefore reach the dashboard and wait for a person, who moves the row with the sha.",
-      "matchManagers": ["github-actions"],
-      "dependencyDashboardApproval": true,
+      "description": "A bumped sha is also a row of docs/supply-chain.md, which internal/model/supply_chain_test.go holds against the tree in both directions. Renovate cannot move a Markdown row, so a proposal that touches a pin is a proposal somebody finishes: move the row in the same pull request, or verify stays red on the page rather than on the bump.",
+      "matchManagers": [
+        "github-actions"
+      ],
       "pinDigests": true
     },
     {
-      "description": "The npm tools the workflows install are pinned to exact versions and carry rows of the same page, for the same reason.",
-      "matchManagers": ["npm"],
-      "dependencyDashboardApproval": true,
-      "rangeStrategy": "pin"
-    },
-    {
-      "description": "One module dependency, go.yaml.in/yaml/v3, vendored. A bump has to be vendored again in the same commit, which is a person's act, and adding a second dependency is a decision rather than a step.",
-      "matchManagers": ["gomod"],
-      "dependencyDashboardApproval": true,
-      "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"]
+      "description": "One module dependency, vendored. The workflow's postUpgradeTasks re-vendors, so a proposal arrives with vendor/ in step; if that step is ever removed, this manager has to be disabled with it.",
+      "matchManagers": [
+        "gomod"
+      ]
     }
   ],
   "vulnerabilityAlerts": {
-    "dependencyDashboardApproval": false,
-    "description": "The one case that does not wait for the dashboard: an advisory arrives without anything in the repository moving, and CONTRIBUTING.md puts the work it names before the next merge rather than after the next feature."
+    "description": "The one case that does not wait for the schedule: an advisory arrives without anything in the repository moving, and CONTRIBUTING.md puts the work it names before the next merge rather than after the next feature.",
+    "schedule": [
+      "at any time"
+    ]
+  },
+  "postUpgradeTasks": {
+    "commands": [
+      "go mod vendor"
+    ],
+    "fileFilters": [
+      "vendor/**"
+    ],
+    "executionMode": "update"
   }
 }

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 03-implementation
+created: "2026-10-08T14:47:32Z"
+schema_version: "1.0"
+runner_version: dev+5f12412
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: '#317''s pin test fired on this intent''s own new action: adding a workflow that pins one action made the page''s test red until the row was written, which is the interaction XENO-0274 only described.'
+      proposal: The supply-chain page's own prose should say that a new pinned action is two edits and that the test is what enforces it, so that whoever adds a workflow knows before CI tells them.
+      target: docs/supply-chain.md

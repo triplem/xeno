@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 00-intake
+created: "2026-10-08T14:40:29Z"
+schema_version: "1.0"
+runner_version: dev+5f12412
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'XENO-0274 was run without reading the issue''s comments: phase start quotes the issue body and nothing brings the discussion under it, so the analysis and the three answers that settled this were invisible to the phase that needed them.'
+      proposal: Where a tracker is configured, phase start should carry the issue's comments into the intake beside its body, or say how many there are and that they were not read, so that a phase cannot proceed believing the body is the whole of what was said.
+      target: internal/runner/tracker.go
