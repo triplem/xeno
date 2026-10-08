@@ -1,0 +1,35 @@
+intent: github.com/triplem/xeno#324
+phase: 02-design
+created: "2026-10-08T13:46:50Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: fdddf523edca617a4731679edcab4efdd215a0ce9805f5c5d77a9c22d7c804dc
+evidence_source: ci
+template_source: project
+repo_commit: 042c9bca5efd9824171f991f3ddae64293bc2c5b
+files:
+    - path: internal/scaffold/files/ci-github.yml
+      sha256: b9c73699b060cbeeafae2fce86ae2a9253b834800dbbf5787961771666ceb13a
+      bytes: 3688
+    - path: internal/scaffold/files/ci-gitlab.yml
+      sha256: 64ab1410cba2e1429149627c57ce1ca3064bc5f1d1a54ad4925c0172bd383149
+      bytes: 3550
+    - path: internal/runner/init_test.go
+      sha256: 9c722bb46fa5aacb8f105347453445dc85977d2894baba73e77d60c6617df30c
+      bytes: 25149
+    - path: Dockerfile
+      sha256: a98533f68ab81f4f907ee5f8480ff2db8992e87a8f8a8dea7389e021526134db
+      bytes: 7716
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 0b070abe6bce8b4bcfc4a25e374e753ad0c24abc1bec1d76ab07c9412e2c5b5e

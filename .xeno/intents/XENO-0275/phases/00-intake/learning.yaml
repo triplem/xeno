@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#324
+phase: 00-intake
+created: "2026-10-08T13:46:15Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The intent key had to be passed by hand: the previous intent lives on a branch that has not merged, so the trail on main does not know its number is taken and intent start handed out the same one.'
+      proposal: Where a second intent is started before the first has merged, xeno intent start should say that the key it derived may already exist on another branch, or the sequence should be read from the branch's own base rather than from the working tree.
+      target: internal/runner/runner.go

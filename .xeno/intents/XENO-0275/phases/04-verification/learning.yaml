@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#324
+phase: 04-verification
+created: "2026-10-08T13:48:57Z"
+schema_version: "1.0"
+runner_version: dev+042c9bc.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A check over a rendered wrapper reads the templates embedded in the binary, so running it without rebuilding reports the old file while the test over the template already passes.
+      proposal: Where a phase verifies a generated file, the verification section should name the build that produced the binary it read, as the evidence declaration names a job.
+      target: .xeno/plugin/skills/xeno-verification/SKILL.md

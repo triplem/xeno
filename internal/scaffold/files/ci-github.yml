@@ -31,6 +31,13 @@ jobs:
     # keeps open. Edit it here, where the job that depends on it is.
     container:
       image: {{.RunnerImage}}
+      # The host mounts its own work directory into this container and chowns nothing, and
+      # actions/checkout runs inside it, so the image's user has to be able to write there.
+      # A hosted runner needs nothing: that directory belongs to uid 1001 and the image runs
+      # as 1001. A self-hosted runner, or a controller deployment, may own it as another uid,
+      # and then checkout fails on a permission before any gate exists -- no setting inside
+      # the image can fix a write. Uncomment this with the uid your runner uses.
+      # options: --user 1001
     steps:
       - uses: actions/checkout@v5
         with:
