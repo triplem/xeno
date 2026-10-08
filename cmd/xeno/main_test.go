@@ -307,6 +307,10 @@ var completeWithoutArguments = map[string]string{
 	"intent status": "lists the last ten intents by creation, and none is an empty list",
 	"gate verify":   "recomputes every verdict there is, which in a tree holding none is none",
 	"cost turn":     "reads a hook's JSON on standard input, so the arguments are not where its input comes from",
+	// The first command added after this test was written, and it arrived while this branch
+	// was open: it counts the whole trail, so no argument is the ordinary way to call it and
+	// --intent narrows what it already answers.
+	"report figures": "counts every intent the trail holds, which is what it is for",
 }
 
 // Every command's own words with nothing after them. `xeno init` panicked this way for as
