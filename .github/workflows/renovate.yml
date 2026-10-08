@@ -1,0 +1,44 @@
+# Renovate, run as this repository's own job rather than as an installed app. The shape was
+# decided on #95 and the deciding detail is `go mod vendor`: the app cannot run a command in
+# the repository, so a go.mod bump from it would arrive with vendor/ stale and fail `verify`
+# on a tree the bot had made inconsistent. This form runs postUpgradeTasks, and it has a
+# second property this project cares about — the run is a job here, pinned by a commit sha
+# like every other action, and therefore a row of docs/supply-chain.md.
+#
+# A proposal arrives WITHOUT a Signed-off-by, deliberately: Q-1 of XENO-0277 is decided as
+# "a person re-signs each proposal", so an unsigned renovate pull request is the expected
+# state and amending it with your own sign-off is the step before merging.
+#
+# Nothing runs until RENOVATE_TOKEN is in the repository's secrets, which only a maintainer
+# can add. Until then the job authenticates against nothing and proposes nothing, which is
+# the honest state of a repository that has decided the shape and not switched it on.
+name: renovate
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'     # before 6am Monday in the configuration's own words
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # setup-go so that postUpgradeTasks can run `go mod vendor` against the toolchain the
+      # go directive names, rather than against whatever the runner image happens to carry.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # allowedPostUpgradeCommands has to permit the command explicitly: the action refuses
+      # one it was not told about rather than running it.
+      - uses: renovatebot/github-action@230ce922b08968d0a4f6f70f295601daff09ef1d # v46.3.7
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ALLOWED_POST_UPGRADE_COMMANDS: '["^go mod vendor$"]'
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}

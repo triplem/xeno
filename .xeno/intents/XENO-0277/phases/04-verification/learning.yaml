@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 04-verification
+created: "2026-10-08T14:52:20Z"
+schema_version: "1.0"
+runner_version: dev+5f12412.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A regex checked against a whole file is not the check renovate performs: a recursive matchStrings applies each pattern to what the previous one matched, and tested the wrong way the bare version: pattern captured node-version instead.'
+      proposal: Where a phase verifies a pattern a tool will run, the verification should state which engine semantics it reproduced, because a pattern that matches in one and not the other is a check that proves nothing.
+      target: .xeno/plugin/skills/xeno-verification/SKILL.md
