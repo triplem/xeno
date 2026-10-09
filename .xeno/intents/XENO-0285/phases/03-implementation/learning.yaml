@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 03-implementation
+created: "2026-10-09T16:51:14Z"
+schema_version: "1.0"
+runner_version: dev+d2bc411.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A removed configuration key leaves nothing behind to explain itself. commitBody carried Refs #95 for a reason that stopped applying, and a reader who finds no commitBody and knows CONTRIBUTING.md asks for a footer would reasonably add one back, reintroducing a footer this project decided against.'
+      proposal: Where a change removes a key or a field rather than altering one, the reason goes into the file that no longer has it, next to what remains. A commit message carries it for the reader of the diff; the file has to carry it for the reader of the tree, who is the only reader after a squash.
+      target: CLAUDE.md

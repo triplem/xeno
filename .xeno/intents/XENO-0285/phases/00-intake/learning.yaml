@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 00-intake
+created: "2026-10-09T16:46:54Z"
+schema_version: "1.0"
+runner_version: dev+d2bc411.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The three pins with no manager were found by running every customManager regex against the tree and reading what each resolved to, not by reading renovate.json. Reading the configuration suggests coverage, because every manager present is correct; a pin with no manager has no entry that could be wrong, so absence is the one defect reading cannot find.
+      proposal: Where a configuration's job is to match text elsewhere in the tree, a phase claiming coverage runs the match and records what each entry resolved to, including the entries it is not changing. The entries that already worked are what make an entry that matches nothing evidence rather than a harness that never ran.
+      target: CLAUDE.md

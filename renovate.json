@@ -17,7 +17,17 @@
     "golangci-lint's version is a with: input of its action, and gosec's and govulncheck's are the",
     "@version of a go install line, so each is reached by a regex manager below, as",
     "semantic-release and trivy are. There is no npm manifest in this repository, so",
-    "the npm manager is off and semantic-release is reached by a regex instead."
+    "the npm manager is off and semantic-release is reached by a regex instead.",
+    "A renovate commit carries no Refs footer. CONTRIBUTING.md puts the issue of the work in",
+    "the footer and a dependency bump is the work of no issue; the squash takes the pull",
+    "request description anyway, so a footer on the branch commit would not reach main. It",
+    "used to read Refs #95, which is the issue that decided this shape and is now closed.",
+    "gitleaks, zensical and the image's base are reached by regex managers below for the same",
+    "reason the tools above are: the version is a line of a workflow or of the Dockerfile and",
+    "no manifest records it. gitleaks is the one whose proposal cannot be complete \u2014 renovate",
+    "moves GITLEAKS_VERSION and cannot recompute GITLEAKS_SHA256, so the install step fails",
+    "the checksum until a person recomputes it. That is loud rather than silent and nothing",
+    "automerges, which is the same bargain the supply-chain rows already make."
   ],
   "dependencyDashboard": true,
   "automerge": false,
@@ -26,7 +36,6 @@
     "before 6am on monday"
   ],
   "semanticCommits": "enabled",
-  "commitBody": "Refs #95",
   "pinDigests": true,
   "enabledManagers": [
     "github-actions",
@@ -115,6 +124,42 @@
       ],
       "depNameTemplate": "github.com/securego/gosec/v2",
       "datasourceTemplate": "go"
+    },
+    {
+      "description": "gitleaks is fetched as a release tarball at a version held in an env: block, which no manager sees. The tags carry a v and the variable does not, so extractVersion drops it. The checksum beside it is NOT renovate's to move: a proposal arrives with GITLEAKS_SHA256 stale and the install step's sha256sum -c fails until somebody recomputes it.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/gitleaks\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "GITLEAKS_VERSION: (?<currentValue>[0-9][^\\s]*)"
+      ],
+      "depNameTemplate": "gitleaks/gitleaks",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "description": "zensical builds the documentation site and is pinned on a pip install line in docs.yml, which is not a requirements file, so the pip manager finds nothing. Its fourteen dependencies resolve unpinned at install and are not reachable from here, which docs/supply-chain.md's row already says.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/docs\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "pip install zensical==(?<currentValue>[0-9][^\\s]*)"
+      ],
+      "depNameTemplate": "zensical",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "description": "The image's base, as the value of ARG BASE rather than of FROM, which is why the dockerfile manager is not enabled for it. The tag is matched as well as the digest because a digest alone names no stream to follow: docs/supply-chain.md calls this pin debian 13-slim and the reference now says so too.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Dockerfile$/"
+      ],
+      "matchStrings": [
+        "ARG BASE=(?<depName>docker\\.io/library/debian):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[0-9a-f]{64})"
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [

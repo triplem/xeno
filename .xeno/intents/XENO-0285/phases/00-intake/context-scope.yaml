@@ -1,0 +1,25 @@
+intent: github.com/triplem/xeno#95
+phase: 00-intake
+created: "2026-10-09T16:44:59Z"
+schema_version: "1.0"
+runner_version: dev+d2bc411.dirty
+plugin_version: 0.0.0-dev
+include:
+    - renovate.json
+    - Dockerfile
+    - CONTRIBUTING.md
+    - docs/supply-chain.md
+    - internal/model/supply_chain_test.go
+    - .github/workflows/renovate.yml
+    - .github/workflows/gitleaks.yml
+    - .github/workflows/docs.yml
+    - .github/workflows/release.yml
+    - .github/workflows/trivy.yml
+    - .github/workflows/lint.yml
+    - .github/workflows/govulncheck.yml
+    - .github/workflows/gosec.yml
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 13
+    bytes: 108000
