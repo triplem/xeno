@@ -1,0 +1,71 @@
+intent: github.com/triplem/xeno#332
+phase: 05-review
+created: "2026-10-09T13:41:10Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: fce7823c4cdad1c2d634bfb67a6d7f2b2866d61238b56251bd82a01550226668
+evidence_source: ci
+template_source: project
+repo_commit: b431e423b4f53db37cff2433cb9dcfecf698f792
+files:
+    - path: docs/process-definition.md
+      sha256: 6420d86b48170f55e32f074a23b454831edb6298dced3e9f204d7286cc680bf5
+      bytes: 138216
+    - path: docs/commands.md
+      sha256: f96f10216e6ebf5ae3308e0c612745086ce39c025a9e468c342b8772e7051540
+      bytes: 6699
+    - path: docs/assumptions.md
+      sha256: b2c5a4bac5f95e3a69bf8e7beb23c30714ff3033600c7a8a8effeb17a6a2569f
+      bytes: 114990
+    - path: internal/model/identity.go
+      sha256: 0080081229149101f0003afd66653aa75418f475823a0f1f85d69c876a1f44f7
+      bytes: 15061
+    - path: internal/model/identity_test.go
+      sha256: 1ba01f36c02fa1ecff295e7cb7080fd415059ebfcfa8107a08a5182cf9f556a8
+      bytes: 10600
+    - path: internal/runner/tracker.go
+      sha256: b3c36d06436bf0c2f9a620bf08cf3f53b599cfc021d42837b3260931e824cdb6
+      bytes: 19775
+    - path: internal/runner/tracker_test.go
+      sha256: afe037ccb3ef401e53293065e5dbfaa2d77e5fc133b102f795ba15bf4c0095ee
+      bytes: 24137
+    - path: internal/runner/runner.go
+      sha256: b58bfe73d07ca56743e03fc8bfc2d3070b5e5f5d1e583d850bf2397f7f749ff4
+      bytes: 84141
+    - path: internal/runner/init.go
+      sha256: 7921ca01a66a73e97e8f50dae09bcf3d7350127bf25cc90dff2bdf44e398b0b2
+      bytes: 11092
+    - path: internal/runner/init_test.go
+      sha256: 6e9d3dffeee4921fbef352b32e5eca3f28b286e3a705f0e8cbcde494c1dd3f5e
+      bytes: 26556
+    - path: cmd/xeno/main.go
+      sha256: 9593d065d3b9ea4e1b972752a48e6a71c015e4adb63a5a29739c0310a2295c97
+      bytes: 63167
+    - path: internal/mcp/mcp_test.go
+      sha256: 0b33625b111a376c32be6d1a0a717d95c878d93c77ad437706938cb806fd2e42
+      bytes: 17998
+    - path: internal/host/github/tracker_test.go
+      sha256: 51b19d57b0ab790d13d16a9d021ee11c516bb006081b0e2c1d6c16f860e4b10d
+      bytes: 10839
+    - path: internal/plugin/plugin_test.go
+      sha256: 03c4db4507dbc4f7d0bcd8e41f82a7abbb6d1e4361481424fe6de0dec70e8cd4
+      bytes: 23396
+    - path: .xeno/plugin/bin/xeno-env.sh
+      sha256: 6b5ddfc1b7900c27e89db7bde7b894bf50550950495961fb1408df9a2d9b9eed
+      bytes: 2420
+    - path: scripts/github-settings.sh
+      sha256: 864ccd306d9e5f98dfae7e5730fbe2913182f7cc32272bb751bd33c41050241a
+      bytes: 6922
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: fb2fd2afd827658fe5745e4405ba58b7b6a392743f6b1fddae07bb4c672ad392

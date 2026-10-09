@@ -191,12 +191,12 @@ func TestAnIssueIsReadWithWhatTheHostSaysAroundIt(t *testing.T) {
 	a, asked := routing(t, map[string]any{
 		"/repos/triplem/xeno/issues/330": map[string]any{
 			"title": "t", "body": "b",
-			"labels":    []map[string]string{{"name": "wp12"}, {"name": "approved"}},
+			"labels":    []map[string]string{{"name": "wp12"}, {"name": "xeno-approved"}},
 			"milestone": map[string]any{"title": "1.1", "due_on": "2026-12-31T00:00:00Z", "number": 2, "state": "open"},
 		},
 		"/repos/triplem/xeno/issues/330/comments": []map[string]any{
 			{"user": map[string]string{"login": "someone"}, "created_at": "2026-10-08T10:00:00Z", "body": "a question"},
-			{"user": map[string]string{"login": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "approved\n\nbecause"},
+			{"user": map[string]string{"login": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "/xeno approved\n\nbecause"},
 		},
 		"/repos/triplem/xeno/milestones": []map[string]any{
 			{"title": "1.0", "due_on": "2026-11-30T00:00:00Z", "number": 1, "state": "open"},
@@ -208,7 +208,7 @@ func TestAnIssueIsReadWithWhatTheHostSaysAroundIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(issue.Labels, ",") != "wp12,approved" {
+	if strings.Join(issue.Labels, ",") != "wp12,xeno-approved" {
 		t.Errorf("labels %v", issue.Labels)
 	}
 	if issue.Milestone == nil || issue.Milestone.Title != "1.1" || issue.Milestone.Due != "2026-12-31T00:00:00Z" ||
@@ -216,7 +216,7 @@ func TestAnIssueIsReadWithWhatTheHostSaysAroundIt(t *testing.T) {
 		t.Errorf("milestone %+v", issue.Milestone)
 	}
 	if len(issue.Comments) != 2 || issue.Comments[1].Author != "triplem" ||
-		issue.Comments[1].At != "2026-10-08T15:10:28Z" || issue.Comments[1].Body != "approved\n\nbecause" {
+		issue.Comments[1].At != "2026-10-08T15:10:28Z" || issue.Comments[1].Body != "/xeno approved\n\nbecause" {
 		t.Errorf("comments %+v", issue.Comments)
 	}
 	if len(issue.OpenMilestones) != 3 || issue.OpenMilestones[2].Due != "" || issue.OpenMilestones[0].Number != 1 {
@@ -266,14 +266,14 @@ func TestCommentsBeyondTheFirstPageAreFollowed(t *testing.T) {
 			return
 		}
 		_ = json.NewEncoder(w).Encode([]map[string]any{
-			{"user": map[string]string{"login": "triplem"}, "body": "approved"}})
+			{"user": map[string]string{"login": "triplem"}, "body": "/xeno approved"}})
 	}))
 	t.Cleanup(srv.Close)
 	issue, err := New(srv.Client(), srv.URL).Issue("triplem/xeno", "330", "tok")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if calls != 2 || len(issue.Comments) != pageSize+1 || issue.Comments[pageSize].Body != "approved" {
+	if calls != 2 || len(issue.Comments) != pageSize+1 || issue.Comments[pageSize].Body != "/xeno approved" {
 		t.Errorf("%d calls read %d comments", calls, len(issue.Comments))
 	}
 }

@@ -153,12 +153,12 @@ func TestAnIssueIsReadWithWhatThisHostSaysAroundIt(t *testing.T) {
 	a, asked := routing(t, map[string]any{
 		"/projects/group%2Fproj/issues/330": map[string]any{
 			"title": "t", "description": "d",
-			"labels":    []string{"wp12", "approved"},
+			"labels":    []string{"wp12", "xeno-approved"},
 			"milestone": map[string]any{"title": "1.1", "due_date": "2026-12-31", "iid": 2, "state": "active"},
 		},
 		"/projects/group%2Fproj/issues/330/notes": []map[string]any{
 			{"author": map[string]string{"username": "bot"}, "created_at": "2026-10-08T10:00:00Z", "body": "added ~approved label", "system": true},
-			{"author": map[string]string{"username": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "approved\n\nbecause", "system": false},
+			{"author": map[string]string{"username": "triplem"}, "created_at": "2026-10-08T15:10:28Z", "body": "/xeno approved\n\nbecause", "system": false},
 		},
 		"/projects/group%2Fproj/milestones": []map[string]any{
 			{"title": "1.0", "due_date": "2026-11-30", "iid": 1, "state": "active"},
@@ -169,13 +169,13 @@ func TestAnIssueIsReadWithWhatThisHostSaysAroundIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(issue.Labels) != 2 || issue.Labels[1] != "approved" {
+	if len(issue.Labels) != 2 || issue.Labels[1] != "xeno-approved" {
 		t.Errorf("labels %v", issue.Labels)
 	}
 	if issue.Milestone == nil || issue.Milestone.Due != "2026-12-31" || issue.Milestone.Number != 2 || issue.Milestone.Closed {
 		t.Errorf("milestone %+v", issue.Milestone)
 	}
-	if len(issue.Comments) != 1 || issue.Comments[0].Author != "triplem" || issue.Comments[0].Body != "approved\n\nbecause" {
+	if len(issue.Comments) != 1 || issue.Comments[0].Author != "triplem" || issue.Comments[0].Body != "/xeno approved\n\nbecause" {
 		t.Errorf("the system note was read as a comment, or the note was not: %+v", issue.Comments)
 	}
 	if len(issue.OpenMilestones) != 2 || issue.OpenMilestones[0].Title != "1.0" {

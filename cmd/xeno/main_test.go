@@ -449,11 +449,11 @@ func approvedTracker(t *testing.T) string {
 		if strings.HasSuffix(r.URL.Path, "/comments") {
 			_ = json.NewEncoder(w).Encode([]map[string]any{{
 				"user": map[string]string{"login": "m"}, "created_at": "2026-10-08T15:10:28Z",
-				"body": "approved\n\nwanted"}})
+				"body": "/xeno approved\n\nwanted"}})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"title": "t", "body": "b",
-			"labels": []map[string]string{{"name": "approved"}}})
+			"labels": []map[string]string{{"name": "xeno-approved"}}})
 	}))
 	t.Cleanup(srv.Close)
 	t.Setenv("XENO_TRACKER_TOKEN", "a-token")

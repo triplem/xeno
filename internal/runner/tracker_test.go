@@ -36,13 +36,13 @@ type fakeHost struct {
 }
 
 // approved is the fake host an intent can be started against: the label and a comment
-// whose first line is the word, which is the whole of what section 12 asks for.
+// whose first line is `/xeno approved`, which is the whole of what section 12 asks for.
 func approved(issue map[string]string) *fakeHost {
-	return &fakeHost{issue: issue, labels: []string{"approved"},
+	return &fakeHost{issue: issue, labels: []string{"xeno-approved"},
 		discussion: []map[string]any{{
 			"user":       map[string]string{"login": "maintainer"},
 			"created_at": "2026-10-08T15:10:28Z",
-			"body":       "approved\n\nbecause the shape was decided on the issue",
+			"body":       "/xeno approved\n\nbecause the shape was decided on the issue",
 		}}}
 }
 
@@ -271,15 +271,15 @@ func TestAnIssueNobodyApprovedDoesNotBecomeAnIntent(t *testing.T) {
 		want string
 	}{
 		{"neither", &fakeHost{issue: map[string]string{"title": "t", "body": "b"}},
-			"the label approved and a comment whose first line is approved"},
+			"the label xeno-approved and a comment whose first line is /xeno approved"},
 		{"the label alone", &fakeHost{issue: map[string]string{"title": "t"},
-			labels: []string{"approved"}}, "missing a comment whose first line is approved"},
+			labels: []string{"xeno-approved"}}, "missing a comment whose first line is /xeno approved"},
 		{"the comment alone", &fakeHost{issue: map[string]string{"title": "t"},
-			discussion: approved(nil).discussion}, "missing the label approved"},
+			discussion: approved(nil).discussion}, "missing the label xeno-approved"},
 		{"a comment that only contains the word", &fakeHost{issue: map[string]string{"title": "t"},
-			labels: []string{"approved"}, discussion: []map[string]any{{
+			labels: []string{"xeno-approved"}, discussion: []map[string]any{{
 				"user": map[string]string{"login": "m"}, "body": "this could be approved later"}}},
-			"missing a comment whose first line is approved"},
+			"missing a comment whose first line is /xeno approved"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -457,7 +457,7 @@ func TestTheIntakeSaysWhereNoApprovalWasFound(t *testing.T) {
 
 	f.must(f.r.Start(key, "00-intake"))
 	got := f.section("00-intake", IntakeProblem)
-	if !strings.Contains(got, "No approval was found on the issue when this phase started: it is missing the label approved and a comment whose first line is approved.") {
+	if !strings.Contains(got, "No approval was found on the issue when this phase started: it is missing the label xeno-approved and a comment whose first line is /xeno approved.") {
 		t.Errorf("the intake does not say what was missing:\n%s", got)
 	}
 }

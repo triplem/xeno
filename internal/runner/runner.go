@@ -1625,7 +1625,7 @@ func (r *Runner) approved(t model.Tracker, id string, now bool) error {
 	if _, missing := issue.Approval(); len(missing) > 0 {
 		return refuse("%s is not approved: it is missing %s. An issue becomes an intent "+
 			"only where a person approved it, with the label and a comment whose first "+
-			"line is the word %s", id, strings.Join(missing, " and "), model.ApprovedWord)
+			"line is %s", id, strings.Join(missing, " and "), model.ApprovedWord)
 	}
 	if m := issue.Ahead(); m != nil && !now {
 		return refuse("%s is for milestone %q, and %q is open ahead of it; --now starts "+

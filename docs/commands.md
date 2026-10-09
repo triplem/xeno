@@ -69,9 +69,11 @@ sequence the intents directory holds, and `--intent` names it instead where ther
 sequence to continue or the key is not the next one.
 
 Where a tracker block is configured, `xeno intent start` reads the issue and refuses one
-nobody approved: the issue has to carry the label `approved` and a comment whose first
-line is the word `approved`, the rest of which is the reason, and the refusal names which
-of the two is missing. An issue with a milestone is held while an earlier open milestone
+nobody approved: the issue has to carry the label `xeno-approved` and a comment whose
+first line is `/xeno approved`, the rest of which is the reason, and the refusal names
+which of the two is missing. Both carry the tool's name so that a tracker's own
+`approved` label and a bare word written to a colleague start nothing; the label is
+created once with `.xeno/plugin/bin/xeno-labels.sh`, which `xeno init` names. An issue with a milestone is held while an earlier open milestone
 exists — by due date, undated ones last — and `--now` starts it anyway. A read that
 cannot happen refuses too: no token in the environment, no such issue, an issue on a host
 the block does not reach. The intake's problem section then records who approved, when

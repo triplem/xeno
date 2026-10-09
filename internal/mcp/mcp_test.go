@@ -251,11 +251,11 @@ var approvedHost = sync.OnceValue(func() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, "/comments") {
 			_ = json.NewEncoder(w).Encode([]map[string]any{{
-				"user": map[string]string{"login": "m"}, "body": "approved\n\nwanted"}})
+				"user": map[string]string{"login": "m"}, "body": "/xeno approved\n\nwanted"}})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"title": "t", "body": "b",
-			"labels": []map[string]string{{"name": "approved"}}})
+			"labels": []map[string]string{{"name": "xeno-approved"}}})
 	}))
 })
 
