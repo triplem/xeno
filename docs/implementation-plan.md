@@ -1,7 +1,7 @@
 ---
 id: implementation-plan
 title: Xeno, Implementation Plan v1
-revision: 9
+revision: 10
 status: draft, not ratified
 date: 2026-09-20
 location: docs/implementation-plan.md
@@ -1137,14 +1137,24 @@ with English keys.
 This is the documentation, not the artifacts. Both strings bundles ship in v1, so a
 project writes its artifacts in German from the first release.
 
-**Tooling: MkDocs with the Material theme.** Per page frontmatter, anchor and link
-checking, and Mermaid are all there without assembling them, and the alternative worth
-naming is Hugo, a single static binary with no runtime in the pipeline, which fits the
-rest of this project better and would have to have its checking put together by hand.
-MkDocs was chosen because the checking is the point here and because this is the one
-place where a Python dependency in a documentation job costs nothing that matters. The
-choice belongs in this work package rather than in a later decision, because the source
-hash binding and the extraction of code examples both depend on it.
+**Tooling: Zensical.** Per page frontmatter, anchor and link checking, Mermaid and
+snippets are all there without assembling them, and the alternative worth naming is
+Hugo, a single static binary with no runtime in the pipeline, which fits the rest of
+this project better and would have to have its checking put together by hand. The
+checking is the point here, and this is the one place where a Python dependency in a
+documentation job costs nothing that matters. MkDocs with the Material theme was the
+choice until #226 built a page with each of three generators: MkDocs 2.0 removes the
+plugin system Material depends on, Material's authors expect no further 1.x updates and
+build Zensical as its replacement, with a configuration of the same keys and the same
+extension set, so the named choice was a generator its own theme's authors say to leave.
+Zensical is young, below version one on the day it was chosen, and its configuration is
+portable back to MkDocs 1.x in an afternoon if that ever has to happen. Astro Starlight
+was measured too and set aside: it needed three things assembled before the documents
+built, brought a lockfile of 270 packages onto the supply chain page, and could not
+publish the documents unrewritten. The choice belongs in this work package rather than
+in a later decision, because the source hash binding and the extraction of code examples
+both depend on it. The site offers a light and a dark mode, since a reader chooses one
+and a document that cannot be read comfortably is not read.
 
 **Each document carries a stable id and a revision in its frontmatter**, which the site
 needs before it can publish them. A cross reference has to point at an id rather than at
