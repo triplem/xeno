@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#343
+phase: 00-intake
+created: "2026-10-09T13:18:48Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+include:
+    - .github/workflows/gosec.yml
+    - docs/supply-chain.md
+    - docs/assumptions.md
+    - renovate.json
+    - internal/model/supply_chain_test.go
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 5
+    bytes: 158684

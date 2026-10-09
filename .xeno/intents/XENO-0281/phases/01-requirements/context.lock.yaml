@@ -1,0 +1,38 @@
+intent: github.com/triplem/xeno#343
+phase: 01-requirements
+created: "2026-10-09T13:19:47Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 9ffcef7664f2159b5b0be9723e8d0e8b5c31cc37288be6d53cce22f5435800e8
+evidence_source: ci
+template_source: project
+repo_commit: 2af2c28b5a7da498ca39a58b5c39dbb6c8e92357
+files:
+    - path: .github/workflows/gosec.yml
+      sha256: 6e287da139858f7db3025b3ad71e1cbc1df3f3862fb800c7614ad58540596ae9
+      bytes: 4984
+    - path: docs/supply-chain.md
+      sha256: ef64bcc274b848e5ad94949d2a6b1b59b1f4d2819fb52d99d74a16a641e52d7b
+      bytes: 13708
+    - path: docs/assumptions.md
+      sha256: 09532edbd0dd7f7f50e54c4bb0b7f9b6d5ea9310f8402351d31167d6ad34e81f
+      bytes: 113879
+    - path: renovate.json
+      sha256: ee631c70179e90d4cdcaa2b3e91a15b07c9efeece9c4c1ea9f09ef0a3f986b03
+      bytes: 6474
+    - path: internal/model/supply_chain_test.go
+      sha256: bff836511282a3b5ee81ae61f1cd9696cb2c334f8b02b7c301035abb1e81b152
+      bytes: 19639
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 396d5a10cfdd27caddc305737455a9de3bce393acb997ead7058b9d0d723bea7
