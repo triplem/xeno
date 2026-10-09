@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#337
+phase: 03-implementation
+created: "2026-10-09T15:59:03Z"
+schema_version: "1.0"
+runner_version: dev+9590797.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The first draft of WP21''s shape paragraph restated #224''s three reasons in the plan, although the issue''s done-when asked for a citation; the restatement read naturally in place and was only seen as one on the read-back of the whole diff. The same draft had the register''s cost remark, Medium at least, nearly become a size table row.'
+      proposal: Where an issue's done-when says cited rather than repeated, write the citation first and the single sentence after it, and read the diff for any sentence that could be deleted without the reference losing its sense; a plan that restates an issue ages apart from it.
+      target: docs/implementation-plan.md
