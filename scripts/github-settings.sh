@@ -114,7 +114,7 @@ gh api -X PUT "/repos/$repo/branches/$branch/protection" --input - >/dev/null <<
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["verify", "audit", "gitleaks", "semgrep", "trivy"]
+    "contexts": ["verify", "audit", "gitleaks", "lint", "gosec", "govulncheck", "trivy"]
   },
   "enforce_admins": true,
   "required_pull_request_reviews": null,

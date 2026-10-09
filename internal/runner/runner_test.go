@@ -232,7 +232,7 @@ func (f *fixture) redIntake() *model.Gate {
 	f.t.Helper()
 	f.must(f.r.Start(key, "00-intake"))
 	f.output("00-intake", "")
-	os.Remove(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml"))
+	f.must(os.Remove(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "learning.yaml")))
 	g := f.finish("00-intake")
 	if g.Status != "red" {
 		f.t.Fatalf("expected red, got %s", g.Status)
@@ -306,9 +306,9 @@ const pendingTest = "evidence:\n  - kind: test-report\n    job: unit\n"
 func (f *fixture) pipeline(result string) string {
 	dir := filepath.Join(f.t.TempDir(), "artifacts")
 	_ = os.MkdirAll(dir, 0o755)
-	os.WriteFile(filepath.Join(dir, "junit.xml"), []byte("<testsuite failures=\"0\"/>\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
-		"- kind: test-report\n  job: unit\n  result: "+result+"\n  file: junit.xml\n  pipeline: \"4711\"\n  commit: abc123\n"), 0o644)
+	f.must(os.WriteFile(filepath.Join(dir, "junit.xml"), []byte("<testsuite failures=\"0\"/>\n"), 0o644))
+	f.must(os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
+		"- kind: test-report\n  job: unit\n  result: "+result+"\n  file: junit.xml\n  pipeline: \"4711\"\n  commit: abc123\n"), 0o644))
 	return dir
 }
 
@@ -488,7 +488,7 @@ func TestDecisionCarriesForwardOnlyForTheSameFinding(t *testing.T) {
 	if g = f.finish("00-intake"); g.Status != "approved" {
 		t.Fatalf("decision lost on an unchanged finding: %s", g.Status)
 	}
-	os.Rename(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "stray.txt"), filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "other.txt"))
+	f.must(os.Rename(filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "stray.txt"), filepath.Join(f.root, model.PhaseDir(key, "00-intake"), "other.txt")))
 	if g = f.finish("00-intake"); g.Status != "red" {
 		t.Fatalf("a decision covered a different finding: %s", g.Status)
 	}
@@ -956,14 +956,14 @@ func TestAnUnknownSectionIsRefusedWithWhatThereIs(t *testing.T) {
 func (f *fixture) scanArtifact(result string) string {
 	dir := filepath.Join(f.t.TempDir(), "scan-trivy")
 	_ = os.MkdirAll(dir, 0o755)
-	os.WriteFile(filepath.Join(dir, "trivy.json"), []byte("{\"Results\":[]}\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "db-metadata.json"),
-		[]byte("{\"UpdatedAt\":\"2026-09-25T06:17:00Z\"}\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
+	f.must(os.WriteFile(filepath.Join(dir, "trivy.json"), []byte("{\"Results\":[]}\n"), 0o644))
+	f.must(os.WriteFile(filepath.Join(dir, "db-metadata.json"),
+		[]byte("{\"UpdatedAt\":\"2026-09-25T06:17:00Z\"}\n"), 0o644))
+	f.must(os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
 		"- kind: scan\n  job: trivy\n  result: "+result+"\n  file: trivy.json\n"+
 			"  pipeline: \"4711\"\n  commit: abc123\n"+
 			"- kind: other\n  job: trivy-db\n  file: db-metadata.json\n"+
-			"  pipeline: \"4711\"\n  commit: abc123\n"), 0o644)
+			"  pipeline: \"4711\"\n  commit: abc123\n"), 0o644))
 	return dir
 }
 
@@ -1012,7 +1012,9 @@ func TestAScanReportFromThePipelineAttachesWithItsDatabaseAge(t *testing.T) {
 func TestTheScanWorkflowsWriteTheManifestThisExpects(t *testing.T) {
 	for _, c := range []struct{ file, job, report string }{
 		{"trivy.yml", "trivy", "trivy.json"},
-		{"semgrep.yml", "semgrep", "semgrep.json"},
+		{"lint.yml", "lint", "golangci-lint.json"},
+		{"gosec.yml", "gosec", "gosec.json"},
+		{"govulncheck.yml", "govulncheck", "govulncheck.json"},
 	} {
 		b, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", c.file))
 		if err != nil {
@@ -1602,8 +1604,8 @@ func TestPhaseEnvIsWrittenAndRemoved(t *testing.T) {
 func (f *fixture) brokenPipeline() string {
 	dir := filepath.Join(f.t.TempDir(), "artifacts")
 	_ = os.MkdirAll(dir, 0o755)
-	os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
-		"- kind: test-report\n  job: unit\n  result: pass\n  uri: https://ci.example/a/7\n"), 0o644)
+	f.must(os.WriteFile(filepath.Join(dir, "manifest.yaml"), []byte(
+		"- kind: test-report\n  job: unit\n  result: pass\n  uri: https://ci.example/a/7\n"), 0o644))
 	return dir
 }
 

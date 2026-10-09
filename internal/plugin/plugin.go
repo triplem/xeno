@@ -160,7 +160,7 @@ func treeLines(dir string) ([]line, error) {
 		if err != nil {
 			return err
 		}
-		b, err := os.ReadFile(abs)
+		b, err := os.ReadFile(abs) // #nosec G122 -- the walk hashes the vendored plugin as it is; a file changed between the listing and the read changes the digest, which is the point of the digest
 		if err != nil {
 			return err
 		}

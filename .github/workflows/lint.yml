@@ -1,0 +1,96 @@
+# Static analysis of this project's own code: govet, staticcheck and errcheck through
+# golangci-lint, with gosec in gosec.yml for the reason .golangci.yml gives. It is a
+# scanner like the vulnerability scan, so the same three things hold: no gate reads the
+# report, the threshold lives in .golangci.yml, and what stops a merge is this job
+# failing. The reasoning the scan
+# workflows share, why the scan carries continue-on-error and the failure is raised
+# last, is in trivy.yml and not repeated here.
+#
+# No schedule. The tool is pinned and the policy is a commit, so a finding cannot arrive
+# between two pushes the way a vulnerability can, and the push to main is the run
+# against the default branch.
+#
+# Every action is pinned to a commit sha and every tool to an exact version;
+# docs/supply-chain.md says which and why.
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# The job id is the name of the check GitHub reports and the string the branch
+# protection requires (#186).
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, for the
+      # reason A39 gives: it is a job status and never a commit.
+      - name: make room for the report
+        run: mkdir -p .xeno/local/scan
+
+      # The publisher's own action, which verifies .golangci.yml against its schema and
+      # caches the analysis between runs. The version is the binary's and is a row of
+      # its own on the pin table beside the action's sha, as trivy's is. Two outputs:
+      # the text to the log, so the run reads like one, and the JSON to the file the
+      # manifest names.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        id: scan
+        continue-on-error: true
+        with:
+          version: v2.14.0
+          args: >-
+            --output.text.path=stdout
+            --output.json.path=.xeno/local/scan/golangci-lint.json
+
+      - name: what it found
+        if: always()
+        run: |
+          if [ ! -f .xeno/local/scan/golangci-lint.json ]; then
+            echo "no report was written" >&2
+            exit 0
+          fi
+          jq -r '
+            .Issues[]?
+            | [.FromLinter, .Pos.Filename, (.Pos.Line | tostring), .Text]
+            | @tsv' .xeno/local/scan/golangci-lint.json
+          echo "$(jq '.Issues | length' .xeno/local/scan/golangci-lint.json) findings"
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a scan that wrote no report fails here instead.
+          test -f "$out/golangci-lint.json"
+          result=pass
+          if [ "${{ steps.scan.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: scan"
+            echo "  job: lint"
+            echo "  result: $result"
+            echo "  file: golangci-lint.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-lint
+          path: .xeno/local/scan/
+
+      - name: fail if the scan did
+        if: steps.scan.outcome == 'failure'
+        run: exit 1

@@ -1,0 +1,32 @@
+# The policy of the static analysis, in the repository as a commit. Facts want currency
+# and policy wants a commit: the vulnerability database is fetched on every run because
+# it is facts other people discover, and this file is fetched by nothing because it is a
+# choice somebody made. A run reports what the previous run reported unless this file or
+# the pinned tool moved (#94).
+#
+# Three linters and no default set, so that the set is the one written here. govet is
+# what `go vet` runs; staticcheck is correctness and simplification beyond it; errcheck
+# is the error nobody looked at. gosec is not run through this tool: under golangci-lint
+# 2.14.0 its findings on this tree differed between three runs of one commit, with and
+# without a cache and at a concurrency of one, while the gosec binary reported the same
+# fifty-eight twice. A check that moves between two runs of one tree cannot be required,
+# so gosec runs on its own, pinned, with its policy in .gosec.json.
+#
+# The threshold is zero. Any finding fails the run, which is what --error did for
+# semgrep. Nothing is accepted inline; the one exclusion is the preset below, which says
+# what it is for.
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+  exclusions:
+    # An exclusion nothing matches is a policy that stopped meaning anything.
+    warn-unused: true
+    # The error returns nobody checks because nothing can be done with them: a Fprintln
+    # to standard error, a Close in a defer, a Flush at the end of a stream.
+    presets:
+      - std-error-handling

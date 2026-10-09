@@ -268,10 +268,14 @@ func TestMergeCommitsAreExemptWhereTheRuleSaysSo(t *testing.T) {
 		gitRepo(t, root)
 		base := gitCommit(t, root, "chore: the base")
 		for _, args := range [][]string{{"checkout", "-b", "side"}} {
-			exec.Command("git", append([]string{"-C", root}, args...)...).Run()
+			if err := exec.Command("git", append([]string{"-C", root}, args...)...).Run(); err != nil {
+				t.Fatal(err)
+			}
 		}
 		gitCommit(t, root, "feat: on the side")
-		exec.Command("git", "-C", root, "checkout", "main").Run()
+		if err := exec.Command("git", "-C", root, "checkout", "main").Run(); err != nil {
+			t.Fatal(err)
+		}
 		gitCommit(t, root, "feat: on main")
 		if out, err := exec.Command("git", "-C", root, "merge", "--no-ff", "-m",
 			"Merge branch 'side'", "side").CombinedOutput(); err != nil {

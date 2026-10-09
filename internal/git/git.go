@@ -89,7 +89,7 @@ func Commits(root, base, head string) ([]Commit, error) {
 	if base == "" || head == "" {
 		return nil, fmt.Errorf("no commit range: base %q, head %q", base, head)
 	}
-	cmd := exec.Command("git", "-C", root, "log", "--reverse", "--format="+format, base+".."+head)
+	cmd := exec.Command("git", "-C", root, "log", "--reverse", "--format="+format, base+".."+head) // #nosec G204 -- the arguments are the runner's own, and launching git over a range is what this reader is
 	out, err := cmd.Output()
 	if err != nil {
 		msg := strings.TrimSpace(string(exitText(err)))
@@ -136,7 +136,7 @@ func exitText(err error) []byte {
 // not a repository, a repository with no commit yet, or no git at all are the same answer, because
 // the caller records a fact about the repository and an invented one would be a false claim.
 func Head(root string) string {
-	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	out, err := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output() // #nosec G204 -- the only variable is the repository root this runner was started in
 	if err != nil {
 		return ""
 	}
@@ -164,7 +164,7 @@ func Paths(root, base, head, under string) ([]string, error) {
 	if under != "" {
 		args = append(args, "--", under)
 	}
-	out, err := exec.Command("git", args...).Output()
+	out, err := exec.Command("git", args...).Output() // #nosec G204 -- the arguments are assembled above from the root, the range and a path under it, none of them from outside the runner
 	if err != nil {
 		msg := strings.TrimSpace(string(exitText(err)))
 		if msg == "" {

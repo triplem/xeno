@@ -64,8 +64,11 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | `aquasecurity/trivy-action` | `ed142fd0673e97e23eac54620cfb913e5ce36c25`, v0.36.0 | github.com |
 | `trivy` | v0.74.0 | github.com |
 | trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
-| `semgrep` | `sha256:32e45996…`, 1.178.0, by digest | docker.io |
-| semgrep's rules | vendored under `.semgrep/`, not fetched | — |
+| `golangci/golangci-lint-action` | `ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a`, v9.3.0 | github.com |
+| `golangci-lint` | v2.14.0 | github.com |
+| `gosec` | v2.29.0, as `github.com/securego/gosec/v2` through `go install`, checksummed by the module sum database | proxy.golang.org |
+| `govulncheck` | v1.8.0, as `golang.org/x/vuln` through `go install`, checksummed by the module sum database | proxy.golang.org |
+| govulncheck's vulnerability database | not pinned, and cannot be | vuln.go.dev |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
 | `gitleaks` | 8.30.1, by release tarball and sha256 `551f6fc8…` | github.com |
 | the image's base, `debian` 13-slim | `sha256:a29215f6…`, the manifest index, by digest | docker.io |
@@ -140,15 +143,22 @@ of the actions themselves have no advisory feed here; Dependabot would give one,
 rejected in #11 for a reason that has not changed: its pull requests are changes without
 an intent.
 
-**semgrep's rules go the other way, and the contrast is the point.** They are vendored
-under `.semgrep/` and nothing fetches them at scan time, which was verified by running
-the scan with the network removed. The patterns of the secret filter follow the same rule
-for the same reason: they are translated from gitleaks' rules at a named version into
-`.xeno/plugin/secrets.yaml`, and `secrets_hash` means what it says only because nothing
-fetches them. A vulnerability database is facts about the world
-that other people discover, so it goes stale by time passing. A rule set is patterns
-somebody chose to enforce, and one that changes underneath a project can fail a build
-that nothing in the repository touched. Facts want currency; policy wants a commit.
+**The linters' policy goes the other way, and the contrast is the point.**
+`.golangci.yml` and `.gosec.json` say which linters run and which findings are accepted,
+the tools that read them are pinned, and nothing fetches either at run time, so a run
+reports what the previous run reported unless somebody changed one of them in a commit.
+The patterns of the secret filter follow the same rule for the same reason: they are
+translated from gitleaks' rules at a named version into `.xeno/plugin/secrets.yaml`, and
+`secrets_hash` means what it says only because nothing fetches them. A vulnerability
+database is facts about the world that other people discover, so it goes stale by time
+passing. A rule set is patterns somebody chose to enforce, and one that changes
+underneath a project can fail a build that nothing in the repository touched. Facts want
+currency; policy wants a commit.
+
+govulncheck's database is trivy's case and not the linter's: fetched on every run, from
+`vuln.go.dev`, and matched against call paths rather than versions. Its report carries
+the database's own date, `db_last_modified`, so it answers for its own coverage where
+trivy's report has to be accompanied by the cache's metadata.
 
 Two things follow from the database being data rather than code. The case for letting it
 through a gap is a different case from the one for a toolchain, since nothing in it is

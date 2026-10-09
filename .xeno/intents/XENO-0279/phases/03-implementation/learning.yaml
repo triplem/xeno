@@ -1,0 +1,15 @@
+intent: github.com/triplem/xeno#94
+phase: 03-implementation
+created: "2026-10-08T20:38:55Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The intake''s figure, four gosec findings in shipped code, came from one run of golangci-lint and was wrong: the tool''s gosec findings differed between three runs of one commit and missed forty-seven of fifty-eight; the design was written against the wrong figure and corrected in implementation.'
+      proposal: Where a phase records a measurement a tool produced, run the tool twice from a cold cache and record both results, or record that it was run once; a sentence in the verification skill's results paragraph, since that is where figures are asked for.
+      target: .xeno/plugin/skills/xeno-verification/SKILL.md
+    - category: project-convention
+      observation: gosec with -quiet writes no report on a clean tree, so the manifest step that tests for the report would fail on exactly the run that found nothing; caught by running the final command twice locally before the workflow was written.
+      proposal: Run every scan command locally on the clean tree and check that the report file exists before writing the manifest step, as a line in the implementation skill about evidence a pipeline produces.
+      target: .xeno/plugin/skills/xeno-implementation/SKILL.md

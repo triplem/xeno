@@ -152,7 +152,7 @@ func TestProvenanceIsWrittenWhereGivenAndAbsentWhereNot(t *testing.T) {
 	f := newFixture(t)
 	f.verification()
 	_, err := f.declare("04-verification", "", model.EvidenceItem{
-		Kind: "scan", Job: "semgrep", Format: "other", ProducedBy: "semgrep --config .semgrep/golang.yaml",
+		Kind: "scan", Job: "lint", Format: "other", ProducedBy: "golangci-lint run",
 	})
 	f.must(err)
 	_, err = f.declare("04-verification", "", model.EvidenceItem{Kind: "sbom", Job: "sbom"})
@@ -225,7 +225,7 @@ func TestAPairIsDeclaredOnce(t *testing.T) {
 	}
 	// A different job of the same kind is a different item, which is what the three scans
 	// of this repository's own pipeline are.
-	_, err = f.declare("04-verification", "", model.EvidenceItem{Kind: "scan", Job: "semgrep"})
+	_, err = f.declare("04-verification", "", model.EvidenceItem{Kind: "scan", Job: "lint"})
 	f.must(err)
 	if items := f.declared("04-verification"); len(items) != 2 {
 		t.Fatalf("two jobs of one kind are two items: %+v", items)
@@ -236,7 +236,7 @@ func TestDeclaringOverAnotherReportIsRefused(t *testing.T) {
 	f := newFixture(t)
 	f.verification()
 	_, err := f.declare("04-verification", f.report("report.json", "{\"first\":true}\n"),
-		model.EvidenceItem{Kind: "scan", Job: "semgrep", Result: "pass"})
+		model.EvidenceItem{Kind: "scan", Job: "lint", Result: "pass"})
 	f.must(err)
 	_, err = f.declare("04-verification", f.report("report.json", "{\"second\":true}\n"),
 		model.EvidenceItem{Kind: "scan", Job: "trivy", Result: "pass"})

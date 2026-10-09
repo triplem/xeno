@@ -1,0 +1,15 @@
+{
+  "description": [
+    "gosec's policy, read by -conf from .github/workflows/gosec.yml, which also carries the",
+    "two exclusions and the reasons for them. This file holds what only a configuration can",
+    "say: the file modes the runner is allowed to write. It writes artifacts into a git",
+    "checkout, and git records one executable bit and nothing else, so a 0600 file written",
+    "here is a 0644 file on every other clone; the modes below are the ones git produces,",
+    "and gosec fires on anything looser. The key is the rule, the value the widest mode",
+    "it accepts.",
+    "G301 is a directory, G302 a chmod, G306 a file written with WriteFile."
+  ],
+  "G301": "0755",
+  "G302": "0644",
+  "G306": "0644"
+}

@@ -57,7 +57,7 @@ func TestTheShippedSetNamesNothingSpecific(t *testing.T) {
 		"github", "gitlab", "docker", "kubernetes"}
 	for _, r := range shipped(t) {
 		words := strings.FieldsFunc(strings.ToLower(r.Statement), func(c rune) bool {
-			return !(c >= 'a' && c <= 'z')
+			return c < 'a' || c > 'z'
 		})
 		for _, w := range words {
 			for _, f := range forbidden {

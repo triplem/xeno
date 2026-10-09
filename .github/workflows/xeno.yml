@@ -153,7 +153,7 @@ jobs:
       # trail before #208 pointed at a transcript somebody typed.
       #
       # continue-on-error, with the failure raised again at the end of the job, for the
-      # reason semgrep.yml records: the run worth reading is the one that failed, and a
+      # reason trivy.yml records: the run worth reading is the one that failed, and a
       # report step written after a failing step never runs. The steps between the two
       # therefore run on a tree whose tests failed, which is a readable report rather than
       # a truncated one.

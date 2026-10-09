@@ -1,0 +1,126 @@
+# The vulnerability scan of the source. trivy.yml scans what the release ships and
+# matches versions; this scans what the source calls and matches call paths, so a
+# vulnerable function the binary carries and never reaches is a finding there and is
+# reported as not called here. Both run, because they answer one question from two
+# sides and the decision on #94 keeps both. The reasoning the scan workflows share, why
+# the scan carries continue-on-error and the failure is raised last, is in trivy.yml.
+#
+# The judgement is a step and not an exit code. govulncheck exits 3 on a reachable
+# vulnerability in text mode and 0 whatever it finds with -format json, measured on a
+# module requiring a version of golang.org/x/text with a known one. The report is
+# written as JSON, which is what a manifest can name, and the step after the scan
+# applies the text mode's own rule: a finding whose trace reaches a function fails the
+# job, one at module or package level is printed and does not. A reachable finding
+# with no fixed version is printed and does not fail the job either, for the reason
+# trivy.yaml gives for ignore-unfixed: a check that fires without a possible response
+# is one people learn to route around.
+#
+# The database's date is in the report, as db_last_modified, which is the field trivy's
+# report lacks (#11). It is printed beside the result and no second file travels along.
+#
+# Every action is pinned to a commit sha and every tool to an exact version;
+# docs/supply-chain.md says which and why.
+name: govulncheck
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # A vulnerability is found after the code is written, so the scheduled run is the
+    # one that does the work, on the day trivy's runs and off its minute, so that two
+    # failures on one morning are two mails and not one.
+    - cron: '29 6 * * *'
+
+permissions:
+  contents: read
+
+# The job id is the name of the check GitHub reports and the string the branch
+# protection requires (#186).
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # Pinned to a version and checksummed by the module sum database on the way in,
+      # which is what go install does for a named version. The publisher's action is a
+      # wrapper around this line, so the line is written out and its sha stays off the
+      # pin table.
+      - name: install the scanner
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+
+      # .xeno/local/ is gitignored and is where a pipeline artifact belongs, for the
+      # reason A39 gives: it is a job status and never a commit.
+      - name: make room for the report
+        run: mkdir -p .xeno/local/scan
+
+      - name: scan
+        continue-on-error: true
+        run: govulncheck -format json ./... > .xeno/local/scan/govulncheck.json
+
+      # The report is a stream of JSON objects, one per message, which jq -s reads as
+      # one array. The fixed version is the column this is for: a report that only
+      # names an id is one somebody has to research before they can act.
+      - name: what it found, and whether it is reachable
+        id: judge
+        if: always()
+        continue-on-error: true
+        run: |
+          set -eu
+          report=.xeno/local/scan/govulncheck.json
+          if [ ! -f "$report" ]; then
+            echo "no report was written" >&2
+            exit 1
+          fi
+          jq -s -r '
+            (map(select(.config)) | .[0].config) as $c
+            | [.[] | select(.finding) | .finding] as $f
+            | "database \($c.db), last modified \($c.db_last_modified), scanner \($c.scanner_version)",
+              ($f[]
+               | [.osv, .trace[0].module, (.fixed_version // "no fix"),
+                  (if (.trace[0].function // "") != "" then "reachable" else "not called" end)]
+               | @tsv),
+              "\([$f[] | .osv] | unique | length) vulnerabilities, \([$f[] | select((.trace[0].function // "") != "") | .osv] | unique | length) reachable"
+          ' "$report"
+          reachable=$(jq -s '
+            [.[] | select(.finding) | .finding
+             | select((.trace[0].function // "") != "" and .fixed_version != null)
+             | .osv] | unique | length' "$report")
+          if [ "$reachable" -gt 0 ]; then
+            echo "$reachable reachable with a fix available: the job fails"
+            exit 1
+          fi
+
+      - name: declare what this run produced
+        if: always()
+        run: |
+          set -eu
+          out=.xeno/local/scan
+          # A manifest naming a file that does not exist declares something untrue,
+          # so a scan that wrote no report fails here instead.
+          test -f "$out/govulncheck.json"
+          result=pass
+          if [ "${{ steps.judge.outcome }}" = "failure" ]; then result=fail; fi
+          {
+            echo "- kind: scan"
+            echo "  job: govulncheck"
+            echo "  result: $result"
+            echo "  file: govulncheck.json"
+            echo "  pipeline: \"${{ github.run_id }}\""
+            echo "  commit: ${{ github.sha }}"
+          } > "$out/manifest.yaml"
+          cat "$out/manifest.yaml"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: scan-govulncheck
+          path: .xeno/local/scan/
+
+      - name: fail if the scan did
+        if: steps.judge.outcome == 'failure'
+        run: exit 1

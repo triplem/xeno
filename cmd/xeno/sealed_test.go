@@ -145,7 +145,7 @@ var aimedAtTheSealedPhase = map[string]walk{
 	// walk has sealed, which is the property worth asserting for a reader over the whole
 	// trail: counting what a judged phase holds is not a way of writing into it.
 	"report figures":   {},
-	"evidence declare": {args: []string{"--kind", "scan", "--job", "semgrep"}},
+	"evidence declare": {args: []string{"--kind", "scan", "--job", "lint"}},
 	// Two reads with no argument to fill: the dispatch supplies --phase for the one that
 	// takes it, and the other is given a name. Neither opens an intent directory at all — a
 	// template comes from the plugin or the project and the index from .xeno/local/ — so
@@ -355,7 +355,12 @@ func (s *seal) feed(t *testing.T) {
 	}
 	saved := os.Stdin
 	os.Stdin = f
-	t.Cleanup(func() { os.Stdin = saved; f.Close() })
+	t.Cleanup(func() {
+		os.Stdin = saved
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 }
 
 // fill substitutes the per fixture values into one command's arguments and fails on a

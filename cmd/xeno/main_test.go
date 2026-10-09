@@ -801,12 +801,12 @@ func TestEvidenceIsDeclaredFromTheCommandLine(t *testing.T) {
 	}
 
 	code, out, errw := invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
-		"--phase", "00", "--kind", "scan", "--job", "semgrep", "--format", "other",
-		"--produced-by", "semgrep --config .semgrep/golang.yaml --error", "--no-next")
+		"--phase", "00", "--kind", "scan", "--job", "lint", "--format", "other",
+		"--produced-by", "golangci-lint run", "--no-next")
 	if code != 0 {
 		t.Fatalf("declaring a pending item exits %d: %s", code, errw)
 	}
-	if !strings.Contains(out, "declares scan/semgrep: pending") {
+	if !strings.Contains(out, "declares scan/lint: pending") {
 		t.Errorf("the command does not say what state the item is in: %q", out)
 	}
 
@@ -826,7 +826,7 @@ func TestEvidenceIsDeclaredFromTheCommandLine(t *testing.T) {
 	if _, err := fm.ReadFront(filepath.Join(root, model.PhaseDir("PROJ-1", "00-intake"), "output.md"), &o); err != nil {
 		t.Fatal(err)
 	}
-	if len(o.Evidence) != 2 || o.Evidence[0].Job != "semgrep" || o.Evidence[1].SHA256 == "" {
+	if len(o.Evidence) != 2 || o.Evidence[0].Job != "lint" || o.Evidence[1].SHA256 == "" {
 		t.Fatalf("the artifact does not carry the two declarations: %+v", o.Evidence)
 	}
 	if o.Evidence[1].ProducedBy != "" || o.Evidence[1].Format != "go-test-json" {
@@ -842,8 +842,8 @@ func TestEvidenceIsDeclaredFromTheCommandLine(t *testing.T) {
 
 	// A refusal is 1 with a reason on stderr, which is the middle step of the staircase.
 	if code, _, errw = invoke(t, "evidence", "declare", "--root", root, "--intent", "PROJ-1",
-		"--phase", "00", "--kind", "scan", "--job", "semgrep", "--no-next"); code != 1 ||
-		!strings.Contains(errw, "scan/semgrep") {
+		"--phase", "00", "--kind", "scan", "--job", "lint", "--no-next"); code != 1 ||
+		!strings.Contains(errw, "scan/lint") {
 		t.Errorf("declaring the same pair twice exits %d: %s", code, errw)
 	}
 	// And a phase that does not resolve is 2, which is the top of it.
