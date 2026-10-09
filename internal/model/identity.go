@@ -92,10 +92,13 @@ type Comment struct {
 // ApprovedLabel and ApprovedWord are the two halves of approval section 12 fixes: the
 // label an issue carries, and the first line of the comment that carries the reason. They
 // are constants and not configuration, so that a reader of any trail knows what the
-// intake's sentence meant without a project file that may have changed since.
+// intake's sentence meant without a project file that may have changed since. Both carry
+// the tool's name (#332): a brownfield tracker may have an `approved` label of its own,
+// and `approved` alone is also what people write to each other; the slash form names the
+// receiver without mentioning an account, as a host's own comment commands do.
 const (
-	ApprovedLabel = "approved"
-	ApprovedWord  = "approved"
+	ApprovedLabel = "xeno-approved"
+	ApprovedWord  = "/xeno approved"
 )
 
 // Approval is who approved an issue, when, and why, read off the last comment whose first
@@ -112,7 +115,7 @@ type Approval struct {
 // The last qualifying comment wins and not the first, because an approval is withdrawn
 // and given again by writing another, and the latest is the one that stands. The first
 // line is compared trimmed, with case ignored and trailing punctuation dropped, so that
-// `Approved.` and `approved:` are not two different words; the reason is everything after
+// `/Xeno approved.` and `/xeno approved:` are not two different lines; the reason is everything after
 // that line, trimmed, and may be empty.
 func (i Issue) Approval() (Approval, []string) {
 	var missing []string

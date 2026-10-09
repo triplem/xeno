@@ -120,7 +120,7 @@ func TestInitNamesWhatItCannotDo(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined := strings.Join(res.Manual, "\n")
-	for _, want := range []string{"required", "review", "token", "schedule"} {
+	for _, want := range []string{"required", "review", "token", "schedule", model.ApprovedLabel, "xeno-labels.sh"} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("the manual settings do not mention %q:\n%s", want, joined)
 		}

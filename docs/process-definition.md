@@ -1,7 +1,7 @@
 ---
 id: process-definition
 title: Xeno, Process Definition v1
-revision: 10
+revision: 11
 status: draft, not ratified
 date: 2026-09-20
 location: docs/process-definition.md
@@ -1711,22 +1711,28 @@ could reach a code host could also return different verdicts on different days.
 **Starting an intent.** `xeno intent start` is on the same side, and it is where the one
 check that cannot be a gate lives: whether anybody wanted the work. An issue becomes an
 intent only where a person approved it, and approval is two things on the issue itself,
-the label `approved` and a comment whose first line is the word `approved`, the rest of
-which is the reason. The label is what a list of issues shows, and setting it takes a
-right the host grants; the comment is what the intake quotes, with who wrote it and when.
-Neither alone is enough: a label carries no reason, and a comment can be written by
-anybody. Where the issue carries a milestone, it is work for that milestone's turn, and
-it is not started while an earlier one is open, unless the caller says so with `--now`.
-Milestones are ordered by due date, and one without a date comes last. A refusal names
-what is missing, or which milestone is ahead. The intake's problem section records that
-the intent was authorised, by whom, when and with what reason, and that it was started
-ahead of its milestone where it was, so that a reader of any later phase checks the
-authorisation instead of taking it. Reading an issue stays one operation of the adapter
-contract; it is the issue, its comments and, where the issue carries a milestone, the
-project's open milestones, which is up to three calls on either host. None of this is a
-gate. A gate never reaches the host, and a gate that read a local copy of the answer
-would be judging what the agent wrote down about its own authorisation. A project
-without a tracker block reads no issue and checks nothing, as before.
+the label `xeno-approved` and a comment whose first line is `/xeno approved`, the rest
+of which is the reason. The label is what a list of issues shows, and setting it takes a
+right the host grants; the comment is what the intake quotes, with who wrote it and
+when. Neither alone is enough: a label carries no reason, and a comment can be written
+by anybody. Both carry the tool's name, because a brownfield tracker may already have an
+`approved` label that means something else, and because `approved` on its own is also
+what one person writes to another about a design; the slash form names the receiver the
+way a host's own comment commands do, without mentioning an account. The label is a
+person's act on the host, which `xeno init` names among the settings it does not make
+and the plugin's `bin/xeno-labels.sh` creates for either host. Where the issue carries a
+milestone, it is work for that milestone's turn, and it is not started while an earlier
+one is open, unless the caller says so with `--now`. Milestones are ordered by due date,
+and one without a date comes last. A refusal names what is missing, or which milestone
+is ahead. The intake's problem section records that the intent was authorised, by whom,
+when and with what reason, and that it was started ahead of its milestone where it was,
+so that a reader of any later phase checks the authorisation instead of taking it.
+Reading an issue stays one operation of the adapter contract; it is the issue, its
+comments and, where the issue carries a milestone, the project's open milestones, which
+is up to three calls on either host. None of this is a gate. A gate never reaches the
+host, and a gate that read a local copy of the answer would be judging what the agent
+wrote down about its own authorisation. A project without a tracker block reads no issue
+and checks nothing, as before.
 
 **Interface.** The CLI drives the process. Nothing is operated through a UI, and v1
 has no UI at all.

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#332
+phase: 03-implementation
+created: "2026-10-09T13:41:10Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A search and replace of the string approved across six test files hit a gate decision of the same spelling and missed a capitalised label and one adapter's fixture; the suite caught all three on the first run.
+      proposal: 'Rename by the constant and not by the string where a constant exists: fixtures that spell model.ApprovedLabel and model.ApprovedWord literally are what made this a search in the first place, and the new init line and label test read the constants for that reason.'
+      target: internal/runner/tracker_test.go

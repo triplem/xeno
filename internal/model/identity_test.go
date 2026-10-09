@@ -189,7 +189,7 @@ func TestSomethingThatIsNotAQualifiedIdIsRefused(t *testing.T) {
 // adapter, so that two hosts cannot answer it differently.
 
 func TestApprovalNeedsTheLabelAndTheWord(t *testing.T) {
-	word := Comment{Author: "m", At: "2026-10-08T15:10:28Z", Body: "Approved.\n\nbecause it was decided\non the issue"}
+	word := Comment{Author: "m", At: "2026-10-08T15:10:28Z", Body: "/Xeno approved.\n\nbecause it was decided\non the issue"}
 	cases := []struct {
 		name    string
 		issue   Issue
@@ -197,14 +197,16 @@ func TestApprovalNeedsTheLabelAndTheWord(t *testing.T) {
 		reason  string
 	}{
 		{"neither", Issue{}, 2, ""},
-		{"the label alone", Issue{Labels: []string{"approved"}}, 1, ""},
+		{"the label alone", Issue{Labels: []string{"xeno-approved"}}, 1, ""},
 		{"the word alone", Issue{Comments: []Comment{word}}, 1, ""},
-		{"both, with case and punctuation ignored", Issue{Labels: []string{"wp12", "Approved"},
+		{"both, with case and punctuation ignored", Issue{Labels: []string{"wp12", "Xeno-Approved"},
 			Comments: []Comment{word}}, 0, "because it was decided\non the issue"},
-		{"a comment that merely contains the word", Issue{Labels: []string{"approved"},
+		{"a comment that merely contains the word", Issue{Labels: []string{"xeno-approved"},
 			Comments: []Comment{{Body: "this could be approved later"}}}, 1, ""},
-		{"the word with nothing after it", Issue{Labels: []string{"approved"},
-			Comments: []Comment{{Author: "m", Body: "approved"}}}, 0, ""},
+		{"the names before #332, now two missing halves", Issue{Labels: []string{"approved"},
+			Comments: []Comment{{Author: "m", Body: "approved\n\nunder the old clause"}}}, 2, ""},
+		{"the word with nothing after it", Issue{Labels: []string{"xeno-approved"},
+			Comments: []Comment{{Author: "m", Body: "/xeno approved"}}}, 0, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -222,9 +224,9 @@ func TestApprovalNeedsTheLabelAndTheWord(t *testing.T) {
 // The last approving comment stands, because an approval is withdrawn and given again by
 // writing another, and the one that stands is the latest.
 func TestTheLastApprovingCommentStands(t *testing.T) {
-	i := Issue{Labels: []string{"approved"}, Comments: []Comment{
-		{Author: "first", Body: "approved\nfor the wrong reason"},
-		{Author: "second", Body: "approved\nfor the right one"},
+	i := Issue{Labels: []string{"xeno-approved"}, Comments: []Comment{
+		{Author: "first", Body: "/xeno approved\nfor the wrong reason"},
+		{Author: "second", Body: "/xeno approved\nfor the right one"},
 	}}
 	a, _ := i.Approval()
 	if a.By != "second" || a.Reason != "for the right one" {

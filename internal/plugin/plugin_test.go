@@ -521,6 +521,25 @@ func TestTheEntryPointStartsTheRunnerFromThePath(t *testing.T) {
 	}
 }
 
+// The label script section 12 names beside the entry point: there, executable, and creating the
+// label the constant names rather than one spelled by hand, so that the two cannot drift (#332).
+func TestTheLabelScriptCreatesTheLabelTheClauseNames(t *testing.T) {
+	path := filepath.Join(repoRoot, pluginDir, "bin", "xeno-labels.sh")
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("section 12 names a label script that is not there: %v", err)
+	}
+	if info.Mode()&0o111 == 0 {
+		t.Error("xeno-labels.sh is not executable")
+	}
+	body := read(t, path)
+	for _, want := range []string{"label=" + model.ApprovedLabel, model.ApprovedWord, "gh label create", "glab label create"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the label script does not carry %q", want)
+		}
+	}
+}
+
 // Both manifests are read rather than described, because the client loads them and a field this
 // test invented would pass while the client refused the plugin.
 func TestTheManifestsSayWhatTheClientReads(t *testing.T) {

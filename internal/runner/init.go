@@ -102,6 +102,8 @@ func (r *Runner) Init(o InitOptions) (*InitResult, error) {
 		"require a review from somebody other than the author",
 		"issue a token that can read the protected branch settings, for xeno enforcement check",
 		"schedule xeno enforcement check daily, so that a setting changed back is noticed",
+		"create the label " + model.ApprovedLabel + ", with .xeno/plugin/bin/xeno-labels.sh or by hand; " +
+			"an issue becomes an intent only with it and a comment beginning " + model.ApprovedWord,
 		h.Squash,
 	}
 	res.Outstand = []string{
