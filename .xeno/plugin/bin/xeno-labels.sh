@@ -12,8 +12,14 @@
 #
 # Needs gh or glab, authenticated, with the right to manage labels. Running it twice
 # changes nothing the second time: a label that is there is reported and left alone.
-# The description carries the other half of the clause, so that a reader of the label
-# list sees why setting the label alone starts nothing.
+# That rests on the read before the write asking for the whole answer: a list read with
+# its default page stops at thirty labels, and the second run on a repository past that
+# tried to create the label again and exited 1 (#346). gh reads by name, which is
+# exact after grep because --search also matches descriptions; glab has no search and
+# reads a page of a hundred, the most the host returns, so past a hundred labels the
+# GitLab branch meets the same fault. The description carries the other half of the
+# clause, so that a reader of the label list sees why setting the label alone starts
+# nothing.
 
 set -eu
 
@@ -26,7 +32,7 @@ colour=1d76db
 
 case "$host" in
 github)
-	if gh label list --repo "$project" --json name --jq '.[].name' | grep -qx "$label"; then
+	if gh label list --search "$label" --repo "$project" --json name --jq '.[].name' | grep -qx "$label"; then
 		echo "$label exists on $project; nothing changed"
 	else
 		gh label create "$label" --repo "$project" --description "$description" --color "$colour"
@@ -34,7 +40,7 @@ github)
 	fi
 	;;
 gitlab)
-	if glab label list --repo "$project" --output json 2>/dev/null | grep -q "\"name\":\"$label\""; then
+	if glab label list --per-page 100 --repo "$project" --output json 2>/dev/null | grep -q "\"name\":\"$label\""; then
 		echo "$label exists on $project; nothing changed"
 	else
 		glab label create --repo "$project" --name "$label" --description "$description" --color "#$colour"

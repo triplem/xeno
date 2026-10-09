@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#346
+phase: 03-implementation
+created: "2026-10-09T15:20:13Z"
+schema_version: "1.0"
+runner_version: dev+9590797.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: XENO-0282's verification named this fault under gaps, a host that paginates past the label, and dismissed it in the same sentence because both hosts refuse a duplicate; the refusal under set -e is an exit 1, which is the defect. A gap that names a failure and a reason it does not matter has done half the check.
+      proposal: Where a gap paragraph names a failure mode of a shipped script, run the script against the repository in P4 instead of reasoning about the host's answer, which for this script means a second run; a gap dismissed by argument is still a gap.
+      target: .xeno/plugin/skills/xeno-verification/SKILL.md

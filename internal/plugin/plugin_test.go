@@ -523,6 +523,9 @@ func TestTheEntryPointStartsTheRunnerFromThePath(t *testing.T) {
 
 // The label script section 12 names beside the entry point: there, executable, and creating the
 // label the constant names rather than one spelled by hand, so that the two cannot drift (#332).
+// The two read flags are held because the read before the write is what makes the script
+// idempotent, and a list read with its default page missed the label on a repository past
+// thirty (#346); a test without a host can hold the shape of the read and not its answer.
 func TestTheLabelScriptCreatesTheLabelTheClauseNames(t *testing.T) {
 	path := filepath.Join(repoRoot, pluginDir, "bin", "xeno-labels.sh")
 	info, err := os.Stat(path)
@@ -533,7 +536,11 @@ func TestTheLabelScriptCreatesTheLabelTheClauseNames(t *testing.T) {
 		t.Error("xeno-labels.sh is not executable")
 	}
 	body := read(t, path)
-	for _, want := range []string{"label=" + model.ApprovedLabel, model.ApprovedWord, "gh label create", "glab label create"} {
+	for _, want := range []string{
+		"label=" + model.ApprovedLabel, model.ApprovedWord,
+		"gh label create", "glab label create",
+		"gh label list --search", "glab label list --per-page",
+	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the label script does not carry %q", want)
 		}
