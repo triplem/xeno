@@ -60,6 +60,11 @@ against what they are deliberately not.
   definition, section by section, so the next revision can be written from a list rather
   than from memory.
 
-Beside these, in the repository root: [CONTRIBUTING.md](../CONTRIBUTING.md) for the
-commit and pull request conventions and the DCO, [SECURITY.md](../SECURITY.md), and
-[CLAUDE.md](../CLAUDE.md), which every session in this repository is sent with.
+Beside these, in the repository root:
+[CONTRIBUTING.md](https://github.com/triplem/xeno/blob/main/CONTRIBUTING.md) for the
+commit and pull request conventions and the DCO,
+[SECURITY.md](https://github.com/triplem/xeno/blob/main/SECURITY.md), and
+[CLAUDE.md](https://github.com/triplem/xeno/blob/main/CLAUDE.md), which every session in
+this repository is sent with. The links go to the host rather than up a directory,
+because the published site has no page for the three and a strict build refuses a link
+to a page that does not exist.

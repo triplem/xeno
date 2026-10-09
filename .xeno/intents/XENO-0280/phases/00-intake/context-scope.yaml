@@ -1,0 +1,22 @@
+intent: github.com/triplem/xeno#226
+phase: 00-intake
+created: "2026-10-09T12:56:57Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+include:
+    - docs/implementation-plan.md
+    - docs/README.md
+    - docs/supply-chain.md
+    - docs/assumptions.md
+    - CONTRIBUTING.md
+    - internal/model/supply_chain_test.go
+    - scripts/github-settings.sh
+    - .gitignore
+    - .github/workflows/trivy.yml
+    - .github/workflows/lint.yml
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 10
+    bytes: 305455

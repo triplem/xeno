@@ -71,6 +71,17 @@ echo "== private vulnerability reporting =="
 gh api -X PUT "/repos/$repo/private-vulnerability-reporting" >/dev/null
 gh api "/repos/$repo/private-vulnerability-reporting" -q '"  enabled: \(.enabled)"'
 
+# The Pages site the docs workflow deploys to, built from a workflow rather than from a
+# branch. Created where it is absent and reported where it is there; the deploy job's
+# configure-pages step tries the same with the job's token and fails loudly where that
+# token may not, which is what this block is for.
+echo
+echo "== pages =="
+if ! gh api "/repos/$repo/pages" -q '"  build type: \(.build_type)\n  url:        \(.html_url)"' 2>/dev/null; then
+	gh api -X POST "/repos/$repo/pages" -f build_type=workflow >/dev/null
+	gh api "/repos/$repo/pages" -q '"  build type: \(.build_type)\n  url:        \(.html_url)"'
+fi
+
 # The protection of the default branch, per section 7 and the enforcement block of
 # project.yaml, and it is what #84 decided.
 #
@@ -114,7 +125,7 @@ gh api -X PUT "/repos/$repo/branches/$branch/protection" --input - >/dev/null <<
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["verify", "audit", "gitleaks", "lint", "gosec", "govulncheck", "trivy"]
+    "contexts": ["verify", "audit", "gitleaks", "lint", "gosec", "govulncheck", "trivy", "docs"]
   },
   "enforce_admins": true,
   "required_pull_request_reviews": null,

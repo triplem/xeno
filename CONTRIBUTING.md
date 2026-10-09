@@ -131,9 +131,10 @@ under the documentation package.
 ## A red check is fixed before the next merge
 
 Every check the pipeline runs gates the merge. Not one of them: all of them. `verify` is
-the one that judges the trail, and `audit`, `gitleaks`, `lint`, `gosec`, `govulncheck`
-and `trivy` each answer a question the trail cannot, so a merge past any of them red is
-a merge past something nobody looked at.
+the one that judges the trail, `docs` builds the documentation strictly so that a broken
+cross reference between the documents is red before a merge, and `audit`, `gitleaks`,
+`lint`, `gosec`, `govulncheck` and `trivy` each answer a question the trail cannot, so a
+merge past any of them red is a merge past something nobody looked at.
 
 Three of them run on a schedule as well as on a change, because an advisory arrives
 without anything in the repository moving. A scheduled run going red is therefore the
