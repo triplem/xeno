@@ -72,7 +72,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
 | `golangci/golangci-lint-action` | `ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a`, v9.3.0 | github.com |
 | `golangci-lint` | v2.14.0 | github.com |
-| `gosec` | v2.29.0, as `github.com/securego/gosec/v2` through `go install`, checksummed by the module sum database | proxy.golang.org |
+| `gosec` | v2.29.1-0.20261009120814-7b1b5cebe007, the pseudo-version of a commit on its main branch, as `github.com/securego/gosec/v2` through `go install`, checksummed by the module sum database; a commit until 2.30.0 because release 2.29.0 cannot read Go 1.27.2's export data (#343) | proxy.golang.org |
 | `govulncheck` | v1.8.0, as `golang.org/x/vuln` through `go install`, checksummed by the module sum database | proxy.golang.org |
 | govulncheck's vulnerability database | not pinned, and cannot be | vuln.go.dev |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |

@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#343
+phase: 00-intake
+created: "2026-10-09T13:19:47Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'xeno intent start derived XENO-0280 on a branch cut from main while XENO-0280 was live on the unmerged branch of #342, the collision the register and the memory of 2026-10-07 both describe; caught by eye before the first write.'
+      proposal: Have intent start read the keys on every branch the remote holds, or at least warn when a key it derives exists on origin, which XENO-0268's intake proposed and nobody has scheduled.
+      target: internal/runner/runner.go
