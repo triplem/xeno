@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#226
+phase: 00-intake
+created: "2026-10-09T12:56:57Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The three comparison branches were the evidence the decision rested on and were deleted on the same instruction that took the decision; what remains is the comment on the issue, the figures in it, and nothing a reader can rebuild.
+      proposal: Where a decision rests on something built to compare, keep the comparison's configuration files in the intent that takes the decision, as this intent keeps zensical.toml, or record in the issue that the branches are gone and the comment is the record; a sentence in the intake skill about evidence that is a branch.
+      target: .xeno/plugin/skills/xeno-intake/SKILL.md

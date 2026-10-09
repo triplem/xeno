@@ -1,0 +1,53 @@
+intent: github.com/triplem/xeno#226
+phase: 03-implementation
+created: "2026-10-09T12:58:26Z"
+schema_version: "1.0"
+runner_version: dev+30b1dea.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 062231aab2b335439c96bc88ec1013d80d34c27b174fad0a968d87e8be5fd232
+evidence_source: ci
+template_source: project
+repo_commit: 5056d9b645eb12bca15e71ea9c2bc9b4448c3b34
+files:
+    - path: docs/implementation-plan.md
+      sha256: f4e008bec6dc0794fc10072fc7be50bef55cf54058afe3e0b7f92581606dafdf
+      bytes: 129370
+    - path: docs/README.md
+      sha256: fef9333c54ed9c5811c199572730a4905d1dc613e0ae6865baabd599122ac039
+      bytes: 3520
+    - path: docs/supply-chain.md
+      sha256: ef64bcc274b848e5ad94949d2a6b1b59b1f4d2819fb52d99d74a16a641e52d7b
+      bytes: 13708
+    - path: docs/assumptions.md
+      sha256: 09532edbd0dd7f7f50e54c4bb0b7f9b6d5ea9310f8402351d31167d6ad34e81f
+      bytes: 113879
+    - path: CONTRIBUTING.md
+      sha256: 0109f1119269938b45adbebd0ef1eaf3161bb5306f36ff158bdb94d2143c5570
+      bytes: 7644
+    - path: internal/model/supply_chain_test.go
+      sha256: bff836511282a3b5ee81ae61f1cd9696cb2c334f8b02b7c301035abb1e81b152
+      bytes: 19639
+    - path: scripts/github-settings.sh
+      sha256: 864ccd306d9e5f98dfae7e5730fbe2913182f7cc32272bb751bd33c41050241a
+      bytes: 6922
+    - path: .gitignore
+      sha256: e1614f84f14a37dcf898c354dec4e5732aafe75f8a46886d39a1652a15f3caa3
+      bytes: 723
+    - path: .github/workflows/trivy.yml
+      sha256: c9167af759378be230e7e50de090f5adcac056c4286bee20c5b2b3b11247dced
+      bytes: 6345
+    - path: .github/workflows/lint.yml
+      sha256: 46f521dd27de20c9b9fa5299fa47b3959e39ab8ea5dfc84e1492b499612a7538
+      bytes: 3705
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 396d5a10cfdd27caddc305737455a9de3bce393acb997ead7058b9d0d723bea7

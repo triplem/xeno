@@ -1,0 +1,82 @@
+# The documentation site, as WP16 names it: Zensical, chosen on #226 over MkDocs with the
+# Material theme, whose authors build Zensical as its replacement, and over Astro
+# Starlight, which needed three things assembled before the documents would publish.
+#
+# The documents under docs/ are rendered as they are, which is what WP16 asks of them,
+# and the build is run with --strict in .github/workflows/docs.yml so that a link to a
+# page that does not exist or an anchor that does not exist fails a pull request; that
+# is the one mechanical check on cross references between the documents, and nothing
+# else makes it. The site lands under .xeno/local/, which is gitignored, for the reason
+# A39 gives: a build product is a job status and never a commit.
+#
+# Two palettes and a toggle, light and dark, the first following the reader's system
+# preference, which is what the maintainer asked for on #226 and the plan now says.
+# Primary black on both, so the site is the documents and not a colour.
+[project]
+site_url = "https://triplem.github.io/xeno/"
+site_name = "Xeno"
+site_description = "A network free runner for a six phase process"
+repo_url = "https://github.com/triplem/xeno"
+repo_name = "triplem/xeno"
+edit_uri = "edit/main/docs/"
+docs_dir = "docs"
+site_dir = ".xeno/local/site"
+
+nav = [
+  { "Overview" = "README.md" },
+  { "The process" = [
+    { "Process definition" = "process-definition.md" },
+    { "Implementation plan" = "implementation-plan.md" },
+    { "Orchestrator evaluation" = "orchestrator-evaluation.md" },
+    { "What changes in v2" = "v2-delta.md" },
+  ] },
+  { "Working with it" = [
+    { "Commands" = "commands.md" },
+    { "Assumptions and decisions" = "assumptions.md" },
+    { "The trail in this repository" = "the-trail-in-this-repository.md" },
+    { "The gate job" = "m0-gate-job.md" },
+    { "Clause readers" = "clause-readers.md" },
+    { "Supply chain" = "supply-chain.md" },
+    { "Symbol index" = "symbol-index.md" },
+  ] },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "navigation.indexes",
+  "navigation.sections",
+  "navigation.top",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "black"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "black"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+attr_list = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.snippets.check_paths = true
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
