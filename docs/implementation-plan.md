@@ -102,7 +102,8 @@ so v1 targets monorepos. Issue commands as a trigger, which would need a compone
 receive them. The read only dashboard, WP18, which reads what the repository already
 holds and which nothing else depends on. The German documentation translation and the
 hash binding that keeps it current. Public release and everything that hangs on it,
-signing included.
+signing included. An entry point before the first issue, WP21, which is the greenfield
+case and the one item here that adds a record rather than reach.
 
 Artifact language is not on that list. Both strings bundles ship in v1, because the
 separation of structure and text is what makes a second language cheap later, and a
@@ -1380,6 +1381,51 @@ a mechanical phase is a configuration change and not a code change, and when the
 measured cost per intent is stated in the documentation as a figure with its method
 beside it.
 
+### WP21 Ideation, deferred to 1.1
+
+The stage before there is a request. The six phases begin at P0 with an issue that
+exists and is approved, which is the brownfield case the plan is built for; a
+greenfield project has no issue yet, and until #337 nothing said how the first ones
+come to be. This package is the sentence, the conversation or the document that
+becomes the set of issues the approval act of section 12 then takes one by one.
+Specified here because the shape is decided and built in 1.1 because nothing in v1
+depends on it: this repository writes its issues by hand, and the deferral has the
+reason section 1 gives for everything that waits.
+
+**A sealed record beside the intents, and not a phase.** The record lives in a
+directory beside `.xeno/intents/`, under a key sequence of its own, and holds what a
+phase holds: `output.md`, `digest.md`, `learning.yaml` and `gate.yaml`, sealed by
+`artifacts_hash` and recomputed by `gate verify` as any phase is. It is not a phase
+for the reasons #224 gives, which are not repeated here: the front of the phase list
+is the expensive end, and the cheap end is the wrong one. Section 12 adds a reason of
+its own: a phase belongs to an intent and an intent starts from an approved issue, and
+the record has to exist before either does. The approval of #337 asks for the input
+and output documents to be gated, and a gate seals a record, so the record is a thing
+of its own.
+
+**What it holds and what it produces.** Its sections are the vision and the plan: the
+idea as it was given, what it is to become, the work packages it decomposes into and
+the issues each package needs, with every decision put to a person one at a time in
+the shape section 8 of the process definition fixes. Its output is the issues on the
+tracker, written through the adapter and each carrying the record's key, so that a
+P0 started from one quotes where it came from as it quotes who approved it. The
+approval act is unchanged: an issue the record produced starts nothing until a person
+labels it and writes the comment, which is where the human in the loop stays.
+
+**What it touches.** A record type in section 6 and a path in Appendix B of the
+process definition, both a specification change first; a seventh template in the
+shipped set, with its sections and strings; the commands that write and judge the
+record, which are the phase commands with a record in place of a phase where the
+shapes allow it; a write operation on the adapter contract, which WP12 fixes at four
+and whose widening is the decision WP12 says it is; and the P0 sentence that quotes
+the originating record. What it adds to the MCP tool surface is argued against that
+budget when it is built, not assumed here.
+
+Done when a repository with no issue reaches its first approved intent through a
+record that `gate verify` recomputes, when every issue the record produced names it
+and every P0 started from one quotes it, and when a record run on this repository
+costs a figure that #117 can place beside an intent's.
+
 ## 3. Architecture
 
 Ports and adapters, for one reason above the usual ones: it turns the tool's central
@@ -1671,7 +1717,8 @@ to be observed rather than solved in advance.
 12. WP19 last, before the release
 13. WP16 and WP17 alongside throughout, not at the end
 
-WP18 is specified but not built. It moves to 1.1 with the rest of the breadth.
+WP18 and WP21 are specified but not built. They move to 1.1 with the rest of the
+breadth.
 
 **M0, the walking skeleton.** One intent, one phase, one agent, end to end with a
 passing gate in CI, where green means the eight gates that exist passed and the other
@@ -1702,7 +1749,7 @@ somewhere else.
 | Large | WP3 templates, WP4 rule engine, WP7 runner, WP11 agent layer, WP16 documentation, WP17 test strategy |
 | Medium | WP0 bootstrap, WP1 artifact schema, WP2 rendering, WP6 evidence, WP8 context scope, WP10 CI wrapper and enforcement check, WP15 symbol index, WP19 conformance, WP20 token economy |
 | Small | WP5 assumptions, WP9 init, WP12 GitHub adapter, WP13 token recording, WP14 learning |
-| Not sized | WP18 dashboard, specified and deferred to 1.1 |
+| Not sized | WP18 dashboard and WP21 ideation, specified and deferred to 1.1 |
 
 The distribution says something the sequence hides. Of the twenty packages built for
 v1, M0 needs eight and three of the seven large ones, M1 eleven and four. Neither is
@@ -1785,9 +1832,9 @@ Xeno is developed on GitHub and stays there, whatever hosts it learns to generat
 wrappers for.
 
 Intents spanning several repositories. Issue commands as a trigger, with whatever
-component receives them. The dashboard, WP18, specified in section 2 and not built.
-The German documentation translation together with the hash binding that keeps it
-current.
+component receives them. The dashboard, WP18, and the ideation record, WP21, each
+specified in section 2 and not built. The German documentation translation together
+with the hash binding that keeps it current.
 
 **Public release, decided rather than deferred, and the repository went first.** The
 repository is public from v1. What waits for 1.1 is the release: signatures, a public
