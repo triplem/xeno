@@ -44,10 +44,14 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Pinned to a version and checksummed by the module sum database on the way in,
-      # which is what go install does for a named version.
+      # Pinned to a commit's pseudo-version and checksummed by the module sum database on
+      # the way in, which is what go install does for a named version. A commit rather
+      # than a release because Go 1.27.2 writes export data version 5 and release 2.29.0
+      # reads up to 4 through x/tools 0.49.0, so every package loaded with type errors and
+      # every merge was red (#343); this commit carries x/tools 0.51.0. The pin returns to
+      # a release at 2.30.0, which renovate proposes.
       - name: install the scanner
-        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261009120814-7b1b5cebe007
 
       # .xeno/local/ is gitignored and is where a pipeline artifact belongs, for the
       # reason A39 gives: it is a job status and never a commit.
