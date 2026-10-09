@@ -1,0 +1,62 @@
+intent: github.com/triplem/xeno#95
+phase: 03-implementation
+created: "2026-10-09T16:49:58Z"
+schema_version: "1.0"
+runner_version: dev+d2bc411.dirty
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 5c294e11c40ecd8a14b75780326cfa15c37b2f9240f36070378f411832ea5faf
+evidence_source: ci
+template_source: project
+repo_commit: d2bc411fe423d59534722d6343eeceed4b6bad69
+files:
+    - path: renovate.json
+      sha256: ee631c70179e90d4cdcaa2b3e91a15b07c9efeece9c4c1ea9f09ef0a3f986b03
+      bytes: 6474
+    - path: Dockerfile
+      sha256: a98533f68ab81f4f907ee5f8480ff2db8992e87a8f8a8dea7389e021526134db
+      bytes: 7716
+    - path: CONTRIBUTING.md
+      sha256: 7c9986badf2980286596642863af3ee5a1dee79193ff1d224856460bb2e25782
+      bytes: 7763
+    - path: docs/supply-chain.md
+      sha256: 4cfe0becaa34c55929f5f453b462a1b13c93a4929ddf9661078e4fa313e380f1
+      bytes: 15084
+    - path: internal/model/supply_chain_test.go
+      sha256: e4c8ccd95b7b46f1bdace82a5f94edf43424b7c6a3150dac4ca01c954cad3450
+      bytes: 20291
+    - path: .github/workflows/renovate.yml
+      sha256: 198bc4342904a205cb48db6350378586be6cb1ed5f93d3c7522f76483dd6b960
+      bytes: 2124
+    - path: .github/workflows/gitleaks.yml
+      sha256: b7502363b43c396fb3fbf741c2e615c5b9a10e93417ce89e7bed9035f6c1a441
+      bytes: 5362
+    - path: .github/workflows/docs.yml
+      sha256: a2e3c2f2a57a613fb2de78a69b825a24960319a23630859b9b03ff80b0992899
+      bytes: 2964
+    - path: .github/workflows/release.yml
+      sha256: 0acee4e3c8a9a6ab4305b8240a57f01e574a6b8c897a57163d6b521b0744d262
+      bytes: 15081
+    - path: .github/workflows/trivy.yml
+      sha256: c9167af759378be230e7e50de090f5adcac056c4286bee20c5b2b3b11247dced
+      bytes: 6345
+    - path: .github/workflows/lint.yml
+      sha256: 46f521dd27de20c9b9fa5299fa47b3959e39ab8ea5dfc84e1492b499612a7538
+      bytes: 3705
+    - path: .github/workflows/govulncheck.yml
+      sha256: 5ad3d6bce6856d29c0dc2560350841ea7314f745c0a2c9219644e8b6693aada7
+      bytes: 5612
+    - path: .github/workflows/gosec.yml
+      sha256: d081920b7e66a45404670ecedf3ec92109d2f18195f39ae80ba2155abbfee2db
+      bytes: 5371
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 953edde96806721dadace7f3ca6fed815f4f44fb2f9630d905212cc0cd987f87

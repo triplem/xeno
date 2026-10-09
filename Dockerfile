@@ -40,7 +40,7 @@
 # one pull per CI runner against a question nobody in this repository can answer, and the
 # day somebody can run a container job on Alpine and watch it work, this paragraph is
 # what the change deletes.
-ARG BASE=docker.io/library/debian@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
+ARG BASE=docker.io/library/debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
 FROM $BASE
 
 # --no-install-recommends, because what git recommends here is an ssh client, a pager and

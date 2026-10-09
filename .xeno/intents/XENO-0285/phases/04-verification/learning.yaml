@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#95
+phase: 04-verification
+created: "2026-10-09T16:55:02Z"
+schema_version: "1.0"
+runner_version: dev+d2bc411.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The nine manager regexes are checked by a script that exists only in this phase's evidence, so nothing re-runs them. A configuration whose job is to match text elsewhere in the tree can rot silently when that text is rewritten, and this intent found exactly that rot by hand.
+      proposal: Where a configuration matches text elsewhere in the tree, the check that it still matches belongs in the repository next to the other scripts, so the next person re-runs it instead of thinking to look. Not taken here because it is a tool the design did not propose.
+      target: docs/implementation-plan.md
