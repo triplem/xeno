@@ -55,6 +55,12 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | Go toolchain | 1.27, from the `go` directive in `go.mod` via `setup-go`, which resolves it to the newest 1.27.x | golang.org |
 | `actions/setup-node` | `820762786026740c76f36085b0efc47a31fe5020`, v7.0.0 | github.com |
 | Node toolchain | 24, from `node-version` in `audit.yml` and `release.yml` via `setup-node`, which resolves it to the newest 24.x | github.com, nodejs.org |
+| `actions/setup-python` | `5fda3b95a4ea91299a34e894583c3862153e4b97`, v7.0.0 | github.com |
+| Python toolchain | 3.14, from `python-version` in `docs.yml` via `setup-python`, which resolves it to the newest 3.14.x | github.com |
+| `zensical` | 0.0.69, through `pip install`; its fourteen dependencies resolve unpinned at install | pypi.org |
+| `actions/configure-pages` | `45bfe0192ca1faeb007ade9deae92b16b8254a0d`, v6.0.0 | github.com |
+| `actions/upload-pages-artifact` | `fc324d3547104276b827a68afc52ff2a11cc49c9`, v5.0.0 | github.com |
+| `actions/deploy-pages` | `368f82528645a54fb793d4d04e342629a3f51346`, v5.0.1 | github.com |
 | `cycjimmy/semantic-release-action` | `b12c8f6015dc215fe37bc154d4ad456dd3833c90`, v6.0.0 | github.com |
 | semantic-release | 25.0.9 | npm |
 | `CycloneDX/gh-gomod-generate-sbom` | `efc74245d6802c8cefd925620515442756c70d8f`, v2.0.0 | github.com |
@@ -66,7 +72,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | trivy's vulnerability database | not pinned, and cannot be | ghcr.io |
 | `golangci/golangci-lint-action` | `ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a`, v9.3.0 | github.com |
 | `golangci-lint` | v2.14.0 | github.com |
-| `gosec` | v2.29.0, as `github.com/securego/gosec/v2` through `go install`, checksummed by the module sum database | proxy.golang.org |
+| `gosec` | v2.29.1-0.20261009120814-7b1b5cebe007, the pseudo-version of a commit on its main branch, as `github.com/securego/gosec/v2` through `go install`, checksummed by the module sum database; a commit until 2.30.0 because release 2.29.0 cannot read Go 1.27.2's export data (#343) | proxy.golang.org |
 | `govulncheck` | v1.8.0, as `golang.org/x/vuln` through `go install`, checksummed by the module sum database | proxy.golang.org |
 | govulncheck's vulnerability database | not pinned, and cannot be | vuln.go.dev |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
@@ -97,6 +103,14 @@ published image is fixed and two images a month apart are not the same image, an
 `git` in either of them is read off the build log of the run that produced it. The bill
 of materials cannot answer it, because it describes the binary and not the image around
 it.
+
+**Zensical's dependencies are the one install here that resolves unpinned.** The
+generator itself is pinned to a version, and `pip` resolves the fourteen packages behind
+it to whatever each range allows on the day. A lockfile would pin them, and the day a
+transitive package breaks the build is the day it earns its place; until then the row
+says what it is, and the build is strict enough to say when it breaks. The site it
+produces is a derivative of the repository and nothing a verdict rests on, which is why
+this is tolerable here and would not be on the gate path.
 
 **The `docker` CLI is pinned by the runner rather than by this repository.** The image
 step runs `docker login`, `docker build` and `docker push` instead of

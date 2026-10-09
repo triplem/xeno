@@ -88,6 +88,9 @@ var (
 	fullSha     = regexp.MustCompile(`\b[0-9a-f]{40}\b`)
 	goDirective = regexp.MustCompile(`(?m)^go ([0-9]+\.[0-9]+)`)
 	nodeVersion = regexp.MustCompile(`node-version:\s*'?([0-9][0-9.]*)'?`)
+	// The third toolchain pinned by major, `python-version: '3.14'` in docs.yml, with the same
+	// shape problem as the two above and the same answer.
+	pythonVersion = regexp.MustCompile(`python-version:\s*'?([0-9][0-9.]*)'?`)
 )
 
 // actionPin is one sha-pinned `uses:` together with every file that writes it, so that two
@@ -108,6 +111,7 @@ type treePins struct {
 	versions  map[string]string // the version as written -> the file it is written in
 	goVersion string
 	node      string
+	python    string
 	raw       string
 }
 
@@ -121,6 +125,7 @@ func readTreePins(t *testing.T) *treePins {
 		versions:  map[string]string{},
 	}
 	node := map[string]string{}
+	python := map[string]string{}
 
 	for _, rel := range sortedKeys(workflows) {
 		body := workflows[rel]
@@ -157,6 +162,9 @@ func readTreePins(t *testing.T) *treePins {
 		for _, m := range nodeVersion.FindAllStringSubmatch(stripped, -1) {
 			node[m[1]] = rel
 		}
+		for _, m := range pythonVersion.FindAllStringSubmatch(stripped, -1) {
+			python[m[1]] = rel
+		}
 	}
 
 	// The Dockerfile contributes the one pin the issue names it for: the base image's digest,
@@ -181,6 +189,12 @@ func readTreePins(t *testing.T) *treePins {
 	}
 	for v := range node {
 		p.node = v
+	}
+	if len(python) > 1 {
+		t.Errorf("the workflows ask for python %v and the page carries one row", sortedKeys(python))
+	}
+	for v := range python {
+		p.python = v
 	}
 	return p
 }
@@ -289,6 +303,9 @@ var boundByHand = map[string]func(*treePins) (string, string){
 	},
 	"Node toolchain": func(p *treePins) (string, string) {
 		return p.node, "`node-version` in the workflows"
+	},
+	"Python toolchain": func(p *treePins) (string, string) {
+		return p.python, "`python-version` in the workflows"
 	},
 }
 
