@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#336
+phase: 05-review
+created: "2026-10-10T13:45:24Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: 'XENO-0286 learned to add the expected growth to the byte budget; this intent applied it and still overshot, 43,663 against 43,000. The margin was 889 bytes, estimated as "nine or so lines" in the context rationale, and the change was 23 lines or 1,552 bytes. So the method was right and the estimate was not: nine lines was the size of the sentence, and the Sources entry, which the same intake also planned, was another fourteen.'
+      proposal: 'Estimate the growth by listing what will be written and counting it, not by guessing a line count: one sentence plus a Sources entry is two items, and the budget needs both. Where the estimate is uncertain, round the margin up generously — a budget that is too large costs nothing, since the figure is a claim about what the phases were given and a generous one is still true, while a budget that is too small cannot be repaired after the intake is judged and carries an advisory finding to the end of the intent. Two intents have now carried that finding.'
+      target: .xeno/config/project.yaml

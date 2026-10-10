@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#336
+phase: 04-verification
+created: "2026-10-10T13:44:02Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+learnings:
+    - category: template
+      observation: Six of the eleven criteria could only be answered by reading the prose that was written, by the same agent that wrote it. What kept that from being an opinion was that each criterion named the clause carrying it, so a reviewer reading the same clause can disagree. The one criterion that failed, a sentence count, was recorded as not met in the mapping table rather than re-read as satisfied.
+      proposal: Where a phase delivers prose, write each acceptance criterion as a claim the prose must assert, and in the mapping name the clause that carries it. A criterion phrased as an impression of the whole cannot be checked by anybody, including the writer; one phrased as a claim with a clause beside it can be contradicted by a second reader, which is the most verification prose admits of. And a mapping that never reports its own unmet criterion is worth less than no mapping.
+      target: .xeno/plugin/templates

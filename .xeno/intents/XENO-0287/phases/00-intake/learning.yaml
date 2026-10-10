@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#336
+phase: 00-intake
+created: "2026-10-10T13:26:49Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The budget was set to 43,000 against a resolved 42,111, because the file this intent edits is in its own scope and the edit enlarges it. XENO-0286 set its budget from the resolved figure alone and carried an advisory G-Schema finding from P4 to its end, with no repair available, because the budget sits inside the intake artifacts_hash.
+      proposal: 'This is the rule from XENO-0286 applied rather than a new observation, and it worked: where a scope includes the files the change will grow, set the byte budget to the resolved figure plus the expected growth and say so in the context rationale. One intent has now paid for not doing it and one has avoided it, which is the evidence the rule needed.'
+      target: .xeno/config/project.yaml
