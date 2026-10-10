@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 02-design
+created: "2026-10-10T15:41:06Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Adding a page under docs/ needs two edits that nothing ties together: an entry in docs/README.md, which the strict build verifies only as a link that resolves, and an entry in zensical.tomls hand-written nav, which nothing verifies at all. A page missing from the nav builds, publishes and is unreachable from the site, and the docs job stays green. Three pages of the thirteen under docs/ would have to be checked by hand to notice. The failure is silent in exactly the way a page nobody reads is silent.'
+      proposal: The docs job gains a step comparing the set of markdown files under docs/ against the set of paths named in zensical.tomls nav, failing on either difference. It needs no network and no new dependency, and it is the same kind of check main_test.go already makes between the usage constant and docs/commands.md.
+      target: .github/workflows/docs.yml, and zensical.toml nav

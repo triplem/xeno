@@ -1,0 +1,23 @@
+intent: github.com/triplem/xeno#359
+phase: 00-intake
+created: "2026-10-10T15:33:59Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+include:
+    - docs/labels.md
+    - docs/README.md
+    - zensical.toml
+    - .github/workflows/docs.yml
+    - internal/model/identity.go
+    - internal/host/host.go
+    - internal/host/github/tracker.go
+    - .xeno/plugin/bin/xeno-labels.sh
+    - docs/commands.md
+    - CONTRIBUTING.md
+    - CLAUDE.md
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 14
+    bytes: 130000

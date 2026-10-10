@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 00-intake
+created: "2026-10-10T15:36:41Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: '#359 carries xeno-approved and xeno-needs-decision and no wp label, and the plans twenty packages hold no owner for the projects own tracker conventions. WP16 is documentation and is the nearest fit, which is the same nearest fit #216 reached for and disclaimed in the issue body. That is the second time a change to how this repository is run rather than to what Xeno does has had to borrow a package label, and the third standing rule asks for a finding where something belongs to no package rather than for the work to absorb it.'
+      proposal: Either a package in section 2 of the plan owns the repositorys own conventions, which is a normative change by the maintainer, or the rule in CLAUDE.md says what label such an issue carries and that borrowing one with the borrowing disclaimed in the body is the answer. Today the answer lives in two issue bodies and nowhere a reader would look first.
+      target: docs/implementation-plan.md section 2, and the third standing rule in CLAUDE.md

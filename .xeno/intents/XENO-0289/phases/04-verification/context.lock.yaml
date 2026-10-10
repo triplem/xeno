@@ -1,0 +1,56 @@
+intent: github.com/triplem/xeno#359
+phase: 04-verification
+created: "2026-10-10T15:59:38Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 329d89b97c2f64c0b84c6bb32e2d96d2946168d4563e4b772cffd3e5a920ac05
+evidence_source: ci
+template_source: project
+repo_commit: 0444ef797e82cfc60ee77f7a88ce832fe8aa86bd
+files:
+    - path: docs/labels.md
+      sha256: 09f8def95877052612c939fb2ef05f21eabc71e3eb64506bd6217f23d5971351
+      bytes: 12146
+    - path: docs/README.md
+      sha256: 84fdf9c5a5059214c9f25ebb4c5c3d1a0ac7b51cea76bc52ef30eeb8d7883f11
+      bytes: 4190
+    - path: zensical.toml
+      sha256: 56ca0e4f453e7cea12378c29c74d66cba7beb12ea828dce6adce9f30aec8229e
+      bytes: 2915
+    - path: .github/workflows/docs.yml
+      sha256: a2e3c2f2a57a613fb2de78a69b825a24960319a23630859b9b03ff80b0992899
+      bytes: 2964
+    - path: internal/model/identity.go
+      sha256: 0080081229149101f0003afd66653aa75418f475823a0f1f85d69c876a1f44f7
+      bytes: 15061
+    - path: internal/host/host.go
+      sha256: d9803eff5dad334eddeb371940972640aea4cb60f50807cb6bc82da6ec0863da
+      bytes: 8957
+    - path: internal/host/github/tracker.go
+      sha256: 88513b8c9bf6c098ec34f994f895bfe089ceecca88e3457d66d38908329733a6
+      bytes: 8719
+    - path: .xeno/plugin/bin/xeno-labels.sh
+      sha256: dc1619492af9820c0324dfeddd5613818003279ae0c9c5b994ce3cacac3aa1cf
+      bytes: 2344
+    - path: docs/commands.md
+      sha256: f96f10216e6ebf5ae3308e0c612745086ce39c025a9e468c342b8772e7051540
+      bytes: 6699
+    - path: CONTRIBUTING.md
+      sha256: 7c9986badf2980286596642863af3ee5a1dee79193ff1d224856460bb2e25782
+      bytes: 7763
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 953edde96806721dadace7f3ca6fed815f4f44fb2f9630d905212cc0cd987f87
