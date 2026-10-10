@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 01-requirements
+created: "2026-10-10T15:38:54Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: 'A question that belongs to the issue rather than to the intents own work has nowhere to go in the artifacts. Section 8s open-questions section is sealed and G-Questions demands a resolution from P5, so recording #359s lifecycle question there would hold a documentation page at a red P5 until the maintainer wrote a section 12 clause. The question was put on the tracker with the xeno-needs-decision label instead, and the reason is written into the intakes scope section so a reader is not left wondering why the mechanism was skipped. Nothing in the templates or the gates distinguishes the two kinds of question.'
+      proposal: Either section 8 says that a question about a clause only a person can write is put to the tracker rather than recorded as an open-questions entry, and what the label beside it is for, or G-Questions gets a fourth exit for a question deferred to an issue with its number. Today the distinction is kept by whoever is writing and explained in prose each time, which is how it will be got wrong.
+      target: docs/process-definition.md section 8, open questions have to be resolved
