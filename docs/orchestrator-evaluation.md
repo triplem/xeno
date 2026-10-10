@@ -1,9 +1,9 @@
 ---
 id: orchestrator-evaluation
 title: Xeno, Orchestrator Evaluation for v2
-revision: 3
+revision: 4
 status: draft, not ratified
-date: 2026-10-08
+date: 2026-10-10
 location: docs/orchestrator-evaluation.md
 ---
 
@@ -20,13 +20,17 @@ so that a reader who disagrees can see what the disagreement is about.
 It is an architecture decision record, not a plan. What follows from it is in
 the implementation plan.
 
-Section 9 records a second decision of the same kind, taken later and about a
-different kind of tool: a specification framework, evaluated and declined. It
-sits here because the form is the same one — a candidate pinned to a version,
-the rows it changes, the reason that decides it, and the conditions under which
-the answer is revisited — and because a tool declined is only useful to a reader
-who can find the reason. The page is the record of external tools this project
-evaluated, of which the orchestrator was the first.
+Sections 9 and 10 record two further decisions of the same kind, taken later
+and about different kinds of tool: a specification framework, evaluated and
+declined, and a development lifecycle methodology, compared and not extended.
+They sit here because the form is the same one — a candidate pinned to a
+version, the rows it changes, the reason that decides it, and the conditions
+under which the answer is revisited — and because a tool declined is only
+useful to a reader who can find the reason. What section 10 compares with is
+the thing that distinguishes it: the orchestrator was chosen against a
+platform's criteria and the framework against one section of one template,
+while a methodology compares with the process itself. The page is the record of
+external tools this project evaluated, of which the orchestrator was the first.
 
 ## 2. What the platform has to do
 
@@ -467,6 +471,299 @@ why the wait costs nothing: on 2026-10-08 `xeno gate verify` counts 519 verdicts
 this trail, and not one of them carries an override, so the view would have nothing to
 show.
 
+## 10. A methodology, not an extension
+
+### 10.1 What was evaluated
+
+AI-DLC, the AI-Driven Development Life Cycle, shipped as `awslabs/aidlc-workflows` under
+MIT-0, **pinned at `v2.11.0`**. That is an annotated tag: the ref resolves to tag object
+`4079edbe`, which points at commit `6a378b53c0a4fe0641ed7d8de8dfff94264d5b6a` of
+2026-10-08, and everything below was read at the commit. Both shas answer to "v2.11.0",
+which is why this says which is which. The repository was created on 2025-11-13 and
+carried 5,123 stars and 924 forks when the figures were read on 2026-10-10. Three
+preview tags were cut in the three days around the release and they are numbered
+`2.11.1-preview`, ahead of `2.11.0`, so "2.11" on its own names no single tree.
+
+It is a methodology rather than a platform, which is why it is here and not among the
+candidates of section 4. Five phases hold 33 stages, from ideation to operation; eleven
+scope profiles decide which of them run; fourteen agents hold the personas; one
+harness-neutral `core/` is projected onto seven harnesses — Claude Code, Kiro CLI, Kiro
+IDE, Codex CLI, Cursor, opencode and GitHub Copilot — by a packager. Hooks and tools are
+TypeScript. Every stage outside the three initialisation stages ends with a human
+approval gate.
+
+`aws-samples/sample-collaborative-ai-dlc` is the same methodology hosted, also MIT-0,
+also pinned at an annotated tag, `v2.2.0`, commit
+`bc988d0eaaca752d9add2d67b2c861841a363227`. Its own description is an early-preview AWS
+sample deployed into the adopter's account: it can start an intent from a GitHub, GitLab
+or Jira issue, and it keeps the record in Neptune and DynamoDB rather than in a git
+tree. It compares on the rows below with that one cell changed, and the change sharpens
+the second row instead of adding a sixth.
+
+How the reading was done, project by project and source by source, is issue #323. This
+section is the decision and the reason for it.
+
+### 10.2 The five rows
+
+| What | Here | With AI-DLC v2.11.0 | Changed |
+|---|---|---|---|
+| the unit of work | an intent, six phases, one issue, one branch | an intent, 33 stages cut to a scope profile, auto-created from a sentence typed at `/aidlc` and keyed by a UUIDv7 in `intents.json`, bound to no issue | replaced |
+| where the record lives | `.xeno/intents/KEY/`, sealed by `artifacts_hash` | `aidlc/spaces/<space>/intents/<YYMMDD>-<label>/`, committed Markdown beside per-clone audit shards of 115 event types, hashed nowhere except the reviewed-source fingerprint of `aidlc attest` | replaced, and unsealed |
+| who enforces it | fourteen gates, deterministic and model free, red is red | sensors that refuse only at a gate, only where a manifest opted in, and only until a person overrides against a receipt; no shipped sensor opts in | replaced, and opt-in |
+| who may edit the specification | a person, in a commit of its own, before the code that follows from it | a stage's agent drafts it, a person approves it at the gate, and a person's jump back reopens the stage to keep, modify or redo | **inverted**, with a person at every turn |
+| rules and learning | `learning.yaml` per phase, taking effect only as a merge request against the rule set | a per-stage diary surfaced verbatim at the gate, ticked, written with provenance and logged, taking effect only in the next workflow | **built**, and ahead |
+
+The first four are section 9.2's rows and all four change, the fourth by reversing. The
+fifth is an addition OpenSpec did not need, and it is the row on which this project is
+behind.
+
+**The unit of work.** An intent is "a single run of the AI-DLC lifecycle, scoped to one
+task", created the first time somebody describes work rather than by a command of its
+own. Its row in `intents.json` carries `uuid`, `slug`, `dirName`, `scope`, `repos` and
+`status`, and no field for an issue. Nothing in `core/` reads a tracker: a search of the
+whole tree at the pinned commit for tracker vocabulary returns one hit, a prose citation
+of AI-DLC's own issue numbers inside a knowledge file, while a control search of the
+same tree for `intents.json` returns five files, so the absence is an absence and not a
+search that missed. The hosted sample is where an issue enters, and it imports one
+rather than requiring it. Here the issue is the identity: section 3 makes an intent one
+issue and one branch, and section 12's approval act reads the issue before `xeno intent
+start` writes anything.
+
+**Where the record lives.** Both projects commit the record, and that is the whole of
+the agreement. AI-DLC's is `aidlc-state.md`, per-stage artifacts, a per-stage
+`memory.md` diary and an `audit/` directory of per-clone shards carrying 115 event
+types. No hash seals any of it. The one exception is the mechanism 10.6 takes up: at
+review time the engine writes
+`<record>/construction/<unit>/<stage>/reviewed-source-<hash12>.tsv`, a listing of
+claimed path to blob OID whose header binds the manifest bytes, and the receipt carries
+the SHA-256 of it. So one thing in that record has a content hash, and it is the source
+that was reviewed rather than the record of the review. Here it is the other way round:
+five hashes cover the record, Appendix B defines each to the byte, and `xeno gate
+verify` recomputes them from the repository alone.
+
+**Who enforces it.** This is the row #334 asked to have settled, because two of AI-DLC's
+own documents read literally disagree and both sentences are still there at the tag.
+`docs/guide/09-rules-and-the-learning-loop.md:140` says a sensor result "is **advisory**
+in this release ... it does not block the stage's approval gate or stop your workflow",
+unqualified; `docs/reference/07-sensor-system.md:101` says "Blocking is enforced for
+`fire_on: gate`; write-fired blocking declarations remain advisory in this release."
+
+The reference is current, and the code is why. In `core/tools/aidlc-state.ts`, 8,520
+lines, `fireGateSensors` at :3465 keeps only sensors declaring `fire_on === "gate"` and,
+of those, only `default_severity === "blocking"`; `enforceBlockingGateSensors` at :3725
+returns without complaint on an empty finding list and otherwise calls `error()`; the
+`gate-start` path calls it at :5928. The write path cannot refuse at all —
+`core/hooks/aidlc-run-sensors.ts:305` is the comment "Step 12 — exit 0 (advisory always
+per G5)" above `return 0`. The guide's sentence sits two lines below a paragraph that
+describes gate-fired sensors, so the file disagrees with itself inside one screen and
+reads as a paragraph that was true before gate-fired blocking landed.
+
+What that enforcement is, stated precisely, is three qualifications deep. It exists, it
+is deterministic and it needs no model. It reaches only the gate, never a write. It
+applies only where a sensor manifest declared `blocking`, and the six sensors AI-DLC
+ships — `claim-sources`, `linter`, `required-sections`, `traceability`, `type-check` and
+`upstream-coverage` — every one declares `advisory`, so out of the box nothing refuses
+anything. And a person may override it, which the implementation makes expensive rather
+than easy: the override is refused in autonomous mode, because "Unattended runs must
+halt on blocking sensor findings"; refused unless the answer is the exact offered
+choice; and refused without a fresh authorisation receipt proving that choice was
+offered and taken after a human turn. That is a better override than most things have.
+It is still the opposite end of section 7 from "red is red": here the gate list is
+fixed, no manifest opts in or out, and the valve is `xeno gate override`, which writes a
+decision onto the named finding with an obligation that stays owed and is printed back
+until somebody closes it.
+
+**Who may edit the specification.** Softer than OpenSpec's and the same answer. The
+specification is a stage output: the stage's lead agent drafts it, the person approves
+it at that stage's gate, and within an attempt the reviewed outputs are byte-bound and
+frozen. An earlier artifact is rewritten by going back to it — `/aidlc --stage <name>`
+reopens that stage and every later one in the plan, starts a new attempt, and asks the
+person whether to keep the files, modify them or redo the stage from scratch. Every step
+of that is a person's, which is more than OpenSpec offers and is why the cell says "with
+a person at every turn". The first standing rule is still the other sentence: the
+documents are not editable by the agent, and a change to one is a person's own commit
+made before the code that follows from it. An agent that may write the specification it
+is judged against, even with a person in front of every version of it, is being judged
+against its own account of the work.
+
+**Rules and learning.** Here the comparison runs the other way, which is why the row is
+in the table. AI-DLC's rules are prose files people write — `memory/org.md`, `team.md`,
+`project.md`, `phases/<phase>.md` — resolved strictly additively once at workflow start
+on the integer chain `SCOPE_PRIORITY` of org 0, team 1, project 2, phase 3. The loop
+around them is the thing. A deterministic tool reads the stage's `memory.md` diary and
+emits every non-blank line under its four standard headings as a candidate, with "No
+paraphrase, no 'interesting' filtering — the lines are shown as written"; "Keep none of
+these" is the first choice; an empty diary asks the person nothing; a kept line is
+written into `project.md` as a dated entry with provenance, or into `team.md` by a
+one-click promote, and there is no widen-to-org path at all; each write leaves a
+`RULE_LEARNED` row, or a `SENSOR_PROPOSED` one where the learning is a sensor binding,
+"so no rule is ever installed silently"; and "A learning captured at one gate does
+**not** change the rules for the rest of the current workflow."
+
+Section 10 of [the process definition](process-definition.md) describes that mechanism
+and this project has not built it. Where both exist the difference is the review:
+AI-DLC's admission check is a tick at a gate, with an LLM comparison against `org.md`
+offering revise, skip or escalate and no override, while section 10 routes a learning
+through a merge request against the rule set so that nothing takes effect where it was
+noticed. A merge request is the stronger review and a tick is the one that happens. The
+honest reading of the row is that AI-DLC has a closed loop with a weak gate and this
+project has a strong gate on a loop still open at the far end.
+
+### 10.3 Decision
+
+Not an extension, and not because AI-DLC is worse.
+
+It answers layer 2 inside the harness. Section 2 says the platform is chosen for layer 1
+alone and that anything a candidate offers for layer 2 "is not a benefit here. It is a
+second source of truth competing with the repository"; section 4.4 declined durable
+workflow engines on that ground. AI-DLC's disposition across stages lives in
+`aidlc-state.md` and `intents.json` and is read by its own orchestrator, which is
+exactly the second state that argument is about. Adopting it would not remove `.xeno/`;
+it would put a second record beside it, and the reproducibility claim would then hold
+for the half of the record that is this project's and not for the half the stages run
+in.
+
+And the fourth row decides what the second leaves open, as it did in 9.3. The
+specification is a stage output drafted by an agent, and the first standing rule is the
+opposite sentence. The difference from OpenSpec is that AI-DLC puts a person in front of
+every version, so this is a disagreement between two defensible answers rather than
+between an answer and the absence of one. Two defensible answers to who owns the
+specification, and only one of them can hold in one repository.
+
+What is deliberately not part of the reason: that AI-DLC is less complete, less
+engineered or less well documented. It is none of those. Its release is checksummed with
+a Sigstore bundle and a build-provenance file; its plugin contract is explicit about
+what it does not yet do, with a plugin's `memory` contributions "rejected until that
+subtree can be projected" and a stage's `when:` predicate "parsed, not evaluated"; and
+on the fifth row it is ahead. 10.6 takes what this project had not thought of, and 10.5
+says what would make the narrow argument worth running again.
+
+### 10.4 The three shapes, and what each costs
+
+10.3 answers whether this project should adopt AI-DLC. #323 asked the cheaper question
+as well — whether an extension reaches the same place for less — and weighed three
+shapes. The measurement is the smaller half of the case and is recorded because it is
+what a later reader would otherwise have to redo.
+
+**Xeno as an AI-DLC plugin.** Sensors wrapping `xeno gate run` and `xeno gate verify`,
+and stages that write the six phases. The plugin contract takes away precisely the parts
+this project exists for. A plugin cannot make a gate refuse: only a gate-fired sensor's
+severity can, and a person may override that against a receipt. It cannot contribute a
+rule, because `memory` declarations are rejected. It cannot bind an intent to an issue,
+because nothing in `core/` reads a tracker. It cannot put a condition on a core stage,
+because `when:` is parsed and not evaluated. And it must prefix its artifacts, so
+`.xeno/` becomes a second record beside `aidlc/`. Acquired in exchange: a Node runtime
+on every machine that works a phase, TypeScript hooks between the agent and the tree,
+and an upstream that cut three tags in three days — section 9.4's list of what a
+framework costs, larger.
+
+**AI-DLC as a way of working a Xeno phase.** Section 5.1 says the runner does not know
+who is typing. An AI-DLC stage that writes sections through `xeno section set` is manual
+mode; an AI-DLC sensor whose `command` is `xeno gate run` is a bridge that is one
+Markdown file in an adopter's project and needs nothing from this repository. The cost
+is a page of somebody else's documentation and nothing in this tree. This is the cheap
+route, and it is cheap because it builds nothing — which is also why it is not a
+decision this document has to take. Nothing stops it today, and the only thing that
+could stop it would be a change here that nobody has asked for.
+
+**Take the mechanisms, as 9.6 did.** The route taken, and 10.6 is the result.
+
+So the answer has the shape 9.3 reached by a different road: the framework is declined,
+the mechanisms are examined, and the bridge that costs nothing is left available to
+whoever wants it rather than built here.
+
+### 10.5 Conditions for revisiting
+
+- A Xeno verdict is wanted that binds the source it judged by identity. The question was
+  put to the maintainer on #334 and answered — record the gap, take nothing — and the
+  form worth revisiting first is the weakest of the three considered there: a verdict
+  recording the base and head it was computed over, which answers "which diff" without
+  claiming "the same diff". It is still a change to `docs/process-definition.md:480`
+  before it is anything else. What would bring it back is a case: somebody asking what a
+  green P5 proves about the code that was merged, and not being satisfied that it proves
+  the record was sealed.
+- AI-DLC's gate-fired blocking stops being opt-in, or a shipped sensor declares
+  `blocking`. The third row would then compare two enforcement models rather than
+  enforcement against signal, which is a narrower and more interesting argument.
+- A plugin may contribute rules, and a stage's `when:` is evaluated. Both are named in
+  AI-DLC's own documentation as not yet done, the plugin shape of 10.4 fails on them
+  today, and it would have to be re-costed if they land.
+- The learning loop of section 10 is built here. The fifth row currently compares a
+  described mechanism with a shipped one; once both ship, what is left to compare is the
+  review, and a tick at a gate against a merge request against the rule set is a
+  question worth asking on evidence rather than on principle.
+- Whether this project should cover ideation or operation. AI-DLC's lifecycle reaches
+  past these six phases at both ends. The front of it is WP21 in [the implementation
+  plan](implementation-plan.md), "a sealed record beside the intents, and not a phase",
+  deferred to 1.1 with #337 as the finding behind it; the back of it is not in the plan
+  at all. Neither is settled here, and a reader who wants that comparison should know it
+  is the plan's question and not this document's.
+
+What would not change the answer is AI-DLC becoming better at what it does. The second
+row and the fourth are a disagreement about whether a record is sealed and about who
+owns the specification, and a better tool settles neither.
+
+### 10.6 The mechanisms worth taking
+
+Four, of which three already have an issue and the fourth is a gap this section records
+rather than closes.
+
+**A sensor that fires on write.** `fire_on: write` dispatches from a PostToolUse hook
+and checks an output while it is being written, where v2 has a stop hook and nothing
+earlier. What is on offer is early signal and not early refusal, since AI-DLC's own
+write path cannot refuse, by construction and by its own comment. #340 holds it, with
+the figure that decides whether it earns its place — G-Secret has failed once in thirty
+judged phases — and it is a change to section 7 of the process definition before it is a
+line of code.
+
+**The learning gate's ritual.** Candidates surfaced verbatim by a deterministic tool,
+"Keep none of these" offered first, an empty diary asking nothing, and every write
+leaving a `RULE_LEARNED` row. The audit row is the part this project does not have: a
+phase's `learning.yaml` is written and sealed, and nothing records what a merge request
+against the rule set did with it afterwards, so the far end of section 10's route is
+invisible in the trail. That is the closed half of the loop, and it is worth having
+whether or not the engine that applies learned rules exists yet.
+
+**The admission conflict check, named and declined.** Before a kept learning lands,
+AI-DLC's orchestrator compares it with the matching section of `memory/org.md` as a
+section-level LLM check, and the person then revises, skips or escalates with no
+override path. Its own reference is candid about what that is — "an audit aid, not a
+deterministic enforcement boundary", with the deterministic writer not re-running the
+comparison. It is named here because it is the one place in that tree where a model sits
+in a refusal path, and declined for the reason section 7 opens with: all gates are
+deterministic and model free, so that red on Monday is red on Friday. A check whose
+verdict depends on a model is a check whose verdict is not a fact about the repository.
+
+**The reviewed-source fingerprint, recorded as a gap.** This is the best thing in
+AI-DLC's tree and the one that needed a person's decision, so the decision was taken on
+#334 and the mechanism is described here rather than taken.
+
+A per-unit `REVIEW_COMPLETED` receipt carries a `Unit Source Fingerprint` over the
+unit's claimed paths and its manifest bytes, and the committed listing beside it names
+each claimed path's repository selector, file mode and blob OID. `aidlc attest resolve
+--diff base..head` then classifies every changed path as `verified`, `drifted`,
+`unattested`, `unverifiable` or `indeterminate` from `(base, head)` alone, in any clone,
+with the last two failing closed; `--record-ref` pins the record to a ref the change
+under test cannot move, so a change that writes its own approving receipt gains nothing.
+Attribution "keys on blob content (OIDs), not commit ancestry", so a reviewed change
+that lands squashed with others still verifies.
+
+What this project has is not that. The five hashes are all over the record's own
+content. `context.lock.yaml` fixes what a phase was given and G-Freshness binds the
+files a preceding phase read, by freshness; P5 records a review result, and nothing
+binds that result to the bytes it approved. Stated plainly: **Xeno seals the record of a
+review; it does not seal the identity of the source that was reviewed.**
+
+What makes that a gap rather than a defect is that it was chosen. "A verdict says what
+it judged, by content and not by commit" is in the process definition, which is the
+normative document, so it is a decision and not an oversight — and a decision with a
+property behind it, since no artifact records a commit a rebase could rewrite and
+section 6's "Rebasing is safe where the trees are" follows from that. Taking the
+mechanism is therefore a change to that sentence, in a person's own commit, before
+anything else, which is 10.5's first condition and not this section's to make. The
+answer worth writing down meanwhile is the honest one: a green P5 proves that the record
+was sealed, not that the diff was the diff.
+
 ## Sources
 
 - https://docs.openhands.dev/overview/introduction
@@ -499,3 +796,31 @@ prompts the Automations API registers, with
 rest of the design the sentence does not take. The tree holds no `.github/workflows`
 directory, which is what makes "something has to receive them" literal there. Nine
 stars, one author and no licence file.
+
+For section 10, read on 2026-10-10: https://github.com/awslabs/aidlc-workflows at tag
+`v2.11.0`, which is annotated — the ref resolves to tag object
+`4079edbea52cf4d3c80e580825da3a4dd8213271`, and the reading is at the commit it points
+at, `6a378b53c0a4fe0641ed7d8de8dfff94264d5b6a`. Read there:
+`docs/guide/03-spaces-and-intents.md` for the intent, its registry row and the record
+layout; `docs/guide/04-phases-and-stages.md` for the five phases and 33 stages and for
+the jump; `docs/guide/07-interaction-modes.md` for the approval gate at every stage
+outside initialisation and for keep, modify or redo;
+`docs/guide/09-rules-and-the-learning-loop.md` and `docs/reference/08-rule-system.md`
+for the fifth row, and the first of those for the sentence the third row had to settle
+against; `docs/reference/07-sensor-system.md` for the sensor manifest's fields and the
+sentence that contradicts it; `core/tools/aidlc-state.ts`,
+`core/hooks/aidlc-run-sensors.ts` and the six manifests under `core/sensors/` for what
+enforces, which is what settles it; `docs/reference/04-stage-protocol.md` for the
+reviewer and for reviewed outputs staying frozen; `docs/reference/12-state-machine.md`
+for the 115 event types and for `STAGE_JUMPED`; `docs/reference/18-plugin-mechanism.md`
+for what a plugin may not contribute; `docs/reference/20-commit-provenance.md` for the
+committed reviewed-source evidence and `aidlc attest resolve`; and
+`docs/reference/19-supply-chain-security.md` for the release's provenance. The whole
+tree at that commit was searched for tracker vocabulary, together with a control search
+for a term that is present, which is what the first row's negative claim rests on; the
+figures for stars, forks, licence and the release dates are from the GitHub API on the
+same day. https://github.com/aws-samples/sample-collaborative-ai-dlc was read at tag
+`v2.2.0`, also annotated, commit `bc988d0eaaca752d9add2d67b2c861841a363227`, and only
+its `README.md`: the line in 10.1 claims what that file states, and the sample's own
+five rows have not been read by anybody. The comparison itself, with the three shapes
+weighed and every source quoted, is issue #323.
