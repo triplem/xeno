@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 03-implementation
+created: "2026-10-10T15:54:50Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Two figures were sealed before they were read. 01-requirements criterion 1 says the host lists 34 labels and it lists 33; 00-intakes decision record names four issues carrying xeno-needs-decision plus #359, and the host says seven, one of which the record omits and one of which the record names and the host does not carry. Both were taken from the sessions own earlier work rather than from a command, and both landed inside an artifacts_hash that cannot be rewritten. The rule in CLAUDE.md about negative results covers the case where a tool is asked about something absent; it does not cover a count or a list stated from memory, which fails the same way and for the same reason, and which an artifact seals just as permanently.'
+      proposal: 'The rule that a negative result must be probed before it is written down is widened to any figure or enumeration an artifact states about something outside the repository: read it with the command the artifact names, in the same session, before the section is set. It costs one command per figure and it is the same discipline already required of an absence.'
+      target: CLAUDE.md, the paragraph on negative results, and docs/process-definition.md section 8

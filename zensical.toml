@@ -32,6 +32,7 @@ nav = [
   ] },
   { "Working with it" = [
     { "Commands" = "commands.md" },
+    { "Labels" = "labels.md" },
     { "Assumptions and decisions" = "assumptions.md" },
     { "The trail in this repository" = "the-trail-in-this-repository.md" },
     { "The gate job" = "m0-gate-job.md" },

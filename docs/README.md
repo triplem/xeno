@@ -21,6 +21,11 @@ before the code that follows from it.
 
 - [commands.md](commands.md) — every command with its flags, which is the text
   `xeno --help` prints.
+- [labels.md](labels.md) — the labels this repository's tracker carries, what each one
+  stands for, who sets it, who clears it and what reads it. A record of what is in use
+  rather than a definition of what a tool reads: the one label Xeno reads is the one
+  section 12 fixes, and the page says which of the others are this project's own
+  conventions and which are the host's.
 - [symbol-index.md](symbol-index.md) — the format of the symbol index a project produces
   for Xeno to read, as the annotated worked example the reader is tested against. Xeno
   ships no indexer, and a phase runs without one.
