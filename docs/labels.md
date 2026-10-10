@@ -21,6 +21,17 @@ is three operations — read what a branch enforces, read an issue, write a comm
 a label write has nowhere to live in it. Every label on an issue is somebody's act on
 the host, through the web interface or the command line.
 
+**Who acted cannot be read off the host.** `gh api user --jq .login` on this repository
+returns `triplem`, and there is no bot identity: every label the agent applies and every
+comment it posts arrives under the maintainer's own account. So the host's authorship
+field cannot tell an agent's act from a person's here. A reader asking who set a label
+gets `triplem` either way, and so does a reader asking who wrote an approval. This is
+why the convention of writing "the decision is the maintainer's; the transcription is
+not" into the artifact is load-bearing rather than a courtesy: it carries the one
+distinction the host does not, in the place a verdict seals. `XENO-0286`'s intake
+records an approval that way and `XENO-0289`'s second decision records an answer that
+way.
+
 **Xeno reads exactly one label.** Both adapters carry every label on the issue into
 `Issue.Labels`, and one function looks at that list: `Issue.Approval()` in
 `internal/model/identity.go`, which compares each entry against the constant
@@ -29,7 +40,7 @@ package labels, reaches that code and is passed over.
 
 The set below was read from the host on 2026-10-10 with
 
-    gh api repos/triplem/xeno/labels --paginate --jq '.[].name'
+gh api repos/triplem/xeno/labels --paginate --jq '.[].name'
 
 which lists 33 labels in three groups. Nothing keeps this page and that command in
 agreement; the command is given so that a reader can repeat it rather than trust the
@@ -64,17 +75,21 @@ The label is created once per repository, by hand or by
 does not make. It is the one label Xeno asks a project's tracker for; everything below
 is this repository's own.
 
-Nineteen issues carried it on 2026-10-10, against more than a hundred and forty
-intents in the trail. The reason is A107: the two names moved on #332 with no
-transition, so issues approved before that carry a label that no longer exists on
-this repository. It is worth knowing because it shows what the label
-is and is not. The durable record of an approval is the sentence the intake sealed, not
-the label; the label is what makes an issue findable as one where work may start.
+Nineteen issues carried it on 2026-10-10, against more than a hundred and forty intents
+in the trail. The reason is A107: the two names moved on #332 with no transition, so
+issues approved before that carry a label that no longer exists on this repository. It
+is worth knowing because it shows what the label is and is not. The durable record of an
+approval is the sentence the intake sealed, not the label; the label is what makes an
+issue findable as one where work may start.
 
 **Open point.** What should become of `xeno-approved` when the work it authorised stops
 — a decision against it, or an issue that is no longer of interest — is open on #359,
 with the options put to the maintainer. It would be a section 12 change before it was
-anything, which is why this page records the reading above rather than a better one.
+anything, which is why this page records the reading above rather than a better one. One
+thing is already fixed whichever way it goes: an option that recorded a withdrawal as a
+comment would record it exactly as unfalsifiably as an approval is recorded, for the
+reason in the paragraph on authorship above. That is a property this arrangement has and
+not an argument against such an option.
 
 ## The labels this repository has given itself
 
@@ -154,8 +169,8 @@ silently omits ten of them is a page a reader cannot check against the host.
 
 ## Applying a label, and reading it back
 
-    gh api -X POST "repos/triplem/xeno/issues/<n>/labels" -f "labels[]=<name>"
-    gh api "repos/triplem/xeno/issues/<n>/labels" --jq '[.[].name]|join(",")'
+gh api -X POST "repos/triplem/xeno/issues/<n>/labels" -f "labels[]=<name>" gh api
+"repos/triplem/xeno/issues/<n>/labels" --jq '[.[].name]|join(",")'
 
 The second line is the point. An exit code is a report about a request, not evidence
 about an issue: it says the host accepted something, and what the issue carries
@@ -173,6 +188,10 @@ support. The read-back is prescribed on its own merits and holds whichever form 
 Creating a label is `gh label create`, and the one label Xeno requires has a script:
 `.xeno/plugin/bin/xeno-labels.sh github triplem/xeno`, which is idempotent and reports a
 label that already exists rather than failing.
+
+Whatever the form, the host will record the act under the account whose token ran it,
+which on this repository is the maintainer's whoever typed the command. The label list
+says what is set; it does not say who decided it.
 
 ## What this page does not say
 

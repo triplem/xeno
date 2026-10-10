@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 05-review
+created: "2026-10-10T16:03:42Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: prompt
+      observation: xeno gate run on a phase whose sections are not yet written is the only way to learn which review rules the effective set holds, and running it writes a red gate.yaml that turns every later write in that phase into a staged redo. The information wanted was a list of three rule names; the price was a verdict in the artifact and a redo path through the rest of the phase. xeno review answer also refuses a name that is not in the set and names the three, so the list is reachable from a refusal, but only by guessing a name wrongly first. Nothing prints the effective review set without judging the phase.
+      proposal: 'A read-only way to ask which review rules a phase owes, as xeno template show does for sections: either xeno review show --intent K --phase NN, or the review rules added to what template show prints for 05-review. It writes nothing and needs no artifact, and it removes the only reason to run gate run early.'
+      target: docs/commands.md, xeno template show and the review commands
