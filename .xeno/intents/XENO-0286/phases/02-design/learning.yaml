@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 02-design
+created: "2026-10-10T12:17:45Z"
+schema_version: "1.0"
+runner_version: dev+90c7227.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The mode of a downloaded release asset was found by running the download, not by reading the workflow. gh release download writes 0644, go build writes 0755, and COPY preserves the mode, so the recovery path would have published an image whose runner is not executable. Nothing in either issue, in the Dockerfile or in release.yml says what mode anything has; the defect lives in what two tools do by default and is invisible in all three files.
+      proposal: Where a design replaces one producer of a file with another — a build with a download, a generator with a checkout — run the new producer and compare the file rather than its bytes. Permissions, line endings and the executable bit are carried by the producer and named in no file, so they are the class of difference that reading every file in scope cannot find.
+      target: CLAUDE.md

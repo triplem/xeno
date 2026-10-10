@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 01-requirements
+created: "2026-10-10T12:12:57Z"
+schema_version: "1.0"
+runner_version: dev+90c7227.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Criterion 10 came out of reading the release job rather than the issues: IMAGE is written into GITHUB_ENV by the build step, and a dispatch skips the build step, so the image step would have resolved its registry to the empty string. Neither #355 nor #356 mentions it, because both were written about why a step failed and not about what a second trigger would find missing.'
+      proposal: A second trigger into an existing job is a requirement about what the job already carries between its steps, not only about the condition on the steps. Before widening a condition, read what each admitted step reads out of GITHUB_ENV, GITHUB_OUTPUT or the filesystem, and make the skipped producer of each a criterion. A step that takes its input from a step the new trigger skips fails with an empty value rather than with an error.
+      target: CLAUDE.md

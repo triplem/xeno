@@ -77,7 +77,7 @@ keep moving major refs besides: `cycjimmy/semantic-release-action` carries `v1` 
 | govulncheck's vulnerability database | not pinned, and cannot be | vuln.go.dev |
 | gitleaks' rules | v8.30.1, translated into `.xeno/plugin/secrets.yaml`, not fetched | — |
 | `gitleaks` | 8.30.1, by release tarball and sha256 `551f6fc8…` | github.com |
-| the image's base, `debian` 13-slim | `sha256:a29215f6…`, the manifest index, by digest | docker.io |
+| the image's base, `debian` 13-slim | `sha256:a29215f6…`, the manifest index, by digest | ghcr.io, mirrored from docker.io |
 | `ca-certificates` and `git`, installed into the image | not pinned, and cannot be | deb.debian.org |
 | `docker`, which builds and pushes the image | the hosted runner's image, which this repository does not pin | — |
 
@@ -103,6 +103,24 @@ published image is fixed and two images a month apart are not the same image, an
 `git` in either of them is read off the build log of the run that produced it. The bill
 of materials cannot answer it, because it describes the binary and not the image around
 it.
+
+**Where the base is fetched from, and where it comes from.** Those are two registries
+and the row names both. The release builds from `ghcr.io`, which is the registry it
+already authenticates to and already pushes the image to, and what it finds there is a
+copy of the digest above, mirrored from `docker.io`. The copy is made by the release
+itself, on the first run that asks for a digest the mirror does not hold, so Docker Hub
+is reached once per bump of the pin and not once per release. That is the whole of the
+reason: an unauthenticated pull from Docker Hub spends a quota shared with every other
+puller on the runner's address, and on 2026-10-09 it ran out and cost v0.60.2 its
+image (#355).
+
+The pin does not move with the fetch path. `ARG BASE` in the `Dockerfile` names
+`docker.io/library/debian:13-slim@sha256:a29215f6…` unchanged, the copy preserves the
+manifest index, and the release builds against that same digest at its mirrored address.
+So a reader of the `Dockerfile` and a reader of this row are told the same bytes, and
+somebody with no read access to this registry can still build the file by hand from the
+reference it carries. The `docker` of the last row copies as well as building and
+pushing, with the same plugin of the same unpinned CLI.
 
 **Zensical's dependencies are the one install here that resolves unpinned.** The
 generator itself is pinned to a version, and `pip` resolves the fourteen packages behind

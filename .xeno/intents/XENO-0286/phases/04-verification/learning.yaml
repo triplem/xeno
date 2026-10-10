@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 04-verification
+created: "2026-10-10T13:15:01Z"
+schema_version: "1.0"
+runner_version: dev+b9beef5.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Criterion 2 is a property of buildx, so neither a test nor a measurement was available: there is no buildx plugin and no docker daemon on this machine. Writing it as an assumption would have left the design resting on a belief. Instead the step names the mirror by the pinned digest and inspects it after the copy, so a copy that re-serialised the index fails there with the reference it could not resolve.'
+      proposal: Where a phase depends on a behaviour of a tool it cannot run, prefer arranging the code so the behaviour is checked at the moment it is used over recording an assumption about it. A check that runs every time the dependency matters outlives the phase that could not measure it, and it fails on the day the behaviour changes rather than the day somebody re-reads the assumption register.
+      target: CLAUDE.md

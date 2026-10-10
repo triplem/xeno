@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 03-implementation
+created: "2026-10-10T13:07:40Z"
+schema_version: "1.0"
+runner_version: dev+b9beef5.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: A test keyed its exemption map on a documents row s exact first cell, so improving that row s wording would have turned the documents-only commit into a code change. The design had planned the wording change; the test is what made it impossible to make it first and alone.
+      proposal: Where a change to a document has to land in its own commit before the code, grep the tree for the document text that commit touches before writing it, not only for the document path. A row, a heading or a key quoted inside a test is a line the documents commit cannot move without taking the test with it, and the place to find that out is before the commit rather than in its failing check.
+      target: CLAUDE.md

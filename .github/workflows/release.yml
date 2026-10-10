@@ -32,6 +32,20 @@ name: release
 on:
   push:
     branches: [main]
+  # The second way into the image step, and the only one. Every publishing step is gated on
+  # semantic-release having cut a version in the same run, and once it has cut one it will
+  # not cut it again, so a release whose image step failed had no path to its image: a re-run
+  # restarts the job at the gate rather than at the thing the gate guards, and is green
+  # because semantic-release correctly does nothing. v0.60.2 is the release that happened to
+  # (#356). This trigger publishes an image for a tag that already exists, from the binary
+  # that release already published, and cuts nothing.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: >-
+          the version of an existing release whose image is missing,
+          without the leading v
+        required: true
 
 # Two scopes, because section 13's distribution table gives the release two channels and
 # this host counts them separately: contents: write attaches the per platform binaries to
@@ -69,6 +83,23 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # Where the image goes, named once and from the host rather than written down. The
+      # runner compiles it in because the CI wrapper it generates into somebody else's
+      # repository has to name the image, and a repository that had moved would leave that
+      # wrapper pointing at nothing with nothing to notice it. The step that pushes reads the
+      # same value out of the environment, so the registry the binaries claim and the registry
+      # the image is in cannot disagree.
+      #
+      # Lowercased: a registry rejects an upper case repository name and an owner is free to
+      # have one. That is a shell expansion rather than an expression, which is why this is a
+      # step and not a job level `env`.
+      #
+      # It is its own step, and unconditional, because the build step used to write it and a
+      # dispatch skips the build step. The image step would then have resolved its registry to
+      # the empty string, which is a push to a name rather than a failure.
+      - name: where the image goes
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       # The same gates the verify workflow runs. A release is not published from a tree
       # that would not pass them.
       - name: format
@@ -101,8 +132,15 @@ jobs:
         with:
           node-version: '24'
 
+      # On a push and not on a dispatch, which is what lets the four conditions below stay
+      # exactly as they are: a step that did not run has no outputs, so
+      # new_release_published is empty on a dispatch and the binary channel is false by
+      # construction rather than by four more conditions somebody has to keep right. It also
+      # stops the other thing a dispatch could do by accident, which is cut a version out of
+      # whatever has landed on main since the last release.
       - name: release
         id: release
+        if: github.event_name == 'push'
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
           semantic_version: 25.0.9
@@ -172,17 +210,10 @@ jobs:
           g=github.com/triplem/xeno/internal/plugin
           ldflags="$ldflags -X $m.RunnerVersion=$VERSION -X $g.ExpectedDigest=$DIGEST"
 
-          # Where the image goes, named once and from the host rather than written down.
-          # The runner compiles it in because the CI wrapper it generates into somebody
-          # else's repository has to name the image, and a repository that had moved
-          # would leave that wrapper pointing at nothing with nothing to notice it. The
-          # step that pushes reads the same value out of the environment, so the registry
-          # the binaries claim and the registry the image is in cannot disagree.
-          # Lowercased: a registry rejects an upper case repository name and an owner is
-          # free to have one.
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
-          echo "IMAGE=$image" >> "$GITHUB_ENV"
-          ldflags="$ldflags -X $m.ImageRepository=$image"
+          # IMAGE comes from the step above rather than from here, so that the step which
+          # pushes and this one cannot disagree about where the image goes even when only
+          # one of them runs.
+          ldflags="$ldflags -X $m.ImageRepository=$IMAGE"
           for target in $TARGETS; do
             os=${target%/*}; arch=${target#*/}
             ext=""
@@ -247,20 +278,96 @@ jobs:
       # the two routes to take is a decision about this pipeline rather than about the
       # image, so the image ships for the architecture CI is on and the question is
       # written down (#282).
+      #
+      # The base is fetched from ghcr.io and not from Docker Hub. An unauthenticated pull
+      # spends a quota shared with every other unauthenticated puller on the runner's
+      # address, and on 2026-10-09 it ran out: the build failed at `load metadata` with 429
+      # and v0.60.2 was published without its image (#355). The credential this step holds is
+      # for the push target, so the push was authenticated and the pull it depended on was
+      # not. docs/supply-chain.md records the fetch path and the origin.
+      #
+      # The mirror is a cache and not a thing with an owner. This step asks whether it
+      # already holds the pinned digest and copies from Docker Hub when it does not, so
+      # Docker Hub is reached once per bump of the pin rather than once per release. What
+      # that leaves is the one release following a bump, which still depends on it: a bump
+      # landing on a spent quota fails that release and the next run refills the cache. The
+      # alternative was a mirror workflow triggered by the pin changing, which fires on the
+      # same push as the release and would race it, so the failure would depend on timing
+      # and reproduce on nothing.
       - name: image
-        if: steps.release.outputs.new_release_published == 'true'
+        if: >-
+          steps.release.outputs.new_release_published == 'true'
+          || github.event_name == 'workflow_dispatch'
         env:
-          VERSION: ${{ steps.release.outputs.new_release_version }}
+          VERSION: ${{ steps.release.outputs.new_release_version || inputs.version }}
           # Through the environment and not interpolated into the script, which is how the
           # upload step above passes the same token: an expression substituted into a shell
           # is a shell that reads whatever the expression expanded to.
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
+
+          # On a dispatch there is no dist/, because the build step is gated on a version cut
+          # in the same run. The binary comes from the release's own assets rather than from a
+          # second build: the tree at main is no longer the tree the tag was cut from, and a
+          # rebuild would give one version two binaries whose only difference is that, with
+          # the newer one covered by no SHA256SUMS anybody published. Checked against that
+          # release's own SHA256SUMS before it is copied in, which is what stands between a
+          # mistyped input and an image tagged for a release it was not built from.
+          #
+          # chmod, because a release asset carries no permissions and arrives 0644 where go
+          # build produces 0755. COPY preserves the mode, so without this the image's
+          # /usr/local/bin/xeno cannot be executed and every gate job in it fails on a
+          # permission rather than on anything a reader would trace back to here.
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            binary="xeno-$VERSION-linux-amd64"
+            mkdir -p dist
+            gh release download "v$VERSION" --pattern "$binary" --dir dist
+            gh release download "v$VERSION" --pattern SHA256SUMS --dir .
+            grep "  $binary\$" SHA256SUMS > SHA256SUMS.one
+            ( cd dist && sha256sum -c ../SHA256SUMS.one )
+            chmod 0755 "dist/$binary"
+            # Out of the way of .dockerignore, which is `*` then `!dist`, so anything left in
+            # dist/ is context the daemon receives.
+            rm SHA256SUMS SHA256SUMS.one
+          fi
+
           printf '%s' "$REGISTRY_TOKEN" |
             docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
-          docker build --build-arg "VERSION=$VERSION" -t "$IMAGE:$VERSION" .
+
+          # The base, read out of the Dockerfile rather than written again here. A second copy
+          # of the digest would be a second pin — and internal/model/supply_chain_test.go
+          # reads digests out of every workflow, so it would be a second row the page is asked
+          # to carry as well. The Dockerfile keeps naming docker.io, which is what keeps the
+          # regex manager of #351 proposing the next digest for the right image and keeps a
+          # hand build possible for somebody with no read access to this registry.
+          base=$(sed -n 's/^ARG BASE=\(.*\)$/\1/p' Dockerfile)
+          test -n "$base"
+          base_digest=${base##*@}
+          base_tag=${base%@*}; base_tag=${base_tag##*:}
+          mirror="$IMAGE/base"
+          echo "base $base"
+          echo "mirror $mirror@$base_digest"
+
+          # One command asks and proves. Run first, it says whether a copy is needed. Run
+          # again after the copy, it fails with the reference it could not resolve if the copy
+          # re-serialised the manifest index instead of writing it through — which is the
+          # property the whole arrangement rests on and which belongs to buildx rather than to
+          # this repository. So it is checked on every miss rather than assumed once.
+          if docker buildx imagetools inspect "$mirror@$base_digest" >/dev/null 2>&1; then
+            echo "the mirror holds the pinned base already"
+          else
+            echo "the mirror does not hold it; copying from the origin"
+            docker buildx imagetools create --tag "$mirror:$base_tag" "$base"
+            docker buildx imagetools inspect "$mirror@$base_digest" >/dev/null
+          fi
+
+          docker build \
+            --build-arg "VERSION=$VERSION" \
+            --build-arg "BASE=$mirror@$base_digest" \
+            -t "$IMAGE:$VERSION" .
           docker push "$IMAGE:$VERSION"
           # The digest, so that the run log says what was published and not only where.
           # An image is referenced by digest wherever the reference has to be immutable,
