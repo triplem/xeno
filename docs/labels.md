@@ -105,12 +105,20 @@ against section 8 rather than settled here.
 
 Seven issues carried it on 2026-10-10: #120, #224, #234, #329, #334, #338 and #359.
 
-**Open point.** The approving comment on #359 spells the label `xeno-need-decision`; the
-label that exists and that seven issues carry is `xeno-needs-decision`. The spelling is
-the agent's and the discrepancy is named here rather than smoothed over, because a label
-is a string and two spellings of one state is the fault this page exists to prevent.
-Whether it is renamed to the singular is a question for the maintainer, asked after the
-one already open on #359.
+**The name is `xeno-needs-decision`, with the "s".** The comment that approved #359 and
+asked for the label wrote it `xeno-need-decision`; the label created and applied is the
+plural, and the maintainer settled on 2026-10-10 that the plural is the name. Nothing
+needs renaming and nothing needs creating.
+
+It is worth a sentence because of what the near-miss cost and did not cost. No code read
+either spelling, and no code reads any label name but `xeno-approved` — the only
+comparison is the one in `internal/model/identity.go` — so nothing failed, no verdict
+moved, and a run would have gone on exactly as it did under either name. What the two
+spellings could cost is a person: somebody reading the issue list for the label they had
+asked for and not finding it, or filtering on the singular and getting nothing back,
+which reads the same as there being no blocked issues. That is the kind of fault a page
+of names exists to prevent, and it is the reason the names here are given exactly rather
+than described.
 
 ### The work packages
 
@@ -168,13 +176,12 @@ label that already exists rather than failing.
 
 ## What this page does not say
 
-Four things are open, each on an issue, so that a reader does not take this page's
+Three things are open, each on an issue, so that a reader does not take this page's
 silence for an answer.
 
 - What becomes of `xeno-approved` when the work it authorised stops, on #359.
 - Whether a fresh approval is owed after a decision reverses the work, which follows
   from the previous question and is asked after it, on #359.
-- Whether `xeno-needs-decision` is renamed to the maintainer's singular spelling.
 - Whether a label should ever *start* work rather than permit it. That is #338, and it
   is the other half of the title #359 was raised under. Section 12 holds that "issue
   commands are deliberately absent" because something has to receive them, and #338

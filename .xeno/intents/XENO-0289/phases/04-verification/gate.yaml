@@ -1,12 +1,12 @@
 intent: github.com/triplem/xeno#359
-phase: 03-implementation
-created: "2026-10-10T15:55:00Z"
+phase: 04-verification
+created: "2026-10-10T16:01:34Z"
 schema_version: "1.0"
 runner_version: dev+5044a7a
 plugin_version: 0.0.0-dev
 status: green
-run_at: "2026-10-10T15:59:23Z"
-artifacts_hash: 329d89b97c2f64c0b84c6bb32e2d96d2946168d4563e4b772cffd3e5a920ac05
+run_at: "2026-10-10T16:01:34Z"
+artifacts_hash: 622a8b8f3961ab2a65c46dbebe2720a08823ae1cbf8edef58e129ae5bff94088
 checks:
     - gate: G-Supply
       result: not-implemented
@@ -33,6 +33,9 @@ checks:
       result: pass
       provenance: xeno
     - gate: G-Build
+      result: pass
+      provenance: xeno
+    - gate: G-Test
       result: pass
       provenance: xeno
     - gate: G-Rules

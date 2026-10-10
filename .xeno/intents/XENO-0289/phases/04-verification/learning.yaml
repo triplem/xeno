@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#359
+phase: 04-verification
+created: "2026-10-10T16:01:23Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'A phase redone before it was committed leaves a run lock behind that nothing else clears. 04-verification was started, then its directory was removed so that 03-implementation could be redone against a maintainers answer, and phase start then refused with 04-verification is already running. The refusal names the lock under .xeno/local/runs and the remedy, which is why it cost a minute rather than an hour, but the state lives in two places: the phase directory under .xeno/intents and the lock under .xeno/local, and removing the first does not remove the second. xeno intent status also went on reporting the phase as running with no directory behind it.'
+      proposal: Either phase start treats a lock whose phase directory does not exist as stale and clears it, saying so, or a command exists that abandons a started phase that holds no verdict, which is the act a redo of the predecessor requires and which is today done with rm. The refusal is good; what is missing is the inverse of phase start for a phase nothing has sealed.
+      target: internal/runner, phase start and the run lock under .xeno/local/runs
