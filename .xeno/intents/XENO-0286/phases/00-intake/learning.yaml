@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 00-intake
+created: "2026-10-10T10:49:13Z"
+schema_version: "1.0"
+runner_version: dev+90c7227.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: The 404 for ghcr.io/triplem/xeno:0.60.2 was taken beside 200s for 0.60.0 and 0.60.1 in the same loop, against the same registry with the same token and the same Accept header. The missing image is the premise both issues rest on, and a 404 from an unauthenticated probe, a wrong Accept header or a mistyped repository path reads exactly like a 404 for an image that is not there.
+      proposal: Where a phase rests on something being absent from a service, probe for a thing of the same kind that is present in the same call, and record both answers. The negative-result rule in CLAUDE.md says to recreate the thing and run the check again, which a registry does not allow; a positive control in the same loop is what that rule asks for when the thing cannot be recreated.
+      target: CLAUDE.md
