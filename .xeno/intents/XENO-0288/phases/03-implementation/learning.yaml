@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 03-implementation
+created: "2026-10-10T15:50:41Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The prose of the new section was written at about 90 characters and had to be rewrapped to 88 before it could be committed. awk length over the file reports bytes rather than characters in this shell, so an em dash counts three and a width check built on it answers the wrong question in both directions: it flags a compliant line that contains typography and it would pass an over-wide line of pure ASCII that happened to sit under the byte figure. The real count had to be taken in python, and the first reflow pass still left one list item at 90 because the wrap width was applied to the item text without its two-character marker.'
+      proposal: 'Check prose width by characters and not by bytes, and exempt table rows explicitly: a one-line python read over the file is the cheap form, and a shell length check is not, because this project writes em dashes and typographic quotes in almost every paragraph. Where a reflow is done by a script rather than by hand, the width of a list item first line is the budget minus its marker, and the check that proves the reflow worked is the same character count run again afterwards rather than the script having exited 0.'
+      target: CLAUDE.md

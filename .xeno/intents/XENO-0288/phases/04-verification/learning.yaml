@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 04-verification
+created: "2026-10-10T16:01:08Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: template
+      observation: 'Criterion 9 of this intent was written with two sentences: an operative requirement, that no mechanism is taken and that one with an issue points at it, and an illustrative sentence naming three issue numbers. The section meets the first and not the second, because one of the three belongs to a different reading and one is genuinely missing. The illustration was not a requirement anybody intended, and it was discovered at verification rather than at design, by the grep that was supposed to confirm the criterion rather than complicate it. By then P3 was decided and the document committed, so the repair would have staled P3 and P4 was already running.'
+      proposal: A criterion is one sentence. Where a second sentence is wanted to show what the first means, it belongs under the criterion as an example and marked as one, because an acceptance criterion is read later by somebody checking it off and an illustration beside the requirement reads as part of it. The cost of getting this wrong is not a wrong document; it is a criterion recorded as partly met in a sealed phase for a reason that was never a requirement.
+      target: .xeno/plugin/templates/requirements/template.yaml

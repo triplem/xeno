@@ -1,0 +1,17 @@
+intent: github.com/triplem/xeno#334
+phase: 00-intake
+created: "2026-10-10T15:33:49Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+include:
+    - docs/orchestrator-evaluation.md
+    - docs/README.md
+    - CLAUDE.md
+exclude:
+    - .xeno/intents/**
+    - docs/process-definition.md
+    - docs/implementation-plan.md
+budget:
+    files: 8
+    bytes: 140000

@@ -1,0 +1,32 @@
+intent: github.com/triplem/xeno#334
+phase: 04-verification
+created: "2026-10-10T15:57:03Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 546d3aadaf902b301550a743f72642e13491a7a32fb8d80c5c27f50a4d4f10cf
+evidence_source: ci
+template_source: project
+repo_commit: 295bcc487080e80335a0a18744784f3293f2443c
+files:
+    - path: docs/orchestrator-evaluation.md
+      sha256: 7ebffcee70edbb6c18805f59483f6e510a201a200637e72771b602266ce8e32e
+      bytes: 51875
+    - path: docs/README.md
+      sha256: 3a4f58122652f9c77e6b93d2c825de56fd42b92707f54e99e0ad4de4f172a797
+      bytes: 3808
+    - path: CLAUDE.md
+      sha256: 549865a1bfc7ea40f1f6dc45d750d7ec31cd8a93204401bcc39fdf862d180d06
+      bytes: 5529
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 953edde96806721dadace7f3ca6fed815f4f44fb2f9630d905212cc0cd987f87

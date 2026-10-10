@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 05-review
+created: "2026-10-10T16:03:29Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: This intent wrote a section of a document that is itself an evaluation of other projects, and the thing it needed and did not have is a place to put what a reading cost. P4 cell-by-cell table has fifty-odd addresses at one pinned commit, assembled by extracting a tarball of that commit to disk and reading files there. That table is sealed inside this intent and the page it supports carries a Sources entry naming files by what they were read for. So the next person who writes a section of this page, or who revisits this one under 10.5 conditions, has the Sources entry and has to rebuild the addresses, because the thing that would save the work is in the trail of an intent nobody will think to open.
+      proposal: 'Where an intent writing a document assembles a table of addresses into a source outside this repository, the Sources entry of that document names the intent key beside the date of the reading. One phrase on the page, pointing at the phase that holds the per-claim table, which is the only artefact a revisiting reader actually needs and the only one a Sources list cannot carry without becoming a second document. This is not a new field and not a schema change: it is a sentence in the prose of the page, and the trail already holds the thing it points at.'
+      target: docs/orchestrator-evaluation.md

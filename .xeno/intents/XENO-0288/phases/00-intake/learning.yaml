@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 00-intake
+created: "2026-10-10T15:35:44Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The third standing rule says every change belongs to a work package, and #334 carries no package label. Nor did its sibling #336, whose intent shipped as 5044a7a. Both change docs/orchestrator-evaluation.md, which is one of this repository own documents: the plan enumerates packages for what the tool delivers, and no package owns the documents that describe it. XENO-0286 met the same thing from the other side and wrote "Left unlabelled rather than labelled wrongly", so this is the third intent to meet it and the second to record it.'
+      proposal: 'Name the owner of this repository own documents in the implementation plan, either as a package of its own or as a stated exception in the paragraph that lists them, so that an intent changing a document has a label to carry rather than a gap to re-establish. What makes it worth a line is that the rule is a standing rule: an unlabelled issue is a visible breach of it every time, and three intents have now resolved it by leaving the label off and writing the reason into the intake.'
+      target: docs/implementation-plan.md
