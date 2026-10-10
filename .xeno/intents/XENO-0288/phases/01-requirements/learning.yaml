@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 01-requirements
+created: "2026-10-10T15:39:58Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: 'The requirements of this intent needed a criterion nobody asked for, that every cell of the table be re-read at the pinned sha and the figures that moved be named. #323 read AI-DLC at main on 2026-10-08 and the tag was cut on the same day; three days later three of its figures were already wrong, including an event-type count the reading quoted as a number. The page convention is a Sources entry naming what was read and when, which records the reading but does not oblige the next writer to redo it, so a section written from an earlier comment can look pinned while resting on figures read somewhere else.'
+      proposal: Where a section of docs/orchestrator-evaluation.md is written from a reading taken earlier or elsewhere, its acceptance criteria name the claims that have to be re-read at the pin and the phase record says which of them moved. The Sources entry then carries a reading that happened rather than a reading that was cited. The cost is one criterion and one paragraph; what it buys is that the pin means the same thing for every cell of the table, which is the whole claim a pinned evaluation makes.
+      target: docs/orchestrator-evaluation.md

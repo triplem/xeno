@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#334
+phase: 02-design
+created: "2026-10-10T15:42:59Z"
+schema_version: "1.0"
+runner_version: dev+5044a7a
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'The design had to depart from the wording of the decision it records. Option two of the question on #334 named its cost as blob OIDs not being stable across a rebase that changes a tree. AI-DLC own reference claims the opposite property for that mechanism at docs/reference/20-commit-provenance.md:138, "keys on blob content (OIDs), not commit ancestry - a reviewed change that lands squashed with others still verifies". The recommendation and the answer are unaffected, because the reason that decides is docs/process-definition.md:480, but a section that repeated the stated cost would have sealed a claim its own source contradicts.'
+      proposal: Where a question puts options to a person, the consequence and the cost of each option carry the address they were read at, the same way a finding does. An option cost is a claim about a tree like any other and it reaches an artifact through the decision that cites it, so it is sealed on the same terms. The agent that writes the section then has a line to re-read rather than a sentence to either trust or quietly contradict, and where the re-reading disagrees the divergence is visible as a difference between two addresses instead of looking like the writer having second thoughts.
+      target: CLAUDE.md
