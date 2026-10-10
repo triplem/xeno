@@ -163,6 +163,20 @@ in the way that matters most — it would understate what a label does. The miti
 that the page names the file and the function, so a reader checking is one grep away; there
 is no mechanism.
 
+**A reflow script merged both of the page's code blocks into prose, and the strict build
+did not notice.** The page is held at 88 characters by a script that wraps paragraphs and
+leaves indented blocks and table rows alone. Run a second time, it swallowed the two
+command blocks into the paragraphs above them, so `gh api repos/triplem/xeno/labels
+--paginate --jq '.[].name'` and the two lines under "Applying a label" rendered as
+sentences. Nothing caught it: `zensical build --strict` reported no issues, because an
+unindented command line is valid prose and a link that still resolves is still a link,
+and the width check passed because the merged lines came out under 88. It was found by
+reading the page back as a page rather than as a diff, which is what `CLAUDE.md` asks for
+and what a width check cannot do. The blocks are restored and the rendered page now holds
+two `<pre>` elements. The lesson is in this phase's second learning record: a tool that
+reflows prose has to be run once and read back, or not used on a file that has code in
+it.
+
 **The page gained a section after `03-implementation` was sealed, and the figures in that
 phase are now low.** It records 193 lines and 12,146 bytes; the page is 215 lines and
 13,442. What was added is the paragraph on authorship — that there is no bot identity on
@@ -178,8 +192,9 @@ sealed phase directories and running them again. That is a larger act than the
 inaccuracy warrants, and it is the same judgement `04-verification` already made about two
 wrong figures it corrected in prose rather than by rewriting the phases that hold them.
 
-**`04-verification`'s lock records an earlier hash of `docs/labels.md`.** The page changed
-after that phase was given it. G-Freshness's second half is what reports this, and it
+**`04-verification`'s lock records an earlier hash of `docs/labels.md`.** The page
+changed twice after that phase was given it, once for the paragraph on authorship and
+once for the repair of the code blocks. G-Freshness's second half is what reports this, and it
 reports nothing without a commit range: `.github/workflows/xeno.yml` runs `xeno gate
 verify` with none, so no check in this repository will raise it. It is written here
 because that is the only place it will be visible, and because a reader comparing the lock

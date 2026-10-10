@@ -40,7 +40,7 @@ package labels, reaches that code and is passed over.
 
 The set below was read from the host on 2026-10-10 with
 
-gh api repos/triplem/xeno/labels --paginate --jq '.[].name'
+    gh api repos/triplem/xeno/labels --paginate --jq '.[].name'
 
 which lists 33 labels in three groups. Nothing keeps this page and that command in
 agreement; the command is given so that a reader can repeat it rather than trust the
@@ -169,8 +169,8 @@ silently omits ten of them is a page a reader cannot check against the host.
 
 ## Applying a label, and reading it back
 
-gh api -X POST "repos/triplem/xeno/issues/<n>/labels" -f "labels[]=<name>" gh api
-"repos/triplem/xeno/issues/<n>/labels" --jq '[.[].name]|join(",")'
+    gh api -X POST "repos/triplem/xeno/issues/<n>/labels" -f "labels[]=<name>"
+    gh api "repos/triplem/xeno/issues/<n>/labels" --jq '[.[].name]|join(",")'
 
 The second line is the point. An exit code is a report about a request, not evidence
 about an issue: it says the host accepted something, and what the issue carries

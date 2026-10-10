@@ -1,7 +1,7 @@
 ---
 intent: github.com/triplem/xeno#359
 phase: 05-review
-created: "2026-10-10T16:08:48Z"
+created: "2026-10-10T16:20:38Z"
 schema_version: "1.0"
 runner_version: dev+5044a7a
 plugin_version: 0.0.0-dev
@@ -26,7 +26,8 @@ records the deviation that matters: a third of the page is a dated observation a
 tracker that no commit can hold it to. The residual risks are that staleness, the page's
 central claim depending on code it does not sit beside, a question open on #359 that no
 gate can see is open, two sealed figures that are wrong and corrected elsewhere, the line
-and byte counts in `03-implementation` left low by the last change to the page with the
-reason for not chasing them, `04-verification`'s lock holding an earlier hash of that page
+and byte counts in `03-implementation` left low by the last changes to the page with the
+reason for not chasing them, a reflow script that merged both of the page's code blocks
+into prose while three checks passed over the damage, `04-verification`'s lock holding an earlier hash of that page
 with the reason nothing will raise it, and the work package label still absent from the
 issue. What was documented and what was drafted are kept apart in the checklist.
