@@ -94,6 +94,16 @@ exception. Relevant properties:
 - ACP delegation to other harnesses exists as a fallback path, unused in v2 but
   available if the direct model path has to be abandoned.
 
+`rajistics-demo/sdlc-automation-github-demo` is this choice running rather than an
+alternative to it: it drives the same Agent Server through the OpenHands Automations
+API and starts each run from a label on an issue, which is the design section 12's
+"Issue commands are deliberately absent" paragraph declines, and it is evidence for
+that paragraph rather than against it, because the thing receiving the label is a
+hosted automation and not anything in the repository — whose tree carries no workflows
+at all. #330 took the half of this that needs no receiver: `xeno-approved` is a
+precondition `xeno intent start` reads off an issue it has already fetched, not an
+event anything listens for.
+
 ### 4.2 Claude Agent SDK, rejected, best fallback
 
 The same agent loop that powers Claude Code, embeddable in an own program, with
@@ -476,3 +486,16 @@ them, `docs/cli.md`, `docs/agent-contract.md`, `docs/concepts.md` and `docs/faq.
 https://registry.npmjs.org/@fission-ai/openspec for the version, the release dates and
 the licence. The evaluation itself, with the namesakes set aside and every source
 quoted, is issue #223.
+
+For the sentence in 4.1, read on 2026-10-10:
+https://github.com/rajistics-demo/sdlc-automation-github-demo at commit
+`2ddf6c91791d95b8de8ff38b683241743ec12049`, dated 2026-10-07, which is a commit and
+not a tag because the repository publishes no releases. Read there:
+`.github/labels.json` for the four trigger labels and the four status labels beside
+them; `automations/github/openhands-{context,build,review,qa}/` for the presets and
+prompts the Automations API registers, with
+`scripts/automations/register_github_automations.py` for the registration; and
+`.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md` and `openspec/` for the
+rest of the design the sentence does not take. The tree holds no `.github/workflows`
+directory, which is what makes "something has to receive them" literal there. Nine
+stars, one author and no licence file.

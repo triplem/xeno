@@ -1,0 +1,29 @@
+intent: github.com/triplem/xeno#336
+phase: 03-implementation
+created: "2026-10-10T13:32:07Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+predecessor_artifacts_hash: 1418aa94a4a6c42bb8aa9bb7ea6cfb362d88f4187886bd8519c0c6bea40d35d9
+evidence_source: ci
+template_source: project
+repo_commit: 4a5b0828ac401d6288e9b287334a9361e3c16f90
+files:
+    - path: docs/orchestrator-evaluation.md
+      sha256: cf332142e3bde2ba3b556f3d73f1080203f44f1900afa5bce4b6e40237840496
+      bytes: 27050
+    - path: internal/model/identity.go
+      sha256: 0080081229149101f0003afd66653aa75418f475823a0f1f85d69c876a1f44f7
+      bytes: 15061
+rules_applied:
+    - path: .xeno/plugin/rules/given/builtin/deviations-are-traceable.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/interface-change-needs-a-migration-note.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/new-dependency-needs-a-rationale.yaml
+      version: 1
+    - path: .xeno/plugin/rules/given/builtin/release-notes-are-filled.yaml
+      version: 1
+plugin:
+    version: 0.0.0-dev
+    sha256: 953edde96806721dadace7f3ca6fed815f4f44fb2f9630d905212cc0cd987f87

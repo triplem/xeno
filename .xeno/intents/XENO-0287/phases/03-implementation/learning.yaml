@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#336
+phase: 03-implementation
+created: "2026-10-10T13:33:23Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+learnings:
+    - category: project-convention
+      observation: 'Criterion 9 was written as "one sentence" from the issue wording, and the constraints section anticipated the collision with four claims and resolved it in advance in favour of the criterion. Writing it out showed that resolution was wrong: ninety words with three nested subordinate clauses, with the clause most easily misread arriving last. The criterion had fixed a form before anybody had written the thing in that form.'
+      proposal: Where a criterion fixes the form of prose rather than a property of it -- one sentence, one paragraph, one table -- draft the prose in P1 or P2 before the criterion is sealed, or write the criterion about what the prose must not become rather than about what it must be. A count of sentences is a proxy for "not a section", and the proxy can fail while the thing it stands for is satisfied.
+      target: CLAUDE.md
