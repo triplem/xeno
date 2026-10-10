@@ -1,0 +1,14 @@
+intent: github.com/triplem/xeno#336
+phase: 00-intake
+created: "2026-10-10T13:25:38Z"
+schema_version: "1.0"
+runner_version: dev+5f645cb
+plugin_version: 0.0.0-dev
+include:
+    - docs/orchestrator-evaluation.md
+    - internal/model/identity.go
+exclude:
+    - .xeno/intents/**
+budget:
+    files: 2
+    bytes: 43000
