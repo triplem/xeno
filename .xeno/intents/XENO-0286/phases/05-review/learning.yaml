@@ -1,0 +1,11 @@
+intent: github.com/triplem/xeno#355
+phase: 05-review
+created: "2026-10-10T13:16:56Z"
+schema_version: "1.0"
+runner_version: dev+b9beef5.dirty
+plugin_version: 0.0.0-dev
+learnings:
+    - category: context-rule
+      observation: The intake set the context budget from the measured size of six files, 72,508 bytes, and two of those files were the ones the intent existed to enlarge. release.yml grew by 121 lines and docs/supply-chain.md by twenty, so by P4 the recorded context was 80,490 bytes and G-Schema carried an advisory finding from there to the end. The budget sits inside the intake artifacts_hash and cannot be moved once the intake is judged, so there was no repair, only the finding.
+      proposal: 'Set the byte budget from what the files in scope will hold at the end, not from what they hold at the intake. Where a scope includes the files the change will grow, add the expected growth to the figure and say so in the context rationale: the budget is a claim about the context the phases work in, and a change that adds to a file in its own scope raises that figure by construction.'
+      target: .xeno/config/project.yaml

@@ -1,0 +1,58 @@
+intent: github.com/triplem/xeno#355
+phase: 05-review
+created: "2026-10-10T13:17:08Z"
+schema_version: "1.0"
+runner_version: dev+b9beef5.dirty
+plugin_version: 0.0.0-dev
+status: green
+run_at: "2026-10-10T13:17:08Z"
+artifacts_hash: 061faaff9753bd9e622cc54674178ac48186414866491825c82eea3a672bd44b
+checks:
+    - gate: G-Supply
+      result: not-implemented
+      provenance: xeno
+    - gate: G-Schema
+      result: pass
+      provenance: xeno
+      findings:
+        - id: F-f15087
+          file: .xeno/intents/XENO-0286/phases/05-review/context.lock.yaml
+          cause: the recorded context is 80490 bytes and the budget is 73000
+          next: narrow the scope's include, or raise the budget in .xeno/intents/XENO-0286/phases/00-intake/context-scope.yaml and say why
+          advisory: true
+    - gate: G-Trace
+      result: pass
+      provenance: xeno
+    - gate: G-Secret
+      result: pass
+      provenance: xeno
+    - gate: G-Assumptions
+      result: pass
+      provenance: xeno
+    - gate: G-Questions
+      result: pass
+      provenance: xeno
+    - gate: G-Learning
+      result: pass
+      provenance: xeno
+    - gate: G-Freshness
+      result: pass
+      provenance: xeno
+    - gate: G-Evidence
+      result: pass
+      provenance: xeno
+    - gate: G-Build
+      result: pass
+      provenance: xeno
+    - gate: G-Test
+      result: pass
+      provenance: xeno
+    - gate: G-Rules
+      result: pass
+      provenance: xeno
+    - gate: G-Policy
+      result: pass
+      provenance: xeno
+    - gate: G-Complete
+      result: pass
+      provenance: xeno
