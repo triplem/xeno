@@ -1073,6 +1073,23 @@ actually see them.
   to a green gate. This is the golden file fixture from WP17 rather than a second,
   prose version of it: the page shows those files, so the example stays current because
   breaking it breaks a test, and there is one place to maintain instead of two.
+- *The trail.* Every intent's digests, generated, as a part of its own at the end of
+  the navigation. One index page per intent — the phases with their verdicts, the
+  questions and the decisions — and the digest of each phase. The sealed artifacts are
+  linked to the repository at the commit that sealed them rather than rendered, so
+  nothing on the site can disagree with a hash, and the digest is the layer the secret
+  filter has run over, which is what makes it the one to publish. It is derived from
+  the files by the job that builds the reference, so the rule that no generated page is
+  maintained by hand holds here too. The two shapes of the trail are explained once on
+  the index, from the paragraph `docs/the-trail-in-this-repository.md` already
+  carries: the intents up to `XENO-0106` run P0 and stop there deliberately, one intake
+  per work package, and from `XENO-0107` they run all six phases. Published
+  unexplained, half the trail looks abandoned.
+
+  It is last in the navigation because it is larger than everything else here put
+  together, and a reader looking for how to begin should not meet it first. What it
+  buys is the Dogfooding section's promise kept: the only record of how this plan was
+  executed becomes readable without a clone.
 - *Reference.* Generated in full: commands, configuration schema, gates with the
   findings each can produce, predicate types, rule catalogue, template section ids.
   A page per gate belongs here, saying what it checks, why it goes red and what to do
